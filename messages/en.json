@@ -898,7 +898,8 @@
         },
         "sin_datos": "no data",
         "activar_ayuda": "The guardian finished the enrolment. Review the progress and activate it.",
-        "pendiente_ayuda": "The guardian is still completing the enrolment. You'll be able to activate it once finished."
+        "pendiente_ayuda": "The guardian is still completing the enrolment. You'll be able to activate it once finished.",
+        "servicios_no_leidos": "The service request could not be read."
       },
       "alta_doc": {
         "tutores_titulo": "Legal guardians",
@@ -1215,7 +1216,10 @@
         "dni_numero": "ID number",
         "estudios": "Education",
         "empresa": "Employer",
-        "sip": "Health card"
+        "sip": "Health card",
+        "servicio_comedor": "Lunch",
+        "servicio_matinera": "Early morning",
+        "servicio_vespertina": "Afternoon"
       },
       "entidad": {
         "ninos_familia": "Child data (address / family situation)",
@@ -1223,7 +1227,8 @@
         "datos_tutor": "Guardian data",
         "datos_tutor_dni": "Guardian ID document",
         "ninos_identidad": "Child's identity",
-        "ninos_sip_documento": "Health card image"
+        "ninos_sip_documento": "Health card image",
+        "peticion_servicios": "Services"
       },
       "errors": {
         "registro": "The change could not be registered. Please try again.",
@@ -1582,7 +1587,8 @@
           "tutor1": "Guardian 1 (ID)",
           "tutor2": "Guardian 2",
           "medico": "Medical",
-          "sepa": "SEPA mandate"
+          "sepa": "SEPA mandate",
+          "servicios": "Services"
         },
         "estado": {
           "hecho": "done",
@@ -2842,7 +2848,10 @@
       "casilla_aria": "{nombre}: {servicio}",
       "cambios": "{n, plural, one {# unsaved change} other {# unsaved changes}}",
       "guardado": "{n, plural, one {Saved # change.} other {Saved # changes.}}",
-      "descartar_cambios": "There are unsaved changes. Change day and discard them?"
+      "descartar_cambios": "There are unsaved changes. Change day and discard them?",
+      "mensual": "Monthly",
+      "pedido_no": "Requested: no",
+      "pedido_dias_sueltos": "Requested: some days"
     }
   },
   "ausencia": {
@@ -4265,7 +4274,8 @@
         "servicios_diarios": "Daily services",
         "beca_comedor_elegibilidad": "Lunch grant",
         "beca_comedor_tramos": "Lunch grant instalments",
-        "lecturas_ficha_medica": "Who has viewed the medical record"
+        "lecturas_ficha_medica": "Who has viewed the medical record",
+        "servicios_pedidos": "Services requested at enrolment"
       },
       "campos": {
         "nombre_completo": "Name",
@@ -4477,7 +4487,8 @@
         "dni_numero": "ID number",
         "estudios": "Education",
         "empresa": "Employer",
-        "fecha_incorporacion": "Start date"
+        "fecha_incorporacion": "Start date",
+        "respuesta": "Answer"
       },
       "valores": {
         "terminos": "Terms",
@@ -4631,6 +4642,11 @@
         "redes_sociales": "Social media",
         "recomendacion": "Recommendation",
         "paso_por_delante": "Walks past the school"
+      },
+      "respuesta_servicio": {
+        "no": "No",
+        "mensual": "Every month",
+        "dias_sueltos": "Some days"
       }
     },
     "descargar_mis_datos": "Download my data",
@@ -4665,7 +4681,8 @@
         "tutor1": "Guardian 1",
         "tutor2": "Guardian 2",
         "emergencia": "Emergency",
-        "sepa": "Direct debit"
+        "sepa": "Direct debit",
+        "servicios": "Services"
       }
     },
     "identidad": {
@@ -4883,7 +4900,8 @@
         "documentos": "Documents (family book and ID)",
         "imagen": "Image consent",
         "documentos_centro": "Centre's documents to sign",
-        "tutor2": "Guardian 2 details"
+        "tutor2": "Guardian 2 details",
+        "servicios": "Services (answer each one)"
       }
     }
   },
@@ -5575,6 +5593,48 @@
       "errors": {
         "no_leido": "The phone numbers couldn't be read. Try again."
       }
+    }
+  },
+  "peticion_servicios": {
+    "servicio": {
+      "comedor": "Lunch",
+      "matinera": "Early morning",
+      "vespertina": "Afternoon"
+    },
+    "opcion": {
+      "no": "No",
+      "mensual": "Every month",
+      "dias_sueltos": "Some days"
+    },
+    "respuesta": {
+      "no": "No",
+      "mensual": "Every month",
+      "dias_sueltos": "Some days"
+    },
+    "precio_mes": "{importe} per month",
+    "precio_dia": "{importe} per day",
+    "precio_sin_importe": "price per the centre rate",
+    "intro": "For each of the centre’s services, tell us whether you want it every month, only some days, or not at all. It is a request: the management reviews it when validating the enrolment.",
+    "dias_sueltos_aviso": "If on any day your child stays for a service you did not request, they stay and that day is charged. If you request it every month, it starts the month after the start date; the starting month is charged by the days used.",
+    "sin_contestar_fila": "Choose an option.",
+    "faltan_filas": "Answer every service to continue.",
+    "guardado": "Services saved.",
+    "guardado_cola": "Change sent: the management has to approve it.",
+    "no_leida": "We could not load the centre’s services. Please try again later.",
+    "corregida": "Request corrected.",
+    "direccion": {
+      "titulo": "Requested services",
+      "ayuda": "What the family requested. You can correct it before validating; validating sets the monthly items from the month after the start date.",
+      "sin_contestar": "Not answered: {servicios}. You can validate anyway.",
+      "guardar": "Save the correction",
+      "guardando": "Saving…"
+    },
+    "errors": {
+      "invalida": "The request is not valid.",
+      "guardar": "The request could not be saved.",
+      "opcion_no_ofrecida": "The centre no longer offers that option. Reload the page.",
+      "alta_validada": "The enrolment is already validated: the change has to go through the queue.",
+      "mensual_anterior_en_borrador": "The previous monthly item for that service has a draft receipt: confirm it before setting it again."
     }
   }
 }

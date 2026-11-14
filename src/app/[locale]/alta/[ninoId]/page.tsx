@@ -37,6 +37,7 @@ import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas
 import type { EstadoCivil } from '@/features/alta/schemas/alta-documentos'
 import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 import { esFamiliaNuevaEnCentro } from '@/features/alta/queries/familia-nueva-en-centro'
+import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -375,6 +376,11 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // cargada, se saltaba acuses/menor/tutor en la primera entrada — bug de navegación.)
   const pasoInicial = PASO_MIN_AUTENTICADO
 
+  // Fase 8b: lo que el centro ofrece al niño y lo ya contestado, con la sesión. Si no se puede leer,
+  // el paso sale (no se sabe si hay servicios) y dice que no se ha podido cargar, sin ofrecer
+  // guardar: la base no deja cerrar el alta sin contestar, así que no se cierra a ciegas.
+  const peticion = await leerPeticionServicios(supabase, ninoId)
+
   // Fase 5b: «cómo nos has conocido» solo a familias nuevas en el centro (decidido el 2026-11-10),
   // o si ya está contestado (que se pueda corregir). Se cuenta después de autorizar (arriba).
   const familiaNueva = ninoExtra?.familia_id
@@ -441,6 +447,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         // Sin CID no se firma ningún mandato: el wizard no monta el paso SEPA (0c, 2026-11-04).
         centroCid={centro?.identificador_acreedor?.trim() || null}
         centroTieneCid={Boolean(centro?.identificador_acreedor?.trim())}
+        centroTieneServicios={!peticion.ok || peticion.opciones.length > 0}
+        peticionServicios={
+          peticion.ok ? { opciones: peticion.opciones, respuestas: peticion.respuestas } : null
+        }
         mandatoSepaInicial={mandatoSepaInicial}
         mandatoFamilia={mandatoFamilia}
         currentUserId={user.id}

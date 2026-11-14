@@ -15,8 +15,10 @@ import { PasoCuenta } from './PasoCuenta'
 import { PasoMedico } from './PasoMedico'
 import { PasoMenor, type DireccionInicial } from './PasoMenor'
 import { PasoSepa, type MandatoSepaInicial } from './PasoSepa'
+import { PasoServicios } from './PasoServicios'
 import { PasoTutor, type DatosTutorInicial } from './PasoTutor'
 import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
+import type { OpcionServicio, RespuestaServicio } from '@/features/peticion-servicios/lib/peticion'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
@@ -77,6 +79,13 @@ interface Props {
    * invitación (antes de entrar) el CID no llega al cliente y llega solo esto.
    */
   centroTieneCid: boolean
+  /**
+   * Fase 8b: si el centro ofrece algún servicio en Cuotas, para contar los pasos (en la invitación,
+   * antes de entrar, también llega solo esto).
+   */
+  centroTieneServicios: boolean
+  /** Lo que el centro ofrece al niño y lo ya contestado; `null` si no se pudo leer. En `/alta`. */
+  peticionServicios?: { opciones: OpcionServicio[]; respuestas: RespuestaServicio[] } | null
   mandatoSepaInicial: MandatoSepaInicial | null
   /** F-2c-2: mandato SEPA activo de la FAMILIA (o null). Si existe → paso 8 informativo. */
   mandatoFamilia: MandatoFamiliaActivo | null
@@ -141,6 +150,8 @@ export function AltaTutorWizard({
   centroDireccion,
   centroCid,
   centroTieneCid,
+  centroTieneServicios,
+  peticionServicios = null,
   mandatoSepaInicial,
   mandatoFamilia,
   currentUserId,
@@ -158,8 +169,9 @@ export function AltaTutorWizard({
   // el principio («1 de 7»), también en la invitación, y no cambian aunque la página se vuelva a
   // pintar con otro dato del centro a mitad del alta. Sin CID el último es `emergencia`; los
   // índices de los demás no cambian (`sepa` es el último).
-  const [pasos] = useState(() => pasosAlta(centroTieneCid))
+  const [pasos] = useState(() => pasosAlta(centroTieneCid, centroTieneServicios))
   const conSepa = pasos.includes('sepa')
+  const conServicios = pasos.includes('servicios')
   // El CID también, con los pasos: si el centro lo quita a mitad del alta, el paso no se queda en
   // blanco; la ruta rechaza la firma (`centro_sin_cid`, con su mensaje) y «Omitir» finaliza.
   const [cidDelAlta] = useState(centroCid)
@@ -409,6 +421,17 @@ export function AltaTutorWizard({
             onCambio={mergeMedica}
             variante="emergencia"
             fichaNoLeida={!medicaLeida}
+            esUltimo={!conSepa && !conServicios}
+            onNext={conSepa || conServicios ? goNext : finalizar}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'servicios' && (
+          <PasoServicios
+            locale={locale}
+            ninoId={ninoId}
+            peticion={peticionServicios}
             esUltimo={!conSepa}
             onNext={conSepa ? goNext : finalizar}
             onBack={goBack}

@@ -33,6 +33,7 @@ export function ColaCambiosPendientes({ items }: Props) {
   const t = useTranslations('admin.pendientes')
   const tNino = useTranslations('admin.ninos')
   const tAlta = useTranslations('alta')
+  const tPet = useTranslations('peticion_servicios')
   const tErrors = useTranslations()
 
   function valor(l: LineaCambio, v: string | null, lado: 'antes' | 'despues') {
@@ -45,6 +46,12 @@ export function ColaCambiosPendientes({ items }: Props) {
     if (v === null) return t('sin_valor')
     if (l.campo === 'sexo') return tNino(`sexo_opciones.${v}`)
     if (l.campo === 'estado_civil_familia') return tAlta(`tutor.estado_civil_opciones.${v}`)
+    // Fase 8b: `no`, o `mensual|<concepto>` / `dias_sueltos|<concepto>`.
+    if (l.campo.startsWith('servicio_')) {
+      const [respuesta, concepto] = v.split('|')
+      const r = tPet(`respuesta.${respuesta}`)
+      return concepto ? `${r} · ${concepto}` : r
+    }
     return v
   }
   const [filas, setFilas] = useState(items)

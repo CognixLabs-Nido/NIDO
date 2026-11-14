@@ -898,7 +898,8 @@
         },
         "sin_datos": "sin datos",
         "activar_ayuda": "El tutor ha finalizado el alta. Revisa el avance y activa la matrícula.",
-        "pendiente_ayuda": "El tutor aún está completando el alta. Podrás activar cuando la finalice."
+        "pendiente_ayuda": "El tutor aún está completando el alta. Podrás activar cuando la finalice.",
+        "servicios_no_leidos": "No se ha podido leer la petición de servicios."
       },
       "alta_doc": {
         "tutores_titulo": "Tutores legales",
@@ -1215,7 +1216,10 @@
         "dni_numero": "Número del DNI",
         "estudios": "Estudios",
         "empresa": "Empresa",
-        "sip": "Tarjeta sanitaria"
+        "sip": "Tarjeta sanitaria",
+        "servicio_comedor": "Comedor",
+        "servicio_matinera": "Matinera",
+        "servicio_vespertina": "Tarde"
       },
       "entidad": {
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
@@ -1223,7 +1227,8 @@
         "datos_tutor": "Datos de un tutor",
         "datos_tutor_dni": "DNI de un tutor",
         "ninos_identidad": "Identidad del niño",
-        "ninos_sip_documento": "Imagen de la tarjeta sanitaria"
+        "ninos_sip_documento": "Imagen de la tarjeta sanitaria",
+        "peticion_servicios": "Servicios"
       },
       "errors": {
         "registro": "No se pudo registrar el cambio. Inténtalo de nuevo.",
@@ -1582,7 +1587,8 @@
           "tutor1": "Tutor 1 (DNI)",
           "tutor2": "Tutor 2",
           "medico": "Médico",
-          "sepa": "Mandato SEPA"
+          "sepa": "Mandato SEPA",
+          "servicios": "Servicios"
         },
         "estado": {
           "hecho": "hecho",
@@ -2842,7 +2848,10 @@
       "casilla_aria": "{nombre}: {servicio}",
       "cambios": "{n, plural, one {# cambio sin guardar} other {# cambios sin guardar}}",
       "guardado": "{n, plural, one {Guardado # cambio.} other {Guardados # cambios.}}",
-      "descartar_cambios": "Hay cambios sin guardar. ¿Cambiar de día y descartarlos?"
+      "descartar_cambios": "Hay cambios sin guardar. ¿Cambiar de día y descartarlos?",
+      "mensual": "Mensual",
+      "pedido_no": "Pidió: no",
+      "pedido_dias_sueltos": "Pidió: días sueltos"
     }
   },
   "ausencia": {
@@ -4265,7 +4274,8 @@
         "servicios_diarios": "Servicios diarios",
         "beca_comedor_elegibilidad": "Beca de comedor",
         "beca_comedor_tramos": "Tramos de beca de comedor",
-        "lecturas_ficha_medica": "Quién ha leído la ficha médica"
+        "lecturas_ficha_medica": "Quién ha leído la ficha médica",
+        "servicios_pedidos": "Servicios pedidos en el alta"
       },
       "campos": {
         "nombre_completo": "Nombre",
@@ -4477,7 +4487,8 @@
         "dni_numero": "Número del DNI",
         "estudios": "Estudios",
         "empresa": "Empresa",
-        "fecha_incorporacion": "Fecha de incorporación"
+        "fecha_incorporacion": "Fecha de incorporación",
+        "respuesta": "Respuesta"
       },
       "valores": {
         "terminos": "Términos",
@@ -4631,6 +4642,11 @@
         "redes_sociales": "Redes sociales",
         "recomendacion": "Recomendación",
         "paso_por_delante": "Pasa por delante del centro"
+      },
+      "respuesta_servicio": {
+        "no": "No",
+        "mensual": "Todos los meses",
+        "dias_sueltos": "Días sueltos"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",
@@ -4665,7 +4681,8 @@
         "tutor1": "Tutor/a 1",
         "tutor2": "Tutor/a 2",
         "emergencia": "Emergencias",
-        "sepa": "Domiciliación bancaria"
+        "sepa": "Domiciliación bancaria",
+        "servicios": "Servicios"
       }
     },
     "identidad": {
@@ -4883,7 +4900,8 @@
         "documentos": "Documentos (libro de familia y DNI)",
         "imagen": "Autorización de imagen",
         "documentos_centro": "Documentos del centro por firmar",
-        "tutor2": "Datos del tutor 2"
+        "tutor2": "Datos del tutor 2",
+        "servicios": "Servicios (contestar cada uno)"
       }
     }
   },
@@ -5575,6 +5593,48 @@
       "errors": {
         "no_leido": "No se han podido leer los teléfonos. Vuelve a intentarlo."
       }
+    }
+  },
+  "peticion_servicios": {
+    "servicio": {
+      "comedor": "Comedor",
+      "matinera": "Matinera",
+      "vespertina": "Tarde"
+    },
+    "opcion": {
+      "no": "No",
+      "mensual": "Todos los meses",
+      "dias_sueltos": "Días sueltos"
+    },
+    "respuesta": {
+      "no": "No",
+      "mensual": "Todos los meses",
+      "dias_sueltos": "Días sueltos"
+    },
+    "precio_mes": "{importe} al mes",
+    "precio_dia": "{importe} al día",
+    "precio_sin_importe": "precio según la tarifa del centro",
+    "intro": "Para cada servicio del centro, dinos si lo queréis todos los meses, solo algunos días o no. Es una petición: Dirección la revisa al validar el alta.",
+    "dias_sueltos_aviso": "Si un día el niño se queda a un servicio que no habéis pedido, se queda y se cobra ese día. Si lo pedís todos los meses, empieza el mes siguiente al de su incorporación; el mes en que entra se cobra por los días que use.",
+    "sin_contestar_fila": "Elige una opción.",
+    "faltan_filas": "Contesta todos los servicios para seguir.",
+    "guardado": "Servicios guardados.",
+    "guardado_cola": "Cambio enviado: Dirección tiene que aprobarlo.",
+    "no_leida": "No hemos podido cargar los servicios del centro. Vuelve a intentarlo más tarde.",
+    "corregida": "Petición corregida.",
+    "direccion": {
+      "titulo": "Servicios pedidos",
+      "ayuda": "Lo que ha pedido la familia. Puedes corregirlo antes de validar; al validar se ponen las mensuales desde el mes siguiente al de la incorporación.",
+      "sin_contestar": "Sin contestar: {servicios}. Puedes validar igualmente.",
+      "guardar": "Guardar la corrección",
+      "guardando": "Guardando…"
+    },
+    "errors": {
+      "invalida": "La petición no es válida.",
+      "guardar": "No se ha podido guardar la petición.",
+      "opcion_no_ofrecida": "Esa opción ya no la ofrece el centro. Recarga la página.",
+      "alta_validada": "El alta ya está validada: el cambio tiene que ir por la cola.",
+      "mensual_anterior_en_borrador": "La mensual anterior de ese servicio tiene un recibo en borrador: confírmalo antes de volver a ponerla."
     }
   }
 }

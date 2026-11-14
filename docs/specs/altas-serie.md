@@ -1782,6 +1782,64 @@ día 1`). Con la mensual desde el 1 de abril, marzo cobra los días del parte y 
 **Pantallas:** «Activar matrícula» pide la fecha de incorporación (sin ella no se pulsa), y
 «Reincorporar» también.
 
+### 8b · La petición de servicios, en dos migraciones
+
+**Medido abierto antes** (producción, 2026-11-14, ensayo terminado en RAISE): con el único camino que
+había (Cuotas → Destinatarios, `fijar_asignaciones_concepto`, sin vigencia), la mensual de comedor del
+niño que entra el 15 de septiembre se cobraba **entera** en septiembre (150 €) y los días del parte no
+(#404); sin ella, los dos días (24 €). La familia no escribe en la facturación (42501 en la tabla y en
+la función) y no lee el catálogo de conceptos; no había dónde guardar la petición, el cierre no la
+miraba y el pase no sabía quién tenía la mensual.
+
+**`20270122120000` (aditiva; antes del despliegue):**
+
+- `peticion_servicio`: una fila por niño y servicio, con `respuesta` (`no`, `mensual`,
+  `dias_sueltos`) y el `concepto_id` pedido (NULL si y solo si «no»). El centro lo pone un trigger
+  desde el niño, y otro comprueba que el concepto es de ese centro, de ese servicio y del tipo de la
+  respuesta. Auditada. RLS: la leen el tutor legal y la Dirección del centro; nadie la escribe con
+  su sesión.
+- Lo que se ofrece (`privado.servicios_ofrecidos`): conceptos activos, de cobro, fijos, por niño,
+  con servicio; mensuales manuales (una automática la tendría todo el mundo) y diarios. Con el precio
+  del niño (la tarifa de su año si la hay; si no, la base). La familia no lee `conceptos_cobro`:
+  `servicios_alta(niño)` se lo da a ella y a la Dirección.
+- `guardar_peticion_servicios(niño, respuestas)`: el tutor legal o la Dirección, antes de validar
+  (con el alta validada, HINT `alta_validada`). Cada respuesta tiene que ser una opción ofrecida
+  hoy (HINT `opcion_no_ofrecida`); lo que no cambia no se reescribe.
+- `validar_alta` aplica las mensuales pedidas: asignación del concepto desde el **día 1 del mes
+  siguiente al de la incorporación** (`privado.mes_siguiente`), también si entra el día 1. «No» y
+  «días sueltos» no tocan nada. Sin petición, valida igual. Una mensual que Dirección hubiera puesto
+  a mano antes, del mismo concepto, se mueve a esa fecha; no se quita nada.
+- La cola: `cambios_pendientes` con entidad `peticion_servicios`; al aprobar,
+  `aplicar_peticion_servicios(niño, respuestas)` (Dirección, alta validada) guarda las respuestas y
+  cambia lo que se cobra: una mensual nueva desde el día 1 del mes siguiente a hoy (Madrid), y nunca
+  antes del mes siguiente a la incorporación; la que se quita (otra respuesta u otra mensual del
+  mismo servicio) hasta el último día del mes en curso, y si aún no había empezado, se borra. Volver
+  a pedirla seguida reabre la misma fila; con un hueco, se cierra la vieja y se crea otra, salvo que
+  la vieja tenga un recibo en borrador (HINT `mensual_anterior_en_borrador`: regenerarlo la perdería).
+- `listado_pase_servicios(centro, fecha)`: además, `mensuales` (los servicios con la mensual vigente
+  ese día, con las condiciones del motor) y `pedidos` (lo que pidió la familia). La de un argumento
+  se sustituye por esta, con la fecha opcional (hoy en Madrid).
+- El export del art. 15 del niño lleva `servicios_pedidos`; `privado.purgar_nino` borra la petición;
+  la auditoría conoce la tabla.
+
+**`20270122130000` (después del despliegue):** `marcar_matricula_lista`, al cerrar un alta pendiente,
+para con HINT `servicios_por_contestar` si falta algún servicio de los que el centro ofrece al niño.
+No es retroactiva. Va después porque con la app de antes la familia no ve el paso.
+
+**Pantallas:** el paso «Servicios» del alta (entre emergencia y la domiciliación; sin conceptos de
+servicio no sale, como el SEPA sin CID), con una fila por servicio, sus opciones y su precio, y el
+aviso de que el día suelto se cobra si el niño se queda. La tarjeta de validación de Dirección enseña
+la petición, avisa de lo que falta y deja corregirla. La cola enseña antes → después de cada
+servicio. El pase marca «Mensual» o lo que pidió la familia.
+
+**Decisiones de implementación** (no las tomó el responsable; se dicen para que se puedan cambiar):
+
+- La incorporación el día 1 también deja la mensual para el mes siguiente: la regla se aplica tal
+  como está escrita, sin excepción.
+- Validar no quita nada; solo pone las mensuales pedidas.
+- Una respuesta cuyo concepto el centro desactiva después cuenta como sin contestar en la pantalla,
+  pero no en la base: la base no frena el cierre por ella, porque la comprobó al guardar.
+
 ### El prorrateo del mes de incorporación (entre la 8a y la 8b)
 
 **Decisiones (2026-11-14).** Jose: el mes de la incorporación se cobra por **días naturales** desde
@@ -1883,7 +1941,7 @@ lo suyo (`20270115130000`).
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
 - [x] Fase 6 (#526) · [x] Fase 7 (#527)
-- [ ] Fase 8: [x] 8a, la fecha de incorporación (#528) · [ ] el prorrateo del mes de incorporación · [ ] 8b, la petición de servicios
+- [ ] Fase 8: [x] 8a, la fecha de incorporación (#528) · [x] el prorrateo del mes de incorporación (#529) · [ ] 8b, la petición de servicios (en PR)
 - [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias

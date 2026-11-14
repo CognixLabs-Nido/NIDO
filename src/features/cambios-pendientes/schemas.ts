@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { estadoCivilEnum, tipoVinculoLegalEnum } from '@/features/alta/schemas/alta-documentos'
+import { respuestasServicioSchema } from '@/features/peticion-servicios/schemas'
 
 /**
  * F11-G-3 (decisión J) — cola de ediciones del tutor pendientes de validación por la
@@ -28,6 +29,9 @@ export const entidadCambioEnum = z.enum([
   'ninos_identidad',
   // Fase 7: la imagen de la tarjeta sanitaria, ya subida a `sip-ninos`; se fija al aprobar.
   'ninos_sip_documento',
+  // Fase 8b: la petición de servicios después del alta. Al aprobar cambia lo que se cobra
+  // (`aplicar_peticion_servicios`): la mensual nueva, desde el día 1 del mes siguiente.
+  'peticion_servicios',
 ])
 export type EntidadCambio = z.infer<typeof entidadCambioEnum>
 
@@ -73,6 +77,15 @@ export const payloadNinosIdentidadSchema = z
   })
   .strict()
   .refine((p) => Object.keys(p).length > 0, { message: 'sin_cambios' })
+
+/**
+ * Fase 8b: las respuestas que cambian (`{servicio, respuesta, concepto_id}`). `strict`: al aprobar se
+ * aplica con la sesión de la directora, y la base vuelve a mirar que cada opción se ofrezca.
+ */
+export const payloadPeticionServiciosSchema = z
+  .object({ respuestas: respuestasServicioSchema })
+  .strict()
+export type PayloadPeticionServicios = z.infer<typeof payloadPeticionServiciosSchema>
 
 /** Documento ya subido a `libro-familia` (objeto staged); se confirma la ruta al aprobar. */
 export const payloadDocumentoSchema = z.object({
@@ -128,4 +141,5 @@ export const ETIQUETA_ENTIDAD: Record<EntidadCambio, string> = {
   datos_tutor_dni: 'admin.pendientes.entidad.datos_tutor_dni',
   ninos_identidad: 'admin.pendientes.entidad.ninos_identidad',
   ninos_sip_documento: 'admin.pendientes.entidad.ninos_sip_documento',
+  peticion_servicios: 'admin.pendientes.entidad.peticion_servicios',
 }

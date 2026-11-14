@@ -164,7 +164,7 @@ describe('el paso del tutor del alta no guarda el perfil que no pudo leer', () =
   }
 
   async function numeroYGuardar(p: PropsAsistente) {
-    const i = pasosAlta(p.centroTieneCid).indexOf('tutor1')
+    const i = pasosAlta(p.centroTieneCid, p.centroTieneServicios).indexOf('tutor1')
     expect(i).toBeGreaterThan(0)
     render(createElement(AltaTutorWizard, { ...p, pasoInicial: i }))
     const numero = (await screen.findByLabelText('menor.direccion_numero')) as HTMLInputElement

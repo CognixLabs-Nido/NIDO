@@ -898,7 +898,8 @@
         },
         "sin_datos": "sense dades",
         "activar_ayuda": "El tutor ha finalitzat l'alta. Revisa l'avanç i activa la matrícula.",
-        "pendiente_ayuda": "El tutor encara està completant l'alta. Podràs activar quan la finalitze."
+        "pendiente_ayuda": "El tutor encara està completant l'alta. Podràs activar quan la finalitze.",
+        "servicios_no_leidos": "No s’ha pogut llegir la petició de serveis."
       },
       "alta_doc": {
         "tutores_titulo": "Tutors legals",
@@ -1215,7 +1216,10 @@
         "dni_numero": "Número del DNI",
         "estudios": "Estudis",
         "empresa": "Empresa",
-        "sip": "Targeta sanitària"
+        "sip": "Targeta sanitària",
+        "servicio_comedor": "Menjador",
+        "servicio_matinera": "Matinera",
+        "servicio_vespertina": "Vesprada"
       },
       "entidad": {
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
@@ -1223,7 +1227,8 @@
         "datos_tutor": "Dades d'un tutor",
         "datos_tutor_dni": "DNI d'un tutor",
         "ninos_identidad": "Identitat de l'infant",
-        "ninos_sip_documento": "Imatge de la targeta sanitària"
+        "ninos_sip_documento": "Imatge de la targeta sanitària",
+        "peticion_servicios": "Serveis"
       },
       "errors": {
         "registro": "No s'ha pogut registrar el canvi. Torna a provar-ho.",
@@ -1582,7 +1587,8 @@
           "tutor1": "Tutor 1 (DNI)",
           "tutor2": "Tutor 2",
           "medico": "Mèdic",
-          "sepa": "Mandat SEPA"
+          "sepa": "Mandat SEPA",
+          "servicios": "Serveis"
         },
         "estado": {
           "hecho": "fet",
@@ -2842,7 +2848,10 @@
       "casilla_aria": "{nombre}: {servicio}",
       "cambios": "{n, plural, one {# canvi sense guardar} other {# canvis sense guardar}}",
       "guardado": "{n, plural, one {Guardat # canvi.} other {Guardats # canvis.}}",
-      "descartar_cambios": "Hi ha canvis sense guardar. Canviar de dia i descartar-los?"
+      "descartar_cambios": "Hi ha canvis sense guardar. Canviar de dia i descartar-los?",
+      "mensual": "Mensual",
+      "pedido_no": "Va demanar: no",
+      "pedido_dias_sueltos": "Va demanar: dies solts"
     }
   },
   "ausencia": {
@@ -4265,7 +4274,8 @@
         "servicios_diarios": "Serveis diaris",
         "beca_comedor_elegibilidad": "Beca de menjador",
         "beca_comedor_tramos": "Trams de beca de menjador",
-        "lecturas_ficha_medica": "Qui ha llegit la fitxa mèdica"
+        "lecturas_ficha_medica": "Qui ha llegit la fitxa mèdica",
+        "servicios_pedidos": "Serveis demanats en l’alta"
       },
       "campos": {
         "nombre_completo": "Nom",
@@ -4477,7 +4487,8 @@
         "dni_numero": "Número del DNI",
         "estudios": "Estudis",
         "empresa": "Empresa",
-        "fecha_incorporacion": "Data d'incorporació"
+        "fecha_incorporacion": "Data d'incorporació",
+        "respuesta": "Resposta"
       },
       "valores": {
         "terminos": "Termes",
@@ -4631,6 +4642,11 @@
         "redes_sociales": "Xarxes socials",
         "recomendacion": "Recomanació",
         "paso_por_delante": "Passa per davant del centre"
+      },
+      "respuesta_servicio": {
+        "no": "No",
+        "mensual": "Tots els mesos",
+        "dias_sueltos": "Dies solts"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",
@@ -4665,7 +4681,8 @@
         "tutor1": "Tutor/a 1",
         "tutor2": "Tutor/a 2",
         "emergencia": "Emergències",
-        "sepa": "Domiciliació bancària"
+        "sepa": "Domiciliació bancària",
+        "servicios": "Serveis"
       }
     },
     "identidad": {
@@ -4883,7 +4900,8 @@
         "documentos": "Documents (llibre de família i DNI)",
         "imagen": "Autorització d'imatge",
         "documentos_centro": "Documents del centre per signar",
-        "tutor2": "Dades del tutor 2"
+        "tutor2": "Dades del tutor 2",
+        "servicios": "Serveis (contestar cadascun)"
       }
     }
   },
@@ -5575,6 +5593,48 @@
       "errors": {
         "no_leido": "No s'han pogut llegir els telèfons. Torna-ho a provar."
       }
+    }
+  },
+  "peticion_servicios": {
+    "servicio": {
+      "comedor": "Menjador",
+      "matinera": "Matinera",
+      "vespertina": "Vesprada"
+    },
+    "opcion": {
+      "no": "No",
+      "mensual": "Tots els mesos",
+      "dias_sueltos": "Dies solts"
+    },
+    "respuesta": {
+      "no": "No",
+      "mensual": "Tots els mesos",
+      "dias_sueltos": "Dies solts"
+    },
+    "precio_mes": "{importe} al mes",
+    "precio_dia": "{importe} al dia",
+    "precio_sin_importe": "preu segons la tarifa del centre",
+    "intro": "Per a cada servei del centre, digueu-nos si el voleu tots els mesos, només alguns dies o no. És una petició: Direcció la revisa en validar l’alta.",
+    "dias_sueltos_aviso": "Si un dia el xiquet es queda a un servei que no heu demanat, es queda i es cobra eixe dia. Si el demaneu tots els mesos, comença el mes següent al de la seua incorporació; el mes en què entra es cobra pels dies que use.",
+    "sin_contestar_fila": "Tria una opció.",
+    "faltan_filas": "Contesta tots els serveis per a continuar.",
+    "guardado": "Serveis guardats.",
+    "guardado_cola": "Canvi enviat: Direcció l’ha d’aprovar.",
+    "no_leida": "No hem pogut carregar els serveis del centre. Torna-ho a provar més tard.",
+    "corregida": "Petició corregida.",
+    "direccion": {
+      "titulo": "Serveis demanats",
+      "ayuda": "El que ha demanat la família. Pots corregir-ho abans de validar; en validar es posen les mensuals des del mes següent al de la incorporació.",
+      "sin_contestar": "Sense contestar: {servicios}. Pots validar igualment.",
+      "guardar": "Guardar la correcció",
+      "guardando": "Guardant…"
+    },
+    "errors": {
+      "invalida": "La petició no és vàlida.",
+      "guardar": "No s’ha pogut guardar la petició.",
+      "opcion_no_ofrecida": "Eixa opció ja no l’oferix el centre. Recarrega la pàgina.",
+      "alta_validada": "L’alta ja està validada: el canvi ha d’anar per la cua.",
+      "mensual_anterior_en_borrador": "La mensual anterior d’eixe servei té un rebut en esborrany: confirma’l abans de tornar a posar-la."
     }
   }
 }

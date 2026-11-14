@@ -29,6 +29,7 @@ const RECIEN_ACEPTADA: SenalesAvance = {
   medico: false,
   mandato: false,
   centroConCid: true,
+  servicios: 'sin_contestar',
 }
 
 const TODO_HECHO: SenalesAvance = {
@@ -41,6 +42,7 @@ const TODO_HECHO: SenalesAvance = {
   medico: true,
   mandato: true,
   centroConCid: true,
+  servicios: 'contestado',
 }
 
 describe('Lo que lleva hecho un alta', () => {
@@ -71,6 +73,7 @@ describe('Lo que lleva hecho un alta', () => {
       tutor1: { tutor1: true },
       tutor2: { tutor2: 'completo' },
       medico: { medico: true },
+      servicios: { servicios: 'contestado' },
       sepa: { mandato: true },
     }
     for (const item of ITEMS_AVANCE) {
@@ -85,6 +88,14 @@ describe('Lo que lleva hecho un alta', () => {
 
   it('todo hecho: todas las líneas hechas (control positivo)', () => {
     for (const l of avanceAlta(TODO_HECHO)) expect.soft(l.estado, l.item).toBe('hecho')
+  })
+
+  it('sin servicios en Cuotas no hay línea de servicios, porque el paso no aparece (8b)', () => {
+    const con = avanceAlta(TODO_HECHO).map((l) => l.item)
+    expect(con).toContain('servicios')
+    expect(avanceAlta({ ...TODO_HECHO, servicios: 'no_ofrece' }).map((l) => l.item)).toEqual(
+      con.filter((i) => i !== 'servicios')
+    )
   })
 
   it('sin CID del centro no hay línea de SEPA, porque el paso no aparece', () => {

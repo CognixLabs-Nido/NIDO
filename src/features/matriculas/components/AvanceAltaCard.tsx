@@ -9,6 +9,8 @@ import type { LineaAvance } from '../lib/avance-alta'
 import { ActivarMatriculaButton } from './ActivarMatriculaButton'
 import { AltaSinTerminarAcciones } from './AltaSinTerminarAcciones'
 import { ChecklistAvance } from './ChecklistAvance'
+import { PeticionServiciosDireccion } from '@/features/peticion-servicios/components/PeticionServiciosDireccion'
+import type { OpcionServicio, RespuestaServicio } from '@/features/peticion-servicios/lib/peticion'
 
 interface Props {
   estado: 'pendiente' | 'lista'
@@ -29,6 +31,11 @@ interface Props {
     email: string | null
     familiaNueva: boolean
   }
+  /**
+   * Fase 8b: la petición de servicios, para verla y corregirla antes de validar. `null` si no se
+   * pudo leer (lo dice); sin el prop, no se enseña.
+   */
+  servicios?: { ninoId: string; opciones: OpcionServicio[]; respuestas: RespuestaServicio[] } | null
   locale: string
 }
 
@@ -45,6 +52,7 @@ export async function AvanceAltaCard({
   avance,
   pedagogicos,
   sinTerminar,
+  servicios,
   locale,
 }: Props) {
   const t = await getTranslations('admin.ninos.avance_alta')
@@ -80,6 +88,21 @@ export async function AvanceAltaCard({
             {!pedagogicos && <span className="text-muted-foreground"> · {t('sin_datos')}</span>}
           </span>
         </p>
+        {servicios === null && (
+          <p role="alert" className="text-accent-warm-800 border-t pt-3 text-sm">
+            {t('servicios_no_leidos')}
+          </p>
+        )}
+        {servicios && servicios.opciones.length > 0 && (
+          <div className="border-t pt-3">
+            <PeticionServiciosDireccion
+              locale={locale}
+              ninoId={servicios.ninoId}
+              opciones={servicios.opciones}
+              respuestas={servicios.respuestas}
+            />
+          </div>
+        )}
         {estado === 'lista' ? (
           <div className="space-y-1 border-t pt-3">
             <ActivarMatriculaButton matriculaId={matriculaId} />

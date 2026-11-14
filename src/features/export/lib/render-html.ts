@@ -26,6 +26,8 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'apellidos',
   'fecha_nacimiento',
   'fecha_incorporacion',
+  // Fase 8b: la petición de servicios del alta.
+  'respuesta',
   'sexo',
   'nacionalidad',
   'primer_apellido',
@@ -509,6 +511,9 @@ function formatearValor(k: string, v: unknown, c: Ctx): string {
   if (esVacio(v)) return `<span class="nil">—</span>`
   if (typeof v === 'boolean') return escape(v ? c.t('doc.si') : c.t('doc.no'))
   if (k === 'sexo' && (v === 'F' || v === 'M' || v === 'X')) return escape(c.t(`doc.sexo.${v}`))
+  // Fase 8b: lo que pidió la familia, dicho, no el código.
+  if (k === 'respuesta' && (v === 'no' || v === 'mensual' || v === 'dias_sueltos'))
+    return escape(c.t(`doc.respuesta_servicio.${v}`))
   // El dinero viaja en céntimos enteros (`*_centimos`).
   if (k.endsWith('_centimos') && typeof v === 'number') return escape(formatEuros(v, c.locale))
   if (Array.isArray(v)) return renderLista(v, c)
@@ -742,6 +747,7 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('confirmaciones_eventos', n.confirmaciones_eventos, c)}
   ${seccion('recordatorios_nino', n.recordatorios, c)}
   ${seccion('servicios_diarios', n.servicios_diarios, c)}
+  ${seccion('servicios_pedidos', n.servicios_pedidos, c)}
   ${seccion('lineas_recibo', n.lineas_recibo, c)}
   ${seccion('conceptos_asignados', n.conceptos_asignados, c)}
   ${seccion('beca_comedor_elegibilidad', n.beca_comedor_elegibilidad, c)}
