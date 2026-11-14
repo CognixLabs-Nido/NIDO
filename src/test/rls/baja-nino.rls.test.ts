@@ -13,6 +13,7 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  FECHA_INCORPORACION_DE_TEST,
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -82,6 +83,7 @@ describe('F-3-D — baja_nino (RPC)', () => {
         nombre: opts.nombre ?? 'Niño F3D',
         primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
+        fecha_incorporacion: FECHA_INCORPORACION_DE_TEST, // fase 8a: activo, incorporado desde siempre
       })
       .select('id')
       .single()

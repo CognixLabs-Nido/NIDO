@@ -75,9 +75,12 @@ CREATE FUNCTION privado.ninos_incorporacion_no_se_quita()
  SET search_path TO 'public'
 AS $function$
 -- Fase 8a: el mismo invariante desde el otro lado: a un niño con matrícula activa no se le quita la
--- fecha. Cambiarla sí se puede (Dirección corrige el día).
+-- fecha. Cambiarla sí se puede (Dirección corrige el día). La purga del niño sí la borra
+-- (`privado.purgar_nino`, que pone `deleted_reason = 'purga_rgpd'` en el mismo UPDATE): el olvido
+-- puede llegar con la matrícula aún activa, y a un niño purgado no se le cobra (sin fecha, el motor
+-- no lo cuenta en ningún mes).
 BEGIN
-  IF NEW.fecha_incorporacion IS NULL AND EXISTS (
+  IF NEW.fecha_incorporacion IS NULL AND NEW.deleted_reason IS DISTINCT FROM 'purga_rgpd' AND EXISTS (
        SELECT 1 FROM public.matriculas m
         WHERE m.nino_id = NEW.id AND m.estado = 'activa' AND m.deleted_at IS NULL AND m.fecha_baja IS NULL) THEN
     RAISE EXCEPTION 'un niño con matrícula activa tiene que tener fecha de incorporación'

@@ -13,6 +13,7 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  FECHA_INCORPORACION_DE_TEST,
 } from '../rls/setup'
 
 /**
@@ -208,7 +209,13 @@ describe('El alta sin terminar: la confirma Dirección', () => {
     const ninos = await serviceClient
       .from('ninos')
       .insert([
-        { centro_id: centro.id, nombre: 'Nil', primer_apellido: 'Tres Altas', familia_id: famOna },
+        {
+          centro_id: centro.id,
+          nombre: 'Nil',
+          primer_apellido: 'Tres Altas',
+          familia_id: famOna,
+          fecha_incorporacion: FECHA_INCORPORACION_DE_TEST, // fase 8a: Nil es el activo
+        },
         { centro_id: centro.id, nombre: 'Ona', primer_apellido: 'Tres Altas', familia_id: famOna },
         { centro_id: centro.id, nombre: 'Pau', primer_apellido: 'Tres Altas', familia_id: famOna },
       ])

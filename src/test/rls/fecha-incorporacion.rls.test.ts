@@ -98,13 +98,22 @@ describe('La fecha de incorporación (fase 8a)', () => {
   }
 
   async function cobrado(ninoId: string, anio: number, mes: number): Promise<number[]> {
+    // En dos pasos: `lineas_recibo` tiene más de una clave a `recibos` y el embebido es ambiguo.
+    const r = await serviceClient
+      .from('recibos')
+      .select('id')
+      .eq('centro_id', centro.id)
+      .eq('anio', anio)
+      .eq('mes', mes)
+    if (r.error) throw new Error(`recibos del mes: ${r.error.message}`)
+    const ids = (r.data ?? []).map((x) => x.id)
+    if (ids.length === 0) return []
     const { data, error } = await serviceClient
       .from('lineas_recibo')
-      .select('importe_centimos, recibos!inner(anio, mes)')
+      .select('importe_centimos')
       .eq('nino_id', ninoId)
       .eq('concepto_id', concepto)
-      .eq('recibos.anio', anio)
-      .eq('recibos.mes', mes)
+      .in('recibo_id', ids)
     if (error) throw new Error(`líneas: ${error.message}`)
     return (data ?? []).map((l) => l.importe_centimos)
   }
