@@ -884,7 +884,8 @@
       "activar_matricula": {
         "ok": "Matrícula activada",
         "activando": "Activant…",
-        "activar": "Activar matrícula"
+        "activar": "Activar matrícula",
+        "fecha_incorporacion": "Data d'incorporació"
       },
       "avance_alta": {
         "titulo": "Avanç de la matrícula",
@@ -950,7 +951,9 @@
         "cancelar": "Cancel·lar",
         "confirmar": "Reincorporar",
         "procesando": "Processant…",
-        "exito": "Xiquet reincorporat"
+        "exito": "Xiquet reincorporat",
+        "fecha_label": "Data d'incorporació",
+        "fecha_ayuda": "El dia que torna a vindre. Des d’eixe mes se li cobra."
       },
       "archivo": {
         "link": "Veure baixes / arxiu",
@@ -2484,7 +2487,8 @@
     "desarchivar": {
       "validation": {
         "aula_requerida": "Tria una aula del curs actiu",
-        "invalid": "Dades de reincorporació no vàlides"
+        "invalid": "Dades de reincorporació no vàlides",
+        "fecha_requerida": "Posa la data d'incorporació: el dia que el xiquet comença a vindre"
       },
       "errors": {
         "no_autorizado": "No tens permís per a reincorporar este xiquet",
@@ -2519,7 +2523,8 @@
       "aula_invalida": "Selecciona una aula",
       "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
       "invalid": "Dades de matrícula no vàlides.",
-      "email_invalido": "Escriu un correu vàlid."
+      "email_invalido": "Escriu un correu vàlid.",
+      "fecha_incorporacion_requerida": "Posa la data d'incorporació: el dia que el xiquet comença a vindre"
     },
     "errors": {
       "create_failed": "No s'ha pogut crear la matrícula.",
@@ -4471,7 +4476,8 @@
         "telefono": "Telèfon",
         "dni_numero": "Número del DNI",
         "estudios": "Estudis",
-        "empresa": "Empresa"
+        "empresa": "Empresa",
+        "fecha_incorporacion": "Data d'incorporació"
       },
       "valores": {
         "terminos": "Termes",

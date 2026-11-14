@@ -71,6 +71,8 @@ const CLAVES: Record<string, readonly string[]> = {
     // Fase 7 (2026-11-13): la tarjeta sanitaria, el número y la ruta de la imagen.
     'sip',
     'sip_documento_path',
+    // Fase 8a (2026-11-14): el día en que empezó a venir.
+    'fecha_incorporacion',
   ],
   info_medica_emergencia: PERSONALES_INFO_MEDICA,
   datos_pedagogicos_nino: [

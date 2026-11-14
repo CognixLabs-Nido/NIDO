@@ -3615,6 +3615,7 @@ export type Database = {
             | Database["public"]["Enums"]["estado_civil"]
             | null
           familia_id: string
+          fecha_incorporacion: string | null
           fecha_nacimiento: string | null
           foto_url: string | null
           hermanos_lugar: number | null
@@ -3655,6 +3656,7 @@ export type Database = {
             | Database["public"]["Enums"]["estado_civil"]
             | null
           familia_id: string
+          fecha_incorporacion?: string | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           hermanos_lugar?: number | null
@@ -3695,6 +3697,7 @@ export type Database = {
             | Database["public"]["Enums"]["estado_civil"]
             | null
           familia_id?: string
+          fecha_incorporacion?: string | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           hermanos_lugar?: number | null
@@ -5347,7 +5350,11 @@ export type Database = {
       datos_anular_alta: { Args: { p_nino_id: string }; Returns: Json }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       desarchivar_nino: {
-        Args: { p_aula_id: string; p_nino_id: string }
+        Args: {
+          p_aula_id: string
+          p_fecha_incorporacion: string
+          p_nino_id: string
+        }
         Returns: Json
       }
       desconfirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
@@ -6283,6 +6290,10 @@ export type Database = {
           p_publicacion_id: string
         }
         Returns: boolean
+      }
+      validar_alta: {
+        Args: { p_fecha_incorporacion: string; p_matricula_id: string }
+        Returns: string
       }
       ver_datos_bloqueados: {
         Args: {

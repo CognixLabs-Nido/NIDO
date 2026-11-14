@@ -25,6 +25,7 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'nombre',
   'apellidos',
   'fecha_nacimiento',
+  'fecha_incorporacion',
   'sexo',
   'nacionalidad',
   'primer_apellido',

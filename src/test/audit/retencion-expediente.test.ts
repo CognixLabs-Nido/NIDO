@@ -208,7 +208,11 @@ describe('Retención del expediente', () => {
     const bloqueada = await leer(vuelve)
     expect(bloqueada.error?.code).toBe('55000')
     const c = await clientFor(admin)
-    const { error: dErr } = await c.rpc('desarchivar_nino', { p_nino_id: vuelve, p_aula_id: aula })
+    const { error: dErr } = await c.rpc('desarchivar_nino', {
+      p_nino_id: vuelve,
+      p_aula_id: aula,
+      p_fecha_incorporacion: '2026-09-01',
+    })
     expect(dErr).toBeNull()
     const { data, error } = await leer(vuelve)
     expect(error).toBeNull()

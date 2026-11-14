@@ -383,6 +383,9 @@ export async function createTestFamilia(centro_id: string): Promise<string> {
  * este factory) DEBE setear `familia_id` (NOT NULL desde F-2b-3) creando la familia con
  * `createTestFamilia`. No insertes en `ninos` sin familia_id: la RLS suite falla.
  */
+/** La fecha de incorporación de los niños de test: anterior a cualquier mes que genere un test. */
+export const FECHA_INCORPORACION_DE_TEST = '2000-01-01'
+
 export async function createTestNino(centro_id: string, nombre?: string): Promise<TestNino> {
   const finalNombre = nombre ?? `NinoTest-${randomUUID().slice(0, 8)}`
   // familia_id es NOT NULL (F-2b-3): se crea una familia para el niño de test.
@@ -395,6 +398,11 @@ export async function createTestNino(centro_id: string, nombre?: string): Promis
       nombre: finalNombre,
       primer_apellido: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
+      // Fase 8a (`20270120130000`): un niño con matrícula activa tiene fecha de incorporación, y el
+      // motor no le cobra nada de un mes anterior. Los niños de test vienen «incorporados desde
+      // siempre», que es como se cobraba antes de la fecha: así ningún test de recibos cambia de
+      // mes por ella. Los que miden la fecha se la quitan o se la ponen ellos.
+      fecha_incorporacion: FECHA_INCORPORACION_DE_TEST,
     })
     .select('id')
     .single()
@@ -507,6 +515,15 @@ export async function matricular(
   aula_id: string,
   curso_academico_id: string
 ): Promise<string> {
+  // La matrícula nace 'activa' (el DEFAULT de la columna), y desde la fase 8a una activa exige que
+  // el niño tenga fecha de incorporación. Matricular a un niño de test es incorporarlo «desde
+  // siempre» si aún no la tiene (la misma que pone `createTestNino`); una que ya tenga no se toca.
+  const inc = await serviceClient
+    .from('ninos')
+    .update({ fecha_incorporacion: FECHA_INCORPORACION_DE_TEST })
+    .eq('id', nino_id)
+    .is('fecha_incorporacion', null)
+  if (inc.error) throw new Error(`matricular (incorporar): ${inc.error.message}`)
   const { data, error } = await serviceClient
     .from('matriculas')
     .insert({ nino_id, aula_id, curso_academico_id, fecha_alta: cursoDeTest().inicio })
