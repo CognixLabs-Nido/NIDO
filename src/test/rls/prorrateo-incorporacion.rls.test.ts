@@ -190,6 +190,8 @@ describe('Prorrateo del mes de incorporación', () => {
       tipo_concepto: 'diario',
       servicio: 'comedor',
       importe_centimos: COMEDOR_DIA,
+      // Un diario es siempre automático (CHECK `conceptos_cobro_diario_automatico`).
+      aplicacion: 'automatico',
     })
     await concepto('pico', { nombre: 'Pico P', importe_centimos: 45 })
     await concepto('picoDto', { nombre: 'Pico dto P', signo: -1, importe_centimos: 45 })
