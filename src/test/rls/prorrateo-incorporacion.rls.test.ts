@@ -231,7 +231,9 @@ describe('Prorrateo del mes de incorporación', () => {
       { descripcion: 'Escolaridad P (16 de 30 días)', cantidad: 1, importe_centimos: 21_333 },
     ])
     // La beca fija, con la misma fracción y simétrica: el recibo no sale a favor.
-    expect(importe(l, 'beca')).toEqual([-21_333])
+    expect(de(l, 'beca')).toMatchObject([
+      { descripcion: 'Beca P (16 de 30 días)', importe_centimos: -21_333 },
+    ])
     // El 10 %, sobre la base ya prorrateada (21.333 × 0,1 = 2.133,3 → 2.133), no prorrateado otra vez.
     expect(importe(l, 'pct')).toEqual([-2_133])
     // La mensual de servicio no se toca.
@@ -254,7 +256,8 @@ describe('Prorrateo del mes de incorporación', () => {
     expect(de(l, 'escolaridad')).toMatchObject([
       { descripcion: 'Escolaridad P', importe_centimos: ESCOLARIDAD },
     ])
-    expect(importe(l, 'beca')).toEqual([-BECA])
+    // El descuento llama siempre a la descripción del prorrateo: el día 1 no lleva días.
+    expect(de(l, 'beca')).toMatchObject([{ descripcion: 'Beca P', importe_centimos: -BECA }])
 
     await generar(ANIO, MES + 1)
     const oct = await lineas(entra15.id, ANIO, MES + 1)
