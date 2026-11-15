@@ -137,11 +137,21 @@ describe('La petición de servicios del alta (8b)', () => {
     (
       await serviceClient
         .from('asignacion_concepto')
-        .select('concepto_id, vigencia_desde, vigencia_hasta, deleted_at, origen')
+        .select(
+          'concepto_id, vigencia_desde, vigencia_hasta, deleted_at, origen, conceptos_cobro(nombre)'
+        )
         .eq('nino_id', nino)
         .order('created_at')
     ).data ?? []
   const vivas = async (nino: string) => (await asignaciones(nino)).filter((a) => !a.deleted_at)
+  // Si un aserto sobre las vivas cae, el log dice qué concepto es cada fila (el nombre, leído de la
+  // base, no deducido del id): [valor, mensaje] para expect(...).
+  type Viva = Awaited<ReturnType<typeof vivas>>[number]
+  const vivasCon = async <T>(nino: string, f: (a: Viva) => T) => {
+    const v = await vivas(nino)
+    const leyenda = v.map((a) => `${a.conceptos_cobro?.nombre ?? '?'} = ${a.concepto_id}`)
+    return [v.map(f), `vivas: ${leyenda.join('; ') || 'ninguna'}`] as const
+  }
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Servicios 8b')
@@ -465,7 +475,7 @@ describe('La petición de servicios del alta (8b)', () => {
     expect(await estado(n)).toBe('activa')
     // Una sola asignación, la corregida, desde el día 1 del mes siguiente; días sueltos, nada.
     expect(
-      (await vivas(n)).map((a) => [a.concepto_id, a.vigencia_desde, a.vigencia_hasta, a.origen])
+      ...(await vivasCon(n, (a) => [a.concepto_id, a.vigencia_desde, a.vigencia_hasta, a.origen]))
     ).toEqual([[c.comedor5, `${ANIO}-10-01`, null, 'manual']])
     // Con la petición ya validada, la familia no la toca: va por la cola.
     expect((await guardar('madre', n, [resp('comedor', 'no', null)])).error?.hint).toBe(
@@ -572,7 +582,7 @@ describe('La petición de servicios del alta (8b)', () => {
     it('una mensual nueva empieza el día 1 del mes siguiente a aplicarla', async () => {
       expect((await aplicar('admin', [resp('comedor', 'mensual', c.comedor3!)])).error).toBeNull()
       expect(
-        (await vivas(n)).map((a) => [a.concepto_id, a.vigencia_desde, a.vigencia_hasta])
+        ...(await vivasCon(n, (a) => [a.concepto_id, a.vigencia_desde, a.vigencia_hasta]))
       ).toEqual([[c.comedor3, mesSiguiente(hoy), null]])
     })
 
@@ -584,25 +594,25 @@ describe('La petición de servicios del alta (8b)', () => {
         .eq('nino_id', n)
         .eq('concepto_id', c.comedor3!)
       expect((await aplicar('admin', [resp('comedor', 'no', null)])).error).toBeNull()
-      expect((await vivas(n)).map((a) => [a.concepto_id, a.vigencia_hasta])).toEqual([
+      expect(...(await vivasCon(n, (a) => [a.concepto_id, a.vigencia_hasta]))).toEqual([
         [c.comedor3, finDeMes(hoy)],
       ])
       // Volver a pedirla seguida: la misma fila, otra vez sin fin.
       expect((await aplicar('admin', [resp('comedor', 'mensual', c.comedor3!)])).error).toBeNull()
-      expect((await vivas(n)).map((a) => [a.concepto_id, a.vigencia_hasta])).toEqual([
+      expect(...(await vivasCon(n, (a) => [a.concepto_id, a.vigencia_hasta]))).toEqual([
         [c.comedor3, null],
       ])
       // Cambiar a la de 5 días: la de 3 termina a fin de mes, la de 5 empieza el mes siguiente.
       expect((await aplicar('admin', [resp('comedor', 'mensual', c.comedor5!)])).error).toBeNull()
       expect(
-        (await vivas(n)).map((a) => [a.concepto_id, a.vigencia_desde, a.vigencia_hasta])
+        ...(await vivasCon(n, (a) => [a.concepto_id, a.vigencia_desde, a.vigencia_hasta]))
       ).toEqual([
         [c.comedor3, `${hoy.slice(0, 7)}-01`, finDeMes(hoy)],
         [c.comedor5, mesSiguiente(hoy), null],
       ])
       // Quitar la de 5, que aún no ha empezado: se borra.
       expect((await aplicar('admin', [resp('comedor', 'no', null)])).error).toBeNull()
-      expect((await vivas(n)).map((a) => a.concepto_id)).toEqual([c.comedor3])
+      expect(...(await vivasCon(n, (a) => a.concepto_id))).toEqual([c.comedor3])
       const peticion = await serviceClient
         .from('peticion_servicio')
         .select('respuesta')
