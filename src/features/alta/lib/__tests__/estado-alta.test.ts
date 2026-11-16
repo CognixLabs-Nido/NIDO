@@ -14,41 +14,44 @@ describe('modelo de pasos del alta', () => {
     expect(PASOS_ALTA[0]).toBe('cuenta')
   })
 
-  it('el último paso del wizard es sepa (IBAN + mandato, G-2), y servicios va justo antes (8b)', () => {
-    expect(PASOS_ALTA[PASOS_ALTA.length - 1]).toBe('sepa')
-    expect(PASOS_ALTA[PASOS_ALTA.length - 2]).toBe('servicios')
-    expect(PASOS_ALTA).toHaveLength(9)
+  it('el último paso del wizard es sepa (G-2), y antes servicios (8b) y gastos (9)', () => {
+    expect(PASOS_ALTA.slice(-3)).toEqual(['servicios', 'gastos', 'sepa'])
+    expect(PASOS_ALTA).toHaveLength(10)
   })
 })
 
-describe('pasos del alta según el CID y los servicios del centro (0c, 2026-11-04; 8b)', () => {
-  it('con CID y servicios, los nueve; sin CID, sin `sepa`, y el último es `servicios`', () => {
-    expect(pasosAlta(true, true)).toEqual(PASOS_ALTA)
-    const sin = pasosAlta(false, true)
+describe('pasos del alta según el CID, los servicios y los gastos (0c, 2026-11-04; 8b; 9)', () => {
+  it('con todo, los diez; sin CID, sin `sepa`, y el último es `gastos`', () => {
+    expect(pasosAlta(true, true, true)).toEqual(PASOS_ALTA)
+    const sin = pasosAlta(false, true, true)
     expect(sin).not.toContain('sepa')
     expect(sin).toHaveLength(PASOS_ALTA.length - 1)
-    expect(sin[sin.length - 1]).toBe('servicios')
+    expect(sin[sin.length - 1]).toBe('gastos')
   })
 
   it('sin servicios en Cuotas no hay paso de servicios; sin nada, el último es `emergencia`', () => {
-    const conCid = pasosAlta(true, false)
+    const conCid = pasosAlta(true, false, false)
     expect(conCid).not.toContain('servicios')
     expect(conCid[conCid.length - 1]).toBe('sepa')
-    const nada = pasosAlta(false, false)
-    expect(nada).toHaveLength(PASOS_ALTA.length - 2)
+    const nada = pasosAlta(false, false, false)
+    expect(nada).toHaveLength(PASOS_ALTA.length - 3)
     expect(nada[nada.length - 1]).toBe('emergencia')
   })
 
-  it('quitar `servicios` o `sepa` no mueve ningún paso de antes (el alta se reanuda en `acuses`)', () => {
-    // Premisa: los dos que se pueden quitar son los dos últimos de PASOS_ALTA.
-    expect(PASOS_ALTA.slice(-2)).toEqual(['servicios', 'sepa'])
-    for (const [cid, serv] of [
-      [false, true],
-      [true, false],
-      [false, false],
-    ] as const)
-      pasosAlta(cid, serv)
-        .filter((p) => p !== 'sepa')
-        .forEach((p, i) => expect.soft(PASOS_ALTA[i], `${cid}/${serv} ${p}`).toBe(p))
+  it('sin importe de gastos para el curso del alta, no hay paso de gastos', () => {
+    const p = pasosAlta(true, true, false)
+    expect(p).not.toContain('gastos')
+    expect(p.slice(-2)).toEqual(['servicios', 'sepa'])
+  })
+
+  it('quitar `servicios`, `gastos` o `sepa` no mueve ningún paso de antes (se reanuda en `acuses`)', () => {
+    // Premisa: los tres que se pueden quitar son los tres últimos de PASOS_ALTA.
+    expect(PASOS_ALTA.slice(-3)).toEqual(['servicios', 'gastos', 'sepa'])
+    for (const cid of [true, false])
+      for (const serv of [true, false])
+        for (const gastos of [true, false])
+          pasosAlta(cid, serv, gastos)
+            .filter((p) => p !== 'sepa' && p !== 'gastos' && p !== 'servicios')
+            .forEach((p, i) => expect.soft(PASOS_ALTA[i], `${cid}/${serv}/${gastos} ${p}`).toBe(p))
   })
 })

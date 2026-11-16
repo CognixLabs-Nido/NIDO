@@ -724,7 +724,8 @@
         "guardando": "Guardando…",
         "cancelar": "Cancelar",
         "guardado": "Guardado. Asignados: {asignadas}. Quitados: {quitadas}."
-      }
+      },
+      "tab_gastos_gestion": "Gastos de gestión"
     },
     "aulas": {
       "title": "Aulas",
@@ -1219,7 +1220,8 @@
         "sip": "Tarjeta sanitaria",
         "servicio_comedor": "Comedor",
         "servicio_matinera": "Matinera",
-        "servicio_vespertina": "Tarde"
+        "servicio_vespertina": "Tarde",
+        "gastos_forma": "Cómo paga los gastos de gestión"
       },
       "entidad": {
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
@@ -1228,7 +1230,8 @@
         "datos_tutor_dni": "DNI de un tutor",
         "ninos_identidad": "Identidad del niño",
         "ninos_sip_documento": "Imagen de la tarjeta sanitaria",
-        "peticion_servicios": "Servicios"
+        "peticion_servicios": "Servicios",
+        "gastos_gestion": "Gastos de gestión"
       },
       "errors": {
         "registro": "No se pudo registrar el cambio. Inténtalo de nuevo.",
@@ -1588,7 +1591,8 @@
           "tutor2": "Tutor 2",
           "medico": "Médico",
           "sepa": "Mandato SEPA",
-          "servicios": "Servicios"
+          "servicios": "Servicios",
+          "gastos": "Gastos de gestión"
         },
         "estado": {
           "hecho": "hecho",
@@ -4690,7 +4694,8 @@
         "tutor2": "Tutor/a 2",
         "emergencia": "Emergencias",
         "sepa": "Domiciliación bancaria",
-        "servicios": "Servicios"
+        "servicios": "Servicios",
+        "gastos": "Gastos de gestión"
       }
     },
     "identidad": {
@@ -4909,7 +4914,8 @@
         "imagen": "Autorización de imagen",
         "documentos_centro": "Documentos del centro por firmar",
         "tutor2": "Datos del tutor 2",
-        "servicios": "Servicios (contestar cada uno)"
+        "servicios": "Servicios (contestar cada uno)",
+        "gastos": "Gastos de gestión (elegir cómo se pagan)"
       }
     }
   },
@@ -5643,6 +5649,66 @@
       "opcion_no_ofrecida": "Esa opción ya no la ofrece el centro. Recarga la página.",
       "alta_validada": "El alta ya está validada: el cambio tiene que ir por la cola.",
       "mensual_anterior_en_borrador": "La mensual anterior de ese servicio tiene un recibo en borrador: confírmalo antes de volver a ponerla."
+    }
+  },
+  "gastos_gestion": {
+    "titulo": "Gastos de gestión",
+    "intro": "El centro cobra unos gastos de gestión por el alta. Dinos cómo los vas a pagar: por transferencia (con el justificante ahora o más tarde) o en efectivo.",
+    "no_leidos": "No se han podido leer los gastos de gestión. Vuelve a cargar la página.",
+    "faltan": "Elige cómo vas a pagar los gastos de gestión.",
+    "sin_contestar": "Elige transferencia o efectivo.",
+    "guardado": "Guardado.",
+    "guardado_cola": "Guardado. Lo revisará Dirección.",
+    "curso": "Curso {curso}",
+    "importe": "Importe: {importe}",
+    "importe_cero": "Dirección lo ha dejado sin coste: no hay nada que pagar.",
+    "importe_propio": "Importe: {importe} (el del curso es {curso})",
+    "opcion": {
+      "transferencia": "Por transferencia",
+      "efectivo": "Pagaré en efectivo"
+    },
+    "forma": {
+      "transferencia": "Transferencia",
+      "efectivo": "Efectivo"
+    },
+    "justificante": "Justificante de la transferencia",
+    "justificante_ayuda": "Justificante (PDF o imagen, hasta 15 MB). Si no lo tienes a mano, puedes subirlo después.",
+    "justificante_ya": "Ya hay un justificante subido.",
+    "ver_justificante": "Ver el justificante",
+    "con_justificante": "con justificante",
+    "otro_importe": "Otro importe (€)",
+    "guardar_importe": "Guardar importe",
+    "volver_al_del_curso": "Volver al del curso",
+    "importe_guardado": "Importe guardado.",
+    "importe_quitado": "Importe quitado.",
+    "dijo": "La familia dijo: {forma}",
+    "sin_contestar_aun": "Sin contestar",
+    "guardar_forma": "Guardar",
+    "cobrado": "Cobrado",
+    "cobrado_el": "Cobrado el {fecha}",
+    "sin_cobrar": "Sin cobrar",
+    "marcar_cobro": "Marcar como cobrado",
+    "desmarcar_cobro": "Quitar la marca de cobro",
+    "marcado": "Marcado como cobrado.",
+    "desmarcado": "Marca de cobro quitada.",
+    "cursos_titulo": "Importe por curso",
+    "cursos_ayuda": "Lo que se pide en el alta de cada curso. Es una propuesta: en la ficha de cada niño puedes poner otro importe o 0. Sin importe, el alta no lo pide.",
+    "sin_cursos": "No hay cursos abiertos.",
+    "curso_sin_importe": "Sin importe",
+    "importe_curso": "Importe (€)",
+    "quitar_importe": "Quitar importe",
+    "pendientes_titulo": "Faltan por cobrar",
+    "pendientes_ninguno": "No falta nadie por cobrar.",
+    "alta_en_curso": "alta sin cerrar",
+    "errors": {
+      "invalido": "Los datos no son válidos.",
+      "curso_sin_gastos": "Ese curso no tiene gastos de gestión para este niño.",
+      "guardar": "No se ha podido guardar. Inténtalo de nuevo.",
+      "subida": "No se ha podido subir el justificante.",
+      "tipo": "El justificante tiene que ser un PDF o una imagen (JPG, PNG o HEIC).",
+      "tamano": "El justificante no puede pasar de 15 MB.",
+      "importe": "El importe no es válido.",
+      "curso_cerrado": "Ese curso está cerrado: su importe ya no se cambia."
     }
   }
 }

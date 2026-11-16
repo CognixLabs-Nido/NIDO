@@ -1966,16 +1966,25 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   olvido por prefijo (y con él `anular_alta`, que usa el mismo manifiesto).
 - Sale en el export del art. 15 y se purga con el niño.
 
-### 9b: el alta (lo que queda de la fase)
+### 9b: el alta
 
-- **El paso del alta:** justificante de la transferencia o «pagaré en efectivo», obligatorio si el
-  centro tiene importe para el curso del alta. Sin importe, no sale.
-- **Dirección lo ve al validar** y decide sin bloqueo ni «exento» (D5); cambia el importe o lo pone a
-  0, y marca el cobro cuando quiere.
-- **La lista de los que faltan** por cobrar, de Dirección.
-- **El importe del curso en Cuotas.**
-- **Después de validar**, el justificante que falte llega por la cola (decisión del responsable del
-  2026-11-16; no la ha revocado la de Jose, que quita solo la renovación).
+- **El paso del alta** (`gastos`, entre `servicios` y `sepa`; `PasoGastos`): justificante de la
+  transferencia o «pagaré en efectivo», obligatorio si el centro tiene importe para el curso del
+  alta (`cursoDelAltaTieneGastos`). Sin importe, el paso no sale y el avance dice `no_pide`. Cerrar
+  el alta sin contestar da el bloque `gastos` en la app y `gastos_por_contestar` en la base.
+- **El justificante** sube por `/[locale]/alta/[ninoId]/justificante-gastos` con la sesión de quien
+  lo sube: el bucket, después `declarar_gastos_gestion` con la ruta, y el fichero anterior se borra.
+  Los tipos y el tope de la app (`TIPOS_JUSTIFICANTE`, `MAX_JUSTIFICANTE_BYTES`) los compara el test
+  RLS contra el bucket.
+- **Dirección lo ve al validar** (ficha del niño, `GastosGestionDireccion`) y decide sin bloqueo ni
+  «exento» (D5): cambia el importe o lo pone a 0, vuelve al del curso, declara por la familia (el
+  alta en papel) y marca o desmarca el cobro.
+- **Cuotas → Gastos de gestión** (`GastosGestionCentro`): el importe de cada curso no cerrado y la
+  lista de los que faltan por cobrar, con la marca de cobro.
+- **La familia** lo ve en la ficha del niño (`GastosGestionFamilia`, solo el tutor legal).
+- **Después de validar**, lo que declare la familia llega por la cola (entidad `gastos_gestion`;
+  decisión del responsable del 2026-11-16; no la ha revocado la de Jose, que quita solo la
+  renovación).
 - **La migración B** (`20270124120000`, después del despliegue): `gastos_del_nino` solo con el curso
   del alta; `gastos_sin_contestar` sin pedir nada con importe 0; y `marcar_matricula_lista` con la
   puerta `gastos_por_contestar`, detrás de la de servicios. Ensayada en producción (terminada en
@@ -2043,7 +2052,8 @@ lo suyo (`20270115130000`).
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
 - [x] Fase 6 (#526) · [x] Fase 7 (#527)
 - [x] Fase 8: [x] 8a, la fecha de incorporación (#528) · [x] el prorrateo del mes de incorporación (#529) · [x] 8b, la petición de servicios (#530)
-- [ ] Fase 9 · [ ] Fase 10
+- [ ] Fase 9: [x] 9a, la base de los gastos de gestión (#531) · [ ] 9b, el alta (este PR; la B después del despliegue)
+- [ ] Fase 10
 
 ## Referencias
 

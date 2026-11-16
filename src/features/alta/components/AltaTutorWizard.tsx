@@ -12,6 +12,7 @@ import { finalizarAlta, type BloqueAlta } from '../actions/finalizar-alta'
 import { PASO_MIN_AUTENTICADO, pasosAlta, type PasoAlta } from '../lib/estado-alta'
 import { PasoAcuses } from './PasoAcuses'
 import { PasoCuenta } from './PasoCuenta'
+import { PasoGastos } from './PasoGastos'
 import { PasoMedico } from './PasoMedico'
 import { PasoMenor, type DireccionInicial } from './PasoMenor'
 import { PasoSepa, type MandatoSepaInicial } from './PasoSepa'
@@ -19,6 +20,7 @@ import { PasoServicios } from './PasoServicios'
 import { PasoTutor, type DatosTutorInicial } from './PasoTutor'
 import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
 import type { OpcionServicio, RespuestaServicio } from '@/features/peticion-servicios/lib/peticion'
+import type { GastosCurso } from '@/features/gastos-gestion/lib/gastos'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
@@ -86,6 +88,13 @@ interface Props {
   centroTieneServicios: boolean
   /** Lo que el centro ofrece al niño y lo ya contestado; `null` si no se pudo leer. En `/alta`. */
   peticionServicios?: { opciones: OpcionServicio[]; respuestas: RespuestaServicio[] } | null
+  /**
+   * Fase 9: si el curso del alta tiene importe de gastos de gestión, para contar los pasos (en la
+   * invitación, antes de entrar, llega solo esto).
+   */
+  cursoTieneGastos: boolean
+  /** Los gastos del curso del alta y lo ya contestado; `null` si no se pudo leer. En `/alta`. */
+  gastosGestion?: GastosCurso[] | null
   mandatoSepaInicial: MandatoSepaInicial | null
   /** F-2c-2: mandato SEPA activo de la FAMILIA (o null). Si existe → paso 8 informativo. */
   mandatoFamilia: MandatoFamiliaActivo | null
@@ -152,6 +161,8 @@ export function AltaTutorWizard({
   centroTieneCid,
   centroTieneServicios,
   peticionServicios = null,
+  cursoTieneGastos,
+  gastosGestion = null,
   mandatoSepaInicial,
   mandatoFamilia,
   currentUserId,
@@ -169,9 +180,10 @@ export function AltaTutorWizard({
   // el principio («1 de 7»), también en la invitación, y no cambian aunque la página se vuelva a
   // pintar con otro dato del centro a mitad del alta. Sin CID el último es `emergencia`; los
   // índices de los demás no cambian (`sepa` es el último).
-  const [pasos] = useState(() => pasosAlta(centroTieneCid, centroTieneServicios))
+  const [pasos] = useState(() => pasosAlta(centroTieneCid, centroTieneServicios, cursoTieneGastos))
   const conSepa = pasos.includes('sepa')
   const conServicios = pasos.includes('servicios')
+  const conGastos = pasos.includes('gastos')
   // El CID también, con los pasos: si el centro lo quita a mitad del alta, el paso no se queda en
   // blanco; la ruta rechaza la firma (`centro_sin_cid`, con su mensaje) y «Omitir» finaliza.
   const [cidDelAlta] = useState(centroCid)
@@ -421,8 +433,8 @@ export function AltaTutorWizard({
             onCambio={mergeMedica}
             variante="emergencia"
             fichaNoLeida={!medicaLeida}
-            esUltimo={!conSepa && !conServicios}
-            onNext={conSepa || conServicios ? goNext : finalizar}
+            esUltimo={!conSepa && !conServicios && !conGastos}
+            onNext={conSepa || conServicios || conGastos ? goNext : finalizar}
             onBack={goBack}
           />
         )}
@@ -432,6 +444,17 @@ export function AltaTutorWizard({
             locale={locale}
             ninoId={ninoId}
             peticion={peticionServicios}
+            esUltimo={!conSepa && !conGastos}
+            onNext={conSepa || conGastos ? goNext : finalizar}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'gastos' && (
+          <PasoGastos
+            locale={locale}
+            ninoId={ninoId}
+            gastos={gastosGestion}
             esUltimo={!conSepa}
             onNext={conSepa ? goNext : finalizar}
             onBack={goBack}

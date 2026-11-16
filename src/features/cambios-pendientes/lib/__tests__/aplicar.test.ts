@@ -26,6 +26,8 @@ function mockService(opts: {
   /** Fase 6: las llamadas a `guardar_tutor` / `fijar_dni_tutor`, y la ruta de antes que devuelve esta. */
   onRpc?: (fn: string, args: Record<string, unknown>) => void
   dniPrevio?: string | null
+  /** Fase 9: la ruta del justificante de antes que devuelve `declarar_gastos_gestion`. */
+  justificantePrevio?: string | null
 }) {
   const makeBuilder = (table: string) => {
     const builder: Record<string, unknown> = {}
@@ -49,6 +51,10 @@ function mockService(opts: {
     // El libro anterior es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`). El falso
     // contesta con lo que el test pone para `ninos`.
     rpc: vi.fn(async (fn: string, args: { p_nino_ids: string[] }) => {
+      if (fn === 'declarar_gastos_gestion') {
+        opts.onRpc?.(fn, args as unknown as Record<string, unknown>)
+        return { data: opts.justificantePrevio ?? null, error: null }
+      }
       if (fn === 'guardar_tutor' || fn === 'fijar_dni_tutor') {
         opts.onRpc?.(fn, args as unknown as Record<string, unknown>)
         return { data: fn === 'fijar_dni_tutor' ? (opts.dniPrevio ?? null) : 'ft1', error: null }
@@ -389,5 +395,103 @@ describe('R1 — descartar NO borra una ruta ajena al niño', () => {
       payload: { path: 'c1/n1/staged.pdf' },
     })
     expect(removed).toEqual([{ bucket: 'libro-familia', paths: ['c1/n1/staged.pdf'] }])
+  })
+})
+
+/** Fase 9: los gastos de gestión después del alta, por la cola. */
+describe('gastos_gestion en la cola', () => {
+  const K = '11111111-2222-4333-8444-555555555555'
+  const aplicar = (payload: unknown, opts: Parameters<typeof mockService>[0] = {}) => {
+    const rpcs: Array<[string, Record<string, unknown>]> = []
+    const removes: Array<{ bucket: string; paths: string[] }> = []
+    const s = mockService({
+      ...opts,
+      onRpc: (fn, args) => rpcs.push([fn, args]),
+      storageRemove: (bucket, paths) => removes.push({ bucket, paths }),
+    })
+    const r = aplicarCambioPendiente(s, s, {
+      entidad: 'gastos_gestion',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload,
+    })
+    return { r, rpcs, removes }
+  }
+
+  it('con justificante: declara transferencia con la ruta y borra el justificante anterior', async () => {
+    const { r, rpcs, removes } = aplicar(
+      { curso_academico_id: K, forma: 'transferencia', path: 'c1/n1/justificante-x.png' },
+      { justificantePrevio: 'c1/n1/justificante-viejo.pdf' }
+    )
+    await r
+    expect(rpcs).toEqual([
+      [
+        'declarar_gastos_gestion',
+        {
+          p_nino_id: 'n1',
+          p_curso_academico_id: K,
+          p_forma: 'transferencia',
+          p_justificante_path: 'c1/n1/justificante-x.png',
+        },
+      ],
+    ])
+    expect(removes).toEqual([
+      { bucket: 'justificantes-gestion', paths: ['c1/n1/justificante-viejo.pdf'] },
+    ])
+  })
+
+  it('efectivo: declara sin ruta (la base la quita) y no borra nada si no había', async () => {
+    const { r, rpcs, removes } = aplicar({ curso_academico_id: K, forma: 'efectivo' })
+    await r
+    expect(rpcs).toEqual([
+      [
+        'declarar_gastos_gestion',
+        { p_nino_id: 'n1', p_curso_academico_id: K, p_forma: 'efectivo' },
+      ],
+    ])
+    expect(removes).toEqual([])
+  })
+
+  it.each([
+    ['de otro niño', 'c1/n2/justificante.pdf'],
+    ['de otro centro', 'c2/n1/justificante.pdf'],
+    ['con un tipo que el bucket no admite', 'c1/n1/justificante.exe'],
+  ])('ruta %s → lanza y no declara', async (_caso, path) => {
+    const { r, rpcs } = aplicar({ curso_academico_id: K, forma: 'transferencia', path })
+    await expect(r).rejects.toBeInstanceOf(RutaDocumentoInvalidaError)
+    expect(rpcs).toEqual([])
+  })
+
+  it('justificante con efectivo no vale (el CHECK lo prohíbe): lanza y no declara', async () => {
+    const { r, rpcs } = aplicar({
+      curso_academico_id: K,
+      forma: 'efectivo',
+      path: 'c1/n1/justificante.pdf',
+    })
+    await expect(r).rejects.toThrow()
+    expect(rpcs).toEqual([])
+  })
+
+  it('descartar borra el justificante que quedó subido; sin él, o ajeno, nada', async () => {
+    const removed: Array<{ bucket: string; paths: string[] }> = []
+    const s = mockService({ storageRemove: (bucket, paths) => removed.push({ bucket, paths }) })
+    const fila = (payload: unknown) => ({
+      entidad: 'gastos_gestion',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload,
+    })
+    await descartarCambioPendiente(
+      s,
+      fila({ curso_academico_id: K, forma: 'transferencia', path: 'c1/n1/justificante.heic' })
+    )
+    await descartarCambioPendiente(s, fila({ curso_academico_id: K, forma: 'efectivo' }))
+    await descartarCambioPendiente(
+      s,
+      fila({ curso_academico_id: K, forma: 'transferencia', path: 'c1/n2/justificante.pdf' })
+    )
+    expect(removed).toEqual([
+      { bucket: 'justificantes-gestion', paths: ['c1/n1/justificante.heic'] },
+    ])
   })
 })

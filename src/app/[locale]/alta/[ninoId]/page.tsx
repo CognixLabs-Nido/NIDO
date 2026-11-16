@@ -38,6 +38,7 @@ import type { EstadoCivil } from '@/features/alta/schemas/alta-documentos'
 import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 import { esFamiliaNuevaEnCentro } from '@/features/alta/queries/familia-nueva-en-centro'
 import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
+import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -381,6 +382,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // guardar: la base no deja cerrar el alta sin contestar, así que no se cierra a ciegas.
   const peticion = await leerPeticionServicios(supabase, ninoId)
 
+  // Fase 9: los gastos de gestión del curso del alta, con la sesión. Igual que los servicios: si no
+  // se pueden leer, el paso sale y lo dice, sin ofrecer guardar (la base no cierra el alta sin ellos).
+  const gastos = await leerGastosGestion(supabase, ninoId)
+
   // Fase 5b: «cómo nos has conocido» solo a familias nuevas en el centro (decidido el 2026-11-10),
   // o si ya está contestado (que se pueda corregir). Se cuenta después de autorizar (arriba).
   const familiaNueva = ninoExtra?.familia_id
@@ -451,6 +456,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         peticionServicios={
           peticion.ok ? { opciones: peticion.opciones, respuestas: peticion.respuestas } : null
         }
+        cursoTieneGastos={!gastos.ok || gastos.gastos.length > 0}
+        gastosGestion={gastos.ok ? gastos.gastos : null}
         mandatoSepaInicial={mandatoSepaInicial}
         mandatoFamilia={mandatoFamilia}
         currentUserId={user.id}

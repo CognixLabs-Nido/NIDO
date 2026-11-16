@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { purgarUno } from '@/features/olvido/actions/purgar-vencidos'
 import { recolectarAdjuntosDe } from '@/features/olvido/lib/fuentes-adjuntos'
+import { MAX_JUSTIFICANTE_BYTES, TIPOS_JUSTIFICANTE } from '@/features/gastos-gestion/lib/gastos'
 import { BUCKET_JUSTIFICANTES_GESTION } from '@/shared/lib/adjuntos/storage'
 import type { Database } from '@/types/db'
 
@@ -389,6 +390,17 @@ describe('Los gastos de gestión (fase 9)', () => {
       .from(BUCKET_JUSTIFICANTES_GESTION)
       .upload(ruta(N, 'tio.pdf'), PDF, { contentType: 'application/pdf' })
     expect(sube.error).not.toBeNull()
+  })
+
+  it('la app sube los tipos y el tamaño que el bucket admite (la misma lista, no una copia a mano)', async () => {
+    const { data, error } = await serviceClient.storage.getBucket(BUCKET_JUSTIFICANTES_GESTION)
+    expect(error).toBeNull()
+    // Premisa: el bucket trae su lista (un null diría «todo vale» y la comparación no mediría nada).
+    expect(data?.allowed_mime_types?.length ?? 0).toBeGreaterThan(0)
+    expect([...(data?.allowed_mime_types ?? [])].sort()).toEqual(
+      Object.keys(TIPOS_JUSTIFICANTE).sort()
+    )
+    expect(Number(data?.file_size_limit)).toBe(MAX_JUSTIFICANTE_BYTES)
   })
 
   it('sale en el export del niño', async () => {

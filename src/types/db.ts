@@ -257,6 +257,10 @@ type ARGS_ANULABLES = {
   registrar_version_documento: 'p_curso_academico_id'
   /** NULL = modo invitar: sin rol ni vínculo, que crea la aceptación (`IF p_usuario_id IS NOT NULL`). */
   crear_o_anadir_a_familia: 'p_usuario_id'
+  /** NULL quita el importe del curso: el centro deja de cobrar los gastos ese curso (fase 9). */
+  fijar_gastos_gestion_curso: 'p_importe_centimos'
+  /** NULL vuelve al importe del curso (fase 9; el test lo comprueba). */
+  fijar_importe_gastos_gestion: 'p_importe_centimos'
 }
 
 type ConAnulables<A, N> = A extends unknown

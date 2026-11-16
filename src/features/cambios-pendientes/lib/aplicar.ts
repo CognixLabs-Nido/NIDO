@@ -7,10 +7,12 @@ import type { Database } from '@/types/db'
 
 import {
   BUCKET_DNI_TUTORES,
+  BUCKET_JUSTIFICANTES_GESTION,
   BUCKET_LIBRO_FAMILIA,
   BUCKET_SIP_NINOS,
   borrarObjetosBucket,
 } from '@/shared/lib/adjuntos/storage'
+import { rutaJustificanteDelNino } from '@/features/gastos-gestion/lib/gastos'
 import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { logger } from '@/shared/lib/logger'
 
@@ -18,6 +20,7 @@ import {
   payloadDatosTutorDniSchema,
   payloadDatosTutorSchema,
   payloadDocumentoSchema,
+  payloadGastosGestionSchema,
   payloadNinosFamiliaSchema,
   payloadNinosIdentidadSchema,
   payloadPeticionServiciosSchema,
@@ -189,6 +192,27 @@ export async function aplicarCambioPendiente(
     return
   }
 
+  if (entidad === 'gastos_gestion') {
+    // Fase 9: por `declarar_gastos_gestion` con la sesión de la directora (Dirección declara siempre:
+    // es quien aprueba). Devuelve la ruta anterior si cambia: ese justificante ya no lo usa nadie.
+    const p = payloadGastosGestionSchema.parse(row.payload)
+    if (p.path !== undefined && !rutaJustificanteDelNino(p.path, row.centro_id, row.nino_id))
+      throw new RutaDocumentoInvalidaError()
+    const { data: anterior, error } = await db.rpc('declarar_gastos_gestion', {
+      p_nino_id: row.nino_id,
+      p_curso_academico_id: p.curso_academico_id,
+      p_forma: p.forma,
+      ...(p.path === undefined ? {} : { p_justificante_path: p.path }),
+    })
+    if (error) throw new Error(`gastos_gestion: ${error.hint ?? error.code ?? ''}`)
+    if (anterior && anterior !== p.path) {
+      await borrarObjetosBucket(storage, BUCKET_JUSTIFICANTES_GESTION, [anterior]).catch(
+        () => undefined
+      )
+    }
+    return
+  }
+
   throw new Error(`entidad_desconocida:${row.entidad}`)
 }
 
@@ -214,6 +238,16 @@ export async function descartarCambioPendiente(service: Client, row: CambioRow):
   } else if (entidad === 'datos_tutor_dni') {
     bucket = BUCKET_DNI_TUTORES
     path = payloadDatosTutorDniSchema.parse(row.payload).path
+  } else if (entidad === 'gastos_gestion') {
+    // Fase 9: el justificante, si lo había (efectivo no deja fichero). PDF o imagen.
+    const p = payloadGastosGestionSchema.parse(row.payload).path
+    if (p === undefined) return
+    if (!rutaJustificanteDelNino(p, row.centro_id, row.nino_id)) {
+      logger.warn('descartarCambioPendiente: ruta ajena al niño, no se borra', entidad)
+      return
+    }
+    await borrarObjetosBucket(service, BUCKET_JUSTIFICANTES_GESTION, [p]).catch(() => undefined)
+    return
   } else {
     return
   }

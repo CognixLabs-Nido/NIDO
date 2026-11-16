@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { FORMAS_GASTOS } from '@/features/gastos-gestion/lib/gastos'
+
 import { estadoCivilEnum, tipoVinculoLegalEnum } from '@/features/alta/schemas/alta-documentos'
 import { respuestasServicioSchema } from '@/features/peticion-servicios/schemas'
 
@@ -32,6 +34,9 @@ export const entidadCambioEnum = z.enum([
   // Fase 8b: la petición de servicios después del alta. Al aprobar cambia lo que se cobra
   // (`aplicar_peticion_servicios`): la mensual nueva, desde el día 1 del mes siguiente.
   'peticion_servicios',
+  // Fase 9: los gastos de gestión después del alta (la forma, y el justificante ya subido a
+  // `justificantes-gestion`); al aprobar, `declarar_gastos_gestion` con la sesión de Dirección.
+  'gastos_gestion',
 ])
 export type EntidadCambio = z.infer<typeof entidadCambioEnum>
 
@@ -92,6 +97,21 @@ export const payloadDocumentoSchema = z.object({
   path: z.string().min(1).max(400),
 })
 
+/**
+ * Fase 9: los gastos de gestión de un curso. La ruta, si viene, es la del justificante ya subido; la
+ * forma y la ruta, como en la tabla (el justificante solo con transferencia).
+ */
+export const payloadGastosGestionSchema = z
+  .object({
+    curso_academico_id: z.string().uuid(),
+    forma: z.enum(FORMAS_GASTOS),
+    path: z.string().min(1).max(400).optional(),
+  })
+  .strict()
+  .refine((p) => p.path === undefined || p.forma === 'transferencia', {
+    message: 'justificante_de_transferencia',
+  })
+
 /** El perfil de un tutor (identidad, dirección y los cinco de la fase 6), con su vínculo. */
 export const payloadDatosTutorSchema = z.object({
   tipo_vinculo: tipoVinculoLegalEnum,
@@ -142,4 +162,5 @@ export const ETIQUETA_ENTIDAD: Record<EntidadCambio, string> = {
   ninos_identidad: 'admin.pendientes.entidad.ninos_identidad',
   ninos_sip_documento: 'admin.pendientes.entidad.ninos_sip_documento',
   peticion_servicios: 'admin.pendientes.entidad.peticion_servicios',
+  gastos_gestion: 'admin.pendientes.entidad.gastos_gestion',
 }

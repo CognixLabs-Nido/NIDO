@@ -18,6 +18,8 @@ export const PASOS_ALTA = [
   'emergencia',
   // Fase 8b: la petición de servicios. Antes de `sepa` para que los índices de los demás no cambien.
   'servicios',
+  // Fase 9: los gastos de gestión, si el curso del alta tiene importe. También antes de `sepa`.
+  'gastos',
   'sepa',
 ] as const
 
@@ -39,13 +41,18 @@ export const PASO_MIN_AUTENTICADO = PASOS_ALTA.indexOf('acuses')
  * Los pasos del alta de un centro. Sin CID del centro no se firma ningún mandato (0c,
  * 2026-11-04): el paso `sepa` no aparece y el alta se completa en efectivo, como cuando la familia
  * omite. Sin ningún concepto de servicio en Cuotas, el paso `servicios` tampoco (fase 8b, como el
- * SEPA sin CID). El último que queda finaliza.
+ * SEPA sin CID). Sin importe de gastos de gestión para el curso del alta, el paso `gastos` tampoco
+ * (fase 9: «un centro sin importe no ve el paso»). El último que queda finaliza.
  */
 export function pasosAlta(
   centroTieneCid: boolean,
-  centroTieneServicios: boolean
+  centroTieneServicios: boolean,
+  cursoTieneGastos: boolean
 ): readonly PasoAlta[] {
   return PASOS_ALTA.filter(
-    (p) => (p !== 'sepa' || centroTieneCid) && (p !== 'servicios' || centroTieneServicios)
+    (p) =>
+      (p !== 'sepa' || centroTieneCid) &&
+      (p !== 'servicios' || centroTieneServicios) &&
+      (p !== 'gastos' || cursoTieneGastos)
   )
 }

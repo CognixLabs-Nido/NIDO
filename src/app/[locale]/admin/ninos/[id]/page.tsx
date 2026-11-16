@@ -34,7 +34,13 @@ import {
 import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { TarjetaSanitariaCard } from '@/features/ninos/components/TarjetaSanitariaCard'
-import { BUCKET_SIP_NINOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
+import {
+  BUCKET_JUSTIFICANTES_GESTION,
+  BUCKET_SIP_NINOS,
+  firmarRuta,
+} from '@/shared/lib/adjuntos/storage'
+import { GastosGestionDireccion } from '@/features/gastos-gestion/components/GastosGestionDireccion'
+import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 import { FichaMedicaBloqueada } from '@/features/ninos/components/FichaMedicaBloqueada'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
 import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
@@ -165,6 +171,15 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
     : null
   // Fase 8b: la petición de servicios, para verla y corregirla al validar. `null` fuera del alta.
   const peticionServicios = enAlta ? await leerPeticionServicios(supabase, id) : null
+  // Fase 9: los gastos de gestión del curso del alta. Siempre (no solo en el alta): Dirección marca
+  // el cobro cuando quiere. El justificante, con un enlace firmado con la sesión (la RLS del bucket).
+  const gastosLeidos = await leerGastosGestion(supabase, id)
+  const urlsJustificante: Record<string, string | null> = {}
+  if (gastosLeidos.ok)
+    for (const g of gastosLeidos.gastos)
+      urlsJustificante[g.cursoId] = g.justificantePath
+        ? await firmarRuta(supabase, BUCKET_JUSTIFICANTES_GESTION, g.justificantePath)
+        : null
   // El alta sin terminar (20261209120000): su estado y el botón, solo con la matrícula pendiente.
   const sinTerminar =
     matriculaActiva?.estado === 'pendiente'
@@ -288,6 +303,15 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
                 : null
           }
           locale={locale}
+        />
+      )}
+
+      {(!gastosLeidos.ok || gastosLeidos.gastos.length > 0) && (
+        <GastosGestionDireccion
+          locale={locale}
+          ninoId={id}
+          gastos={gastosLeidos.ok ? gastosLeidos.gastos : null}
+          urlsJustificante={urlsJustificante}
         />
       )}
 

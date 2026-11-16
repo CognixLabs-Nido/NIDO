@@ -6,7 +6,11 @@ import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { leerTarjetasSanitarias } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { logger } from '@/shared/lib/logger'
 
-import { payloadPeticionServiciosSchema, type EntidadCambio } from '../schemas'
+import {
+  payloadGastosGestionSchema,
+  payloadPeticionServiciosSchema,
+  type EntidadCambio,
+} from '../schemas'
 
 /** Un campo que cambia: lo guardado hoy y lo que se propone. */
 export interface LineaCambio {
@@ -156,6 +160,12 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
     filas.filter((r) => r.entidad === 'peticion_servicios')
   )
 
+  // Fase 9: lo guardado de los gastos de gestión de esos niños (Dirección lee `gastos_gestion`).
+  const gastos = await leerGastosDeLaCola(
+    supabase,
+    filas.filter((r) => r.entidad === 'gastos_gestion')
+  )
+
   return filas.map((r) => {
     const entidad = r.entidad as EntidadCambio
     const payload = (r.payload && typeof r.payload === 'object' ? r.payload : {}) as Fila
@@ -167,6 +177,8 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       lineas = lineasDeParche(payload, nino)
     } else if (entidad === 'peticion_servicios') {
       lineas = servicios ? lineasDeServicios(payload, r.nino_id, servicios) : null
+    } else if (entidad === 'gastos_gestion') {
+      lineas = gastos ? lineasDeGastos(payload, r.nino_id, gastos) : null
     } else if (entidad === 'ninos_libro_familia') {
       lineas = [{ campo: 'documento', antes: texto(nino.libro_familia_path), despues: 'nuevo' }]
     } else if (entidad === 'ninos_sip_documento') {
@@ -193,6 +205,47 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       lineas,
     }
   })
+}
+
+type GastosDeLaCola = Map<string, { forma: string | null; justificante_path: string | null }>
+
+/** `niño:curso` → lo guardado; `null` si la lectura falla (la cola no enseña un «antes» falso). */
+async function leerGastosDeLaCola(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filas: { nino_id: string }[]
+): Promise<GastosDeLaCola | null> {
+  const guardados: GastosDeLaCola = new Map()
+  if (filas.length === 0) return guardados
+  const g = await supabase
+    .from('gastos_gestion')
+    .select('nino_id, curso_academico_id, forma, justificante_path')
+    .in('nino_id', [...new Set(filas.map((r) => r.nino_id))])
+  if (g.error) {
+    logger.warn('listarCambiosPendientes: los gastos guardados', g.error.code ?? 'sin_codigo')
+    return null
+  }
+  for (const x of g.data ?? []) guardados.set(`${x.nino_id}:${x.curso_academico_id}`, x)
+  return guardados
+}
+
+/**
+ * Fase 9: la forma, si cambia (`gastos_forma`), y el justificante, si viene (`documento`). Un
+ * payload que no valida no se enseña como si estuviera bien: `null`.
+ */
+function lineasDeGastos(payload: Fila, ninoId: string, g: GastosDeLaCola): LineaCambio[] | null {
+  const ok = payloadGastosGestionSchema.safeParse(payload)
+  if (!ok.success) return null
+  const antes = g.get(`${ninoId}:${ok.data.curso_academico_id}`)
+  const lineas: LineaCambio[] = []
+  if ((antes?.forma ?? null) !== ok.data.forma)
+    lineas.push({ campo: 'gastos_forma', antes: antes?.forma ?? null, despues: ok.data.forma })
+  if (ok.data.path !== undefined)
+    lineas.push({
+      campo: 'documento',
+      antes: texto(antes?.justificante_path ?? null),
+      despues: 'nuevo',
+    })
+  return lineas
 }
 
 interface ServiciosDeLaCola {

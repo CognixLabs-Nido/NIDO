@@ -37,6 +37,8 @@ interface Estado {
   /** Fase 8b: lo que devuelve `servicios_alta`; `null` = la lectura falla. */
   serviciosAlta: Fila[] | null
   peticion_servicio: Fila[]
+  /** Fase 9: lo que devuelve `gastos_gestion_nino`; `null` = la lectura falla. */
+  gastosNino: Fila[] | null
   /** El error de `marcar_matricula_lista`, si lo da. */
   errorMarcar?: { code: string; message: string; hint: string | null }
 }
@@ -104,6 +106,8 @@ function altaCompleta(): Estado {
     // Fase 8b: un centro sin conceptos de servicio no pide nada.
     serviciosAlta: [],
     peticion_servicio: [],
+    // Fase 9: un curso sin importe de gastos no pide nada.
+    gastosNino: [],
   }
 }
 
@@ -131,7 +135,13 @@ function makeFake(estado: Estado) {
     from: (tabla: string) => {
       if (
         !(tabla in estado) ||
-        ['imagenConsentida', 'documentosCentro', 'errorMarcar', 'serviciosAlta'].includes(tabla)
+        [
+          'imagenConsentida',
+          'documentosCentro',
+          'errorMarcar',
+          'serviciosAlta',
+          'gastosNino',
+        ].includes(tabla)
       )
         throw new Error(`tabla no prevista en el falso: ${tabla}`)
       tablasLeidas.push(tabla)
@@ -187,6 +197,12 @@ function makeFake(estado: Estado) {
         return Promise.resolve(
           estado.serviciosAlta
             ? { data: estado.serviciosAlta, error: null }
+            : { data: null, error: { code: 'XX000', message: 'fallo' } }
+        )
+      if (fn === 'gastos_gestion_nino')
+        return Promise.resolve(
+          estado.gastosNino
+            ? { data: estado.gastosNino, error: null }
             : { data: null, error: { code: 'XX000', message: 'fallo' } }
         )
       if (fn === 'marcar_matricula_lista')
@@ -454,6 +470,82 @@ describe('finalizarAlta · la petición de servicios (fase 8b)', () => {
       success: false,
       error: 'alta.errors.incompleto',
       faltan: ['servicios'],
+    })
+  })
+})
+
+describe('finalizarAlta · los gastos de gestión (fase 9)', () => {
+  const K = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+  /** Una fila de `gastos_gestion_nino`, con las columnas de la función. */
+  const gastos = (
+    forma: string | null,
+    importe = 6000,
+    cobrado_at: string | null = null
+  ): Fila => ({
+    curso_academico_id: K,
+    curso_nombre: '2026-27',
+    importe_curso: 6000,
+    importe,
+    importe_propio: importe !== 6000,
+    forma,
+    justificante_path: null,
+    cobrado_at,
+    matricula_pendiente: true,
+  })
+
+  it('premisa: contestado (efectivo), finaliza', async () => {
+    const estado = altaCompleta()
+    estado.gastosNino = [gastos('efectivo')]
+    expect(await cierra(estado)).toEqual({ r: { success: true, data: { id: NINO } }, cerro: true })
+  })
+
+  it('sin contestar frena el alta, y no se llama a la base', async () => {
+    const estado = altaCompleta()
+    estado.gastosNino = [gastos(null)]
+    expect(await cierra(estado)).toEqual({
+      r: { success: false, error: 'alta.errors.incompleto', faltan: ['gastos'] },
+      cerro: false,
+    })
+  })
+
+  it('transferencia sin justificante cuenta como contestado (llega después)', async () => {
+    const estado = altaCompleta()
+    estado.gastosNino = [gastos('transferencia')]
+    expect((await cierra(estado)).cerro).toBe(true)
+  })
+
+  it('con importe 0 no hay nada que contestar', async () => {
+    const estado = altaCompleta()
+    estado.gastosNino = [gastos(null, 0)]
+    expect((await cierra(estado)).cerro).toBe(true)
+  })
+
+  it('cobrado sin contestar tampoco frena (lo marcó Dirección)', async () => {
+    const estado = altaCompleta()
+    estado.gastosNino = [gastos(null, 6000, '2026-11-16T10:00:00Z')]
+    expect((await cierra(estado)).cerro).toBe(true)
+  })
+
+  it('si la lectura falla, no se cierra: vacía diría «nada que contestar»', async () => {
+    const estado = altaCompleta()
+    estado.gastosNino = null
+    expect(await cierra(estado)).toEqual({
+      r: { success: false, error: 'alta.errors.finalizar_fallo' },
+      cerro: false,
+    })
+  })
+
+  it('si la base frena (gastos_por_contestar), se dice lo que falta', async () => {
+    const estado = altaCompleta()
+    estado.errorMarcar = {
+      code: 'P0001',
+      message: 'faltan los gastos de gestión por contestar',
+      hint: 'gastos_por_contestar',
+    }
+    expect((await cierra(estado)).r).toEqual({
+      success: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['gastos'],
     })
   })
 })

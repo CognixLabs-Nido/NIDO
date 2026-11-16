@@ -30,6 +30,7 @@ const RECIEN_ACEPTADA: SenalesAvance = {
   mandato: false,
   centroConCid: true,
   servicios: 'sin_contestar',
+  gastos: 'sin_contestar',
 }
 
 const TODO_HECHO: SenalesAvance = {
@@ -43,6 +44,7 @@ const TODO_HECHO: SenalesAvance = {
   mandato: true,
   centroConCid: true,
   servicios: 'contestado',
+  gastos: 'contestado',
 }
 
 describe('Lo que lleva hecho un alta', () => {
@@ -74,6 +76,7 @@ describe('Lo que lleva hecho un alta', () => {
       tutor2: { tutor2: 'completo' },
       medico: { medico: true },
       servicios: { servicios: 'contestado' },
+      gastos: { gastos: 'contestado' },
       sepa: { mandato: true },
     }
     for (const item of ITEMS_AVANCE) {
@@ -95,6 +98,14 @@ describe('Lo que lleva hecho un alta', () => {
     expect(con).toContain('servicios')
     expect(avanceAlta({ ...TODO_HECHO, servicios: 'no_ofrece' }).map((l) => l.item)).toEqual(
       con.filter((i) => i !== 'servicios')
+    )
+  })
+
+  it('sin importe de gastos para el curso del alta no hay línea de gastos (fase 9)', () => {
+    const con = avanceAlta(TODO_HECHO).map((l) => l.item)
+    expect(con).toContain('gastos')
+    expect(avanceAlta({ ...TODO_HECHO, gastos: 'no_pide' }).map((l) => l.item)).toEqual(
+      con.filter((i) => i !== 'gastos')
     )
   })
 

@@ -724,7 +724,8 @@
         "guardando": "Guardant…",
         "cancelar": "Cancel·la",
         "guardado": "Guardat. Assignats: {asignadas}. Llevats: {quitadas}."
-      }
+      },
+      "tab_gastos_gestion": "Despeses de gestió"
     },
     "aulas": {
       "title": "Aules",
@@ -1219,7 +1220,8 @@
         "sip": "Targeta sanitària",
         "servicio_comedor": "Menjador",
         "servicio_matinera": "Matinera",
-        "servicio_vespertina": "Vesprada"
+        "servicio_vespertina": "Vesprada",
+        "gastos_forma": "Com paga les despeses de gestió"
       },
       "entidad": {
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
@@ -1228,7 +1230,8 @@
         "datos_tutor_dni": "DNI d'un tutor",
         "ninos_identidad": "Identitat de l'infant",
         "ninos_sip_documento": "Imatge de la targeta sanitària",
-        "peticion_servicios": "Serveis"
+        "peticion_servicios": "Serveis",
+        "gastos_gestion": "Despeses de gestió"
       },
       "errors": {
         "registro": "No s'ha pogut registrar el canvi. Torna a provar-ho.",
@@ -1588,7 +1591,8 @@
           "tutor2": "Tutor 2",
           "medico": "Mèdic",
           "sepa": "Mandat SEPA",
-          "servicios": "Serveis"
+          "servicios": "Serveis",
+          "gastos": "Despeses de gestió"
         },
         "estado": {
           "hecho": "fet",
@@ -4690,7 +4694,8 @@
         "tutor2": "Tutor/a 2",
         "emergencia": "Emergències",
         "sepa": "Domiciliació bancària",
-        "servicios": "Serveis"
+        "servicios": "Serveis",
+        "gastos": "Despeses de gestió"
       }
     },
     "identidad": {
@@ -4909,7 +4914,8 @@
         "imagen": "Autorització d'imatge",
         "documentos_centro": "Documents del centre per signar",
         "tutor2": "Dades del tutor 2",
-        "servicios": "Serveis (contestar cadascun)"
+        "servicios": "Serveis (contestar cadascun)",
+        "gastos": "Despeses de gestió (triar com es paguen)"
       }
     }
   },
@@ -5643,6 +5649,66 @@
       "opcion_no_ofrecida": "Eixa opció ja no l’oferix el centre. Recarrega la pàgina.",
       "alta_validada": "L’alta ja està validada: el canvi ha d’anar per la cua.",
       "mensual_anterior_en_borrador": "La mensual anterior d’eixe servei té un rebut en esborrany: confirma’l abans de tornar a posar-la."
+    }
+  },
+  "gastos_gestion": {
+    "titulo": "Despeses de gestió",
+    "intro": "El centre cobra unes despeses de gestió per l’alta. Digues-nos com les pagaràs: per transferència (amb el justificant ara o més tard) o en efectiu.",
+    "no_leidos": "No s’han pogut llegir les despeses de gestió. Torna a carregar la pàgina.",
+    "faltan": "Tria com pagaràs les despeses de gestió.",
+    "sin_contestar": "Tria transferència o efectiu.",
+    "guardado": "Guardat.",
+    "guardado_cola": "Guardat. Ho revisarà la Direcció.",
+    "curso": "Curs {curso}",
+    "importe": "Import: {importe}",
+    "importe_cero": "La Direcció l’ha deixat sense cost: no hi ha res a pagar.",
+    "importe_propio": "Import: {importe} (el del curs és {curso})",
+    "opcion": {
+      "transferencia": "Per transferència",
+      "efectivo": "Pagaré en efectiu"
+    },
+    "forma": {
+      "transferencia": "Transferència",
+      "efectivo": "Efectiu"
+    },
+    "justificante": "Justificant de la transferència",
+    "justificante_ayuda": "Justificant (PDF o imatge, fins a 15 MB). Si no el tens a mà, pots pujar-lo després.",
+    "justificante_ya": "Ja hi ha un justificant pujat.",
+    "ver_justificante": "Veure el justificant",
+    "con_justificante": "amb justificant",
+    "otro_importe": "Un altre import (€)",
+    "guardar_importe": "Guardar import",
+    "volver_al_del_curso": "Tornar al del curs",
+    "importe_guardado": "Import guardat.",
+    "importe_quitado": "Import llevat.",
+    "dijo": "La família va dir: {forma}",
+    "sin_contestar_aun": "Sense contestar",
+    "guardar_forma": "Guardar",
+    "cobrado": "Cobrat",
+    "cobrado_el": "Cobrat el {fecha}",
+    "sin_cobrar": "Sense cobrar",
+    "marcar_cobro": "Marcar com a cobrat",
+    "desmarcar_cobro": "Llevar la marca de cobrament",
+    "marcado": "Marcat com a cobrat.",
+    "desmarcado": "Marca de cobrament llevada.",
+    "cursos_titulo": "Import per curs",
+    "cursos_ayuda": "El que es demana en l’alta de cada curs. És una proposta: en la fitxa de cada xiquet pots posar un altre import o 0. Sense import, l’alta no ho demana.",
+    "sin_cursos": "No hi ha cursos oberts.",
+    "curso_sin_importe": "Sense import",
+    "importe_curso": "Import (€)",
+    "quitar_importe": "Llevar l’import",
+    "pendientes_titulo": "Falten per cobrar",
+    "pendientes_ninguno": "No falta ningú per cobrar.",
+    "alta_en_curso": "alta sense tancar",
+    "errors": {
+      "invalido": "Les dades no són vàlides.",
+      "curso_sin_gastos": "Eixe curs no té despeses de gestió per a aquest xiquet.",
+      "guardar": "No s’ha pogut guardar. Torna-ho a intentar.",
+      "subida": "No s’ha pogut pujar el justificant.",
+      "tipo": "El justificant ha de ser un PDF o una imatge (JPG, PNG o HEIC).",
+      "tamano": "El justificant no pot passar de 15 MB.",
+      "importe": "L’import no és vàlid.",
+      "curso_cerrado": "Eixe curs està tancat: el seu import ja no es canvia."
     }
   }
 }

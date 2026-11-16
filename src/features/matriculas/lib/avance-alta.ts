@@ -36,6 +36,8 @@ export const ITEMS_AVANCE = [
   'medico',
   // Fase 8b: la petición de servicios (si el centro ofrece alguno, como el SEPA con CID).
   'servicios',
+  // Fase 9: los gastos de gestión (si el curso del alta tiene importe).
+  'gastos',
   'sepa',
 ] as const
 
@@ -72,6 +74,11 @@ export interface SenalesAvance {
    * concepto de servicio, el paso no aparece y tampoco su línea.
    */
   servicios: 'no_ofrece' | 'contestado' | 'sin_contestar'
+  /**
+   * Fase 9: los gastos de gestión, con la regla del gate. `no_pide`: el curso del alta no tiene
+   * importe, el paso no aparece y tampoco su línea.
+   */
+  gastos: 'no_pide' | 'contestado' | 'sin_contestar'
 }
 
 export type EstadoItem = 'hecho' | 'falta' | 'sin_hacer_opcional'
@@ -96,6 +103,7 @@ export const LINEAS_DEL_GATE: Record<BloqueAlta, readonly ItemAvance[] | 'invita
   imagen: ['imagen'],
   documentos_centro: ['documentos_centro'],
   servicios: ['servicios'],
+  gastos: ['gastos'],
 }
 
 const HECHO: Record<ItemAvance, (s: SenalesAvance) => boolean> = {
@@ -106,6 +114,7 @@ const HECHO: Record<ItemAvance, (s: SenalesAvance) => boolean> = {
   tutor2: (s) => s.tutor2 === 'completo',
   medico: (s) => s.medico,
   servicios: (s) => s.servicios === 'contestado',
+  gastos: (s) => s.gastos === 'contestado',
   sepa: (s) => s.mandato,
 }
 
@@ -114,6 +123,7 @@ export function avanceAlta(s: SenalesAvance): LineaAvance[] {
     (item) =>
       (item !== 'sepa' || s.centroConCid) &&
       (item !== 'servicios' || s.servicios !== 'no_ofrece') &&
+      (item !== 'gastos' || s.gastos !== 'no_pide') &&
       (item !== 'documentos_centro' || hayObligatorioSubido(s.documentosCentro))
   ).map((item) => ({
     item,
