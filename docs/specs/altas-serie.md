@@ -3,7 +3,7 @@ feature: altas-serie
 wave: 1
 status: approved
 priority: high
-last_updated: 2026-11-14
+last_updated: 2026-11-16
 related_adrs: [ADR-0049, ADR-0050, ADR-0063, ADR-0064]
 related_specs: [alta-tutor-driven, autorizaciones-firma, retencion-plazos]
 ---
@@ -306,8 +306,8 @@ Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza
 
 P-1 a P-5 se contestaron el 2026-10-31 y están arriba, en SEPA. Quedan:
 
-- **Reabrir remesas:** el alcance está decidido (abajo, «Reabrir una remesa»). Quedan R-1 a R-4,
-  las preguntas de su traza.
+- **Reabrir remesas:** el alcance está decidido (abajo, «Reabrir una remesa») y R-1 a R-4, las
+  preguntas de su traza, están contestadas (abajo, «Respuestas del responsable (2026-10-31)»).
 - **P-6** se contestó el 2026-11-05: ver «Fase 4: presupuesto y normas, para firmar».
 
 ## Reabrir una remesa
@@ -466,7 +466,7 @@ Contestadas el 2026-10-31: ver «Respuestas del responsable», abajo.
 - **R-4 · Sí: marcar enviada exige el fichero generado**, y el mensaje dice qué falta, no solo que
   no se puede.
 
-### Diseño (propuesta, pendiente del visto bueno)
+### Diseño (construido el 2026-11-02)
 
 **El fichero de cada versión** (R-1). Una versión empieza con la marca (`fichero_generado_at`) y
 acaba al reabrir.
@@ -1534,6 +1534,35 @@ no pudo leer.**
   bloque «una lectura que falla no se lee como «no hay»» de `autorizado-lee-solo-lo-suyo.rls.test.ts`;
   cada uno afirma la fila guardada, no cómo se evita, con su control sin fallo.
 
+#### Las cuatro de gravedad media y baja (decidido el 2026-11-12; escrito el 2026-11-16)
+
+La 5 dejó escrito que `firmas_documentos_centro`, `acuses_alta`, `matriculas` y
+`confirmaciones_evento` iban «en el PR siguiente». Ese PR no se hizo, y la decisión sobre las
+confirmaciones vivió cuatro días solo en una conversación. **Una decisión que no está escrita donde
+viven las decisiones no existe**: por eso va aquí, con sus palabras.
+
+- **Confirmaciones de eventos: solo los padres.** Decisión del 2026-11-12, textual: «El autorizado
+  no confirma y no lee las confirmaciones. Cierras lectura y escritura. Una excursión saca al niño
+  del centro y eso lo decide quien tiene la patria potestad, no quien solo puede recogerlo a la
+  salida.» Confirmada el 2026-11-16 («SOLO CONFIRMAN LOS PADRES»). El calendario del autorizado se
+  queda para **ver** los eventos, que los necesita si va a recogerlo. Sustituye a la ADR-0038 donde
+  decía «cualquier tutor del niño confirma por él».
+- **Firmas de los documentos del centro**: el criterio de las firmas de autorización (opción b): la
+  fila se ve —quién firmó, en calidad de qué y cuándo—; el trazo, la IP, el navegador y el nombre
+  tecleado, solo por función, para quien firmó, el tutor legal y la Dirección (la profe no: la tabla
+  ya no se la dejaba leer, 3b, y la función no amplía a nadie). En
+  dos migraciones: la primera añade la función y la app la usa; la segunda, después del despliegue,
+  quita el permiso de esas columnas.
+- **Acuses del alta**: el tutor legal y la Dirección («el alta es del tutor legal», 2026-11-11).
+- **Matrículas**: pendiente de reconciliar dos instrucciones (2026-11-12 y 2026-11-16).
+
+**Medido abierto otra vez** (2026-11-16, ensayo en producción terminado en RAISE, las predicciones
+escritas antes; 21 de 21): un autorizado con todos los permisos a falso lee la fila de las cuatro,
+y en `firmas_documentos_centro` el trazo, la IP, el navegador y el nombre del tutor legal que firmó.
+El mismo usuario sin vínculo no lee nada y el tutor legal (control positivo) lo lee todo;
+`matriculas.motivo_baja` ya estaba cerrada por columna para todas las familias. Lo mismo que el
+2026-11-12: nada cambió en seis fases.
+
 ## Fase 6: campos de tutores
 
 ### Decisiones (2026-11-12 y 2026-11-13)
@@ -1991,24 +2020,57 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   RAISE, LF y CRLF): 8 de 8 con la B y su control sin ella; las tres guardas paran.
 - D6 intacta: por esa transferencia no se crea ningún recibo.
 
+## Fase 10: la firma de la ficha
+
+### Decisiones (2026-11-16)
+
+- **D11 · La ficha se firma** (2026-10-29): «Hoy el alta termina con «Finalizar» y no se firma nada.»
+- **Qué lleva: todo lo que la familia ha declarado.** Jose, opción A: «niño, los dos tutores, datos
+  pedagógicos, servicios pedidos, gastos de gestión, consentimiento de imagen Y LOS DATOS MÉDICOS,
+  alergias incluidas». El motivo, que guía todo lo demás: «lo que de verdad hace falta tener firmado
+  son las alergias, porque el día que haya un problema con un niño la diferencia entre «lo declaró»
+  y «lo firmó» es toda la diferencia».
+- **El mecanismo es el del mandato**, no uno nuevo: texto canónico versionado con los datos, sha256
+  en el servidor, trazo y PDF para la familia. **El texto canónico no se guarda en claro: se guarda
+  su hash.** El PDF va en un bucket privado, cerrado al menos como lo médico, y el autorizado no lo
+  abre. Antes de escribir nada se mide cómo vive hoy el PDF del mandato (dónde, quién lo abre, con
+  qué política) y si ese patrón sirve para un documento con datos de salud.
+- **Tabla propia, que nace cerrada por columnas** con el criterio de las firmas de autorización: se
+  ve quién firmó y cuándo, no el trazo, la IP, el navegador ni el nombre tecleado. **No** en
+  `firmas_autorizacion`, por lo mismo que se descartó en la fase 3: borra en cascada.
+- **Basta un tutor**, y se guarda quién (como J3). Si hay dos no se espera al segundo: una familia no
+  se queda con el alta a medias porque un tutor no entre en la app.
+- **Firmar es finalizar**: la firma es el último paso del alta y al firmar se cierra. No hay un
+  «Finalizar» después.
+- **La firma es la foto** de lo que se firmó, con su hash. Los cambios posteriores siguen por la cola
+  con su rastro y la ficha no se refirma sola: Dirección puede **pedir** que se vuelva a firmar
+  cuando quiera, con el mecanismo de `pide_refirma`. Nada automático.
+- **Alta en papel**: Dirección registra la firma presencial, teclea el nombre, sin trazo, y el papel
+  es la prueba. Igual que en los documentos.
+- **Las tres altas ya validadas no firman nada hacia atrás.**
+- **No se vuelve a firmar cada curso**: la renovación quedó fuera de la serie y sigue fuera.
+- **Lo de siempre**: exportación del art. 15, purga con el niño, el autorizado no ve nada de esto, y
+  el test de la purga llega a los ficheros del bucket nuevo, no solo a su nombre.
+- **Orden**: después del PR de las cuatro tablas de gravedad media y baja.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
 y la exportación del art. 15 (las funciones de la serie de retención, ADR-0064). Cada PR parte de la
 **definición viva** de esas funciones, no de la que haya en esta spec.
 
-| Fase | Pieza                             | Qué hace                                                                        | Estado       |
-| ---- | --------------------------------- | ------------------------------------------------------------------------------- | ------------ |
-| 1    | SEPA                              | En varios PRs (abajo)                                                           | ✅           |
-| 2    | Pantalla de altas en proceso      | Ver «Fase 2: la pantalla de altas en proceso»                                   | ✅           |
-| 3    | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         | ✅           |
-| 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | ✅           |
-| 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | ✅           |
-| 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          | ✅           |
-| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          | ✅           |
-| 8    | Servicios en el alta              | La fecha de incorporación (8a) y la petición de media pensión (8b)              | ✅           |
-| 9    | Gastos de gestión                 | Paso del alta, la ficha en la renovación, y el cobro que marca Dirección        | 🔸 en marcha |
-| 10   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |              |
+| Fase | Pieza                             | Qué hace                                                                        | Estado |
+| ---- | --------------------------------- | ------------------------------------------------------------------------------- | ------ |
+| 1    | SEPA                              | En varios PRs (abajo)                                                           | ✅     |
+| 2    | Pantalla de altas en proceso      | Ver «Fase 2: la pantalla de altas en proceso»                                   | ✅     |
+| 3    | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         | ✅     |
+| 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | ✅     |
+| 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | ✅     |
+| 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          | ✅     |
+| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          | ✅     |
+| 8    | Servicios en el alta              | La fecha de incorporación (8a) y la petición de media pensión (8b)              | ✅     |
+| 9    | Gastos de gestión                 | Paso del alta y el cobro que marca Dirección (la renovación, fuera: 2026-11-16) | ✅     |
+| 10   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |        |
 
 Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran dentro de la serie.
 
@@ -2036,14 +2098,39 @@ La pantalla (#491), reenviar y cancelar la invitación del segundo tutor (#492),
 
 ### Fase 4, por PRs
 
-4a, la base (#502) · 4b, la familia firma en el alta (4b-1, 4b-2, 4b-3) · 4c, firmar fuera del alta y lo pendiente en el
-inicio de Dirección · 4d, la refirma (#515).
+4a, la base (#502) · 4b, la familia firma en el alta (4b-1 #510, 4b-2 #511, 4b-3 #513) · 4c, firmar
+fuera del alta y lo pendiente en el inicio de Dirección (#514) · 4d, la refirma (#515).
 
 ### Fase 5, por PRs
 
 5a, la base (`20270112120000`, #516) · la puerta de identidad (`20270113120000`, #518) · 5b, las
 pantallas y lo obligatorio al cerrar el alta (`20270114120000`, #519 y #520) · el autorizado lee solo
 lo suyo (`20270115130000`).
+
+### Entre la 5 y la 6, por PRs
+
+Las lecturas por función del autorizado, primera de dos (`20270115120000`, #522) · el autorizado lee
+solo lo suyo (`20270115130000`, #521) · las cuatro de gravedad media y baja (`20270125120000` y la
+segunda, después del despliegue).
+
+### Fase 6, por PRs
+
+Los datos del tutor y su puerta (`20270117120000` y `20270118120000`, #526).
+
+### Fase 7, por PRs
+
+La tarjeta sanitaria (`20270119120000` antes del despliegue y `20270119130000` después, #527).
+
+### Fase 8, por PRs
+
+8a, la fecha de incorporación (`20270120120000` antes del despliegue y `20270120130000` después,
+#528) · el prorrateo del mes de incorporación (`20270121120000`, #529) · 8b, la petición de
+servicios (`20270122120000` antes del despliegue y `20270122130000` después, #530).
+
+### Fase 9, por PRs
+
+9a, la base (`20270123120000`, antes del despliegue, #531) · 9b, el alta (`20270124120000`, después
+del despliegue, #532).
 
 ## Estado
 
@@ -2052,7 +2139,7 @@ lo suyo (`20270115130000`).
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
 - [x] Fase 6 (#526) · [x] Fase 7 (#527)
 - [x] Fase 8: [x] 8a, la fecha de incorporación (#528) · [x] el prorrateo del mes de incorporación (#529) · [x] 8b, la petición de servicios (#530)
-- [ ] Fase 9: [x] 9a, la base de los gastos de gestión (#531) · [ ] 9b, el alta (este PR; la B después del despliegue)
+- [x] Fase 9: [x] 9a, la base de los gastos de gestión (#531) · [x] 9b, el alta (#532)
 - [ ] Fase 10
 
 ## Referencias
