@@ -20,6 +20,7 @@ import {
   payloadDocumentoSchema,
   payloadNinosFamiliaSchema,
   payloadNinosIdentidadSchema,
+  payloadPeticionServiciosSchema,
   rutaDocumentoDelNino,
   type EntidadCambio,
 } from '../schemas'
@@ -172,6 +173,19 @@ export async function aplicarCambioPendiente(
     if (anterior && anterior !== p.path) {
       await borrarObjetosBucket(storage, BUCKET_DNI_TUTORES, [anterior]).catch(() => undefined)
     }
+    return
+  }
+
+  if (entidad === 'peticion_servicios') {
+    // Fase 8b: guarda las respuestas y cambia lo que se cobra, con la sesión de la directora. La
+    // base vuelve a mirar quién (Dirección del centro), que el alta esté validada y que cada opción
+    // se siga ofreciendo; un fallo lanza y la aprobación vuelve a pendiente.
+    const { respuestas } = payloadPeticionServiciosSchema.parse(row.payload)
+    const { error } = await db.rpc('aplicar_peticion_servicios', {
+      p_nino_id: row.nino_id,
+      p_respuestas: respuestas,
+    })
+    if (error) throw new Error(`peticion_servicios: ${error.hint ?? error.code ?? ''}`)
     return
   }
 

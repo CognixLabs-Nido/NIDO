@@ -9,6 +9,8 @@ import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { logger } from '@/shared/lib/logger'
 
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
+import { filasServicios, sinContestar } from '@/features/peticion-servicios/lib/peticion'
+import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 import { frenaElAlta } from '../lib/regla-documentos-alta'
 import { tutorCompleto } from '../lib/datos-tutor'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
@@ -29,6 +31,8 @@ import { fail, ok } from '../../centros/types'
  *   cumplen con la autorización de normas ni con la casilla de `acuses_alta`. Uno que el centro
  *   todavía no ha subido no frena (P-6), así que hasta que suba las normas el alta se cierra sin
  *   ellas: el único momento de la historia del producto en que pasa.
+ * `servicios` (fase 8b): cada servicio que el centro ofrece, contestado (no, todos los meses o días
+ *   sueltos). Un centro sin conceptos de servicio no pide nada.
  */
 export type BloqueAlta =
   | 'identidad'
@@ -38,6 +42,7 @@ export type BloqueAlta =
   | 'documentos'
   | 'imagen'
   | 'documentos_centro'
+  | 'servicios'
 
 const ORDEN_BLOQUES: BloqueAlta[] = [
   'identidad',
@@ -47,6 +52,7 @@ const ORDEN_BLOQUES: BloqueAlta[] = [
   'documentos',
   'imagen',
   'documentos_centro',
+  'servicios',
 ]
 
 /** Resultado de `finalizarAlta`: en fallo por completitud viaja `faltan` (bloques). */
@@ -173,6 +179,13 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   if (!documentosCentro.ok) return fail('alta.errors.finalizar_fallo')
   if (documentosCentro.data.some(frenaElAlta)) faltan.push('documentos_centro')
 
+  // Fase 8b: la petición de servicios, con la regla de la base (`servicios_por_contestar`). Si no se
+  // puede leer no se cierra: «nada que contestar» sería decirlo sin haberlo mirado.
+  const peticion = await leerPeticionServicios(supabase, id)
+  if (!peticion.ok) return fail('alta.errors.finalizar_fallo')
+  if (sinContestar(filasServicios(peticion.opciones), peticion.respuestas).length > 0)
+    faltan.push('servicios')
+
   if (faltan.length > 0) {
     faltan.sort((a, b) => ORDEN_BLOQUES.indexOf(a) - ORDEN_BLOQUES.indexOf(b))
     return { success: false, error: 'alta.errors.incompleto', faltan }
@@ -191,6 +204,9 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     }
     if (error.hint === 'datos_tutor_por_completar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['tutor1', 'tutor2'] }
+    }
+    if (error.hint === 'servicios_por_contestar') {
+      return { success: false, error: 'alta.errors.incompleto', faltan: ['servicios'] }
     }
     if (error.hint === 'documentos_por_firmar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['documentos_centro'] }

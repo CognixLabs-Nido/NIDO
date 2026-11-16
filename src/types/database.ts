@@ -3899,6 +3899,61 @@ export type Database = {
           },
         ]
       }
+      peticion_servicio: {
+        Row: {
+          centro_id: string
+          concepto_id: string | null
+          created_at: string
+          id: string
+          nino_id: string
+          respuesta: string
+          servicio: Database["public"]["Enums"]["servicio_diario"]
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          concepto_id?: string | null
+          created_at?: string
+          id?: string
+          nino_id: string
+          respuesta: string
+          servicio: Database["public"]["Enums"]["servicio_diario"]
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          concepto_id?: string | null
+          created_at?: string
+          id?: string
+          nino_id?: string
+          respuesta?: string
+          servicio?: Database["public"]["Enums"]["servicio_diario"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peticion_servicio_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peticion_servicio_concepto_id_fkey"
+            columns: ["concepto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_cobro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peticion_servicio_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plantillas_informe: {
         Row: {
           archivada_at: string | null
@@ -5171,6 +5226,10 @@ export type Database = {
         Args: { p_accion: string; p_actor: string; p_nino_id: string }
         Returns: Json
       }
+      aplicar_peticion_servicios: {
+        Args: { p_nino_id: string; p_respuestas: Json }
+        Returns: number
+      }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -5628,6 +5687,10 @@ export type Database = {
           matricula_id: string
         }[]
       }
+      guardar_peticion_servicios: {
+        Args: { p_nino_id: string; p_respuestas: Json }
+        Returns: number
+      }
       guardar_tutor: {
         Args: { p_datos: Json; p_familia_id: string; p_rol_familia: string }
         Returns: string
@@ -5647,13 +5710,15 @@ export type Database = {
         }[]
       }
       listado_pase_servicios: {
-        Args: { p_centro_id: string }
+        Args: { p_centro_id: string; p_fecha?: string }
         Returns: {
           apellidos: string
           aula_id: string
           aula_nombre: string
+          mensuales: Database["public"]["Enums"]["servicio_diario"][]
           nino_id: string
           nombre: string
+          pedidos: Json
         }[]
       }
       listar_esqueletos_huerfanos_stub: {
@@ -6071,6 +6136,16 @@ export type Database = {
       ruta_version_documento_nino: {
         Args: { p_nino_id: string; p_version_id: string }
         Returns: string
+      }
+      servicios_alta: {
+        Args: { p_nino_id: string }
+        Returns: {
+          concepto_id: string
+          importe_centimos: number
+          nombre: string
+          servicio: Database["public"]["Enums"]["servicio_diario"]
+          tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
+        }[]
       }
       set_datos_acreedor: {
         Args: {

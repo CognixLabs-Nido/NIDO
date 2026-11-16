@@ -690,6 +690,19 @@ export const SECCIONES_EXPORT = {
     created_at: { sale: 'creado_en' },
     updated_at: { sale: 'actualizado_en' },
   }),
+  'nino.servicios_pedidos': seccion('peticion_servicio', {
+    id: NS_ID,
+    centro_id: NS_CENTRO,
+    nino_id: NS_SUJETO,
+    servicio: { sale: 'servicio' },
+    respuesta: { sale: 'respuesta' },
+    concepto_id: {
+      noSale:
+        '8b (2026-11-14): el concepto pedido sale por su nombre (`concepto`); la clave interna no une nada de lo que la persona recibe.',
+    },
+    created_at: { sale: 'creado_en' },
+    updated_at: { sale: 'actualizado_en' },
+  }),
   'nino.beca_comedor_elegibilidad': seccion('beca_comedor_elegibilidad', {
     id: NS_ID,
     centro_id: NS_CENTRO,

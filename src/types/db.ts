@@ -66,6 +66,7 @@ export const FUNCIONES_RETURNS_TABLE = [
   'platform_crear_centro',
   'platform_metricas',
   'retenciones_centro',
+  'servicios_alta',
   'sip_de_ninos',
   'sujetos_bloqueados',
   'sujetos_retencion',
@@ -140,8 +141,11 @@ export const NO_NULAS = {
   ],
   /** NOT NULL de `lecturas_ficha_medica`; el nombre viene de un LEFT JOIN y de un CASE sin ELSE. */
   lecturas_ficha_medica: ['leida_en', 'rol_lector', 'origen', 'campos'],
-  /** NOT NULL de `ninos` y `aulas`, por JOIN; `apellidos` no. */
-  listado_pase_servicios: ['nino_id', 'nombre', 'aula_id', 'aula_nombre'],
+  /**
+   * NOT NULL de `ninos` y `aulas`, por JOIN; `apellidos` no. Fase 8b: `mensuales` es un `ARRAY(…)`
+   * (sin filas, `{}`) y `pedidos` un `COALESCE(…, '{}')`.
+   */
+  listado_pase_servicios: ['nino_id', 'nombre', 'aula_id', 'aula_nombre', 'mensuales', 'pedidos'],
   /** `auth.users.id`; el centro, una subconsulta que puede no dar fila. */
   listar_esqueletos_huerfanos_stub: ['usuario_id'],
   /** NOT NULL de `olvido_solicitudes`. */
@@ -190,6 +194,11 @@ export const NO_NULAS = {
   ],
   /** NOT NULL de `retenciones`; los nombres, subconsulta o LEFT JOIN. */
   retenciones_centro: ['sujeto_tipo', 'sujeto_id', 'motivo_tipo', 'motivo', 'puesta_en'],
+  /**
+   * NOT NULL de `conceptos_cobro` (id, nombre, tipo) y filtrado con `servicio IS NOT NULL`. El precio
+   * no: un concepto con tarifa por año puede no tener ni tarifa de ese año ni importe base.
+   */
+  servicios_alta: ['concepto_id', 'servicio', 'tipo_concepto', 'nombre'],
   /** Las dos ramas: literal, `ninos.id` (por el CTE) / `usuarios.id` por JOIN; `estado`, CASE con ELSE. */
   sujetos_retencion: ['sujeto_tipo', 'sujeto_id', 'estado'],
   /** `familia_tutores.rol_familia` NOT NULL, por JOIN interior. El nombre y el teléfono pueden faltar. */

@@ -793,6 +793,33 @@ Migraciones `20270120120000_feat_fecha_incorporacion` (antes del despliegue) y
 - Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
 - Test: `fecha-incorporacion.rls.test.ts` y `desarchivar-nino.rls.test.ts`.
 
+### La petición de servicios (serie de altas, fase 8b)
+
+Migraciones `20270122120000_feat_peticion_servicios` (antes del despliegue) y
+`20270122130000_feat_alta_exige_servicios` (después); spec `docs/specs/altas-serie.md`, «8b».
+
+- **`peticion_servicio`**: RLS con una sola política, `peticion_servicio_select` (`es_tutor_legal_de`
+  o `es_admin` del centro). `authenticated` solo tiene `SELECT`: **la familia nunca escribe en la
+  facturación, ni en su petición directamente**. El autorizado y la profe no la leen (la profe ve lo
+  pedido en su pase).
+- **Escriben solo dos funciones** (`SECURITY DEFINER`, `EXECUTE` para `authenticated`, nada para
+  `anon`): `guardar_peticion_servicios` (tutor legal o Dirección del centro del niño, antes de
+  validar; con el alta validada, `alta_validada`) y `aplicar_peticion_servicios` (Dirección, con el
+  alta validada: la cola al aprobar). Las dos miran que cada opción se ofrezca hoy
+  (`opcion_no_ofrecida`), y un trigger, que el concepto es del centro, del servicio y del tipo.
+- **`servicios_alta(niño)`**: lo que el centro ofrece, con el precio, al tutor legal y a la Dirección.
+  La familia no lee `conceptos_cobro` (su RLS es de Dirección).
+- **Las asignaciones** las escriben `validar_alta` (desde el mes siguiente a la incorporación) y
+  `aplicar_peticion_servicios`, como definidor. `asignacion_concepto` sigue siendo de Dirección.
+- **`listado_pase_servicios(centro, fecha)`** da además `mensuales` y `pedidos`: lo ve quien ya veía
+  el pase (Dirección y cualquier profe del centro).
+- **El cierre** (`marcar_matricula_lista`): `servicios_por_contestar`. No retroactivo.
+- Las auxiliares (`servicios_ofrecidos`, `servicios_sin_contestar`, `respuestas_servicio`,
+  `escribir_respuestas_servicio`, `mes_siguiente`, `poner_mensual`, `quitar_mensual` y el trigger)
+  viven en `privado`, cerradas a todas las sesiones y a `service_role`.
+- Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
+- Test: `peticion-servicios.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de
@@ -880,7 +907,7 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
 
 - `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
-Esa lista es la de Fase 2. Hoy son **61 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
+Esa lista es la de Fase 2. Hoy son **62 tablas** (la última, `peticion_servicio`, 8b); la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 

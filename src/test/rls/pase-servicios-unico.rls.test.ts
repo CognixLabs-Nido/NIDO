@@ -26,7 +26,9 @@ import { comoSesionSinCentroCoherente, hayCentroCoherente } from './defensa-sin-
  *
  *  - Cualquier profe del centro (la del aula, la ayudante de otra, una sin aula) lee el listado de
  *    TODOS los niños del centro y apunta el parte de cualquiera, también de otra aula.
- *  - El listado da solo nombre y clase: la ficha de los niños de otras aulas sigue cerrada.
+ *  - El listado da nombre y clase y, desde la 8b (`20270122120000`, decidido el 2026-11-14), quién
+ *    tiene la mensual de cada servicio y lo que pidió la familia; la ficha de los niños de otras
+ *    aulas sigue cerrada.
  *  - Fuera: el tutor, la profe de otro centro y la profe dada de baja (42501 / sin filas).
  *  - Una fila no se puede pasar a un niño de otro centro, ni teniendo rol en los dos.
  *  - El parte de un mes cerrado no se edita, con el mensaje que la acción reconoce.
@@ -136,7 +138,7 @@ describe('PR-12 — pase de servicios, listado único', () => {
     for (const u of usuarios) await deleteTestUser(u.id)
   }, 120_000)
 
-  it('la profe de un aula lee el listado de TODO el centro, con solo nombre y clase', async () => {
+  it('la profe de un aula lee el listado de TODO el centro: nombre, clase, mensuales y lo pedido (8b)', async () => {
     const c = await clientFor(profeAula1)
     // Premisa: la ficha del niño de la otra aula le sigue cerrada.
     const ficha = await c.from('ninos').select('id').eq('id', n2)
@@ -150,8 +152,10 @@ describe('PR-12 — pase de servicios, listado único', () => {
         'apellidos',
         'aula_id',
         'aula_nombre',
+        'mensuales',
         'nino_id',
         'nombre',
+        'pedidos',
       ])
     }
     expect((data ?? []).find((r) => r.nino_id === n2)?.aula_nombre).toBe('Ositos PR12')

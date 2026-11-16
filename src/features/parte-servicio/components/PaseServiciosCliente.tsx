@@ -195,6 +195,16 @@ export function PaseServiciosCliente({ centroId, locale, fecha, filas, aulaInici
                           onCheckedChange={(v) => marcar([casilla(f.ninoId, s)], v === true)}
                           aria-label={t('casilla_aria', { nombre, servicio: t(`col_${s}`) })}
                         />
+                        {/* Fase 8b: quién tiene la mensual, y si no, lo que pidió la familia. */}
+                        {f.mensuales.includes(s) ? (
+                          <span className="text-primary-800 block text-[11px] font-medium">
+                            {t('mensual')}
+                          </span>
+                        ) : f.pedidos[s] && f.pedidos[s] !== 'mensual' ? (
+                          <span className="text-muted-foreground block text-[11px]">
+                            {f.pedidos[s] === 'no' ? t('pedido_no') : t('pedido_dias_sueltos')}
+                          </span>
+                        ) : null}
                       </TableCell>
                     ))}
                   </TableRow>

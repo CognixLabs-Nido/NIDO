@@ -34,6 +34,9 @@ interface Estado {
   imagenConsentida: boolean
   /** Lo que devuelve `documentos_firma_nino`; `null` = la lectura falla. */
   documentosCentro: Fila[] | null
+  /** Fase 8b: lo que devuelve `servicios_alta`; `null` = la lectura falla. */
+  serviciosAlta: Fila[] | null
+  peticion_servicio: Fila[]
   /** El error de `marcar_matricula_lista`, si lo da. */
   errorMarcar?: { code: string; message: string; hint: string | null }
 }
@@ -98,6 +101,9 @@ function altaCompleta(): Estado {
     imagenConsentida: true,
     // Las normas, firmadas: el alta completa.
     documentosCentro: [doc('Normas', true, 'firmado')],
+    // Fase 8b: un centro sin conceptos de servicio no pide nada.
+    serviciosAlta: [],
+    peticion_servicio: [],
   }
 }
 
@@ -125,7 +131,7 @@ function makeFake(estado: Estado) {
     from: (tabla: string) => {
       if (
         !(tabla in estado) ||
-        ['imagenConsentida', 'documentosCentro', 'errorMarcar'].includes(tabla)
+        ['imagenConsentida', 'documentosCentro', 'errorMarcar', 'serviciosAlta'].includes(tabla)
       )
         throw new Error(`tabla no prevista en el falso: ${tabla}`)
       tablasLeidas.push(tabla)
@@ -175,6 +181,12 @@ function makeFake(estado: Estado) {
         return Promise.resolve(
           estado.documentosCentro
             ? { data: estado.documentosCentro, error: null }
+            : { data: null, error: { code: 'XX000', message: 'fallo' } }
+        )
+      if (fn === 'servicios_alta')
+        return Promise.resolve(
+          estado.serviciosAlta
+            ? { data: estado.serviciosAlta, error: null }
             : { data: null, error: { code: 'XX000', message: 'fallo' } }
         )
       if (fn === 'marcar_matricula_lista')
@@ -354,6 +366,94 @@ describe('finalizarAlta · los datos del niño que el alta exige (fase 5b)', () 
       success: false,
       error: 'alta.errors.incompleto',
       faltan: ['identidad'],
+    })
+  })
+})
+
+describe('finalizarAlta · la petición de servicios (fase 8b)', () => {
+  const CM = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const CD = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+  const MD = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+  // Lo que ofrece un centro con comedor (mensual y diario) y matinera (solo diario), con las
+  // columnas de `servicios_alta`.
+  const ofrece = (): Fila[] => [
+    {
+      concepto_id: CM,
+      servicio: 'comedor',
+      tipo_concepto: 'mensual',
+      nombre: 'Comedor',
+      importe_centimos: 15000,
+    },
+    {
+      concepto_id: CD,
+      servicio: 'comedor',
+      tipo_concepto: 'diario',
+      nombre: 'Comedor día',
+      importe_centimos: 1200,
+    },
+    {
+      concepto_id: MD,
+      servicio: 'matinera',
+      tipo_concepto: 'diario',
+      nombre: 'Matinera',
+      importe_centimos: 500,
+    },
+  ]
+
+  it('premisa: con los dos servicios contestados, finaliza', async () => {
+    const estado = altaCompleta()
+    estado.serviciosAlta = ofrece()
+    estado.peticion_servicio = [
+      { servicio: 'comedor', respuesta: 'mensual', concepto_id: CM },
+      { servicio: 'matinera', respuesta: 'no', concepto_id: null },
+    ]
+    expect(await cierra(estado)).toEqual({ r: { success: true, data: { id: NINO } }, cerro: true })
+  })
+
+  it('un servicio sin contestar frena el alta, y no se llama a la base', async () => {
+    const estado = altaCompleta()
+    estado.serviciosAlta = ofrece()
+    estado.peticion_servicio = [{ servicio: 'comedor', respuesta: 'mensual', concepto_id: CM }]
+    expect(await cierra(estado)).toEqual({
+      r: { success: false, error: 'alta.errors.incompleto', faltan: ['servicios'] },
+      cerro: false,
+    })
+  })
+
+  it('una respuesta que ya no es una opción (el centro quitó el concepto) cuenta como sin contestar', async () => {
+    const estado = altaCompleta()
+    estado.serviciosAlta = ofrece().filter((o) => o.concepto_id !== CM)
+    estado.peticion_servicio = [
+      { servicio: 'comedor', respuesta: 'mensual', concepto_id: CM },
+      { servicio: 'matinera', respuesta: 'no', concepto_id: null },
+    ]
+    expect((await cierra(estado)).r).toEqual({
+      success: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['servicios'],
+    })
+  })
+
+  it('si la lectura de lo que se ofrece falla, no se cierra: vacía diría «nada que contestar»', async () => {
+    const estado = altaCompleta()
+    estado.serviciosAlta = null
+    expect(await cierra(estado)).toEqual({
+      r: { success: false, error: 'alta.errors.finalizar_fallo' },
+      cerro: false,
+    })
+  })
+
+  it('si la base frena (servicios_por_contestar), se dice lo que falta', async () => {
+    const estado = altaCompleta()
+    estado.errorMarcar = {
+      code: 'P0001',
+      message: 'faltan servicios por contestar: {comedor}',
+      hint: 'servicios_por_contestar',
+    }
+    expect((await cierra(estado)).r).toEqual({
+      success: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['servicios'],
     })
   })
 })

@@ -48,6 +48,7 @@ import { ExportButton } from '@/features/export/components/ExportButton'
 import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentacionTab'
 import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
+import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
 import { getAvanceAltas } from '@/features/matriculas/queries/get-avance-alta'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
@@ -162,6 +163,8 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
   const avance = enAlta
     ? ((await getAvanceAltas(supabase, nino.centro_id, [id]))?.get(id) ?? null)
     : null
+  // Fase 8b: la petición de servicios, para verla y corregirla al validar. `null` fuera del alta.
+  const peticionServicios = enAlta ? await leerPeticionServicios(supabase, id) : null
   // El alta sin terminar (20261209120000): su estado y el botón, solo con la matrícula pendiente.
   const sinTerminar =
     matriculaActiva?.estado === 'pendiente'
@@ -273,6 +276,17 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
           avance={avance}
           pedagogicos={datosPed !== null}
           sinTerminar={sinTerminar}
+          servicios={
+            peticionServicios === null
+              ? undefined
+              : peticionServicios.ok
+                ? {
+                    ninoId: id,
+                    opciones: peticionServicios.opciones,
+                    respuestas: peticionServicios.respuestas,
+                  }
+                : null
+          }
           locale={locale}
         />
       )}

@@ -6,7 +6,7 @@ import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { leerTarjetasSanitarias } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { logger } from '@/shared/lib/logger'
 
-import type { EntidadCambio } from '../schemas'
+import { payloadPeticionServiciosSchema, type EntidadCambio } from '../schemas'
 
 /** Un campo que cambia: lo guardado hoy y lo que se propone. */
 export interface LineaCambio {
@@ -149,6 +149,13 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
     }
   }
 
+  // Fase 8b: la petición de servicios guardada de los niños con una entrada suya, y el nombre de
+  // cada concepto (la Dirección lee `peticion_servicio` y `conceptos_cobro` de su centro).
+  const servicios = await leerServiciosDeLaCola(
+    supabase,
+    filas.filter((r) => r.entidad === 'peticion_servicios')
+  )
+
   return filas.map((r) => {
     const entidad = r.entidad as EntidadCambio
     const payload = (r.payload && typeof r.payload === 'object' ? r.payload : {}) as Fila
@@ -158,6 +165,8 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       lineas = null
     } else if (entidad === 'ninos_familia' || entidad === 'ninos_identidad') {
       lineas = lineasDeParche(payload, nino)
+    } else if (entidad === 'peticion_servicios') {
+      lineas = servicios ? lineasDeServicios(payload, r.nino_id, servicios) : null
     } else if (entidad === 'ninos_libro_familia') {
       lineas = [{ campo: 'documento', antes: texto(nino.libro_familia_path), despues: 'nuevo' }]
     } else if (entidad === 'ninos_sip_documento') {
@@ -183,6 +192,75 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       createdAt: r.created_at,
       lineas,
     }
+  })
+}
+
+interface ServiciosDeLaCola {
+  /** `niño:servicio` → la respuesta guardada, como en `lineasDeServicios`. */
+  guardadas: Map<string, { respuesta: string; concepto_id: string | null }>
+  nombres: Map<string, string>
+}
+
+/** Lo guardado y los nombres de los conceptos; `null` si una lectura falla. */
+async function leerServiciosDeLaCola(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filas: { nino_id: string; payload: unknown }[]
+): Promise<ServiciosDeLaCola | null> {
+  if (filas.length === 0) return { guardadas: new Map(), nombres: new Map() }
+  const ninoIds = [...new Set(filas.map((r) => r.nino_id))]
+  const pet = await supabase
+    .from('peticion_servicio')
+    .select('nino_id, servicio, respuesta, concepto_id')
+    .in('nino_id', ninoIds)
+  if (pet.error) {
+    logger.warn('listarCambiosPendientes: la petición guardada', pet.error.code ?? 'sin_codigo')
+    return null
+  }
+  const ids = new Set<string>()
+  for (const p of pet.data ?? []) if (p.concepto_id) ids.add(p.concepto_id)
+  for (const r of filas) {
+    const ok = payloadPeticionServiciosSchema.safeParse(r.payload)
+    if (ok.success) for (const x of ok.data.respuestas) if (x.concepto_id) ids.add(x.concepto_id)
+  }
+  const nombres = new Map<string, string>()
+  if (ids.size > 0) {
+    const c = await supabase
+      .from('conceptos_cobro')
+      .select('id, nombre')
+      .in('id', [...ids])
+    if (c.error) {
+      logger.warn('listarCambiosPendientes: los conceptos', c.error.code ?? 'sin_codigo')
+      return null
+    }
+    for (const x of c.data ?? []) nombres.set(x.id, x.nombre)
+  }
+  const guardadas = new Map<string, { respuesta: string; concepto_id: string | null }>()
+  for (const p of pet.data ?? []) guardadas.set(`${p.nino_id}:${p.servicio}`, p)
+  return { guardadas, nombres }
+}
+
+/**
+ * Una línea por servicio que cambia, `servicio_<servicio>`, con el valor como `no`, o
+ * `mensual|<concepto>` / `dias_sueltos|<concepto>` (la pantalla lo traduce). Un payload que no
+ * valida no se enseña como si estuviera bien: `null`, «no se ha podido leer».
+ */
+function lineasDeServicios(
+  payload: Fila,
+  ninoId: string,
+  s: ServiciosDeLaCola
+): LineaCambio[] | null {
+  const ok = payloadPeticionServiciosSchema.safeParse(payload)
+  if (!ok.success) return null
+  const valor = (r: { respuesta: string; concepto_id: string | null } | undefined) =>
+    !r
+      ? null
+      : r.respuesta === 'no' || !r.concepto_id
+        ? r.respuesta
+        : `${r.respuesta}|${s.nombres.get(r.concepto_id) ?? ''}`
+  return ok.data.respuestas.flatMap((x) => {
+    const antes = valor(s.guardadas.get(`${ninoId}:${x.servicio}`))
+    const despues = valor(x)
+    return antes === despues ? [] : [{ campo: `servicio_${x.servicio}`, antes, despues }]
   })
 }
 

@@ -10,7 +10,8 @@ type Client = SupabaseClient<Database>
 const LOTE = 150
 
 /**
- * PR-12 — el listado único de un día: los niños del centro (nombre y clase, por
+ * PR-12 — el listado único de un día: los niños del centro (nombre y clase y, desde la 8b, quién
+ * tiene la mensual ese día y lo que pidió la familia, por
  * `listado_pase_servicios`, que no abre a la profe la ficha de los niños de otras aulas) con lo
  * ya apuntado en `parte_servicio_diario` (RLS: Dirección o cualquier profe del centro). Recibe el
  * cliente: la página pasa el de la sesión y el test de RLS el suyo. Un error se lanza.
@@ -22,6 +23,8 @@ export async function leerPaseServicios(
 ): Promise<FilaPase[]> {
   const { data: listado, error } = await supabase.rpc('listado_pase_servicios', {
     p_centro_id: centroId,
+    // Fase 8b: la mensual vigente ESE día, no hoy.
+    p_fecha: fecha,
   })
   if (error) throw new Error(`leerPaseServicios listado: ${error.code ?? ''} ${error.message}`)
   const alumnos = listado ?? []

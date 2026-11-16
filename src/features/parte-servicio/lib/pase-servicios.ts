@@ -17,7 +17,14 @@ export interface AlumnoListado {
   apellidos: string | null
   aula_id: string
   aula_nombre: string
+  /** Fase 8b: los servicios de los que tiene la mensual vigente ese día (lo que se cobra). */
+  mensuales?: ServicioDiario[]
+  /** Fase 8b: lo que pidió la familia en el alta, por servicio (jsonb de la base). */
+  pedidos?: unknown
 }
+
+/** Lo que pidió la familia para un servicio (fase 8b). */
+export type Pedido = 'no' | 'mensual' | 'dias_sueltos'
 
 export interface ParteDia {
   nino_id: string
@@ -32,6 +39,21 @@ export interface FilaPase {
   aulaId: string
   aulaNombre: string
   servicios: Record<ServicioDiario, boolean | null>
+  /** Fase 8b: con la mensual vigente ese día. Información, no una puerta: se apunta igual. */
+  mensuales: ServicioDiario[]
+  /** Fase 8b: lo que pidió la familia (solo los servicios contestados). */
+  pedidos: Partial<Record<ServicioDiario, Pedido>>
+}
+
+/** Lo pedido, del jsonb de la base: solo claves de servicio con un valor conocido. */
+function pedidosDe(v: unknown): Partial<Record<ServicioDiario, Pedido>> {
+  const out: Partial<Record<ServicioDiario, Pedido>> = {}
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out
+  for (const s of SERVICIOS_DEL_DIA) {
+    const r = (v as Record<string, unknown>)[s]
+    if (r === 'no' || r === 'mensual' || r === 'dias_sueltos') out[s] = r
+  }
+  return out
 }
 
 /** Clave de una casilla. */
@@ -54,6 +76,8 @@ export function combinarPase(listado: AlumnoListado[], partes: ParteDia[]): Fila
       comedor: apuntado.get(casilla(a.nino_id, 'comedor')) ?? null,
       vespertina: apuntado.get(casilla(a.nino_id, 'vespertina')) ?? null,
     },
+    mensuales: a.mensuales ?? [],
+    pedidos: pedidosDe(a.pedidos),
   }))
 }
 

@@ -11,6 +11,7 @@ import { debeMostrarB8 } from '@/features/auth/lib/clasificar-cuenta'
 import { detectarCuentaPorEmail } from '@/features/auth/lib/detectar-cuenta-email'
 import { createClient } from '@/lib/supabase/server'
 import { AuthShell } from '@/shared/components/AuthShell'
+import { centroOfreceServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 
 interface PageProps {
   params: Promise<{ locale: string; token: string }>
@@ -91,9 +92,12 @@ export default async function InvitationPage({ params }: PageProps) {
       .select('identificador_acreedor')
       .eq('id', invitation.centro_id)
       .maybeSingle()
+    // Fase 8b: el paso de servicios, igual, solo si el centro ofrece alguno en Cuotas.
+    const centroTieneServicios = await centroOfreceServicios(service, invitation.centro_id)
     return (
       <AltaInvitacionFlow
         centroTieneCid={Boolean(centro?.identificador_acreedor?.trim())}
+        centroTieneServicios={centroTieneServicios}
         locale={locale}
         token={token}
         email={invitation.email}
@@ -126,6 +130,7 @@ function AltaInvitacionFlow({
   ninoId,
   nombreInicial,
   centroTieneCid,
+  centroTieneServicios,
 }: {
   locale: string
   token: string
@@ -133,6 +138,7 @@ function AltaInvitacionFlow({
   ninoId: string
   nombreInicial: string
   centroTieneCid: boolean
+  centroTieneServicios: boolean
 }) {
   return (
     <AuthShell locale={locale}>
@@ -187,6 +193,7 @@ function AltaInvitacionFlow({
         // Pre-login el CID no viaja al cliente: solo si el centro lo tiene, para contar los pasos.
         centroCid={null}
         centroTieneCid={centroTieneCid}
+        centroTieneServicios={centroTieneServicios}
         mandatoSepaInicial={null}
         mandatoFamilia={null}
         currentUserId=""

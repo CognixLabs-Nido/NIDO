@@ -5,6 +5,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { leerTarjetasSanitarias } from '@/features/ninos/lib/tarjeta-sanitaria'
+import { filasServicios, sinContestar } from '@/features/peticion-servicios/lib/peticion'
+import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 import { logger } from '@/shared/lib/logger'
 
 import type { Database } from '@/types/db'
@@ -62,7 +64,7 @@ export async function getAvanceAltas(
   if (centroR.error || !centroR.data) return falla('centros', centroR.error?.message)
 
   const familias = [...new Set(ninosR.data.map((n) => n.familia_id))]
-  const [tutoresR, mandatosR, imagenes, documentos] = await Promise.all([
+  const [tutoresR, mandatosR, imagenes, documentos, peticiones] = await Promise.all([
     // Por `tutores_de_familia` (fase 6): los datos que exige el cierre no se leen con la sesión.
     Promise.all(
       familias.map(async (f) => ({
@@ -81,6 +83,8 @@ export async function getAvanceAltas(
       ninoIds.map((id) => supabase.rpc('existe_consentimiento_imagen', { p_nino_id: id }))
     ),
     Promise.all(ninoIds.map((id) => supabase.rpc('documentos_firma_nino', { p_nino_id: id }))),
+    // Fase 8b: lo que se ofrece y lo contestado, con la regla del gate.
+    Promise.all(ninoIds.map((id) => leerPeticionServicios(supabase, id))),
   ])
   const tutoresFallo = tutoresR.find(
     ({ r }) => r.error || (r.data ?? []).some((t) => !t.ve_personales)
@@ -93,6 +97,7 @@ export async function getAvanceAltas(
   if (imagenFallo) return falla('existe_consentimiento_imagen', imagenFallo.error?.message)
   const documentosFallo = documentos.find((r) => r.error || !r.data)
   if (documentosFallo) return falla('documentos_firma_nino', documentosFallo.error?.message)
+  if (peticiones.some((p) => !p.ok)) return falla('peticion_servicio', 'no se lee')
 
   const medico = new Set((medicoR.data ?? []).map((c) => c.nino_id))
   const conMandato = new Set(mandatosR.data.map((m) => m.familia_id))
@@ -114,8 +119,17 @@ export async function getAvanceAltas(
       medico: medico.has(ninoId),
       mandato: conMandato.has(nino.familia_id),
       centroConCid,
+      servicios: servicios(peticiones[i]),
     }
     resultado.set(ninoId, avanceAlta(senales))
   }
   return resultado
+}
+
+/** La línea de servicios de un niño: la misma regla que el gate de `finalizarAlta`. */
+function servicios(p: Awaited<ReturnType<typeof leerPeticionServicios>> | undefined) {
+  if (!p?.ok || p.opciones.length === 0) return 'no_ofrece' as const
+  return sinContestar(filasServicios(p.opciones), p.respuestas).length > 0
+    ? ('sin_contestar' as const)
+    : ('contestado' as const)
 }
