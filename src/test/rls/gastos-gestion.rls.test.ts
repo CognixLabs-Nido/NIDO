@@ -98,6 +98,23 @@ describe('Los gastos de gestión (fase 9)', () => {
     otro = await createTestCentro('Centro Otro 9')
     cursoA = await createTestCurso(centro.id, 'activo')
     cursoB = await createTestCurso(centro.id, 'planificado')
+    // El curso siguiente empieza un año después, como en la realidad (createTestCurso los crea todos
+    // con las mismas fechas, y un «siguiente» que empieza el mismo día no existe).
+    const { data: fa, error: faErr } = await serviceClient
+      .from('cursos_academicos')
+      .select('fecha_inicio, fecha_fin')
+      .eq('id', cursoA.id)
+      .single()
+    if (faErr || !fa) throw new Error(`fechas de A: ${faErr?.message}`)
+    const unAnoDespues = (d: string) => `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`
+    const fb = await serviceClient
+      .from('cursos_academicos')
+      .update({
+        fecha_inicio: unAnoDespues(fa.fecha_inicio),
+        fecha_fin: unAnoDespues(fa.fecha_fin),
+      })
+      .eq('id', cursoB.id)
+    if (fb.error) throw new Error(`fechas de B: ${fb.error.message}`)
     cerrado = await createTestCurso(centro.id, 'cerrado')
     aulaA = await createTestAula(centro.id, cursoA.id)
     // La configuración del aula en el curso siguiente (lo que hace «copiar configuración»).
@@ -171,6 +188,13 @@ describe('Los gastos de gestión (fase 9)', () => {
       { p_nino_id: N } as never
     )
     expect([vS, vN]).toEqual([true, false])
+    // Y B es el curso SIGUIENTE: empieza después que A.
+    const { data: ks } = await serviceClient
+      .from('cursos_academicos')
+      .select('id, fecha_inicio')
+      .in('id', [cursoA.id, cursoB.id])
+    const inicio = (id: string) => ks?.find((k) => k.id === id)?.fecha_inicio ?? ''
+    expect(inicio(cursoB.id) > inicio(cursoA.id)).toBe(true)
     for (const nino of [N, S]) {
       const r = await leer(s.madre, nino)
       expect(r.error).toBeNull()
