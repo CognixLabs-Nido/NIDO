@@ -822,8 +822,8 @@ Migraciones `20270122120000_feat_peticion_servicios` (antes del despliegue) y
 
 ### Los gastos de gestión (serie de altas, fase 9a)
 
-Migración `20270123120000_feat_gastos_gestion` (antes del despliegue); spec `docs/specs/altas-serie.md`,
-«Fase 9».
+Migraciones `20270123120000_feat_gastos_gestion` (antes del despliegue) y
+`20270124120000_feat_alta_exige_gastos_gestion` (después); spec `docs/specs/altas-serie.md`, «Fase 9».
 
 - **`gastos_gestion_curso` y `gastos_gestion`**: RLS con una política de SELECT cada una (el importe
   del curso, Dirección; los de un niño, su tutor legal y la Dirección del centro). `authenticated`
@@ -834,9 +834,11 @@ Migración `20270123120000_feat_gastos_gestion` (antes del despliegue); spec `do
   Dirección siempre), `fijar_importe_gastos_gestion` y `marcar_cobro_gastos_gestion` (Dirección) y
   `gastos_gestion_pendientes` (Dirección). Las auxiliares (`gastos_del_nino`, `gastos_sin_contestar`,
   `gastos_curso_del_nino` y los triggers) viven en `privado`, cerradas a todos.
-- **Qué debe cada niño**: cada matrícula viva en un curso no cerrado con importe, como los
-  documentos de curso. La propuesta de «pasar de curso» (`pendiente`) la cuenta: el niño que sigue
-  debe los del curso siguiente desde que Dirección se la propone.
+- **Qué debe cada niño**: el curso de su alta (el primero del niño, no cerrado y con importe).
+  Hasta `20270124120000` contaba cada matrícula viva, también la propuesta de «pasar de curso»: la
+  renovación no es de esta fase (2026-11-16), y la B la quita de `gastos_del_nino`, de la que beben
+  todas. La B también pone la puerta del cierre: `marcar_matricula_lista` para con
+  `gastos_por_contestar`, salvo con importe 0.
 - **La ruta del justificante** es del propio niño (CHECK `gastos_gestion_ruta_del_nino`, PDF o
   imagen) y solo con transferencia; en la cola, el CHECK `cambios_pendientes_ruta_documento_del_nino`
   admite la entidad `gastos_gestion` con la misma regla.
