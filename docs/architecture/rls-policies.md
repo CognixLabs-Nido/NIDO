@@ -820,6 +820,33 @@ Migraciones `20270122120000_feat_peticion_servicios` (antes del despliegue) y
 - Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
 - Test: `peticion-servicios.rls.test.ts`.
 
+### Los gastos de gestión (serie de altas, fase 9a)
+
+Migración `20270123120000_feat_gastos_gestion` (antes del despliegue); spec `docs/specs/altas-serie.md`,
+«Fase 9».
+
+- **`gastos_gestion_curso` y `gastos_gestion`**: RLS con una política de SELECT cada una (el importe
+  del curso, Dirección; los de un niño, su tutor legal y la Dirección del centro). `authenticated`
+  solo tiene `SELECT`: **escriben solo las funciones**. El autorizado y la profe no los leen.
+- **Las funciones** (`SECURITY DEFINER`, `EXECUTE` para `authenticated`, nada para `anon`):
+  `fijar_gastos_gestion_curso` (Dirección; un curso cerrado no), `gastos_gestion_nino` (tutor legal
+  o Dirección), `declarar_gastos_gestion` (tutor legal antes de validar, `alta_validada` después;
+  Dirección siempre), `fijar_importe_gastos_gestion` y `marcar_cobro_gastos_gestion` (Dirección) y
+  `gastos_gestion_pendientes` (Dirección). Las auxiliares (`gastos_del_nino`, `gastos_sin_contestar`,
+  `gastos_curso_del_nino` y los triggers) viven en `privado`, cerradas a todos.
+- **Qué debe cada niño**: cada matrícula viva en un curso no cerrado con importe, como los
+  documentos de curso. La propuesta de «pasar de curso» (`pendiente`) la cuenta: el niño que sigue
+  debe los del curso siguiente desde que Dirección se la propone.
+- **La ruta del justificante** es del propio niño (CHECK `gastos_gestion_ruta_del_nino`, PDF o
+  imagen) y solo con transferencia; en la cola, el CHECK `cambios_pendientes_ruta_documento_del_nino`
+  admite la entidad `gastos_gestion` con la misma regla.
+- **El bucket `justificantes-gestion`**: PDF e imágenes, 15 MB, con las políticas de `sip-ninos`
+  (Dirección o tutor legal, con `ruta_coherente`; borrar, solo Dirección). Lo recorre el olvido por
+  prefijo (`FUENTES_ADJUNTOS`), y con él `anular_alta`.
+- Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
+- Test: `gastos-gestion.rls.test.ts` (con la purga de verdad sobre los ficheros del bucket),
+  `purga-rgpd-nino.test.ts` y `catalogo-buckets.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de
@@ -907,7 +934,7 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
 
 - `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
-Esa lista es la de Fase 2. Hoy son **62 tablas** (la última, `peticion_servicio`, 8b); la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
+Esa lista es la de Fase 2. Hoy son **64 tablas** (las últimas, `gastos_gestion_curso` y `gastos_gestion`, fase 9); la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 

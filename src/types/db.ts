@@ -50,6 +50,9 @@ export const FUNCIONES_RETURNS_TABLE = [
   'fijar_asignaciones_concepto',
   'fijar_fecha_cobro_recibos',
   'firmas_vencidas',
+  // Fase 9: lo que debe cada niño y la lista de Dirección. Todo `| null` hasta que la 9b lo use.
+  'gastos_gestion_nino',
+  'gastos_gestion_pendientes',
   'get_datos_acreedor',
   'get_info_medica_emergencia',
   'get_mandatos_remesa',

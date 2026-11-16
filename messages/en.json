@@ -4275,7 +4275,8 @@
         "beca_comedor_elegibilidad": "Lunch grant",
         "beca_comedor_tramos": "Lunch grant instalments",
         "lecturas_ficha_medica": "Who has viewed the medical record",
-        "servicios_pedidos": "Services requested at enrolment"
+        "servicios_pedidos": "Services requested at enrolment",
+        "gastos_gestion": "Management fees"
       },
       "campos": {
         "nombre_completo": "Name",
@@ -4488,7 +4489,10 @@
         "estudios": "Education",
         "empresa": "Employer",
         "fecha_incorporacion": "Start date",
-        "respuesta": "Answer"
+        "respuesta": "Answer",
+        "forma": "Payment method",
+        "con_justificante": "Receipt attached",
+        "cobrado_en": "Paid on"
       },
       "valores": {
         "terminos": "Terms",
@@ -4647,6 +4651,10 @@
         "no": "No",
         "mensual": "Every month",
         "dias_sueltos": "Some days"
+      },
+      "forma_gastos": {
+        "transferencia": "Bank transfer",
+        "efectivo": "Cash"
       }
     },
     "descargar_mis_datos": "Download my data",

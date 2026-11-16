@@ -1881,6 +1881,73 @@ Su guarda previa exige la A y la B registradas y el motor de la B (md5 normaliza
 redondeo con sus casos, los cinco sitios, la corrección y las funciones cerradas. El diálogo de
 «Regenerar» decía que se descartaban las ediciones manuales, falso desde R-2: ahora dice lo que pasa.
 
+## Fase 9: gastos de gestión
+
+### Decisiones
+
+- **Las de partida (2026-10-29, arriba en «Gastos de gestión» y «SIP»):** un paso del alta donde el
+  tutor «adjunta el justificante de la transferencia o indica que pagará en efectivo»; el importe no
+  es fijo, cambia de un curso a otro. **D5**, sin bloqueo automático ni «exento»: la directora ve lo
+  que declaró la familia y el justificante, y decide al validar. **D6**, no se crea ningún recibo:
+  solo la marca de que se cobró. **D8**, el justificante en su propio bucket, y un test de que la
+  purga lo alcanza.
+- **2026-11-16, de Jose:**
+  - Se pagan **cada curso**, también los niños que continúan.
+  - **Por niño:** el segundo hermano los vuelve a pagar.
+  - **El centro fija un importe por curso**, y Dirección ve si lo que ha transferido la familia
+    cuadra. Un centro que no fije importe no ve el paso en el alta.
+  - «Como todo, dirección puede cambiar lo que quiera o hacer descuentos cuando quiera.» El importe
+    del curso es una **propuesta**: Dirección pone otro para un niño, o cero, cuando quiera, y queda en
+    la auditoría con quién y cuándo. El mismo patrón que la línea prorrateada.
+- **2026-11-16, del responsable:**
+  - Contestar el paso es **obligatorio para cerrar el alta**: justificante o «pagaré en efectivo». Lo
+    que no bloquea es que esté cobrado (D5).
+  - La familia puede **subir el justificante después**, por la cola.
+  - Dirección **marca el cobro en cualquier momento** y ve **la lista de los que faltan**.
+  - Se aceptan **PDF e imágenes** (un justificante suele ser una captura del banco).
+  - Si se **anula un alta**, el justificante se va con lo demás. NIDO no gestiona devoluciones.
+  - D6 intacta: ningún recibo; la marca de cobro, el importe y el justificante.
+  - D8: bucket propio y el test de que la purga llega **a los ficheros**, no solo el del catálogo.
+- **Anotado, fuera de la fase:** el plazo del justificante (¿se borra con el niño o se guarda como
+  prueba de un pago?) queda para el abogado; se construye como D8, borrándose con el niño. Y ningún
+  test comprueba que la purga llegue a los ficheros de `sip-ninos` (fase 7): anotado, sin tocar.
+
+### Lo que se midió antes (2026-11-16, producción en solo lectura y ensayos terminados en RAISE)
+
+- **No existe nada:** ningún concepto, tabla, columna, paso ni bucket de gastos de gestión. Con D6 no
+  hay recibo, así que el motor no puede cobrarlos en un mes equivocado; un centro que los modelara
+  como concepto `mensual` los cobraría cada mes desde la incorporación, y como `esporadico`, en el mes
+  que eligiera Dirección a mano (0 en producción).
+- **La renovación de curso existe, y de ahí se cuelgan los del curso siguiente.** «Pasar de curso»
+  propone una matrícula `pendiente` en el curso siguiente para cada niño que sigue, y
+  `documentos_del_nino` pide el documento de curso de **cada matrícula viva en un curso no cerrado**.
+  Medido con un curso 2027-28, su presupuesto y la propuesta del niño: sin propuesta, el niño debe solo
+  el de 2026-27; con ella, también el de 2027-28 (`por_firmar`). Nunca se ha usado en producción (un
+  solo curso, ninguno planificado, 0 documentos).
+- **Una propuesta de renovación tiene la forma de un alta en curso** (matrícula `pendiente`): las
+  puertas de `marcar_matricula_lista` le saltan (medido: 42501, el acuse médico; sin la propuesta,
+  ninguna). Por eso los gastos del curso siguiente no son un paso del alta: se contestan en la ficha
+  del niño, como el presupuesto (4c), y no frenan nada.
+- **El test del catálogo de buckets ya cubre el nuevo**, en los dos sentidos (sondas: un bucket creado
+  sin catálogo da `sinDueno`; uno en el catálogo sin crear, `inexistentes`). No mide que la purga
+  llegue a los ficheros: eso lo pide la fase.
+
+### Diseño
+
+- **`gastos_gestion_curso`**: el importe que fija el centro para un curso (uno por curso). Lo escribe
+  Dirección, como Cuotas (`es_admin`). Sin fila, el centro no cobra gastos ese curso: ni paso ni ficha.
+- **`gastos_gestion`**: una fila por niño y curso, con la forma (`transferencia` o `efectivo`), la ruta
+  del justificante, el importe propio del niño (NULL = el del curso; Dirección puede poner otro o 0) y
+  la marca de cobro (quién y cuándo). Se audita.
+- **Qué debe cada niño:** cada matrícula viva en un curso no cerrado con importe fijado, como los
+  documentos. El alta exige contestar el de su curso (la matrícula `pendiente` del alta); los niños que
+  siguen lo contestan en su ficha y no frena nada.
+- **Quién escribe:** la familia (tutor legal) declara la forma y el justificante mientras el alta no
+  está validada; después, por la cola. Dirección declara, cambia el importe y marca el cobro siempre.
+- **El bucket `justificantes-gestion`**: PDF e imágenes, carpeta `{centro}/{niño}/`, lo recorre el
+  olvido por prefijo (y con él `anular_alta`, que usa el mismo manifiesto).
+- Sale en el export del art. 15 y se purga con el niño.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
@@ -1896,8 +1963,8 @@ y la exportación del art. 15 (las funciones de la serie de retención, ADR-0064
 | 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | ✅           |
 | 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          | ✅           |
 | 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          | ✅           |
-| 8    | Servicios en el alta              | La fecha de incorporación (8a) y la petición de media pensión (8b)              | 🔸 en marcha |
-| 9    | Gastos de gestión                 | Paso del alta y confirmación de la directora al validar                         |              |
+| 8    | Servicios en el alta              | La fecha de incorporación (8a) y la petición de media pensión (8b)              | ✅           |
+| 9    | Gastos de gestión                 | Paso del alta, la ficha en la renovación, y el cobro que marca Dirección        | 🔸 en marcha |
 | 10   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |              |
 
 Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran dentro de la serie.
@@ -1941,7 +2008,7 @@ lo suyo (`20270115130000`).
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
 - [x] Fase 6 (#526) · [x] Fase 7 (#527)
-- [ ] Fase 8: [x] 8a, la fecha de incorporación (#528) · [x] el prorrateo del mes de incorporación (#529) · [ ] 8b, la petición de servicios (en PR)
+- [x] Fase 8: [x] 8a, la fecha de incorporación (#528) · [x] el prorrateo del mes de incorporación (#529) · [x] 8b, la petición de servicios (#530)
 - [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias

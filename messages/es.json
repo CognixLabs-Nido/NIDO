@@ -4275,7 +4275,8 @@
         "beca_comedor_elegibilidad": "Beca de comedor",
         "beca_comedor_tramos": "Tramos de beca de comedor",
         "lecturas_ficha_medica": "Quién ha leído la ficha médica",
-        "servicios_pedidos": "Servicios pedidos en el alta"
+        "servicios_pedidos": "Servicios pedidos en el alta",
+        "gastos_gestion": "Gastos de gestión"
       },
       "campos": {
         "nombre_completo": "Nombre",
@@ -4488,7 +4489,10 @@
         "estudios": "Estudios",
         "empresa": "Empresa",
         "fecha_incorporacion": "Fecha de incorporación",
-        "respuesta": "Respuesta"
+        "respuesta": "Respuesta",
+        "forma": "Forma de pago",
+        "con_justificante": "Justificante adjunto",
+        "cobrado_en": "Cobrado el"
       },
       "valores": {
         "terminos": "Términos",
@@ -4647,6 +4651,10 @@
         "no": "No",
         "mensual": "Todos los meses",
         "dias_sueltos": "Días sueltos"
+      },
+      "forma_gastos": {
+        "transferencia": "Transferencia",
+        "efectivo": "Efectivo"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",
