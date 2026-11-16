@@ -256,6 +256,16 @@ describe('Los gastos de gestión (fase 9)', () => {
     expect(ins.error?.code).toBe('42501')
   })
 
+  it('la tabla la leen el tutor legal y Dirección; el autorizado y la profe, nada', async () => {
+    const filas = async (cli: Cliente) =>
+      (await cli.from('gastos_gestion').select('id').in('nino_id', [N, S])).data ?? []
+    // Premisa: hay filas (las del test anterior) y la madre y Dirección las ven.
+    expect((await filas(s.madre)).length).toBeGreaterThan(0)
+    expect((await filas(s.admin)).length).toBe((await filas(s.madre)).length)
+    expect(await filas(s.tio)).toEqual([])
+    expect(await filas(s.profe)).toEqual([])
+  })
+
   it('la cola admite la ruta del justificante del propio niño, PDF o imagen; la de otro, no', async () => {
     const encolar = (path: string) =>
       s.madre.from('cambios_pendientes').insert({
