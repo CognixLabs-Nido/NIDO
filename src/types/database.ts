@@ -2719,7 +2719,7 @@ export type Database = {
           {
             foreignKeyName: "gastos_gestion_curso_curso_academico_id_fkey"
             columns: ["curso_academico_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "cursos_academicos"
             referencedColumns: ["id"]
           },
