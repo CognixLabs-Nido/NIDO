@@ -703,6 +703,25 @@ export const SECCIONES_EXPORT = {
     created_at: { sale: 'creado_en' },
     updated_at: { sale: 'actualizado_en' },
   }),
+  'nino.gastos_gestion': seccion('gastos_gestion', {
+    id: NS_ID,
+    centro_id: NS_CENTRO,
+    nino_id: NS_SUJETO,
+    curso_academico_id: {
+      noSale:
+        'Fase 9 (2026-11-16): el curso sale por su nombre (`curso`); la clave interna no une nada de lo que la persona recibe.',
+    },
+    forma: { sale: 'forma' },
+    justificante_path: {
+      sale: 'con_justificante',
+      nota: 'Fase 9 (2026-11-16): sale si está, no la ruta (un fichero en un bucket privado, que subió la propia familia).',
+    },
+    importe_centimos: { sale: 'importe_centimos' },
+    cobrado_at: { sale: 'cobrado_en' },
+    cobrado_por: NS_PERSONA,
+    created_at: { sale: 'creado_en' },
+    updated_at: { sale: 'actualizado_en' },
+  }),
   'nino.beca_comedor_elegibilidad': seccion('beca_comedor_elegibilidad', {
     id: NS_ID,
     centro_id: NS_CENTRO,

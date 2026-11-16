@@ -6,6 +6,7 @@ import type { Database } from '@/types/db'
 
 import {
   BUCKET_DNI_TUTORES,
+  BUCKET_JUSTIFICANTES_GESTION,
   BUCKET_LIBRO_FAMILIA,
   BUCKET_NINOS_FOTOS,
   BUCKET_SIP_NINOS,
@@ -144,6 +145,30 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
         .from(BUCKET_SIP_NINOS)
         .list(prefijo)
       if (lErr) throw new Error(`sip-ninos: ${lErr.message}`)
+      return (objetos ?? []).filter((o) => o.id !== null).map((o) => `${prefijo}/${o.name}`)
+    },
+  },
+  {
+    // Fase 9 (D8): el justificante de los gastos de gestión. `privado.purgar_nino` borra las filas;
+    // los ficheros se borran antes. Por PREFIJO, como la tarjeta: la carpeta `{centro}/{niño}/` de
+    // este bucket es solo de sus justificantes (de todos los cursos, y los que quedaron en la cola).
+    // `anular_alta` usa este mismo manifiesto. Un fallo al listar no es «no hay nada»: para la purga.
+    nombre: 'justificante-gastos-gestion-nino',
+    bucket: BUCKET_JUSTIFICANTES_GESTION,
+    sujetos: ['nino'],
+    async recolectar(service, ninoId) {
+      const { data, error } = await service
+        .from('ninos')
+        .select('centro_id')
+        .eq('id', ninoId)
+        .maybeSingle()
+      if (error) throw new Error(`ninos (justificante de gastos): ${error.message}`)
+      if (!data?.centro_id) return []
+      const prefijo = `${data.centro_id}/${ninoId}`
+      const { data: objetos, error: lErr } = await service.storage
+        .from(BUCKET_JUSTIFICANTES_GESTION)
+        .list(prefijo)
+      if (lErr) throw new Error(`justificantes-gestion: ${lErr.message}`)
       return (objetos ?? []).filter((o) => o.id !== null).map((o) => `${prefijo}/${o.name}`)
     },
   },

@@ -4275,7 +4275,8 @@
         "beca_comedor_elegibilidad": "Beca de menjador",
         "beca_comedor_tramos": "Trams de beca de menjador",
         "lecturas_ficha_medica": "Qui ha llegit la fitxa mèdica",
-        "servicios_pedidos": "Serveis demanats en l’alta"
+        "servicios_pedidos": "Serveis demanats en l’alta",
+        "gastos_gestion": "Despeses de gestió"
       },
       "campos": {
         "nombre_completo": "Nom",
@@ -4488,7 +4489,10 @@
         "estudios": "Estudis",
         "empresa": "Empresa",
         "fecha_incorporacion": "Data d'incorporació",
-        "respuesta": "Resposta"
+        "respuesta": "Resposta",
+        "forma": "Forma de pagament",
+        "con_justificante": "Justificant adjunt",
+        "cobrado_en": "Cobrat el"
       },
       "valores": {
         "terminos": "Termes",
@@ -4647,6 +4651,10 @@
         "no": "No",
         "mensual": "Tots els mesos",
         "dias_sueltos": "Dies solts"
+      },
+      "forma_gastos": {
+        "transferencia": "Transferència",
+        "efectivo": "Efectiu"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",

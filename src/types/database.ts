@@ -2612,6 +2612,119 @@ export type Database = {
           },
         ]
       }
+      gastos_gestion: {
+        Row: {
+          centro_id: string
+          cobrado_at: string | null
+          cobrado_por: string | null
+          created_at: string
+          curso_academico_id: string
+          forma: string | null
+          id: string
+          importe_centimos: number | null
+          justificante_path: string | null
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          cobrado_at?: string | null
+          cobrado_por?: string | null
+          created_at?: string
+          curso_academico_id: string
+          forma?: string | null
+          id?: string
+          importe_centimos?: number | null
+          justificante_path?: string | null
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          cobrado_at?: string | null
+          cobrado_por?: string | null
+          created_at?: string
+          curso_academico_id?: string
+          forma?: string | null
+          id?: string
+          importe_centimos?: number | null
+          justificante_path?: string | null
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_gestion_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_gestion_cobrado_por_fkey"
+            columns: ["cobrado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_gestion_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: false
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_gestion_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gastos_gestion_curso: {
+        Row: {
+          centro_id: string
+          created_at: string
+          curso_academico_id: string
+          id: string
+          importe_centimos: number
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          curso_academico_id: string
+          id?: string
+          importe_centimos: number
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          curso_academico_id?: string
+          id?: string
+          importe_centimos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_gestion_curso_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_gestion_curso_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: true
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       info_medica_emergencia: {
         Row: {
           alergias_graves: string | null
@@ -5407,6 +5520,15 @@ export type Database = {
         Returns: undefined
       }
       datos_anular_alta: { Args: { p_nino_id: string }; Returns: Json }
+      declarar_gastos_gestion: {
+        Args: {
+          p_curso_academico_id: string
+          p_forma: string
+          p_justificante_path?: string
+          p_nino_id: string
+        }
+        Returns: string
+      }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       desarchivar_nino: {
         Args: {
@@ -5605,6 +5727,18 @@ export type Database = {
           resultado: string
         }[]
       }
+      fijar_gastos_gestion_curso: {
+        Args: { p_curso_academico_id: string; p_importe_centimos: number }
+        Returns: undefined
+      }
+      fijar_importe_gastos_gestion: {
+        Args: {
+          p_curso_academico_id: string
+          p_importe_centimos: number
+          p_nino_id: string
+        }
+        Returns: undefined
+      }
       fijar_libro_familia_nino: {
         Args: { p_nino_id: string; p_path: string }
         Returns: string
@@ -5629,6 +5763,34 @@ export type Database = {
         Returns: {
           centro_id: string
           nino_id: string
+        }[]
+      }
+      gastos_gestion_nino: {
+        Args: { p_nino_id: string }
+        Returns: {
+          cobrado_at: string
+          curso_academico_id: string
+          curso_nombre: string
+          forma: string
+          importe: number
+          importe_curso: number
+          importe_propio: boolean
+          justificante_path: string
+          matricula_pendiente: boolean
+        }[]
+      }
+      gastos_gestion_pendientes: {
+        Args: { p_centro_id: string }
+        Returns: {
+          apellidos: string
+          con_justificante: boolean
+          curso_academico_id: string
+          curso_nombre: string
+          forma: string
+          importe: number
+          matricula_pendiente: boolean
+          nino_id: string
+          nombre: string
         }[]
       }
       generar_recibos_mes: {
@@ -5734,6 +5896,14 @@ export type Database = {
           p_forma: Database["public"]["Enums"]["metodo_pago"]
           p_nota: string
           p_recibo_id: string
+        }
+        Returns: undefined
+      }
+      marcar_cobro_gastos_gestion: {
+        Args: {
+          p_cobrado: boolean
+          p_curso_academico_id: string
+          p_nino_id: string
         }
         Returns: undefined
       }

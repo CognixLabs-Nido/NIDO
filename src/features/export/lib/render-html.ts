@@ -28,6 +28,10 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'fecha_incorporacion',
   // Fase 8b: la petición de servicios del alta.
   'respuesta',
+  // Fase 9: los gastos de gestión.
+  'forma',
+  'con_justificante',
+  'cobrado_en',
   'sexo',
   'nacionalidad',
   'primer_apellido',
@@ -514,6 +518,9 @@ function formatearValor(k: string, v: unknown, c: Ctx): string {
   // Fase 8b: lo que pidió la familia, dicho, no el código.
   if (k === 'respuesta' && (v === 'no' || v === 'mensual' || v === 'dias_sueltos'))
     return escape(c.t(`doc.respuesta_servicio.${v}`))
+  // Fase 9: cómo dice la familia que paga los gastos de gestión.
+  if (k === 'forma' && (v === 'transferencia' || v === 'efectivo'))
+    return escape(c.t(`doc.forma_gastos.${v}`))
   // El dinero viaja en céntimos enteros (`*_centimos`).
   if (k.endsWith('_centimos') && typeof v === 'number') return escape(formatEuros(v, c.locale))
   if (Array.isArray(v)) return renderLista(v, c)
@@ -748,6 +755,7 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('recordatorios_nino', n.recordatorios, c)}
   ${seccion('servicios_diarios', n.servicios_diarios, c)}
   ${seccion('servicios_pedidos', n.servicios_pedidos, c)}
+  ${seccion('gastos_gestion', n.gastos_gestion, c)}
   ${seccion('lineas_recibo', n.lineas_recibo, c)}
   ${seccion('conceptos_asignados', n.conceptos_asignados, c)}
   ${seccion('beca_comedor_elegibilidad', n.beca_comedor_elegibilidad, c)}

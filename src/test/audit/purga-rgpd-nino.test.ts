@@ -96,6 +96,8 @@ const CLAVES: Record<string, readonly string[]> = {
   autorizaciones: ['titulo', 'texto', 'datos'],
   cita_invitados: ['nombre_externo', 'comentario'],
   invitaciones: ['email', 'nombre_completo'],
+  // Fase 9 (2026-11-16): la ruta del justificante de los gastos de gestión, como la de la tarjeta.
+  gastos_gestion: ['justificante_path'],
 }
 
 // Las demás columnas de cada tabla de CLAVES, con su porqué: lo que la purga conserva porque no
@@ -129,6 +131,18 @@ const NO_PERSONALES: Record<string, Readonly<Record<string, string>>> = {
     siesta_numero_diario: 'número de 0 a 5, sin texto libre; la purga lo conserva',
     tipo_alimentacion: 'categórico sin valores religiosos (20261125120000); lo que come va en otra',
     tiene_hermanos_en_centro: 'flag, sin texto; la purga lo conserva',
+  },
+  gastos_gestion: {
+    id: ID,
+    centro_id: SEUDONIMO,
+    nino_id: SEUDONIMO,
+    curso_academico_id: SEUDONIMO,
+    forma: 'categórico (transferencia o efectivo), sin texto libre',
+    importe_centimos: 'el importe de ese niño, un número sin texto',
+    cobrado_at: 'sello de la marca de cobro',
+    cobrado_por: 'id de quien de Dirección lo marcó: seudónimo',
+    created_at: FECHA,
+    updated_at: FECHA,
   },
   matriculas: {
     id: ID,
@@ -382,6 +396,21 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
       motivo_baja: marca('motivo-baja'),
     })
     expect(mErr).toBeNull()
+
+    // Fase 9: los gastos de gestión del curso, con un justificante (la ruta lleva la marca). Por las
+    // funciones de la casa, como Dirección: la sesión no escribe la tabla.
+    const { error: gcErr } = await cAdmin.rpc('fijar_gastos_gestion_curso', {
+      p_curso_academico_id: curso.id,
+      p_importe_centimos: 6000,
+    })
+    expect(gcErr).toBeNull()
+    const { error: ggErr } = await cAdmin.rpc('declarar_gastos_gestion', {
+      p_nino_id: nino.id,
+      p_curso_academico_id: curso.id,
+      p_forma: 'transferencia',
+      p_justificante_path: `${centro.id}/${nino.id}/${marca('justificante')}.pdf`,
+    })
+    expect(ggErr).toBeNull()
 
     // Vínculo con parentesco.
     const vinculoId = await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal')
