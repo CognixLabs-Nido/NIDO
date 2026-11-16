@@ -7,6 +7,8 @@ import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { leerTarjetasSanitarias } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { filasServicios, sinContestar } from '@/features/peticion-servicios/lib/peticion'
 import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
+import { porContestar } from '@/features/gastos-gestion/lib/gastos'
+import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 import { logger } from '@/shared/lib/logger'
 
 import type { Database } from '@/types/db'
@@ -64,7 +66,7 @@ export async function getAvanceAltas(
   if (centroR.error || !centroR.data) return falla('centros', centroR.error?.message)
 
   const familias = [...new Set(ninosR.data.map((n) => n.familia_id))]
-  const [tutoresR, mandatosR, imagenes, documentos, peticiones] = await Promise.all([
+  const [tutoresR, mandatosR, imagenes, documentos, peticiones, gastos] = await Promise.all([
     // Por `tutores_de_familia` (fase 6): los datos que exige el cierre no se leen con la sesión.
     Promise.all(
       familias.map(async (f) => ({
@@ -85,6 +87,8 @@ export async function getAvanceAltas(
     Promise.all(ninoIds.map((id) => supabase.rpc('documentos_firma_nino', { p_nino_id: id }))),
     // Fase 8b: lo que se ofrece y lo contestado, con la regla del gate.
     Promise.all(ninoIds.map((id) => leerPeticionServicios(supabase, id))),
+    // Fase 9: los gastos de gestión del curso del alta, con la regla del gate.
+    Promise.all(ninoIds.map((id) => leerGastosGestion(supabase, id))),
   ])
   const tutoresFallo = tutoresR.find(
     ({ r }) => r.error || (r.data ?? []).some((t) => !t.ve_personales)
@@ -98,6 +102,7 @@ export async function getAvanceAltas(
   const documentosFallo = documentos.find((r) => r.error || !r.data)
   if (documentosFallo) return falla('documentos_firma_nino', documentosFallo.error?.message)
   if (peticiones.some((p) => !p.ok)) return falla('peticion_servicio', 'no se lee')
+  if (gastos.some((g) => !g.ok)) return falla('gastos_gestion', 'no se lee')
 
   const medico = new Set((medicoR.data ?? []).map((c) => c.nino_id))
   const conMandato = new Set(mandatosR.data.map((m) => m.familia_id))
@@ -120,6 +125,7 @@ export async function getAvanceAltas(
       mandato: conMandato.has(nino.familia_id),
       centroConCid,
       servicios: servicios(peticiones[i]),
+      gastos: lineaGastos(gastos[i]),
     }
     resultado.set(ninoId, avanceAlta(senales))
   }
@@ -132,4 +138,10 @@ function servicios(p: Awaited<ReturnType<typeof leerPeticionServicios>> | undefi
   return sinContestar(filasServicios(p.opciones), p.respuestas).length > 0
     ? ('sin_contestar' as const)
     : ('contestado' as const)
+}
+
+/** La línea de los gastos de un niño: la misma regla que el gate de `finalizarAlta`. */
+function lineaGastos(g: Awaited<ReturnType<typeof leerGastosGestion>> | undefined) {
+  if (!g?.ok || g.gastos.length === 0) return 'no_pide' as const
+  return porContestar(g.gastos).length > 0 ? ('sin_contestar' as const) : ('contestado' as const)
 }

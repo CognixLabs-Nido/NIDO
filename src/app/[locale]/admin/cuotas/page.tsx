@@ -13,6 +13,8 @@ import { getConceptosCobro } from '@/features/conceptos-cobro/queries/get-concep
 import { getTarifasConceptoAnioDeCentro } from '@/features/conceptos-cobro/queries/get-tarifas-concepto-anio'
 import { AsignacionPermanentePanel } from '@/features/cuotas-config/components/AsignacionPermanentePanel'
 import { getAsignacionPermanente } from '@/features/cuotas-config/queries/get-asignacion-permanente'
+import { GastosGestionCentro } from '@/features/gastos-gestion/components/GastosGestionCentro'
+import { getGastosCentro } from '@/features/gastos-gestion/queries/get-gastos-centro'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
 import { PanelMesRecibos } from '@/features/recibos/components/PanelMesRecibos'
 import { PivotePanel } from '@/features/recibos/components/PivotePanel'
@@ -30,7 +32,15 @@ interface PageProps {
   searchParams: Promise<{ tab?: string; anio?: string; mes?: string }>
 }
 
-const TABS = ['mes', 'conceptos', 'beca-comedor', 'asignacion', 'remesas', 'resumen'] as const
+const TABS = [
+  'mes',
+  'conceptos',
+  'beca-comedor',
+  'asignacion',
+  'remesas',
+  'resumen',
+  'gastos-gestion',
+] as const
 
 // F-4-4: hub de cuotas. Tab por defecto = Panel del mes (revisión + confirmación de
 // recibos a grano familia). Otros tabs: catálogo de conceptos, asignación permanente
@@ -62,6 +72,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     cargasBeca,
     transferenciasBeca,
     panelBecas,
+    gastosCentro,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
@@ -77,6 +88,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getCargasBeca(centroId),
     getTransferenciasBeca(centroId),
     getPanelBecas(centroId),
+    getGastosCentro(centroId),
   ])
 
   const centroLogoInfo = await getCentroLogo(centroId)
@@ -150,6 +162,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
           <TabsTrigger value="asignacion">{t('tab_asignacion')}</TabsTrigger>
           <TabsTrigger value="remesas">{t('tab_remesas')}</TabsTrigger>
           <TabsTrigger value="resumen">{t('tab_resumen')}</TabsTrigger>
+          <TabsTrigger value="gastos-gestion">{t('tab_gastos_gestion')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="mes" className="pt-4">
@@ -219,6 +232,10 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
 
         <TabsContent value="resumen" className="pt-4">
           <PivotePanel locale={locale} anio={anio} mes={mes} pivote={pivote} />
+        </TabsContent>
+
+        <TabsContent value="gastos-gestion" className="pt-4">
+          <GastosGestionCentro locale={locale} datos={gastosCentro} />
         </TabsContent>
       </Tabs>
     </div>

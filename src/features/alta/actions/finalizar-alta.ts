@@ -11,6 +11,8 @@ import { logger } from '@/shared/lib/logger'
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 import { filasServicios, sinContestar } from '@/features/peticion-servicios/lib/peticion'
 import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
+import { porContestar } from '@/features/gastos-gestion/lib/gastos'
+import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 import { frenaElAlta } from '../lib/regla-documentos-alta'
 import { tutorCompleto } from '../lib/datos-tutor'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
@@ -33,6 +35,9 @@ import { fail, ok } from '../../centros/types'
  *   ellas: el único momento de la historia del producto en que pasa.
  * `servicios` (fase 8b): cada servicio que el centro ofrece, contestado (no, todos los meses o días
  *   sueltos). Un centro sin conceptos de servicio no pide nada.
+ * `gastos` (fase 9): los gastos de gestión del curso del alta, contestados (transferencia o
+ *   efectivo) si el centro les ha puesto importe; con importe 0 no se pide nada. Que estén cobrados
+ *   no frena (D5).
  */
 export type BloqueAlta =
   | 'identidad'
@@ -43,6 +48,7 @@ export type BloqueAlta =
   | 'imagen'
   | 'documentos_centro'
   | 'servicios'
+  | 'gastos'
 
 const ORDEN_BLOQUES: BloqueAlta[] = [
   'identidad',
@@ -53,6 +59,7 @@ const ORDEN_BLOQUES: BloqueAlta[] = [
   'imagen',
   'documentos_centro',
   'servicios',
+  'gastos',
 ]
 
 /** Resultado de `finalizarAlta`: en fallo por completitud viaja `faltan` (bloques). */
@@ -186,6 +193,12 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   if (sinContestar(filasServicios(peticion.opciones), peticion.respuestas).length > 0)
     faltan.push('servicios')
 
+  // Fase 9: los gastos de gestión, con la regla de la base (`gastos_por_contestar`). Igual: si no se
+  // pueden leer no se cierra.
+  const gastos = await leerGastosGestion(supabase, id)
+  if (!gastos.ok) return fail('alta.errors.finalizar_fallo')
+  if (porContestar(gastos.gastos).length > 0) faltan.push('gastos')
+
   if (faltan.length > 0) {
     faltan.sort((a, b) => ORDEN_BLOQUES.indexOf(a) - ORDEN_BLOQUES.indexOf(b))
     return { success: false, error: 'alta.errors.incompleto', faltan }
@@ -207,6 +220,9 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     }
     if (error.hint === 'servicios_por_contestar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['servicios'] }
+    }
+    if (error.hint === 'gastos_por_contestar') {
+      return { success: false, error: 'alta.errors.incompleto', faltan: ['gastos'] }
     }
     if (error.hint === 'documentos_por_firmar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['documentos_centro'] }

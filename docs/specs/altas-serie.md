@@ -1892,13 +1892,20 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   solo la marca de que se cobró. **D8**, el justificante en su propio bucket, y un test de que la
   purga lo alcanza.
 - **2026-11-16, de Jose:**
-  - Se pagan **cada curso**, también los niños que continúan.
+  - ~~Se pagan **cada curso**, también los niños que continúan.~~ **Sustituida el 2026-11-16 por la
+    de abajo** («la fase 9 es solo el alta nueva»).
   - **Por niño:** el segundo hermano los vuelve a pagar.
   - **El centro fija un importe por curso**, y Dirección ve si lo que ha transferido la familia
     cuadra. Un centro que no fije importe no ve el paso en el alta.
   - «Como todo, dirección puede cambiar lo que quiera o hacer descuentos cuando quiera.» El importe
     del curso es una **propuesta**: Dirección pone otro para un niño, o cero, cuando quiera, y queda en
     la auditoría con quién y cuándo. El mismo patrón que la línea prorrateada.
+- **2026-11-16, de Jose (después, y manda sobre la de «cada curso»): la fase 9 es solo el ALTA
+  nueva.** Dirección cobra cualquier concepto a cualquiera cuando quiere, y los gastos del curso
+  siguiente son eso: la directora crea un concepto («Gastos de gestión», «Altas» o como lo llame) y en
+  abril, mayo o junio se lo pasa a los alumnos que continúan con un **cargo puntual**. El que continúa
+  no declara nada: se le cobra en un recibo. Fuera de la fase: la cola de la familia que renueva, su
+  aviso de inicio, su sección en la ficha y cualquier obligación de contestar en una renovación.
 - **2026-11-16, del responsable:**
   - Contestar el paso es **obligatorio para cerrar el alta**: justificante o «pagaré en efectivo». Lo
     que no bloquea es que esté cobrado (D5).
@@ -1918,7 +1925,8 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   hay recibo, así que el motor no puede cobrarlos en un mes equivocado; un centro que los modelara
   como concepto `mensual` los cobraría cada mes desde la incorporación, y como `esporadico`, en el mes
   que eligiera Dirección a mano (0 en producción).
-- **La renovación de curso existe, y de ahí se cuelgan los del curso siguiente.** «Pasar de curso»
+- **La renovación de curso existe** (la medida sigue valiendo; lo que se colgaba de ella, no: ver
+  «la fase 9 es solo el alta nueva»). «Pasar de curso»
   propone una matrícula `pendiente` en el curso siguiente para cada niño que sigue, y
   `documentos_del_nino` pide el documento de curso de **cada matrícula viva en un curso no cerrado**.
   Medido con un curso 2027-28, su presupuesto y la propuesta del niño: sin propuesta, el niño debe solo
@@ -1926,8 +1934,15 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   solo curso, ninguno planificado, 0 documentos).
 - **Una propuesta de renovación tiene la forma de un alta en curso** (matrícula `pendiente`): las
   puertas de `marcar_matricula_lista` le saltan (medido: 42501, el acuse médico; sin la propuesta,
-  ninguna). Por eso los gastos del curso siguiente no son un paso del alta: se contestan en la ficha
-  del niño, como el presupuesto (4c), y no frenan nada.
+  ninguna). La app no la trata como alta (`gate-familia.ts`: un hijo con matrícula `activa` no está en
+  alta), y la familia nunca llama a esa función para él.
+- **El cargo a los que continúan ya se puede en bloque** (2026-11-16, producción, ensayo terminado en
+  RAISE con la guarda de md5 de `anadir_cargo_puntual` y su control). Cuotas → panel del mes →
+  «Cargo puntual»: el concepto del catálogo (rellena descripción e importe), una casilla por clase y
+  «Añadir». **Para 60 niños, 4 + 1 por clase clics** (8 con 4 clases). Los 3 niños activos de CEI
+  Ejemplo de una vez: 3 líneas en 2 recibos (uno por familia); repetirlo da «ya incluido» y no cobra dos
+  veces; el tutor, 42501. Una familia con el recibo de ese mes ya validado no se toca: sale «no
+  incluida», con su estado (un recibo validado no se modifica, y Dirección lo ve). Nada que construir.
 - **El test del catálogo de buckets ya cubre el nuevo**, en los dos sentidos (sondas: un bucket creado
   sin catálogo da `sinDueno`; uno en el catálogo sin crear, `inexistentes`). No mide que la purga
   llegue a los ficheros: eso lo pide la fase.
@@ -1939,14 +1954,42 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
 - **`gastos_gestion`**: una fila por niño y curso, con la forma (`transferencia` o `efectivo`), la ruta
   del justificante, el importe propio del niño (NULL = el del curso; Dirección puede poner otro o 0) y
   la marca de cobro (quién y cuándo). Se audita.
-- **Qué debe cada niño:** cada matrícula viva en un curso no cerrado con importe fijado, como los
-  documentos. El alta exige contestar el de su curso (la matrícula `pendiente` del alta); los niños que
-  siguen lo contestan en su ficha y no frena nada.
+- **Qué debe cada niño:** el curso de su **alta**, el primero del niño (sin matrícula en un curso que
+  empiece antes), si no está cerrado y tiene importe. ~~Cada matrícula viva en un curso no cerrado,
+  también la propuesta de una renovación~~ (así se aplicó en `20270123120000`; sustituida el
+  2026-11-16 y quitada en la B, `20270124120000`: una función que devolviera la renovación sería una
+  puerta que alguien usaría creyéndola pensada). El alta exige contestarlo para cerrar, salvo con
+  importe 0.
 - **Quién escribe:** la familia (tutor legal) declara la forma y el justificante mientras el alta no
   está validada; después, por la cola. Dirección declara, cambia el importe y marca el cobro siempre.
 - **El bucket `justificantes-gestion`**: PDF e imágenes, carpeta `{centro}/{niño}/`, lo recorre el
   olvido por prefijo (y con él `anular_alta`, que usa el mismo manifiesto).
 - Sale en el export del art. 15 y se purga con el niño.
+
+### 9b: el alta
+
+- **El paso del alta** (`gastos`, entre `servicios` y `sepa`; `PasoGastos`): justificante de la
+  transferencia o «pagaré en efectivo», obligatorio si el centro tiene importe para el curso del
+  alta (`cursoDelAltaTieneGastos`). Sin importe, el paso no sale y el avance dice `no_pide`. Cerrar
+  el alta sin contestar da el bloque `gastos` en la app y `gastos_por_contestar` en la base.
+- **El justificante** sube por `/[locale]/alta/[ninoId]/justificante-gastos` con la sesión de quien
+  lo sube: el bucket, después `declarar_gastos_gestion` con la ruta, y el fichero anterior se borra.
+  Los tipos y el tope de la app (`TIPOS_JUSTIFICANTE`, `MAX_JUSTIFICANTE_BYTES`) los compara el test
+  RLS contra el bucket.
+- **Dirección lo ve al validar** (ficha del niño, `GastosGestionDireccion`) y decide sin bloqueo ni
+  «exento» (D5): cambia el importe o lo pone a 0, vuelve al del curso, declara por la familia (el
+  alta en papel) y marca o desmarca el cobro.
+- **Cuotas → Gastos de gestión** (`GastosGestionCentro`): el importe de cada curso no cerrado y la
+  lista de los que faltan por cobrar, con la marca de cobro.
+- **La familia** lo ve en la ficha del niño (`GastosGestionFamilia`, solo el tutor legal).
+- **Después de validar**, lo que declare la familia llega por la cola (entidad `gastos_gestion`;
+  decisión del responsable del 2026-11-16; no la ha revocado la de Jose, que quita solo la
+  renovación).
+- **La migración B** (`20270124120000`, después del despliegue): `gastos_del_nino` solo con el curso
+  del alta; `gastos_sin_contestar` sin pedir nada con importe 0; y `marcar_matricula_lista` con la
+  puerta `gastos_por_contestar`, detrás de la de servicios. Ensayada en producción (terminada en
+  RAISE, LF y CRLF): 8 de 8 con la B y su control sin ella; las tres guardas paran.
+- D6 intacta: por esa transferencia no se crea ningún recibo.
 
 ## Orden de la serie
 
@@ -2009,7 +2052,8 @@ lo suyo (`20270115130000`).
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
 - [x] Fase 6 (#526) · [x] Fase 7 (#527)
 - [x] Fase 8: [x] 8a, la fecha de incorporación (#528) · [x] el prorrateo del mes de incorporación (#529) · [x] 8b, la petición de servicios (#530)
-- [ ] Fase 9 · [ ] Fase 10
+- [ ] Fase 9: [x] 9a, la base de los gastos de gestión (#531) · [ ] 9b, el alta (este PR; la B después del despliegue)
+- [ ] Fase 10
 
 ## Referencias
 

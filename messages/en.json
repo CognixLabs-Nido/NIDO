@@ -724,7 +724,8 @@
         "guardando": "Saving…",
         "cancelar": "Cancel",
         "guardado": "Saved. Assigned: {asignadas}. Removed: {quitadas}."
-      }
+      },
+      "tab_gastos_gestion": "Admin fees"
     },
     "aulas": {
       "title": "Classrooms",
@@ -1219,7 +1220,8 @@
         "sip": "Health card",
         "servicio_comedor": "Lunch",
         "servicio_matinera": "Early morning",
-        "servicio_vespertina": "Afternoon"
+        "servicio_vespertina": "Afternoon",
+        "gastos_forma": "How the admin fees are paid"
       },
       "entidad": {
         "ninos_familia": "Child data (address / family situation)",
@@ -1228,7 +1230,8 @@
         "datos_tutor_dni": "Guardian ID document",
         "ninos_identidad": "Child's identity",
         "ninos_sip_documento": "Health card image",
-        "peticion_servicios": "Services"
+        "peticion_servicios": "Services",
+        "gastos_gestion": "Admin fees"
       },
       "errors": {
         "registro": "The change could not be registered. Please try again.",
@@ -1588,7 +1591,8 @@
           "tutor2": "Guardian 2",
           "medico": "Medical",
           "sepa": "SEPA mandate",
-          "servicios": "Services"
+          "servicios": "Services",
+          "gastos": "Admin fees"
         },
         "estado": {
           "hecho": "done",
@@ -4690,7 +4694,8 @@
         "tutor2": "Guardian 2",
         "emergencia": "Emergency",
         "sepa": "Direct debit",
-        "servicios": "Services"
+        "servicios": "Services",
+        "gastos": "Admin fees"
       }
     },
     "identidad": {
@@ -4909,7 +4914,8 @@
         "imagen": "Image consent",
         "documentos_centro": "Centre's documents to sign",
         "tutor2": "Guardian 2 details",
-        "servicios": "Services (answer each one)"
+        "servicios": "Services (answer each one)",
+        "gastos": "Admin fees (choose how they are paid)"
       }
     }
   },
@@ -5643,6 +5649,66 @@
       "opcion_no_ofrecida": "The centre no longer offers that option. Reload the page.",
       "alta_validada": "The enrolment is already validated: the change has to go through the queue.",
       "mensual_anterior_en_borrador": "The previous monthly item for that service has a draft receipt: confirm it before setting it again."
+    }
+  },
+  "gastos_gestion": {
+    "titulo": "Admin fees",
+    "intro": "The centre charges admin fees for enrolment. Tell us how you will pay them: by bank transfer (with the receipt now or later) or in cash.",
+    "no_leidos": "The admin fees could not be loaded. Please reload the page.",
+    "faltan": "Choose how you will pay the admin fees.",
+    "sin_contestar": "Choose bank transfer or cash.",
+    "guardado": "Saved.",
+    "guardado_cola": "Saved. The management will review it.",
+    "curso": "Year {curso}",
+    "importe": "Amount: {importe}",
+    "importe_cero": "The management has waived it: there is nothing to pay.",
+    "importe_propio": "Amount: {importe} (the year amount is {curso})",
+    "opcion": {
+      "transferencia": "By bank transfer",
+      "efectivo": "I will pay in cash"
+    },
+    "forma": {
+      "transferencia": "Bank transfer",
+      "efectivo": "Cash"
+    },
+    "justificante": "Transfer receipt",
+    "justificante_ayuda": "Receipt (PDF or image, up to 15 MB). If you do not have it at hand, you can upload it later.",
+    "justificante_ya": "A receipt has already been uploaded.",
+    "ver_justificante": "View the receipt",
+    "con_justificante": "with receipt",
+    "otro_importe": "Another amount (€)",
+    "guardar_importe": "Save amount",
+    "volver_al_del_curso": "Back to the year amount",
+    "importe_guardado": "Amount saved.",
+    "importe_quitado": "Amount removed.",
+    "dijo": "The family said: {forma}",
+    "sin_contestar_aun": "Not answered",
+    "guardar_forma": "Save",
+    "cobrado": "Paid",
+    "cobrado_el": "Paid on {fecha}",
+    "sin_cobrar": "Not paid",
+    "marcar_cobro": "Mark as paid",
+    "desmarcar_cobro": "Remove the paid mark",
+    "marcado": "Marked as paid.",
+    "desmarcado": "Paid mark removed.",
+    "cursos_titulo": "Amount per year",
+    "cursos_ayuda": "What enrolment asks for in each year. It is a proposal: in each child’s record you can set another amount or 0. With no amount, enrolment does not ask for it.",
+    "sin_cursos": "There are no open years.",
+    "curso_sin_importe": "No amount",
+    "importe_curso": "Amount (€)",
+    "quitar_importe": "Remove amount",
+    "pendientes_titulo": "Still to be paid",
+    "pendientes_ninguno": "Nobody is left to pay.",
+    "alta_en_curso": "enrolment not closed",
+    "errors": {
+      "invalido": "The data are not valid.",
+      "curso_sin_gastos": "That year has no admin fees for this child.",
+      "guardar": "It could not be saved. Please try again.",
+      "subida": "The receipt could not be uploaded.",
+      "tipo": "The receipt must be a PDF or an image (JPG, PNG or HEIC).",
+      "tamano": "The receipt cannot be larger than 15 MB.",
+      "importe": "The amount is not valid.",
+      "curso_cerrado": "That year is closed: its amount can no longer be changed."
     }
   }
 }

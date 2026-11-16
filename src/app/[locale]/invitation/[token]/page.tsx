@@ -12,6 +12,7 @@ import { detectarCuentaPorEmail } from '@/features/auth/lib/detectar-cuenta-emai
 import { createClient } from '@/lib/supabase/server'
 import { AuthShell } from '@/shared/components/AuthShell'
 import { centroOfreceServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
+import { cursoDelAltaTieneGastos } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 
 interface PageProps {
   params: Promise<{ locale: string; token: string }>
@@ -94,10 +95,13 @@ export default async function InvitationPage({ params }: PageProps) {
       .maybeSingle()
     // Fase 8b: el paso de servicios, igual, solo si el centro ofrece alguno en Cuotas.
     const centroTieneServicios = await centroOfreceServicios(service, invitation.centro_id)
+    // Fase 9: el paso de los gastos de gestión, solo si el curso del alta tiene importe.
+    const cursoTieneGastos = await cursoDelAltaTieneGastos(service, invitation.nino_id)
     return (
       <AltaInvitacionFlow
         centroTieneCid={Boolean(centro?.identificador_acreedor?.trim())}
         centroTieneServicios={centroTieneServicios}
+        cursoTieneGastos={cursoTieneGastos}
         locale={locale}
         token={token}
         email={invitation.email}
@@ -131,6 +135,7 @@ function AltaInvitacionFlow({
   nombreInicial,
   centroTieneCid,
   centroTieneServicios,
+  cursoTieneGastos,
 }: {
   locale: string
   token: string
@@ -139,6 +144,7 @@ function AltaInvitacionFlow({
   nombreInicial: string
   centroTieneCid: boolean
   centroTieneServicios: boolean
+  cursoTieneGastos: boolean
 }) {
   return (
     <AuthShell locale={locale}>
@@ -194,6 +200,7 @@ function AltaInvitacionFlow({
         centroCid={null}
         centroTieneCid={centroTieneCid}
         centroTieneServicios={centroTieneServicios}
+        cursoTieneGastos={cursoTieneGastos}
         mandatoSepaInicial={null}
         mandatoFamilia={null}
         currentUserId=""

@@ -24,6 +24,8 @@ import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-
 import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
 import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { TarjetaSanitariaCard } from '@/features/ninos/components/TarjetaSanitariaCard'
+import { GastosGestionFamilia } from '@/features/gastos-gestion/components/GastosGestionFamilia'
+import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 import { BUCKET_SIP_NINOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
 import { getRecorridoNinoFamilia } from '@/features/ninos/queries/get-recorrido-familia'
 import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
@@ -164,6 +166,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const urlTarjeta = tarjeta?.sip_documento_path
     ? await firmarRuta(supabase, BUCKET_SIP_NINOS, tarjeta.sip_documento_path)
     : null
+  // Fase 9: los gastos de gestión del alta, al tutor legal (`gastos_gestion_nino`; el autorizado,
+  // 42501: no se le pregunta). Sin gastos (el curso no tiene importe), no sale nada.
+  const gastos = esTutorLegal ? await leerGastosGestion(supabase, id) : null
   const tMenor = await getTranslations('alta.menor')
   const comoNosConocio = camposAlta?.como_nos_conocio
     ? camposAlta.como_nos_conocio === 'otro'
@@ -275,6 +280,14 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           ninoId={id}
           tarjeta={tarjeta}
           urlImagen={urlTarjeta}
+        />
+      )}
+
+      {gastos && (!gastos.ok || gastos.gastos.length > 0) && (
+        <GastosGestionFamilia
+          locale={locale}
+          ninoId={id}
+          gastos={gastos.ok ? gastos.gastos : null}
         />
       )}
 

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { purgarUno } from '@/features/olvido/actions/purgar-vencidos'
 import { recolectarAdjuntosDe } from '@/features/olvido/lib/fuentes-adjuntos'
+import { MAX_JUSTIFICANTE_BYTES, TIPOS_JUSTIFICANTE } from '@/features/gastos-gestion/lib/gastos'
 import { BUCKET_JUSTIFICANTES_GESTION } from '@/shared/lib/adjuntos/storage'
 import type { Database } from '@/types/db'
 
@@ -26,18 +27,20 @@ import {
 type Cliente = SupabaseClient<Database>
 
 /**
- * Fase 9 — los gastos de gestión (`20270123120000`; spec `docs/specs/altas-serie.md`, «Fase 9»).
- * Decidido (2026-10-29 y 2026-11-16):
+ * Fase 9 — los gastos de gestión (`20270123120000` y `20270124120000`; spec
+ * `docs/specs/altas-serie.md`, «Fase 9»). Decidido (2026-10-29 y 2026-11-16):
  *
  *  - el tutor adjunta el justificante de la transferencia o dice que pagará en efectivo; sin
  *    bloqueo ni «exento» (D5); sin recibo, solo la marca de cobro (D6); el justificante en su
  *    bucket, y la purga llega a sus ficheros (D8);
- *  - cada curso, también los que siguen, y por niño; el centro fija un importe por curso, que es una
- *    propuesta: Dirección pone otro o cero cuando quiere, y queda en la auditoría; sin importe, nada;
+ *  - por niño, en el ALTA: el curso del alta, el primero del niño; el centro fija un importe por
+ *    curso, que es una propuesta: Dirección pone otro o cero cuando quiere, y queda en la auditoría;
+ *    sin importe, nada; contestar es obligatorio para cerrar el alta (con importe 0, no);
  *  - después del alta, por la cola; Dirección marca el cobro y ve la lista de los que faltan.
  *
- * La renovación: el niño que sigue debe los del curso siguiente desde que Dirección le propone la
- * matrícula (la `pendiente` que crea «pasar de curso»), como los documentos de curso.
+ * La renovación NO es de esta fase (Jose, 2026-11-16): al que continúa, Dirección le pasa un cargo
+ * puntual (`anadir_cargo_puntual`). S, con la propuesta de «pasar de curso» en B y B con importe, lo
+ * afirma: solo debe el de A.
  */
 
 const PDF = Buffer.from('%PDF-1.4\n%demo\n')
@@ -58,7 +61,7 @@ describe('Los gastos de gestión (fase 9)', () => {
   let profe: TestUser
   let adminOtro: TestUser
   const s = {} as Record<'admin' | 'madre' | 'tio' | 'profe' | 'adminOtro', Cliente>
-  /** N: en alta (pendiente en A). S: validado en A y propuesto para B (la renovación). */
+  /** N: en alta (pendiente en A). S: validado en A y propuesto para B (una renovación: no debe B). */
   let N: string
   let S: string
   const subidos: string[] = []
@@ -96,6 +99,23 @@ describe('Los gastos de gestión (fase 9)', () => {
     otro = await createTestCentro('Centro Otro 9')
     cursoA = await createTestCurso(centro.id, 'activo')
     cursoB = await createTestCurso(centro.id, 'planificado')
+    // El curso siguiente empieza un año después, como en la realidad (createTestCurso los crea todos
+    // con las mismas fechas, y un «siguiente» que empieza el mismo día no existe).
+    const { data: fa, error: faErr } = await serviceClient
+      .from('cursos_academicos')
+      .select('fecha_inicio, fecha_fin')
+      .eq('id', cursoA.id)
+      .single()
+    if (faErr || !fa) throw new Error(`fechas de A: ${faErr?.message}`)
+    const unAnoDespues = (d: string) => `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`
+    const fb = await serviceClient
+      .from('cursos_academicos')
+      .update({
+        fecha_inicio: unAnoDespues(fa.fecha_inicio),
+        fecha_fin: unAnoDespues(fa.fecha_fin),
+      })
+      .eq('id', cursoB.id)
+    if (fb.error) throw new Error(`fechas de B: ${fb.error.message}`)
     cerrado = await createTestCurso(centro.id, 'cerrado')
     aulaA = await createTestAula(centro.id, cursoA.id)
     // La configuración del aula en el curso siguiente (lo que hace «copiar configuración»).
@@ -169,6 +189,13 @@ describe('Los gastos de gestión (fase 9)', () => {
       { p_nino_id: N } as never
     )
     expect([vS, vN]).toEqual([true, false])
+    // Y B es el curso SIGUIENTE: empieza después que A.
+    const { data: ks } = await serviceClient
+      .from('cursos_academicos')
+      .select('id, fecha_inicio')
+      .in('id', [cursoA.id, cursoB.id])
+    const inicio = (id: string) => ks?.find((k) => k.id === id)?.fecha_inicio ?? ''
+    expect(inicio(cursoB.id) > inicio(cursoA.id)).toBe(true)
     for (const nino of [N, S]) {
       const r = await leer(s.madre, nino)
       expect(r.error).toBeNull()
@@ -177,7 +204,7 @@ describe('Los gastos de gestión (fase 9)', () => {
     expect(await pendientes()).toEqual([])
   })
 
-  it('el centro fija un importe por curso; el que sigue debe también el del curso siguiente', async () => {
+  it('el centro fija un importe por curso; el que sigue no debe el del curso siguiente', async () => {
     // La sesión de la familia no fija nada.
     const t = await s.madre.rpc('fijar_gastos_gestion_curso', {
       p_curso_academico_id: cursoA.id,
@@ -195,14 +222,9 @@ describe('Los gastos de gestión (fase 9)', () => {
       expect(error).toBeNull()
     }
     expect(resumen((await leer(s.madre, N)).filas)).toEqual([`A:${CURSO_A}:-:t`])
-    expect(resumen((await leer(s.madre, S)).filas)).toEqual([
-      `A:${CURSO_A}:-:f`,
-      `B:${CURSO_B}:-:t`,
-    ])
-    expect(resumen((await leer(s.admin, S)).filas)).toEqual([
-      `A:${CURSO_A}:-:f`,
-      `B:${CURSO_B}:-:t`,
-    ])
+    // B tiene importe y S, la propuesta en B: aun así, solo el curso de su alta.
+    expect(resumen((await leer(s.madre, S)).filas)).toEqual([`A:${CURSO_A}:-:f`])
+    expect(resumen((await leer(s.admin, S)).filas)).toEqual([`A:${CURSO_A}:-:f`])
     // El autorizado, la profe y la Dirección de otro centro, no.
     for (const quien of ['tio', 'profe', 'adminOtro'] as const) {
       expect.soft((await leer(s[quien], S)).error?.code, quien).toBe('42501')
@@ -242,10 +264,12 @@ describe('Los gastos de gestión (fase 9)', () => {
     expect((await decl(s.madre, N, cursoB.id, 'efectivo')).error?.hint).toBe('curso_sin_gastos')
     expect((await decl(s.tio, N, cursoA.id, 'efectivo')).error?.code).toBe('42501')
     // S tiene el alta validada: la familia va por la cola; Dirección, directamente.
-    expect((await decl(s.madre, S, cursoB.id, 'efectivo')).error?.hint).toBe('alta_validada')
-    const ajena = await decl(s.admin, S, cursoB.id, 'transferencia', ruta(N, 'j.pdf'))
+    expect((await decl(s.madre, S, cursoA.id, 'efectivo')).error?.hint).toBe('alta_validada')
+    const ajena = await decl(s.admin, S, cursoA.id, 'transferencia', ruta(N, 'j.pdf'))
     expect(ajena.error?.code).toBe('23514')
-    expect((await decl(s.admin, S, cursoB.id, 'efectivo')).error).toBeNull()
+    expect((await decl(s.admin, S, cursoA.id, 'efectivo')).error).toBeNull()
+    // El curso de la renovación de S no tiene gastos, tampoco para Dirección.
+    expect((await decl(s.admin, S, cursoB.id, 'efectivo')).error?.hint).toBe('curso_sin_gastos')
     // La tabla, la sesión no la escribe.
     const ins = await s.madre.from('gastos_gestion').insert({
       centro_id: centro.id,
@@ -273,7 +297,7 @@ describe('Los gastos de gestión (fase 9)', () => {
         nino_id: S,
         entidad: 'gastos_gestion',
         registro_id: S,
-        payload: { curso_academico_id: cursoB.id, forma: 'transferencia', path },
+        payload: { curso_academico_id: cursoA.id, forma: 'transferencia', path },
         solicitado_por: madre.id,
       } as never)
     expect((await encolar(ruta(S, 'cola.png'))).error).toBeNull()
@@ -306,8 +330,8 @@ describe('Los gastos de gestión (fase 9)', () => {
   })
 
   it('Dirección marca el cobro cuando quiere y ve la lista de los que faltan', async () => {
-    // Premisa: los tres pendientes (S/B tiene forma, pero no está cobrado).
-    expect(await pendientes()).toEqual(['N:A', 'S:A', 'S:B'])
+    // Premisa: los dos pendientes (S/A tiene forma, pero no está cobrado; S/B no existe).
+    expect(await pendientes()).toEqual(['N:A', 'S:A'])
     const marca = (cli: Cliente, nino: string, k: string, cobrado: boolean) =>
       cli.rpc('marcar_cobro_gastos_gestion', {
         p_nino_id: nino,
@@ -315,9 +339,9 @@ describe('Los gastos de gestión (fase 9)', () => {
         p_cobrado: cobrado,
       })
     expect((await marca(s.madre, N, cursoA.id, true)).error?.code).toBe('42501')
-    // Sin que la familia haya contestado (S/A): también se marca.
+    // Cuando quiere: también sin que la familia lo haya dicho (S/A lo declaró Dirección).
     expect((await marca(s.admin, S, cursoA.id, true)).error).toBeNull()
-    expect(await pendientes()).toEqual(['N:A', 'S:B'])
+    expect(await pendientes()).toEqual(['N:A'])
     const { data: fila } = await serviceClient
       .from('gastos_gestion')
       .select('cobrado_por')
@@ -326,14 +350,14 @@ describe('Los gastos de gestión (fase 9)', () => {
       .single()
     expect(fila?.cobrado_por).toBe(admin.id)
     expect((await marca(s.admin, S, cursoA.id, false)).error).toBeNull()
-    expect(await pendientes()).toEqual(['N:A', 'S:A', 'S:B'])
+    expect(await pendientes()).toEqual(['N:A', 'S:A'])
     // Un cero no es un pendiente.
     await s.admin.rpc('fijar_importe_gastos_gestion', {
       p_nino_id: S,
       p_curso_academico_id: cursoA.id,
       p_importe_centimos: 0,
     })
-    expect(await pendientes()).toEqual(['N:A', 'S:B'])
+    expect(await pendientes()).toEqual(['N:A'])
     // La familia no ve la lista.
     const fam = await s.madre.rpc('gastos_gestion_pendientes', { p_centro_id: centro.id })
     expect(fam.error?.code).toBe('42501')
@@ -368,6 +392,17 @@ describe('Los gastos de gestión (fase 9)', () => {
     expect(sube.error).not.toBeNull()
   })
 
+  it('la app sube los tipos y el tamaño que el bucket admite (la misma lista, no una copia a mano)', async () => {
+    const { data, error } = await serviceClient.storage.getBucket(BUCKET_JUSTIFICANTES_GESTION)
+    expect(error).toBeNull()
+    // Premisa: el bucket trae su lista (un null diría «todo vale» y la comparación no mediría nada).
+    expect(data?.allowed_mime_types?.length ?? 0).toBeGreaterThan(0)
+    expect([...(data?.allowed_mime_types ?? [])].sort()).toEqual(
+      Object.keys(TIPOS_JUSTIFICANTE).sort()
+    )
+    expect(Number(data?.file_size_limit)).toBe(MAX_JUSTIFICANTE_BYTES)
+  })
+
   it('sale en el export del niño', async () => {
     const { data, error } = await s.admin.rpc('export_datos_sujeto', {
       p_sujeto_tipo: 'nino',
@@ -378,6 +413,61 @@ describe('Los gastos de gestión (fase 9)', () => {
     expect(g.map((x) => [x.forma, x.con_justificante, x.importe_centimos, x.cobrado_en])).toEqual([
       ['transferencia', true, null, null],
     ])
+  })
+
+  it('cerrar el alta exige contestar los gastos, en la base; con importe 0, no', async () => {
+    /** Un niño de la madre con el alta pendiente en A y completa salvo los gastos. */
+    const enAlta = async (nombre: string) => {
+      const n = await createTestNino(centro.id, nombre)
+      await matricular(n.id, aulaA.id, cursoA.id)
+      await crearVinculo(n.id, madre.id, 'tutor_legal_principal')
+      await completarDatosAlta(n.id)
+      const { error } = await serviceClient.from('consentimientos').insert({
+        usuario_id: madre.id,
+        tipo: 'datos_medicos',
+        version: 'v2.0',
+        metodo_firma: 'digital',
+        nino_id: n.id,
+      })
+      if (error) throw new Error(`acuse: ${error.message}`)
+      const m = await serviceClient
+        .from('matriculas')
+        .update({ estado: 'pendiente' })
+        .eq('nino_id', n.id)
+      if (m.error) throw new Error(m.error.message)
+      return n.id
+    }
+    const estado = async (nino: string) =>
+      (await serviceClient.from('matriculas').select('estado').eq('nino_id', nino).single()).data
+        ?.estado
+    const cierra = (nino: string) => s.madre.rpc('marcar_matricula_lista', { p_nino_id: nino })
+
+    const c = await enAlta('Cierra 9')
+    // Premisa: debe los gastos de A, sin contestar.
+    expect(resumen((await leer(s.madre, c)).filas)).toEqual([`A:${CURSO_A}:-:t`])
+    const r = await cierra(c)
+    expect(r.error?.hint).toBe('gastos_por_contestar')
+    expect(await estado(c)).toBe('pendiente')
+    // Contestado (que no cobrado: D5), cierra.
+    const d = await s.madre.rpc('declarar_gastos_gestion', {
+      p_nino_id: c,
+      p_curso_academico_id: cursoA.id,
+      p_forma: 'efectivo',
+    })
+    expect(d.error).toBeNull()
+    expect((await cierra(c)).error).toBeNull()
+    expect(await estado(c)).toBe('lista')
+
+    // Con el importe en 0, no hay nada que contestar.
+    const z = await enAlta('Cero 9')
+    const f = await s.admin.rpc('fijar_importe_gastos_gestion', {
+      p_nino_id: z,
+      p_curso_academico_id: cursoA.id,
+      p_importe_centimos: 0,
+    })
+    expect(f.error).toBeNull()
+    expect((await cierra(z)).error).toBeNull()
+    expect(await estado(z)).toBe('lista')
   })
 
   it('D8: la purga del niño llega a los ficheros del bucket (y no a los de otro niño)', async () => {
