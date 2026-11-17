@@ -6583,6 +6583,7 @@ export type Database = {
         | "privacidad"
         | "imagen"
         | "datos_medicos"
+        | "imagen_denegada"
       consistencia_deposicion: "normal" | "dura" | "blanda" | "diarrea"
       control_esfinteres:
         | "panal_completo"
@@ -6866,6 +6867,7 @@ export const Constants = {
         "privacidad",
         "imagen",
         "datos_medicos",
+        "imagen_denegada",
       ],
       consistencia_deposicion: ["normal", "dura", "blanda", "diarrea"],
       control_esfinteres: [

@@ -255,6 +255,7 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'privacidad',
   'imagen',
   'datos_medicos',
+  'imagen_denegada',
   // tipo_autorizacion
   'salida',
   'medicacion',

@@ -2077,6 +2077,8 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   su hash.** El PDF va en un bucket privado, cerrado al menos como lo médico, y el autorizado no lo
   abre. Antes de escribir nada se mide cómo vive hoy el PDF del mandato (dónde, quién lo abre, con
   qué política) y si ese patrón sirve para un documento con datos de salud.
+  _(**Sustituido** el 2026-11-17 en «PDF» y «bucket»: no se guarda ningún PDF; ver «Decisiones
+  (2026-11-17)». El texto canónico versionado, el hash, el trazo y la tabla propia siguen.)_
 - **Tabla propia, que nace cerrada por columnas** con el criterio de las firmas de autorización: se
   ve quién firmó y cuándo, no el trazo, la IP, el navegador ni el nombre tecleado. **No** en
   `firmas_autorizacion`, por lo mismo que se descartó en la fase 3: borra en cascada.
@@ -2093,6 +2095,7 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
 - **No se vuelve a firmar cada curso**: la renovación quedó fuera de la serie y sigue fuera.
 - **Lo de siempre**: exportación del art. 15, purga con el niño, el autorizado no ve nada de esto, y
   el test de la purga llega a los ficheros del bucket nuevo, no solo a su nombre.
+  _(Con la (C) del 2026-11-17 no hay bucket nuevo: ver «Sin decidir», punto 3.)_
 - **El consentimiento de imagen, también en la base** (decisión del responsable del 2026-11-16).
   Hoy solo lo exige la app (bloque `imagen` de `finalizarAlta`): una llamada directa a
   `marcar_matricula_lista` cierra el alta sin él, el mismo hueco que el 4b-2 cerró para las normas.
@@ -2101,6 +2104,211 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   en la base») y del 2026-11-13 («Los documentos y el consentimiento de imagen se quedan en el punto
   3»): los documentos los cerró el 4b-2; la imagen, no.
 - **Orden**: después del PR de las cuatro tablas de gravedad media y baja.
+
+### Decisiones (2026-11-17)
+
+- **No se guarda PDF: la (C).** El responsable, 2026-11-17, literal: «La (C): no se guarda PDF. Se
+  guarda la FOTO de lo firmado, cifrada como info_medica_emergencia, con su hash, el trazo, quién
+  firmó y cuándo. El PDF se compone cuando la familia o Dirección lo piden.» Por qué: «Es la que
+  menos copias de datos de salud crea. Un PDF guardado con las alergias dentro es una copia más que
+  proteger, que purgar y que explicar, y que se salta el cifrado, el registro de lecturas y el
+  bloqueo tras la baja.» «La (A) nos obliga a inventar cifrado de ficheros, que la casa no tiene,
+  con una clave nueva en Vault. Y una clave perdida destruye la prueba que estamos creando.» «La
+  prueba jurídica no es el PDF: es el contenido firmado, su hash, el trazo, la identidad y el
+  momento.»
+- **La condición: la plantilla del PDF, versionada.** Literal: «VERSIONA LA PLANTILLA DEL PDF y
+  guarda en la firma qué versión se usó, igual que versionas el texto canónico. Si no, dentro de un
+  año alguien toca el generador y el PDF que se descargue una familia ya no será el que firmó. Con
+  la versión guardada se puede componer el mismo.»
+- **Los otros cinco puntos, tal cual** (de la medición del mandato del mismo día): el servidor
+  compone el PDF desde la foto; leer pasa por una función abierta al tutor legal y a Dirección —el
+  autorizado y la profe no—, deja su fila en `lecturas_ficha_medica` con un origen nuevo y respeta
+  el bloqueo tras la baja; nada de URL pública de una hora; la tabla nace cerrada por columnas y se
+  purga con el niño.
+- **El PDF del mandato, anotado con prioridad y sin tocar**: «Eso se cierra en cuanto acabe la fase
+  10» (`docs/follow-ups.md`, «El PDF del mandato SEPA»).
+
+### El mapa, medido (2026-11-16 y 2026-11-17)
+
+Medido en producción en solo lectura (`~/nido-logs/10/mapa2/`) y en el código de `main` (011e60d1).
+
+**1. Cómo se firma hoy.** La casa tiene tres mecanismos de firma, y uno histórico:
+
+| Qué                                                      | Dónde                               | Qué se firma                                                                                                                        | Qué guarda                                                                                                                                                                                                                                                         | En producción |
+| -------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| Documentos del centro, también el presupuesto (de curso) | `firmas_documentos_centro` (3b, 4a) | el PDF que sube la admin: su `sha256` lo calcula el servidor, el fichero se llama por él y no cambia nunca                          | quién y su rol, cómo (`digital` con trazo / `presencial` sin él), nombre tecleado, IP, navegador, y la copia de lo firmado (título, número, curso, `sha256`); una por versión y niño; inmutable; `pide_refirma` en la versión; por columnas desde `20270125130000` | 0 firmas      |
+| Mandato SEPA                                             | `mandatos_sepa`                     | un texto canónico versionado (`version_canonico` 1 o 2) con los datos, cuyo `texto_hash` calcula el servidor; el texto no se guarda | quién, cómo, trazo, nombre tecleado, IP, navegador, IBAN cifrado y sus 4 últimos, `documento_path` del PDF que genera el navegador                                                                                                                                 | 3 mandatos    |
+| Autorizaciones                                           | `firmas_autorizacion` (F8)          | el texto versionado y `datos`, con `texto_hash` compuesto                                                                           | append-only: revocar o volver a firmar es una fila nueva; por columnas desde `20270115130000`                                                                                                                                                                      | 0 firmas      |
+| Acuses del alta                                          | `acuses_alta`                       | una casilla, sin documento                                                                                                          | histórico desde el 4b-2                                                                                                                                                                                                                                            | 4 filas       |
+
+El de la ficha es el del mandato (decisión del 16) sin su PDF (del 17), y de los documentos toma lo
+inmutable, `pide_refirma` y el presencial.
+
+**2. Qué contiene «la ficha».** Todo lo que la familia declara en el alta (Jose, opción A), que hoy
+vive en seis sitios:
+
+- el niño: `ninos` (identidad y gestión: nombre, apellidos, fecha y lugar de nacimiento, sexo,
+  nacionalidad, idioma, DNI, tarjeta sanitaria, dirección, hermanos, estado civil de la familia,
+  observaciones, «cómo nos conoció»);
+- los dos tutores: `familia_tutores` (nombre, email, teléfono, fecha de nacimiento, DNI, dirección,
+  estudios, empresa);
+- los datos pedagógicos: `datos_pedagogicos_nino`;
+- los servicios pedidos: `peticion_servicio`; los gastos de gestión: `gastos_gestion`;
+- la imagen: `consentimientos` (`tipo = 'imagen'`);
+- lo médico: `info_medica_emergencia`, sus seis campos cifrados.
+
+**Si después cambia un dato firmado**: con el alta validada (matrícula `activa`,
+`alta_validada_de_nino`), el tutor pasa por la cola (`cambios_pendientes`) y Dirección lo aprueba; la
+firma no se toca (decisión del 16). **Con el alta en `lista`** (firmada y sin validar), la cola
+todavía no rige: las funciones del tutor escriben directamente. Ver «Sin decidir», punto 1.
+
+**3. Quién firma.** En producción, 4 niños vivos: 2 con dos tutores legales, 2 con uno. Ninguno con
+`requiere_ambos_firmantes`. Basta uno, y se guarda quién (decisión del 16). Matrículas: 3 activas
+(las tres altas validadas, que no firman hacia atrás) y 1 pendiente.
+
+**4. El cierre hoy** (`marcar_matricula_lista`, md5 normalizado `d8d7de95…`): exige el acuse médico,
+los documentos obligatorios, los datos del niño, los de los tutores, los servicios y los gastos. **No
+exige la imagen**: la exige solo la app (`finalizarAlta`, bloque `imagen`, con
+`existe_consentimiento_imagen`).
+
+### Las tres listas (2026-11-17)
+
+**Decidido y hecho**
+
+- La medición del PDF del mandato (2026-11-17), y su decisión: (C).
+- Las cuatro tablas de gravedad media y baja, cerradas (#533 y #534, aplicadas y verificadas).
+
+**Decidido y no hecho** (todo lo de las decisiones del 16 y del 17)
+
+- La tabla propia, cerrada por columnas, con la foto cifrada como `info_medica_emergencia`, su hash,
+  la versión del texto canónico, **la versión de la plantilla del PDF**, el trazo, quién y cuándo.
+- Firmar (el tutor legal, con trazo) y registrar la firma presencial (Dirección), que cierran el alta.
+- `marcar_matricula_lista`: exige la firma, y en el mismo PR, el consentimiento de imagen.
+- Leer la ficha firmada por una función (tutor legal y Dirección), con su fila en
+  `lecturas_ficha_medica` y el bloqueo tras la baja; el PDF lo compone el servidor al pedirlo.
+- `pide_refirma` para Dirección.
+- La exportación del art. 15 y la purga con el niño.
+
+**Sin decidir**: ninguna. Las cinco preguntas, con su respuesta debajo («Las cinco, resueltas»).
+
+**Las preguntas que hubo** (2026-11-17)
+
+1. **Entre firmar y validar.** Con el alta en `lista` la cola no rige y el tutor puede cambiar datos
+   que acaba de firmar. ¿La cola empieza al firmar (en `lista`), o un cambio en `lista` deja la firma
+   sin valor y obliga a firmar otra vez?
+2. **La imagen: ¿«contestada» o «aceptada»?** Hoy un consentimiento de imagen solo dice «sí»: la tabla
+   no guarda un «no», la casilla solo otorga, y el cierre exige que exista uno. Una familia que no
+   quiere fotos acepta para terminar y revoca después. Llevar eso a la base lo endurece. ¿La base
+   exige un «sí», o una respuesta (sí o no), lo que pide guardar el «no»?
+3. **«El test de la purga llega a los ficheros».** Con la (C) no hay ficheros de la ficha. ¿Basta con
+   que el test de la purga afirme que la fila se va y que no queda ningún objeto de la ficha en
+   ningún bucket?
+4. **Qué entra en la foto de lo médico.** `info_medica_emergencia` tiene seis campos: alergias
+   graves y leves, medicación habitual, médico de familia, teléfono de emergencia y notas. ¿Los seis,
+   o solo lo que la familia declara como salud (alergias y medicación)?
+5. **La profe y la ficha firmada.** La decisión deja fuera a la profe. Hoy la profe del aula lee las
+   alertas médicas y la ficha médica (`get_info_medica_emergencia`). ¿Confirmas que la ficha firmada
+   no la ve aunque lea la médica viva?
+
+### Las cinco, resueltas (el responsable, 2026-11-17)
+
+«Spec aprobada con esas cinco dentro. Adelante con el código.»
+
+1. **Entre firmar y validar: el cambio INVALIDA LA FIRMA y hay que volver a firmar.** Literal: «Nada
+   de meter la cola antes de validar: eso obligaría a Dirección a aprobar cambios de un alta que
+   todavía no ha validado, que es trabajo sin sentido. Y es coherente con lo demás: la firma es la
+   foto de lo que se firmó, así que si cambias la foto, firmas otra vez. Que la pantalla lo diga
+   antes de dejar cambiar nada, no después.»
+2. **La imagen: la base exige una RESPUESTA, no un «sí», y se guarda el «no».** Literal: «esto es lo
+   más importante de las cinco y no es un detalle técnico: hoy una familia que no quiere fotos de su
+   hijo tiene que aceptar para poder matricularlo, y eso es exactamente lo que el art. 7.4 prohíbe,
+   condicionar el servicio a un consentimiento que por definición es libre. D3 ya invocaba ese
+   artículo en junio para decir que la imagen era opcional, así que esto no es una decisión nueva:
+   es que la app se desvió.» «Guarda el «no» como respuesta de primera clase, con su fecha y quién
+   la dio, revocable y reversible como el «sí». Y mide antes qué hace hoy la app cuando no hay
+   consentimiento, porque si alguna pantalla trata «no hay fila» como «no quiere», eso cambia de
+   significado en cuanto el «no» exista.»
+3. **El test de la purga: basta con eso.** Literal: «Que afirme que la fila se va y que no queda
+   ningún objeto de la ficha en ningún bucket. Con la (C) no hay fichero que perseguir, y comprobar
+   que no aparece ninguno es precisamente lo que impide que alguien vuelva a meter uno sin darse
+   cuenta.»
+4. **Lo médico: los seis campos.** Literal: «Jose dijo «todo lo que ha declarado, incluido lo médico,
+   alergias incluidas», y el teléfono de emergencia o el médico de familia son tan declarados como
+   las alergias. No recortes por tu cuenta lo que él dijo entero.»
+5. **La profe no ve la ficha firmada, confirmado.** Literal: «Sigue viendo la ficha médica VIVA de su
+   aula, que es lo que necesita para trabajar: el documento firmado es una prueba jurídica, no una
+   herramienta del día a día, y para cuidar a un niño hace falta el dato de hoy, no el de la firma.»
+
+### La imagen como respuesta: lo medido y el diseño (2026-11-17)
+
+Lo pidió el responsable en el punto 2: «mide antes qué hace hoy la app cuando no hay
+consentimiento». Medido en producción en solo lectura (`~/nido-logs/10/imagen/`) y en el código de
+la rama.
+
+**Los datos.** 2 filas `consentimientos` de `tipo = 'imagen'`, de 2 niños, ninguna revocada. De las
+3 matrículas `activa`, 2 tienen el «sí» y 1 no; la `pendiente`, no. `ninos.puede_aparecer_en_fotos`
+coincide con el «sí» en las dos (2 y 0): es el control cruzado.
+
+**Los siete lectores del «sí», en la base.** `existe_consentimiento_imagen`,
+`tiene_consentimiento_imagen` (y con él `consentimiento_imagen_sync` y `ninos_flag_imagen_derivado`,
+que mantienen `puede_aparecer_en_fotos`), `revocar_consentimiento_imagen`, `firma_imagen_sync`,
+`otorgar_consentimiento_imagen`, `export_datos_sujeto` y `marcar_matricula_lista`. Todos leen «una
+fila `tipo = 'imagen'` sin `revocado_en`» como un «sí». **Por eso el «no» no puede ser una fila
+`tipo = 'imagen'`** (ni con una columna `respuesta`): los siete lo leerían como «sí», y el niño que
+no quiere fotos aparecería en ellas.
+
+**Los lectores genéricos de `consentimientos`.** `privado.contenido_bloqueado`,
+`privado.datos_bloqueados`, `privado.queda_conservado_nino`, `privado.quedan_firmas_usuario`,
+`destruir_firmas_nino`, `destruir_consentimientos_cuenta`, `purgar_sujeto_db`, `anular_alta`,
+`estado_retencion_nino`, la política `bloqueo_retencion` y el trigger `consentimientos_solo_revocar`.
+Tratan igual toda fila de la tabla: es prueba del sujeto, que se conserva, se bloquea tras la baja,
+se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
+
+**Las pantallas que leen la ausencia** (`existe_consentimiento_imagen` o el indicador de fotos):
+
+- `finalizarAlta` (bloque `imagen`) y `get-avance-alta` (línea `imagen`): la ausencia es «falta».
+  **Cambian**: con el «no», lo que falta es la respuesta.
+- La casilla del paso `menor` (`AcuseAltaCheckbox`): solo otorga y no se desmarca. **Cambia**: dos
+  respuestas, sí o no.
+- `ImagenAutorizacionTutor` (ficha del niño, familia): sin «sí» pinta «No autorizada: no aparece en
+  las fotos del centro.», que sigue siendo verdad con un «no» y sin respuesta. Es de fotos, no de
+  voluntad: no cambia de significado.
+- La subida de la foto del niño, el etiquetado de las fotos, el botón de revocar de la ficha de
+  Dirección, «Fotos revocadas» y el roster de la autorización de imagen leen el indicador o los «sí»
+  de cada firmante. Un «no» no es un «sí»: no cambian.
+
+**El diseño.**
+
+- **El «no» es un tipo propio en `consentimientos`: `imagen_denegada`.** Hereda sin tocarla toda la
+  maquinaria genérica de arriba, y los siete lectores del «sí» no lo ven porque filtran
+  `tipo = 'imagen'`. Lleva quién, cuándo, la versión del texto, cómo (digital o presencial), IP y
+  navegador, como el «sí». Una tabla aparte habría que cablearla en las once piezas genéricas, y la
+  que se olvide falla en silencio.
+- **Una respuesta vigente por niño, la última.** Dar el «no» retira los «sí» vigentes del niño, de
+  todos los tutores, como ya hace revocar («Se retira la autorización de todos los tutores»). Dar el
+  «sí» retira el «no» vigente. Así el «no» es reversible como el «sí», y revocable: retirarlo deja
+  al niño sin respuesta.
+- **El cierre exige una respuesta**: `privado.respuesta_imagen` (hay un «sí» o un «no» vigente).
+  Entra en `marcar_matricula_lista` en el PR de la firma, como decidió el responsable el
+  2026-11-16.
+- **Dos migraciones, y la primera sola.** Postgres no deja usar un valor de enum en la transacción
+  que lo añade: la primera solo añade `imagen_denegada`, y la segunda, con la primera aplicada, trae
+  las funciones.
+
+### Fase 10, por PRs
+
+1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
+2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen`; `otorgar_consentimiento_imagen`
+   retira el «no» vigente; `registrar_consentimiento` lo rechaza; `privado.respuesta_imagen`. La app:
+   la pregunta de la imagen con sus dos respuestas en el paso del niño, el avance y el aviso de
+   `finalizarAlta` piden respuesta, y la ficha del niño ofrece cambiarla.
+3. **10b**: la ficha firmada. Tabla propia cerrada por columnas, la foto cifrada de los seis
+   sitios (los seis campos médicos incluidos), el hash, la versión del texto canónico y la de la
+   plantilla del PDF, firmar y firmar presencial, `marcar_matricula_lista` exige la firma y la
+   respuesta de la imagen, un cambio en `lista` invalida la firma (la pantalla lo avisa antes),
+   `pide_refirma`, exportación y purga.
+4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
+   el bloqueo tras la baja) y el PDF que compone el servidor.
 
 ## Orden de la serie
 
