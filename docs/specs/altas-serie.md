@@ -2279,9 +2279,20 @@ el «sí» con su sesión. Predicho y medido igual:
 
 **El agujero: 6 de 6 puntos medidos dan al niño por autorizado contra el «no» vigente de B.** Los
 controles: sin «sí», todo false (el «no» solo no abre nada); revocado el «sí» de A, la misma
-publicación sí se oculta (`true`), y el «no» de B sigue vigente al final. `firma_imagen_sync` no se
-midió (pide una autorización de imagen publicada); leída del código, inserta el «sí» sin mirar el
-«no». Hoy la app no da ningún «no». Con sesión, ninguna función lo escribe: `privado.puede_consentir` no tiene rama para `imagen_denegada` y falla (leído del código). Sin sesión, `registrar_consentimiento` solo rechaza `imagen` y aceptaría `imagen_denegada` (leído del código, **sin medir**); la app no la llama así. La 10a-2 trae la función del «no», la cierra en `registrar_consentimiento` y cierra el agujero en las mismas piezas.
+publicación sí se oculta (`true`), y el «no» de B sigue vigente al final. **La séptima, medida abierta también** (2026-11-17, `~/nido-logs/10/septima/`; el responsable:
+«móntala dentro del ensayo»). Producción no tiene ninguna autorización de imagen: se montaron dentro
+la plantilla y su instancia de ámbito niño, publicadas (premisa: firmable y aplica al niño). Con el
+«no» de B vigente, A firma la autorización con su sesión y `firma_imagen_sync` le deja el «sí»: las
+cinco lecturas de arriba pasan a `true` y el «no» de B sigue vigente. **7 de 7 puertas abiertas.**
+
+**`registrar_consentimiento` sin sesión, medido** (mismo ensayo): con `service_role` y
+`p_tipo = 'imagen_denegada'` **inserta**, y B queda con **dos** «no» vigentes (nada impide
+duplicarlos). Controles: con `p_tipo = 'imagen'`, 22023 HINT `imagen`; con la sesión de B y
+`imagen_denegada`, 20000 «case not found» (`privado.puede_consentir` sin rama).
+
+**La condición del responsable para cerrarlas** (2026-11-17, literal): «una función que mire «hay sí»
+y luego «hay no» en dos sentencias separadas puede dar autorizado en el hueco entre las dos. Que la
+decisión salga de una sola consulta.»
 
 **Los lectores genéricos de `consentimientos`.** `privado.contenido_bloqueado`,
 `privado.datos_bloqueados`, `privado.queda_conservado_nino`, `privado.quedan_firmas_usuario`,
