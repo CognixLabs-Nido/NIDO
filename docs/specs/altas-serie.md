@@ -1541,20 +1541,44 @@ La 5 dejó escrito que `firmas_documentos_centro`, `acuses_alta`, `matriculas` y
 confirmaciones vivió cuatro días solo en una conversación. **Una decisión que no está escrita donde
 viven las decisiones no existe**: por eso va aquí, con sus palabras.
 
-- **Confirmaciones de eventos: solo los padres.** Decisión del 2026-11-12, textual: «El autorizado
-  no confirma y no lee las confirmaciones. Cierras lectura y escritura. Una excursión saca al niño
-  del centro y eso lo decide quien tiene la patria potestad, no quien solo puede recogerlo a la
-  salida.» Confirmada el 2026-11-16 («SOLO CONFIRMAN LOS PADRES»). El calendario del autorizado se
-  queda para **ver** los eventos, que los necesita si va a recogerlo. Sustituye a la ADR-0038 donde
-  decía «cualquier tutor del niño confirma por él».
+- **Confirmaciones de eventos: solo los padres.** La pregunta, en el prompt del responsable del
+  2026-11-12 («¿una persona autorizada puede confirmar la asistencia del niño a un evento del
+  centro?»), con lo que se decidía: «El autorizado no confirma y no lee las confirmaciones. Cierras
+  lectura y escritura. Una excursión saca al niño del centro y eso lo decide quien tiene la patria
+  potestad, no quien solo puede recogerlo a la salida.» **La decisión, de Jose, 2026-11-13**,
+  literal: «solo confirman los padres» (fuente: el responsable, 2026-11-16; el mensaje de Jose no está
+  en las conversaciones guardadas). El calendario del autorizado se queda para **ver** los eventos,
+  que los necesita si va a recogerlo. Sustituye a la ADR-0038 donde decía «cualquier tutor del niño
+  confirma por él».
 - **Firmas de los documentos del centro**: el criterio de las firmas de autorización (opción b): la
   fila se ve —quién firmó, en calidad de qué y cuándo—; el trazo, la IP, el navegador y el nombre
-  tecleado, solo por función, para quien firmó, el tutor legal y la Dirección (la profe no: la tabla
-  ya no se la dejaba leer, 3b, y la función no amplía a nadie). En
-  dos migraciones: la primera añade la función y la app la usa; la segunda, después del despliegue,
+  tecleado, solo por función, para quien firmó, el tutor legal y la Dirección. La profe no: la tabla
+  ya no se la dejaba leer (3b), y la función no amplía a nadie lo que la política da. En dos
+  migraciones: la primera añade la función y la app la usa; la segunda, después del despliegue,
   quita el permiso de esas columnas.
-- **Acuses del alta**: el tutor legal y la Dirección («el alta es del tutor legal», 2026-11-11).
-- **Matrículas**: pendiente de reconciliar dos instrucciones (2026-11-12 y 2026-11-16).
+- **Acuses del alta: el tutor legal y la Dirección.** Decisión del responsable del 2026-11-16: «El
+  acuse del alta es el registro de lo que la familia recibió y aceptó, y el autorizado no pinta nada
+  ahí.» (No había decisión explícita antes: «el alta es del tutor legal», del 2026-11-11, era sobre la
+  ruta `/alta`.)
+- **Matrículas: la tabla se queda abierta; la puerta de `/family` se arregla.** Las dos
+  instrucciones valen, porque hablaban de cosas distintas (el responsable, 2026-11-16). La del
+  2026-11-12 («MATRÍCULAS: NO LA DEJES ABIERTA… la puerta de /family no lee la tabla con la sesión,
+  pregunta por función») miraba la **puerta**: `/family` lee con la sesión y convierte el fallo en
+  `[]`, uno de los 454 del censo. Lo medido el 2026-11-16 —el inicio del autorizado lee con su sesión
+  el **aula** del niño, no solo si tiene matrícula (`get-ninos-de-familia`)— deja la **tabla**
+  abierta: el autorizado la necesita y lo sensible (`motivo_baja`) ya está cerrado por columna. Lo que
+  sigue vivo de la del 12: **un fallo de lectura no se lee como «no tiene matrícula»**. Antes de
+  arreglarlo se mide el bucle `/family` ↔ `/alta`, que hasta hoy está leído, no medido.
+  - **El bucle, medido (2026-11-16): no existe.** Lo leído el 2026-11-12 era falso: la puerta
+    (`estadoAltaFamilia`) filtra a los vínculos `tutor_legal_*` **antes** de leer `matriculas`, y
+    `/alta` manda al autorizado a su inicio antes de leer nada. Con el filtro quitado (mutación), dos
+    tests de `gate-familia.test.ts` se ponen rojos, los dos predichos: el autorizado no llega a la
+    lectura por ningún camino.
+  - **La puerta, arreglada** (sin migración): si la lectura de matrículas falla, `estadoAltaFamilia`
+    lanza en vez de devolver «sin alta» (el tutor con un hijo en alta caía en el panel en vez del
+    asistente). Lo recoge la página de error general (tres idiomas, «reintentar», Sentry). Test: el
+    caso nuevo de `gate-familia.test.ts`, rojo sin el arreglo («promise resolved … instead of
+    rejecting») y verde con él.
 
 **Medido abierto otra vez** (2026-11-16, ensayo en producción terminado en RAISE, las predicciones
 escritas antes; 21 de 21): un autorizado con todos los permisos a falso lee la fila de las cuatro,
@@ -1636,12 +1660,16 @@ El mismo usuario sin vínculo no lee nada y el tutor legal (control positivo) lo
   niño y **no** en la ficha médica cifrada; la imagen en su propio bucket (`sip-ninos`), con el
   criterio de `dni-tutores`.
 - **2026-11-13, del responsable (copiando el criterio del DNI y del teléfono de la fase 6):**
-  - **El número es obligatorio para cerrar el alta**, y la base también lo exige. En España la
-    tarjeta sanitaria es obligatoria: todo niño la tiene. Obligatorio es **tenerla**, no que sea
-    valenciana.
-    - _Sustituida el 2026-11-13 por la línea de arriba:_ «no es obligatorio para cerrar el alta: un
-      bebé de cuatro meses puede no tener SIP todavía». Se dijo y se corrigió el mismo día, antes de
-      construir nada.
+  - **El número es obligatorio para cerrar el alta**, y la base también lo exige. **Decisión de
+    Jose, 2026-11-13**, justo después del mensaje de las 20:27 del responsable, literal: «SIP si es
+    obligatorio en españa». El responsable la pasó en «NIDO · SIP · CORRECCIÓN DE JOSE»: obligatorio
+    para cerrar el alta, la base también lo exige, la imagen sigue sin ser obligatoria, y se acepta
+    cualquier tarjeta porque obligatorio es **tenerla**, no que sea valenciana. (Fuente: el
+    responsable, 2026-11-16, que lo cita; el mensaje de Jose y ese prompt no están en las
+    conversaciones guardadas. Se escribe aquí para que no vuelva a vivir solo en un prompt.)
+    - _Sustituida el 2026-11-13 por la decisión de Jose de arriba_, una hora después de decirse: lo
+      que había decidido el responsable a las 20:27, «NO es obligatorio para cerrar el alta. Un bebé
+      de cuatro meses puede no tener SIP todavía». Se corrigió antes de construir nada.
   - **Cualquier tarjeta**: de otra comunidad, de una aseguradora privada o de una familia extranjera.
     La forma propia solo se valida cuando parece un SIP valenciano, como la letra del DNI en la fase
     6 (ver «Lo que no se construyó», abajo).
@@ -2051,6 +2079,13 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
 - **No se vuelve a firmar cada curso**: la renovación quedó fuera de la serie y sigue fuera.
 - **Lo de siempre**: exportación del art. 15, purga con el niño, el autorizado no ve nada de esto, y
   el test de la purga llega a los ficheros del bucket nuevo, no solo a su nombre.
+- **El consentimiento de imagen, también en la base** (decisión del responsable del 2026-11-16).
+  Hoy solo lo exige la app (bloque `imagen` de `finalizarAlta`): una llamada directa a
+  `marcar_matricula_lista` cierra el alta sin él, el mismo hueco que el 4b-2 cerró para las normas.
+  La fase 10 reescribe `marcar_matricula_lista` para exigir la firma, y en el mismo sitio y el mismo
+  PR exige el consentimiento de imagen. Viene del «punto 3» del 2026-11-12 («3 · El cierre del alta
+  en la base») y del 2026-11-13 («Los documentos y el consentimiento de imagen se quedan en el punto
+  3»): los documentos los cerró el 4b-2; la imagen, no.
 - **Orden**: después del PR de las cuatro tablas de gravedad media y baja.
 
 ## Orden de la serie

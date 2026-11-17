@@ -92,6 +92,27 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 - [ ] **Barrer tres componentes muertos (visto el 2026-11-11, en la 5b).** Ningún `.tsx` de `src` llega a ellos por un import de valor desde una ruta (instrumento con control positivo, `PasoIdentidad`, y negativo, `PasoMenor`): `src/features/calendario-centro/components/CalendarioCentroReadOnly.tsx`, `src/shared/components/BrandedLoading.tsx` y `src/shared/components/LoadingSkeleton.tsx`, de mayo de 2026. `docs/journey/progress.md` (línea 427) y `docs/specs/school-calendar.md` dicen que las páginas del calendario de profe y familia usan el primero, y no lo usan: el barrido corrige también esas dos frases. El instrumento no ve un componente importado que nunca se pinta. Decisión del responsable: aparte, no en la 5b. _(Ola 1)_
 
+## Después de la serie de altas — Ola 1
+
+Decisiones del responsable que vivían solo en sus mensajes y se escriben aquí el 2026-11-16 (PR de
+las cuatro tablas de gravedad media y baja), con sus palabras y su fecha. **Disparo:** al cerrar la
+serie de altas (`docs/specs/altas-serie.md`).
+
+- [ ] **Los 6 sitios que quedan del censo y el SEPA silencioso** (2026-11-12, 16:08): «Los 6 que
+      quedan —menú del mes, pase de comidas, los dos de dinero y los dos duplicados— y el SEPA
+      silencioso quedan apuntados con fecha para después de las altas. No los toques ahora.» Del censo
+      de «una lectura que falla no se lee como "no hay"» (`altas-serie.md`, 454 sitios). _(Ola 1)_
+- [ ] **El esquema estricto en la agenda, las citas y los eventos** (2026-11-13, 08:13): «Lo del
+      esquema estricto en la agenda, las citas y los eventos queda ANOTADO sin medir, para después de
+      las altas. No lo toques ahora.» Sin medir. _(Ola 1)_
+- [ ] **Las decisiones A–J de F11-G, sin escribir** (2026-11-13, 08:31): «las decisiones A–J de F11-G
+      no están escritas en ninguna parte del repo, solo citadas en comentarios del código. Eso es
+      código gobernado por decisiones que nadie puede leer. Déjalo apuntado para después de las
+      altas.» La ADR-0049 remite a ellas. _(Ola 1)_
+- [ ] **D14: un teléfono por tutor, no varios** (2026-11-13, 08:31): «D14 · Teléfono obligatorio
+      para TODO tutor que se dé de alta, también cuando solo hay uno. Un teléfono por tutor, no
+      varios.» La spec dice «Teléfono (D14)» sin la segunda frase. _(Ola 1)_
+
 ## Reactivos / condicionales (solo cuando se cumpla la condición)
 
 - [ ] **Columna "Apoyos" en `/admin/aulas`** — añadir cuando aparezca el primer `apoyo` real en un centro (omitida hoy por YAGNI, ver ADR-0033). _(Ola 1)_

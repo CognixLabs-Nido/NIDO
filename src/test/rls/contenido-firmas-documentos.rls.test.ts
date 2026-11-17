@@ -3,7 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/db'
 
-import { borrarDocumentosDe, creaDocumento, subeVersion } from './documentos-centro-fixture'
+import {
+  borrarDocumentosDe,
+  comoPostgres,
+  creaDocumento,
+  subeVersion,
+} from './documentos-centro-fixture'
 import {
   anonClient,
   asignarProfeAula,
@@ -114,12 +119,13 @@ describe('contenido_firmas_documentos (primera de dos)', () => {
       await como(profe)
     ).rpc('es_profe_de_nino', { p_nino_id: nino.id })
     expect(esProfe).toBe(true)
-    const { data: f } = await serviceClient
-      .from('firmas_documentos_centro')
-      .select('firmante_id, firma_imagen, user_agent')
-      .eq('id', firma)
-      .single()
-    expect(f).toEqual({ firmante_id: legal.id, firma_imagen: TRAZO, user_agent: UA })
+    // Como `postgres`: la tabla no da nada a `service_role` (3b), y la segunda migración quitará a
+    // la sesión estas columnas. La premisa no depende de ninguno de los dos permisos.
+    expect(
+      comoPostgres(
+        `SELECT firmante_id || '|' || firma_imagen || '|' || user_agent FROM public.firmas_documentos_centro WHERE id = '${firma}'`
+      )
+    ).toBe(`${legal.id}|${TRAZO}|${UA}`)
   })
 
   it('a quien firmó, al otro tutor legal y a la Dirección: el contenido entero', async () => {

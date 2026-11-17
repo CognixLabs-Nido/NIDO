@@ -16,6 +16,7 @@ const CENTRO = '55555555-5555-4555-8555-555555555555'
 type Hijo = { id: string; tipoVinculo: string }
 let hijosDelAmbito: Hijo[]
 let matriculasRows: Array<{ nino_id: string; estado: string }>
+let matriculasError: { message: string } | null = null
 const ambitosPedidos: string[] = []
 const filtros: Array<[string, string, unknown]> = []
 
@@ -25,8 +26,12 @@ function builder(table: string) {
     eq: (col: string, val: unknown) => (filtros.push([table, `eq:${col}`, val]), b),
     in: (col: string, val: unknown) => (filtros.push([table, `in:${col}`, val]), b),
     is: (col: string, val: unknown) => (filtros.push([table, `is:${col}`, val]), b),
-    then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
-      resolve({ data: matriculasRows, error: null }),
+    then: (resolve: (v: { data: unknown; error: { message: string } | null }) => unknown) =>
+      resolve(
+        matriculasError
+          ? { data: null, error: matriculasError }
+          : { data: matriculasRows, error: null }
+      ),
   }
   return b
 }
@@ -132,6 +137,7 @@ describe('estadoAltaFamilia (hijos del centro activo + matrículas)', () => {
     ambitosPedidos.length = 0
     hijosDelAmbito = []
     matriculasRows = []
+    matriculasError = null
   })
 
   it('pide el ámbito del centro que recibe', async () => {
@@ -166,5 +172,16 @@ describe('estadoAltaFamilia (hijos del centro activo + matrículas)', () => {
       ['matriculas', 'is:fecha_baja', null],
       ['matriculas', 'is:deleted_at', null],
     ])
+  })
+
+  it('si la lectura de matrículas falla, no se lee como «sin matrículas»: lanza', async () => {
+    hijosDelAmbito = [{ id: NINO_A, tipoVinculo: 'tutor_legal_principal' }]
+    // Premisa: con la misma lectura bien, este hijo sale en alta (y la puerta lo mandaría al asistente).
+    matriculasError = null
+    matriculasRows = [{ nino_id: NINO_A, estado: 'pendiente' }]
+    expect(await estadoAltaFamilia(CENTRO)).toEqual({ ninosEnAlta: [NINO_A], hayNinoActivo: false })
+    // Con la lectura fallida: antes daba «sin alta» (el panel en vez del asistente). Ahora, error.
+    matriculasError = { message: 'fallo simulado' }
+    await expect(estadoAltaFamilia(CENTRO)).rejects.toThrow()
   })
 })
