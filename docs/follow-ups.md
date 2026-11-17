@@ -92,6 +92,28 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 - [ ] **Barrer tres componentes muertos (visto el 2026-11-11, en la 5b).** Ningún `.tsx` de `src` llega a ellos por un import de valor desde una ruta (instrumento con control positivo, `PasoIdentidad`, y negativo, `PasoMenor`): `src/features/calendario-centro/components/CalendarioCentroReadOnly.tsx`, `src/shared/components/BrandedLoading.tsx` y `src/shared/components/LoadingSkeleton.tsx`, de mayo de 2026. `docs/journey/progress.md` (línea 427) y `docs/specs/school-calendar.md` dicen que las páginas del calendario de profe y familia usan el primero, y no lo usan: el barrido corrige también esas dos frases. El instrumento no ve un componente importado que nunca se pinta. Decisión del responsable: aparte, no en la 5b. _(Ola 1)_
 
+## Prioridad: en cuanto acabe la fase 10
+
+- [ ] **El PDF del mandato SEPA: lo puede sustituir quien lo firmó, y lleva el IBAN en claro**
+      (medido el 2026-11-17 en producción y en el código; decisión del responsable del mismo día:
+      «Eso se cierra en cuanto acabe la fase 10»). Sin tocar hasta entonces.
+  - **El firmante puede cambiarlo sin firmar otra vez.** La política `mandato_sepa_update` de
+    `storage.objects` (creada en `20260624120000_phase11g_0_altas_documentos_fundacion.sql`,
+    `ALTER POLICY` en `20261027120000_fix_storage_ruta_coherente.sql`, líneas 166 y 170, también
+    `mandato_sepa_update_familia`) deja al tutor legal del niño (y a la familia por su ruta)
+    sobrescribir el objeto. La ruta es fija (`{centro}/{niño}/mandato.pdf`) y la ruta
+    `src/app/[locale]/alta/[ninoId]/mandato-sepa/route.ts` sube con `upsert: true`: volver a firmar
+    pisa el PDF anterior, y nada impide pisarlo sin firmar. Los 3 que hay hoy no han cambiado
+    después de su firma (`updated_at` frente a `fecha_firma`): no se ha usado, pero nada lo impide.
+  - **Nada ata el PDF a lo firmado.** Lo genera el navegador (`src/features/alta/lib/mandato-pdf.ts`)
+    y el servidor calcula `texto_hash` sobre los campos del formulario, no sobre los bytes del PDF.
+  - **El IBAN va en claro dentro del PDF** (`mandato-pdf.ts`, línea 89) mientras la columna está
+    cifrada (`iban_cifrado`): la misma fuga que la fase 10 evita en la ficha (decisión (C)).
+  - **La sesión lee las 26 columnas** de `mandatos_sepa` (el trazo, la IP, el navegador, el nombre
+    tecleado, el documento y la dirección del titular); política `mandatos_sepa_select`:
+    `es_admin(centro_id) OR es_tutor_de_familia(familia_id)`.
+  - El enlace firmado dura una hora (`SIGNED_URL_TTL_SEGUNDOS`).
+
 ## Después de la serie de altas — Ola 1
 
 Decisiones del responsable que vivían solo en sus mensajes y se escriben aquí el 2026-11-16 (PR de
