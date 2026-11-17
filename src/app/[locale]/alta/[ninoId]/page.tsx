@@ -25,6 +25,7 @@ import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-f
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { resolverSalidaAlta } from '@/features/alta/lib/salida-alta'
 import { puedeConsentirImagenAlta } from '@/features/alta/lib/consentimiento-imagen-alta'
+import { leerRespuestaImagen } from '@/features/alta/lib/respuesta-imagen'
 import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
@@ -320,12 +321,16 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // Si la lectura falla no hay alta: una lista vacía diría «no hay nada que firmar».
   const documentosCentro = await leerDocumentosNino(supabase, ninoId)
   if (!documentosCentro.ok) throw new Error(documentosCentro.error)
-  // Imagen por CONSENT (casilla → `otorgar_consentimiento_imagen`, IU-2): ¿el niño ya tiene consent
-  // de imagen vigente? (lo alimentan tanto la casilla como la firma).
+  // Imagen: ¿el niño puede salir en fotos? (`existe_consentimiento_imagen`: un «sí» vigente y ningún
+  // «no», desde la 10a-2; habilita subir su foto). Y la respuesta de quien hace el alta, que es lo que
+  // pide el cierre (fase 10: cada tutor responde por sí). Sin leerla no hay alta: «sin respuesta»
+  // sería decirlo sin haberlo mirado.
   const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
     p_nino_id: ninoId,
   })
   const imagenAceptado = imagenConsentida ?? false
+  const miRespuesta = await leerRespuestaImagen(supabase, ninoId, user.id)
+  if (!miRespuesta.ok) throw new Error('alta: la respuesta a la imagen no se lee')
 
   // SEPA (G-2): datos del centro (acreedor, con su CID desde el 0c-2) y mandato activo previo del
   // tutor 1 (titular).
@@ -443,6 +448,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         imagenSinPlantilla={imagenSinPlantilla}
         documentosCentro={documentosCentro.data}
         imagenAceptado={imagenAceptado}
+        miRespuestaImagen={miRespuesta.respuesta}
         familiaEstadoCivil={familiaEstadoCivil}
         datosTutor1={datosTutor1}
         datosTutor2={datosTutor2}

@@ -39,10 +39,11 @@ import {
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 
 import { actualizarNinoFamilia } from '../actions/actualizar-nino-familia'
-import { AcuseAltaCheckbox } from './AcuseAltaCheckbox'
+import { RespuestaImagenAlta } from './RespuestaImagenAlta'
 import { SubirDocumentoPdf } from './SubirDocumentoPdf'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
+import type { RespuestaImagen } from '../lib/respuesta-imagen'
 import type { IdentidadInicial, ImagenPanelData } from '../lib/tipos'
 
 export interface DireccionInicial {
@@ -78,8 +79,13 @@ interface Props {
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
-  /** ¿El niño ya tiene consent de imagen vigente? (IU-2: el checkbox otorga el consent). */
+  /**
+   * ¿El niño puede salir en fotos? (`existe_consentimiento_imagen`: un «sí» vigente y ningún «no»,
+   * desde la 10a-2). Es lo que habilita subir su foto.
+   */
   imagenAceptado: boolean
+  /** La respuesta de quien hace el alta a la imagen (fase 10, 10a-2): «sí», «no» o ninguna. */
+  miRespuestaImagen: RespuestaImagen
   /** ¿Puede dar el consentimiento de imagen? (tutor legal o modo Dirección). Si no, se oculta
    *  la sección de imagen entera (documento, «Cargar documento» y casilla) y se explica por
    *  qué. Por defecto true. */
@@ -132,6 +138,7 @@ export function PasoMenor({
   imagenPanel,
   imagenSinPlantilla,
   imagenAceptado,
+  miRespuestaImagen,
   puedeConsentirImagen = true,
   currentUserId,
   currentUserNombre,
@@ -150,13 +157,11 @@ export function PasoMenor({
   const [pendingImagen, startImagen] = useTransition()
   const [pendingSiguiente, startSiguiente] = useTransition()
   const [imagenOmitida, setImagenOmitida] = useState(false)
-  // Consentimiento de imagen vigente (IU-2): gate de la foto de abajo. Se DERIVA en vez de
-  // copiarse en estado, porque hay DOS vías de otorgarlo y cada una avisa distinto: el
-  // checkbox lo dice por callback (misma pantalla, sin recargar) y la FIRMA del documento
-  // llega como prop nueva tras su `router.refresh()`. Un `useState(imagenAceptado)` se
-  // quedaría clavado en false tras firmar, porque el inicial solo se lee al montar.
-  const [aceptadoEnSesion, setAceptadoEnSesion] = useState(false)
-  const imagenOk = imagenAceptado || aceptadoEnSesion
+  // ¿Puede salir en fotos? Gate de la foto de abajo, y solo de la prop: desde la 10a-2 un «sí»
+  // propio no basta (el «no» del otro tutor lo frena), así que tras contestar se refresca la ruta y
+  // lo decide el servidor (`existe_consentimiento_imagen`). La firma del documento llega igual, como
+  // prop nueva tras su `router.refresh()`.
+  const imagenOk = imagenAceptado
 
   // Datos pedagógicos elevados del sub-form. Antes su único guardado era el botón propio
   // (desacoplado de "Continuar") → si el tutor rellenaba y avanzaba, se perdía. Ahora se
@@ -739,10 +744,11 @@ export function PasoMenor({
           )
         )}
         {puedeConsentirImagen && (
-          <AcuseAltaCheckbox
+          <RespuestaImagenAlta
             ninoId={ninoId}
-            aceptadoInicial={imagenAceptado}
-            onAceptado={() => setAceptadoEnSesion(true)}
+            respuestaInicial={miRespuestaImagen}
+            soloSi={modoDireccion}
+            onRespondido={() => router.refresh()}
           />
         )}
       </section>

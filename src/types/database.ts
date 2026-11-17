@@ -5540,6 +5540,17 @@ export type Database = {
         Returns: string
       }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
+      denegar_consentimiento_imagen: {
+        Args: {
+          p_ip?: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id: string
+          p_tutor: string
+          p_user_agent?: string
+          p_version: string
+        }
+        Returns: string
+      }
       desarchivar_nino: {
         Args: {
           p_aula_id: string
@@ -6299,6 +6310,10 @@ export type Database = {
           sujeto_nombre: string
           sujeto_tipo: string
         }[]
+      }
+      retirar_denegacion_imagen: {
+        Args: { p_nino_id: string; p_tutor: string }
+        Returns: number
       }
       retirar_peticion_olvido: {
         Args: { p_solicitud_id: string }

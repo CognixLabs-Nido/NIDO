@@ -20,3 +20,13 @@ export const otorgarImagenNinoSchema = z.object({
 })
 
 export type OtorgarImagenNinoInput = z.infer<typeof otorgarImagenNinoSchema>
+
+/**
+ * El «no» de la imagen de UN niño, y retirarlo, por su tutor legal desde el portal de familia (fase
+ * 10, 10a-2). Cada tutor responde por sí: el «no» y su retirada son a nombre de quien llama.
+ */
+export const respuestaImagenNinoSchema = z.object({
+  nino_id: z.string().uuid(),
+})
+
+export type RespuestaImagenNinoInput = z.infer<typeof respuestaImagenNinoSchema>

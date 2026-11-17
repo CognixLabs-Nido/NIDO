@@ -1748,8 +1748,9 @@
         "titulo": "Autorització d'imatge",
         "estado": {
           "concedida": "Concedida: pot aparéixer en les fotos del centre.",
-          "pendiente_otro": "Pendent: falta l'autorització de l'altre tutor. Fins aleshores no apareix en les fotos.",
-          "no_autorizada": "No autoritzada: no apareix en les fotos del centre."
+          "pendiente_otro": "No apareix en les fotos: falta l'autorització de l'altre tutor, o l'altre tutor no l'autoritza.",
+          "no_autorizada": "No autoritzada: no apareix en les fotos del centre.",
+          "denegada_por_mi": "Has dit que no: no apareix en les fotos del centre. Ho pots canviar quan vulgues."
         },
         "revocar": {
           "boton": "Revocar l'autorització",
@@ -1769,6 +1770,24 @@
           "procesando": "Autoritzant…",
           "exito": "Imatge autoritzada: ja pot aparéixer en les fotos.",
           "exito_pendiente": "La teua autorització queda registrada. Falta la de l'altre tutor perquè aparega en les fotos."
+        },
+        "denegar": {
+          "boton": "No autoritze",
+          "titulo": "No autoritzar la imatge",
+          "aviso": "{nombre} no apareixerà en les fotos del centre mentre el teu «no» siga vigent, encara que l'altre tutor l'autoritze. Les fotos ja publicades en què ix queden ocultes. No autoritzar?",
+          "cancelar": "Cancel·la",
+          "confirmar": "No autoritze",
+          "procesando": "Guardant…",
+          "exito": "El teu «no» queda registrat."
+        },
+        "retirar_no": {
+          "boton": "Retirar el meu «no»",
+          "titulo": "Retirar el teu «no»",
+          "aviso": "Deixes de dir que no a la imatge de {nombre}, sense autoritzar-la: queda sense la teua resposta. Retirar-lo?",
+          "cancelar": "Cancel·la",
+          "confirmar": "Retira",
+          "procesando": "Retirant…",
+          "exito": "El teu «no» s'ha retirat."
         }
       },
       "recorrido": {
@@ -2510,7 +2529,10 @@
         "no_autorizado": "No tens permís per a revocar l'autorització d'imatge d'este xiquet",
         "fallo": "No s'ha pogut revocar l'autorització d'imatge",
         "no_autorizado_otorgar": "No tens permís per a autoritzar la imatge d'aquest xiquet",
-        "fallo_otorgar": "No s'ha pogut autoritzar la imatge"
+        "fallo_otorgar": "No s'ha pogut autoritzar la imatge",
+        "no_autorizado_denegar": "No tens permís per a respondre per la imatge d'aquest xiquet",
+        "fallo_denegar": "No s'ha pogut guardar el teu «no»",
+        "fallo_retirar_no": "No s'ha pogut retirar el teu «no»"
       }
     },
     "tarjeta_sanitaria": {
@@ -4721,7 +4743,7 @@
       "cargar": "Carregar autorització d'imatge",
       "cargar_ayuda": "Prepara l'autorització d'imatge per a revisar-la i signar-la.",
       "foto_titulo": "Foto del xiquet",
-      "foto_requiere_autorizacion": "Accepta primer l'autorització d'imatge per a poder pujar la foto.",
+      "foto_requiere_autorizacion": "La foto només es pot pujar si la imatge està autoritzada i cap tutor no ha dit que no.",
       "solo_tutor_legal": "L'autorització d'imatge la dona el tutor legal del xiquet."
     },
     "completado": {
@@ -4746,8 +4768,12 @@
       "privacidad_aceptada": "Vas acceptar l'avís de privacitat en crear el teu compte.",
       "privacidad_ver": "Veure avís de privacitat",
       "aceptado": "Acceptat.",
-      "imagen_acepto": "Autoritze l'ús de la imatge del menor segons la política del centre.",
-      "imagen_aceptado": "Vas acceptar l'autorització d'imatge."
+      "imagen_aceptado": "Has autoritzat la imatge.",
+      "imagen_pregunta": "Autoritzes l'ús de la imatge del menor segons la política del centre?",
+      "imagen_libre": "Pots dir que no: no impedeix acabar l'alta, i ho pots canviar quan vulgues.",
+      "imagen_boton_si": "Sí, autoritze",
+      "imagen_boton_no": "No autoritze",
+      "imagen_denegado": "Has dit que no autoritzes la imatge."
     },
     "menor": {
       "direccion_titulo": "Adreça del menor",
@@ -4912,7 +4938,7 @@
         "tutor1": "Dades del tutor 1",
         "medico": "Dades mèdiques i d'emergència",
         "documentos": "Documents (llibre de família i DNI)",
-        "imagen": "Autorització d'imatge",
+        "imagen": "Resposta a l'autorització d'imatge (sí o no)",
         "documentos_centro": "Documents del centre per signar",
         "tutor2": "Dades del tutor 2",
         "servicios": "Serveis (contestar cadascun)",

@@ -87,6 +87,7 @@ function renderPaso(over: Partial<IdentidadInicial> = {}, mostrarComo = false) {
       imagenPanel={null}
       imagenSinPlantilla={false}
       imagenAceptado={false}
+      miRespuestaImagen={null}
       currentUserId="11111111-1111-4111-8111-111111111111"
       currentUserNombre="Tutor Pruebas"
       onDireccionChange={vi.fn()}

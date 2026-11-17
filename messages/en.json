@@ -1748,8 +1748,9 @@
         "titulo": "Image authorisation",
         "estado": {
           "concedida": "Granted: may appear in the centre's photos.",
-          "pendiente_otro": "Pending: the other guardian's authorisation is missing. Until then, not shown in photos.",
-          "no_autorizada": "Not authorised: not shown in the centre's photos."
+          "pendiente_otro": "They do not appear in the photos: the other guardian's authorisation is missing, or the other guardian does not authorise it.",
+          "no_autorizada": "Not authorised: not shown in the centre's photos.",
+          "denegada_por_mi": "You have said no: they do not appear in the centre's photos. You can change it whenever you like."
         },
         "revocar": {
           "boton": "Revoke authorisation",
@@ -1769,6 +1770,24 @@
           "procesando": "Authorising…",
           "exito": "Image authorised: may now appear in photos.",
           "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos."
+        },
+        "denegar": {
+          "boton": "I do not authorise",
+          "titulo": "Do not authorise the image",
+          "aviso": "{nombre} will not appear in the centre's photos while your «no» stands, even if the other guardian authorises it. Photos already published that include them are hidden. Do not authorise?",
+          "cancelar": "Cancel",
+          "confirmar": "I do not authorise",
+          "procesando": "Saving…",
+          "exito": "Your «no» has been recorded."
+        },
+        "retirar_no": {
+          "boton": "Withdraw my «no»",
+          "titulo": "Withdraw your «no»",
+          "aviso": "You stop saying no to {nombre}'s image without authorising it: it is left without your answer. Withdraw it?",
+          "cancelar": "Cancel",
+          "confirmar": "Withdraw",
+          "procesando": "Withdrawing…",
+          "exito": "Your «no» has been withdrawn."
         }
       },
       "recorrido": {
@@ -2510,7 +2529,10 @@
         "no_autorizado": "You don't have permission to revoke this child's image consent",
         "fallo": "Could not revoke image consent",
         "no_autorizado_otorgar": "You don't have permission to authorise this child's image",
-        "fallo_otorgar": "The image could not be authorised"
+        "fallo_otorgar": "The image could not be authorised",
+        "no_autorizado_denegar": "You are not allowed to answer for this child's image",
+        "fallo_denegar": "Your «no» could not be saved",
+        "fallo_retirar_no": "Your «no» could not be withdrawn"
       }
     },
     "tarjeta_sanitaria": {
@@ -4721,7 +4743,7 @@
       "cargar": "Load image authorisation",
       "cargar_ayuda": "Prepare the image authorisation to review and sign it.",
       "foto_titulo": "Child's photo",
-      "foto_requiere_autorizacion": "Accept the image authorisation first to be able to upload the photo.",
+      "foto_requiere_autorizacion": "The photo can only be uploaded if the image is authorised and no guardian has said no.",
       "solo_tutor_legal": "The image authorisation is given by the child's legal guardian."
     },
     "completado": {
@@ -4746,8 +4768,12 @@
       "privacidad_aceptada": "You accepted the privacy notice when creating your account.",
       "privacidad_ver": "View privacy notice",
       "aceptado": "Accepted.",
-      "imagen_acepto": "I authorise the use of the child's image according to the centre's policy.",
-      "imagen_aceptado": "You accepted the image authorisation."
+      "imagen_aceptado": "You have authorised the image.",
+      "imagen_pregunta": "Do you authorise the use of the child's image according to the centre's policy?",
+      "imagen_libre": "You can say no: it does not stop you finishing the enrolment, and you can change it whenever you like.",
+      "imagen_boton_si": "Yes, I authorise",
+      "imagen_boton_no": "I do not authorise",
+      "imagen_denegado": "You have said you do not authorise the image."
     },
     "menor": {
       "direccion_titulo": "Child's address",
@@ -4912,7 +4938,7 @@
         "tutor1": "Guardian 1 details",
         "medico": "Medical and emergency details",
         "documentos": "Documents (family book and ID)",
-        "imagen": "Image consent",
+        "imagen": "Answer to the image consent (yes or no)",
         "documentos_centro": "Centre's documents to sign",
         "tutor2": "Guardian 2 details",
         "servicios": "Services (answer each one)",

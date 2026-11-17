@@ -1748,8 +1748,9 @@
         "titulo": "Autorización de imagen",
         "estado": {
           "concedida": "Concedida: puede aparecer en las fotos del centro.",
-          "pendiente_otro": "Pendiente: falta la autorización del otro tutor. Hasta entonces no aparece en las fotos.",
-          "no_autorizada": "No autorizada: no aparece en las fotos del centro."
+          "pendiente_otro": "No aparece en las fotos: falta la autorización del otro tutor, o el otro tutor no la autoriza.",
+          "no_autorizada": "No autorizada: no aparece en las fotos del centro.",
+          "denegada_por_mi": "Has dicho que no: no aparece en las fotos del centro. Puedes cambiarlo cuando quieras."
         },
         "revocar": {
           "boton": "Revocar autorización",
@@ -1769,6 +1770,24 @@
           "procesando": "Autorizando…",
           "exito": "Imagen autorizada: ya puede aparecer en las fotos.",
           "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos."
+        },
+        "denegar": {
+          "boton": "No autorizo",
+          "titulo": "No autorizar la imagen",
+          "aviso": "{nombre} no aparecerá en las fotos del centro mientras tu «no» siga vigente, aunque el otro tutor la autorice. Las fotos ya publicadas en las que sale quedan ocultas. ¿No autorizar?",
+          "cancelar": "Cancelar",
+          "confirmar": "No autorizo",
+          "procesando": "Guardando…",
+          "exito": "Tu «no» queda registrado."
+        },
+        "retirar_no": {
+          "boton": "Retirar mi «no»",
+          "titulo": "Retirar tu «no»",
+          "aviso": "Dejas de decir que no a la imagen de {nombre}, sin autorizarla: queda sin tu respuesta. ¿Retirarlo?",
+          "cancelar": "Cancelar",
+          "confirmar": "Retirar",
+          "procesando": "Retirando…",
+          "exito": "Tu «no» se ha retirado."
         }
       },
       "recorrido": {
@@ -2510,7 +2529,10 @@
         "no_autorizado": "No tienes permiso para revocar la autorización de imagen de este niño",
         "fallo": "No se pudo revocar la autorización de imagen",
         "no_autorizado_otorgar": "No tienes permiso para autorizar la imagen de este niño",
-        "fallo_otorgar": "No se pudo autorizar la imagen"
+        "fallo_otorgar": "No se pudo autorizar la imagen",
+        "no_autorizado_denegar": "No tienes permiso para responder por la imagen de este niño",
+        "fallo_denegar": "No se pudo guardar tu «no»",
+        "fallo_retirar_no": "No se pudo retirar tu «no»"
       }
     },
     "tarjeta_sanitaria": {
@@ -4721,7 +4743,7 @@
       "cargar": "Cargar autorización de imagen",
       "cargar_ayuda": "Prepara la autorización de imagen para revisarla y firmarla.",
       "foto_titulo": "Foto del niño",
-      "foto_requiere_autorizacion": "Acepta primero la autorización de imagen para poder subir la foto.",
+      "foto_requiere_autorizacion": "La foto solo se puede subir si la imagen está autorizada y ningún tutor ha dicho que no.",
       "solo_tutor_legal": "La autorización de imagen la da el tutor legal del niño."
     },
     "completado": {
@@ -4746,8 +4768,12 @@
       "privacidad_aceptada": "Aceptaste el aviso de privacidad al crear tu cuenta.",
       "privacidad_ver": "Ver aviso de privacidad",
       "aceptado": "Aceptado.",
-      "imagen_acepto": "Autorizo el uso de la imagen del menor según la política del centro.",
-      "imagen_aceptado": "Aceptaste la autorización de imagen."
+      "imagen_aceptado": "Has autorizado la imagen.",
+      "imagen_pregunta": "¿Autorizas el uso de la imagen del menor según la política del centro?",
+      "imagen_libre": "Puedes decir que no: no impide terminar el alta, y puedes cambiarlo cuando quieras.",
+      "imagen_boton_si": "Sí, autorizo",
+      "imagen_boton_no": "No autorizo",
+      "imagen_denegado": "Has dicho que no autorizas la imagen."
     },
     "menor": {
       "direccion_titulo": "Dirección del menor",
@@ -4912,7 +4938,7 @@
         "tutor1": "Datos del tutor 1",
         "medico": "Datos médicos y de emergencia",
         "documentos": "Documentos (libro de familia y DNI)",
-        "imagen": "Autorización de imagen",
+        "imagen": "Respuesta a la autorización de imagen (sí o no)",
         "documentos_centro": "Documentos del centro por firmar",
         "tutor2": "Datos del tutor 2",
         "servicios": "Servicios (contestar cada uno)",

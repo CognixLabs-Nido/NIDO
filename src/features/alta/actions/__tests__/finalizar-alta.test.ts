@@ -31,7 +31,12 @@ interface Estado {
   familia_tutores: Fila[]
   consentimientos: Fila[]
   mandatos_sepa: Fila[]
-  imagenConsentida: boolean
+  /**
+   * Fase 10 (10a-2): la respuesta a la imagen de quien cierra («sí», «no» o ninguna), que el falso
+   * sirve a la consulta de `consentimientos` filtrada por los dos tipos de imagen; `'falla'` = la
+   * lectura da error.
+   */
+  respuestaImagen: 'si' | 'no' | null | 'falla'
   /** Lo que devuelve `documentos_firma_nino`; `null` = la lectura falla. */
   documentosCentro: Fila[] | null
   /** Fase 8b: lo que devuelve `servicios_alta`; `null` = la lectura falla. */
@@ -100,7 +105,7 @@ function altaCompleta(): Estado {
     ],
     consentimientos: [{ id: '66666666-6666-4666-8666-666666666666' }],
     mandatos_sepa: [],
-    imagenConsentida: true,
+    respuestaImagen: 'si',
     // Las normas, firmadas: el alta completa.
     documentosCentro: [doc('Normas', true, 'firmado')],
     // Fase 8b: un centro sin conceptos de servicio no pide nada.
@@ -117,15 +122,36 @@ function makeFake(estado: Estado) {
 
   function builder(tabla: keyof Estado) {
     const filas = estado[tabla] as Fila[]
+    // La consulta de la respuesta a la imagen es la única que filtra `consentimientos` por varios
+    // tipos (`.in('tipo', …)`): el falso le sirve la respuesta del estado, no las filas del acuse.
+    let tiposImagen = false
     const b = {
       select: () => b,
       eq: () => b,
+      in: (col: string, vals: string[]) => {
+        if (tabla === 'consentimientos' && col === 'tipo' && vals.includes('imagen_denegada'))
+          tiposImagen = true
+        return b
+      },
       is: () => b,
       order: () => b,
       limit: () => b,
       maybeSingle: () => Promise.resolve({ data: filas[0] ?? null, error: null }),
-      then: (resolve: (v: { data: Fila[]; error: null }) => unknown) =>
-        resolve({ data: filas, error: null }),
+      then: (
+        resolve: (v: {
+          data: Fila[] | null
+          error: { code: string; message: string } | null
+        }) => unknown
+      ) => {
+        if (!tiposImagen) return resolve({ data: filas, error: null })
+        const r = estado.respuestaImagen
+        if (r === 'falla')
+          return resolve({ data: null, error: { code: 'XX000', message: 'fallo' } })
+        return resolve({
+          data: r === null ? [] : [{ tipo: r === 'si' ? 'imagen' : 'imagen_denegada' }],
+          error: null,
+        })
+      },
     }
     return b
   }
@@ -136,7 +162,7 @@ function makeFake(estado: Estado) {
       if (
         !(tabla in estado) ||
         [
-          'imagenConsentida',
+          'respuestaImagen',
           'documentosCentro',
           'errorMarcar',
           'serviciosAlta',
@@ -185,8 +211,6 @@ function makeFake(estado: Estado) {
           error: null,
         })
       }
-      if (fn === 'existe_consentimiento_imagen')
-        return Promise.resolve({ data: estado.imagenConsentida, error: null })
       if (fn === 'documentos_firma_nino')
         return Promise.resolve(
           estado.documentosCentro
@@ -286,6 +310,51 @@ async function cierra(estado: Estado) {
   const r = await finalizarAlta(NINO)
   return { r, cerro: rpcSpy.mock.calls.some(([fn]) => fn === 'marcar_matricula_lista') }
 }
+
+describe('finalizarAlta · la imagen pide respuesta, no un «sí» (fase 10, 10a-2)', () => {
+  // Decisión del responsable del 2026-11-17: «la base exige una RESPUESTA, no un «sí»» y «basta que
+  // haya respuesta de quien firma» (art. 7.4).
+  it('premisa: con el «sí» de quien cierra, finaliza', async () => {
+    const { fake, rpcSpy } = makeFake(altaCompleta())
+    createClientMock.mockReturnValue(fake)
+    expect(await finalizarAlta(NINO)).toEqual({ success: true, data: { id: NINO } })
+    expect(rpcSpy).toHaveBeenCalledWith('marcar_matricula_lista', { p_nino_id: NINO })
+  })
+
+  it('con el «no» de quien cierra, finaliza igual: un «no» es una respuesta', async () => {
+    const estado = altaCompleta()
+    estado.respuestaImagen = 'no'
+    const { fake, rpcSpy } = makeFake(estado)
+    createClientMock.mockReturnValue(fake)
+    expect(await finalizarAlta(NINO)).toEqual({ success: true, data: { id: NINO } })
+    expect(rpcSpy).toHaveBeenCalledWith('marcar_matricula_lista', { p_nino_id: NINO })
+  })
+
+  it('sin respuesta de quien cierra falta «imagen», y no se llama a la base', async () => {
+    const estado = altaCompleta()
+    estado.respuestaImagen = null
+    const { fake, rpcSpy } = makeFake(estado)
+    createClientMock.mockReturnValue(fake)
+    expect(await finalizarAlta(NINO)).toEqual({
+      success: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['imagen'],
+    })
+    expect(rpcSpy).not.toHaveBeenCalledWith('marcar_matricula_lista', expect.anything())
+  })
+
+  it('si la respuesta no se lee, no se cierra: «sin respuesta» sería decirlo sin mirarlo', async () => {
+    const estado = altaCompleta()
+    estado.respuestaImagen = 'falla'
+    const { fake, rpcSpy } = makeFake(estado)
+    createClientMock.mockReturnValue(fake)
+    expect(await finalizarAlta(NINO)).toEqual({
+      success: false,
+      error: 'alta.errors.finalizar_fallo',
+    })
+    expect(rpcSpy).not.toHaveBeenCalledWith('marcar_matricula_lista', expect.anything())
+  })
+})
 
 describe('finalizarAlta · los documentos del centro (fase 4, 4b-2)', () => {
   it('premisa: con las normas firmadas, finaliza', async () => {
