@@ -2284,13 +2284,26 @@ se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
   `tipo = 'imagen'`. Lleva quién, cuándo, la versión del texto, cómo (digital o presencial), IP y
   navegador, como el «sí». Una tabla aparte habría que cablearla en las once piezas genéricas, y la
   que se olvide falla en silencio.
-- **Una respuesta vigente por niño, la última.** Dar el «no» retira los «sí» vigentes del niño, de
-  todos los tutores, como ya hace revocar («Se retira la autorización de todos los tutores»). Dar el
-  «sí» retira el «no» vigente. Así el «no» es reversible como el «sí», y revocable: retirarlo deja
-  al niño sin respuesta.
-- **El cierre exige una respuesta**: `privado.respuesta_imagen` (hay un «sí» o un «no» vigente).
-  Entra en `marcar_matricula_lista` en el PR de la firma, como decidió el responsable el
-  2026-11-16.
+- ~~**Una respuesta vigente por niño, la última.**~~ **Sustituida el 2026-11-17 por «Cada tutor
+  responde por sí» (abajo), decisión del responsable.** Era: dar el «no» retiraba los «sí» de todos
+  y dar el «sí» retiraba el «no», así que mandaba el último que contestaba.
+- **Cada tutor responde por sí, y un «no» vigente de cualquiera es «no hay consentimiento»** (el
+  responsable, 2026-11-17, literal): «Para publicar la imagen de un menor hace falta el
+  consentimiento de quienes tienen la patria potestad, y si uno se opone no hay consentimiento
+  válido. Con tu regla, un tutor podría anular el «no» del otro contestando después, y el niño
+  saldría en las fotos contra la voluntad expresa de su madre o de su padre.» «La regla es: CADA
+  TUTOR RESPONDE POR SÍ, Y SI HAY ALGÚN «NO» VIGENTE, NO HAY CONSENTIMIENTO. Un «no» solo lo retira
+  quien lo puso, o Dirección con su rastro; el «sí» del otro tutor no lo tumba. Y para cerrar el
+  alta basta que haya respuesta de quien firma, como el resto.»
+  - **Revocar, como está**: «Lo de revocar, que hoy retira los «sí» de todos, déjalo como está:
+    revocar es retirar, no imponer.»
+  - **Las siete funciones del «sí» cambian**: hoy les basta una fila `imagen` sin revocar; a partir
+    de la 10a-2 miran además que no haya un «no» vigente de nadie. **Antes se mide abierto** (lo pide
+    el responsable): un «sí» de un tutor y un «no» del otro, y en cuáles de las siete sale el niño
+    como autorizado.
+- **El cierre exige la respuesta de quien firma** (un «sí» o un «no» vigente suyo para ese niño):
+  `privado.respuesta_imagen`. Entra en `marcar_matricula_lista` en el PR de la firma, como decidió
+  el responsable el 2026-11-16.
 - **Dos migraciones, y la primera sola.** Postgres no deja usar un valor de enum en la transacción
   que lo añade: la primera solo añade `imagen_denegada`, y la segunda, con la primera aplicada, trae
   las funciones.
@@ -2298,8 +2311,10 @@ se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
-2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen`; `otorgar_consentimiento_imagen`
-   retira el «no» vigente; `registrar_consentimiento` lo rechaza; `privado.respuesta_imagen`. La app:
+2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen` (cada tutor el suyo); el «sí»
+   de un tutor retira solo su propio «no»; el «no» de otro lo retira solo Dirección, con su rastro;
+   las siete funciones del «sí» miran que no haya un «no» vigente de nadie; `registrar_consentimiento`
+   lo rechaza; `privado.respuesta_imagen`. La app:
    la pregunta de la imagen con sus dos respuestas en el paso del niño, el avance y el aviso de
    `finalizarAlta` piden respuesta, y la ficha del niño ofrece cambiarla.
 3. **10b**: la ficha firmada. Tabla propia cerrada por columnas, la foto cifrada de los seis
