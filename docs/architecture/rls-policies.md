@@ -915,6 +915,34 @@ ensayo terminado en RAISE: el tutor de otro niño y una profe ponían el flag de
 - **Una escritura nueva de un consentimiento va por función, nunca por policy**, como la ficha médica.
 - Test: `consentimientos-solo-por-funcion.rls.test.ts` (también con dos centros).
 
+### El «no» de la imagen (serie de altas, fase 10, 10a-1 y 10a-2)
+
+Migraciones `20270126120000_feat_consentimiento_imagen_denegada` (el tipo) y
+`20270127120000_feat_no_imagen`; spec `docs/specs/altas-serie.md`, «Las cinco, resueltas», «Cada
+tutor responde por sí» y «10a-2: el diseño».
+
+- **Cada tutor responde por sí, y con un «no» vigente de cualquiera no hay consentimiento**
+  (decisión del responsable del 2026-11-17). El «no» es una fila de `consentimientos` con
+  `tipo = 'imagen_denegada'`: hereda la purga, la retención y el bloqueo de la tabla, y los lectores
+  del «sí» lo miran expresamente.
+- **Una sola consulta decide**: `tiene_consentimiento_imagen` (SQL, una sentencia) y
+  `existe_consentimiento_imagen` preguntan a la vez por el «sí» y por la falta de «no». El indicador
+  `ninos.puede_aparecer_en_fotos` se recalcula también cuando entra o sale un «no», y de él beben
+  `privado.nino_puede_aparecer` (etiquetar, la foto del niño) y `publicacion_tiene_nino_sin_permiso`.
+- **`denegar_consentimiento_imagen`**: la puerta de `otorgar` (tutor legal, el suyo; Dirección en
+  persona sin el superusuario, el de un tutor legal del niño; si no lo es, 22023
+  `no_es_tutor_legal`). Retira el propio «sí» de ese tutor, nunca el de otro. Uno vigente por tutor y
+  niño (`consentimientos_un_no_imagen_vigente`); repetirlo devuelve el mismo.
+- **El «sí» de un tutor** (`otorgar`, y `firma_imagen_sync` al firmar) retira solo su propio «no».
+- **`retirar_denegacion_imagen`**: el tutor, el suyo; Dirección (sin el superusuario), el de
+  cualquiera. El de otro deja su rastro en `audit_log` (`imagen_no_retirado`, por
+  `privado.retirar_no_imagen`, cerrada a todas las sesiones y a `service_role`).
+- **`registrar_consentimiento`** rechaza `imagen_denegada` como `imagen` (22023, HINT `imagen`).
+  `revocar_consentimiento_imagen` no cambia: retira los «sí» de todos y deja los «no».
+- Medido abierto en producción el 2026-11-17 (7 de 7 puertas daban al niño por autorizado contra el
+  «no» del otro tutor) y cerrado (ensayo terminado en RAISE, LF y CRLF).
+- Test: `src/test/rls/no-imagen.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
