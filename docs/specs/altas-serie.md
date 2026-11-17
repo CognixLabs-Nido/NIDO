@@ -2239,6 +2239,77 @@ exige la imagen**: la exige solo la app (`finalizarAlta`, bloque `imagen`, con
    aula, que es lo que necesita para trabajar: el documento firmado es una prueba jurídica, no una
    herramienta del día a día, y para cuidar a un niño hace falta el dato de hoy, no el de la firma.»
 
+### La imagen como respuesta: lo medido y el diseño (2026-11-17)
+
+Lo pidió el responsable en el punto 2: «mide antes qué hace hoy la app cuando no hay
+consentimiento». Medido en producción en solo lectura (`~/nido-logs/10/imagen/`) y en el código de
+la rama.
+
+**Los datos.** 2 filas `consentimientos` de `tipo = 'imagen'`, de 2 niños, ninguna revocada. De las
+3 matrículas `activa`, 2 tienen el «sí» y 1 no; la `pendiente`, no. `ninos.puede_aparecer_en_fotos`
+coincide con el «sí» en las dos (2 y 0): es el control cruzado.
+
+**Los siete lectores del «sí», en la base.** `existe_consentimiento_imagen`,
+`tiene_consentimiento_imagen` (y con él `consentimiento_imagen_sync` y `ninos_flag_imagen_derivado`,
+que mantienen `puede_aparecer_en_fotos`), `revocar_consentimiento_imagen`, `firma_imagen_sync`,
+`otorgar_consentimiento_imagen`, `export_datos_sujeto` y `marcar_matricula_lista`. Todos leen «una
+fila `tipo = 'imagen'` sin `revocado_en`» como un «sí». **Por eso el «no» no puede ser una fila
+`tipo = 'imagen'`** (ni con una columna `respuesta`): los siete lo leerían como «sí», y el niño que
+no quiere fotos aparecería en ellas.
+
+**Los lectores genéricos de `consentimientos`.** `privado.contenido_bloqueado`,
+`privado.datos_bloqueados`, `privado.queda_conservado_nino`, `privado.quedan_firmas_usuario`,
+`destruir_firmas_nino`, `destruir_consentimientos_cuenta`, `purgar_sujeto_db`, `anular_alta`,
+`estado_retencion_nino`, la política `bloqueo_retencion` y el trigger `consentimientos_solo_revocar`.
+Tratan igual toda fila de la tabla: es prueba del sujeto, que se conserva, se bloquea tras la baja,
+se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
+
+**Las pantallas que leen la ausencia** (`existe_consentimiento_imagen` o el indicador de fotos):
+
+- `finalizarAlta` (bloque `imagen`) y `get-avance-alta` (línea `imagen`): la ausencia es «falta».
+  **Cambian**: con el «no», lo que falta es la respuesta.
+- La casilla del paso `menor` (`AcuseAltaCheckbox`): solo otorga y no se desmarca. **Cambia**: dos
+  respuestas, sí o no.
+- `ImagenAutorizacionTutor` (ficha del niño, familia): sin «sí» pinta «No autorizada: no aparece en
+  las fotos del centro.», que sigue siendo verdad con un «no» y sin respuesta. Es de fotos, no de
+  voluntad: no cambia de significado.
+- La subida de la foto del niño, el etiquetado de las fotos, el botón de revocar de la ficha de
+  Dirección, «Fotos revocadas» y el roster de la autorización de imagen leen el indicador o los «sí»
+  de cada firmante. Un «no» no es un «sí»: no cambian.
+
+**El diseño.**
+
+- **El «no» es un tipo propio en `consentimientos`: `imagen_denegada`.** Hereda sin tocarla toda la
+  maquinaria genérica de arriba, y los siete lectores del «sí» no lo ven porque filtran
+  `tipo = 'imagen'`. Lleva quién, cuándo, la versión del texto, cómo (digital o presencial), IP y
+  navegador, como el «sí». Una tabla aparte habría que cablearla en las once piezas genéricas, y la
+  que se olvide falla en silencio.
+- **Una respuesta vigente por niño, la última.** Dar el «no» retira los «sí» vigentes del niño, de
+  todos los tutores, como ya hace revocar («Se retira la autorización de todos los tutores»). Dar el
+  «sí» retira el «no» vigente. Así el «no» es reversible como el «sí», y revocable: retirarlo deja
+  al niño sin respuesta.
+- **El cierre exige una respuesta**: `privado.respuesta_imagen` (hay un «sí» o un «no» vigente).
+  Entra en `marcar_matricula_lista` en el PR de la firma, como decidió el responsable el
+  2026-11-16.
+- **Dos migraciones, y la primera sola.** Postgres no deja usar un valor de enum en la transacción
+  que lo añade: la primera solo añade `imagen_denegada`, y la segunda, con la primera aplicada, trae
+  las funciones.
+
+### Fase 10, por PRs
+
+1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
+2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen`; `otorgar_consentimiento_imagen`
+   retira el «no» vigente; `registrar_consentimiento` lo rechaza; `privado.respuesta_imagen`. La app:
+   la pregunta de la imagen con sus dos respuestas en el paso del niño, el avance y el aviso de
+   `finalizarAlta` piden respuesta, y la ficha del niño ofrece cambiarla.
+3. **10b**: la ficha firmada. Tabla propia cerrada por columnas, la foto cifrada de los seis
+   sitios (los seis campos médicos incluidos), el hash, la versión del texto canónico y la de la
+   plantilla del PDF, firmar y firmar presencial, `marcar_matricula_lista` exige la firma y la
+   respuesta de la imagen, un cambio en `lista` invalida la firma (la pantalla lo avisa antes),
+   `pide_refirma`, exportación y purga.
+4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
+   el bloqueo tras la baja) y el PDF que compone el servidor.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
