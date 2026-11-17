@@ -4503,6 +4503,7 @@
         "privacidad": "Privacy",
         "imagen": "Image",
         "datos_medicos": "Medical data",
+        "imagen_denegada": "Image: not authorised",
         "salida": "Outing",
         "medicacion": "Medication",
         "recogida": "Pick-up",

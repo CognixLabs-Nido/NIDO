@@ -4503,6 +4503,7 @@
         "privacidad": "Privacidad",
         "imagen": "Imagen",
         "datos_medicos": "Datos médicos",
+        "imagen_denegada": "Imagen: no autorizada",
         "salida": "Salida",
         "medicacion": "Medicación",
         "recogida": "Recogida",

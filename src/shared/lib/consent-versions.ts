@@ -26,6 +26,10 @@ export const CONSENT_VERSIONS: Record<ConsentTipo, string> = {
   // confidencialidad (texto nuevo, sin firma). Las filas v1.0 quedan como histórico.
   datos_medicos: 'v2.0',
   imagen: 'v1.0',
+  // Fase 10 (`20270126120000`): el «no» de la imagen, con su tipo, para que los lectores del «sí»
+  // (que filtran `imagen`) no lo lean como un «sí». Mismo texto que el «sí»: es la respuesta a la
+  // misma pregunta.
+  imagen_denegada: 'v1.0',
 }
 
 /** Tipos obligatorios en el alta (los que se capturan en accept-invitation). */
