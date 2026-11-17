@@ -2281,8 +2281,7 @@ el «sí» con su sesión. Predicho y medido igual:
 controles: sin «sí», todo false (el «no» solo no abre nada); revocado el «sí» de A, la misma
 publicación sí se oculta (`true`), y el «no» de B sigue vigente al final. `firma_imagen_sync` no se
 midió (pide una autorización de imagen publicada); leída del código, inserta el «sí» sin mirar el
-«no». Hoy no se puede dar un «no» por ninguna función: el agujero se abre con la 10a-2, y la 10a-2
-lo cierra en las mismas piezas.
+«no». Hoy la app no da ningún «no». Con sesión, ninguna función lo escribe: `privado.puede_consentir` no tiene rama para `imagen_denegada` y falla (leído del código). Sin sesión, `registrar_consentimiento` solo rechaza `imagen` y aceptaría `imagen_denegada` (leído del código, **sin medir**); la app no la llama así. La 10a-2 trae la función del «no», la cierra en `registrar_consentimiento` y cierra el agujero en las mismas piezas.
 
 **Los lectores genéricos de `consentimientos`.** `privado.contenido_bloqueado`,
 `privado.datos_bloqueados`, `privado.queda_conservado_nino`, `privado.quedan_firmas_usuario`,
