@@ -62,7 +62,7 @@ gravedad media y baja». Motivo: el autorizado recoge al niño, no decide sobre 
 las confirmaciones como un tutor legal (medido en producción el 2026-11-16). Desde
 `20270125130000` confirma y lee las confirmaciones el tutor legal del niño (`es_tutor_legal_de`);
 la profe del niño y la Dirección las siguen leyendo, y el autorizado ve el evento en su calendario.
-PR: PR_PENDIENTE.)_
+PR: [#534](https://github.com/CognixLabs-Nido/NIDO/pull/534).)_
 
 - A es más simple pero no responde la pregunta real del centro ("¿qué **niños**
   vienen a la excursión?") y se rompe con dos tutores que responden distinto.
