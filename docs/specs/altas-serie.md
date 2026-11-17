@@ -2345,13 +2345,41 @@ se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
   que lo añade: la primera solo añade `imagen_denegada`, y la segunda, con la primera aplicada, trae
   las funciones.
 
+### 10a-2: el diseño (2026-11-17)
+
+- **Una sola consulta decide** (condición del responsable): `tiene_consentimiento_imagen` (SQL, una
+  sentencia) y `existe_consentimiento_imagen` (un `RETURN` de un `SELECT`) preguntan «hay un «sí»
+  que vale» y «no hay ningún «no» vigente» en la misma consulta, sobre la misma foto de la base.
+- **El indicador** (`ninos.puede_aparecer_en_fotos`) se recalcula también cuando entra o se retira un
+  «no» (`consentimiento_imagen_sync` deja de ignorar `imagen_denegada`); de él beben
+  `nino_puede_aparecer` y `publicacion_tiene_nino_sin_permiso`, que no se tocan.
+- **`denegar_consentimiento_imagen`**: la puerta de `otorgar` (tutor legal del niño, o Dirección en
+  persona sin el superusuario, que lo atribuye a un tutor legal del niño). Retira **el propio** «sí»
+  de ese tutor para ese niño, nunca el de otro, y deja su «no»; uno vigente por tutor y niño (índice
+  único parcial), y repetirlo devuelve el mismo.
+- **El «sí» de un tutor** (`otorgar` y `firma_imagen_sync` al firmar) retira solo **su propio** «no».
+- **`retirar_denegacion_imagen`**: el tutor, el suyo; Dirección (sin el superusuario), el de
+  cualquiera, y deja su rastro en `audit_log` (evento directo `imagen_no_retirado`: quién, cuándo y
+  qué fila, sin datos de la familia). También deja el rastro `otorgar` cuando Dirección registra en
+  persona el «sí» de un tutor que tenía un «no».
+- **`registrar_consentimiento`** rechaza `imagen_denegada` como ya rechaza `imagen` (22023, HINT
+  `imagen`).
+- **Revocar no cambia** (decisión del 2026-11-17).
+- **Una migración, aplicar antes de mergear**: solo endurece (sin un «no» en la base, todo contesta
+  como hoy) y añade dos funciones que la app de antes no llama.
+- `privado.respuesta_imagen` pasa a la 10b, con el cierre que la usa.
+
+**Sin decidir (del responsable):** la firma `rechazado` de una autorización de imagen. Hoy retira el
+«sí» de quien rechaza y nada más, así que con el «sí» del otro tutor el niño sale en las fotos. ¿Un
+rechazo firmado cuenta como un «no» (que el «sí» del otro no tumba)? La 10a-2 la deja como está.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
 2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen` (cada tutor el suyo); el «sí»
    de un tutor retira solo su propio «no»; el «no» de otro lo retira solo Dirección, con su rastro;
    las siete funciones del «sí» miran que no haya un «no» vigente de nadie; `registrar_consentimiento`
-   lo rechaza; `privado.respuesta_imagen`. La app:
+   lo rechaza. La app:
    la pregunta de la imagen con sus dos respuestas en el paso del niño, el avance y el aviso de
    `finalizarAlta` piden respuesta, y la ficha del niño ofrece cambiarla.
 3. **10b**: la ficha firmada. Tabla propia cerrada por columnas, la foto cifrada de los seis
