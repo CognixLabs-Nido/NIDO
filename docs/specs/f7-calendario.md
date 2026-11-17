@@ -317,6 +317,7 @@ Namespace `eventos.*` en `messages/{es,en,va}.json`: tipos de evento, ámbitos, 
 
 - **D1 — Tipos de evento.** ENUM `tipo_evento` = `excursion` · `reunion` · `fiesta` · `vacaciones` · `otro`.
 - **D2 — Confirmación POR NIÑO.** UNIQUE `(evento_id, nino_id)`. La fila guarda `confirmado_por` + `confirmado_at`. **Cualquier tutor del niño** puede ponerla/cambiarla, **last-write-wins** (UPSERT idempotente).
+  _(**Sustituida** el 2026-11-17 en «cualquier tutor del niño»: solo confirman los padres, decisión de Jose del 2026-11-13 (la pregunta, del 2026-11-12). Desde `20270125130000` la pone y la cambia el tutor legal; el autorizado ni confirma ni lee las confirmaciones. Ver ADR-0038, nota en D2, y `docs/specs/altas-serie.md`, «Las cuatro de gravedad media y baja».)_
 - **D3 — Sin multi-aula.** Ámbito = `nino` | `aula` | `centro` (un evento de aula apunta a 1 aula).
 - **D4 — Push respeta `puede_recibir_mensajes`** (igual que F6-C, vía `expandirDestinatariosRecordatorio`).
 - **D5 — Opcionales:** `lugar` y `hora` (inicio/fin) **SÍ**. Adjuntos **NO** (Storage es F10).

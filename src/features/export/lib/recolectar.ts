@@ -8,6 +8,10 @@ import {
   COLUMNAS_CONTENIDO_FIRMA,
   leerContenidoFirmas,
 } from '@/features/autorizaciones/lib/contenido-firmas'
+import {
+  COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO,
+  leerContenidoFirmasDocumentos,
+} from '@/features/documentos-centro/lib/contenido-firmas-documentos'
 import { COLUMNAS_GESTION_NINO, leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import {
   COLUMNAS_TARJETA_NINO,
@@ -187,20 +191,37 @@ function deLaTabla(ruta: RutaRecolectar, porFuncion: readonly string[], extra: s
 }
 
 /**
+ * De dónde sale el contenido de cada clase de firma: las de autorización por `contenido_firmas`
+ * (`20270115130000`) y las de los documentos del centro por `contenido_firmas_documentos`
+ * (`20270125130000`).
+ */
+const FIRMAS_AUTORIZACION = {
+  columnas: COLUMNAS_CONTENIDO_FIRMA,
+  leer: leerContenidoFirmas,
+} as const
+const FIRMAS_DOCUMENTOS = {
+  columnas: COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO,
+  leer: leerContenidoFirmasDocumentos,
+} as const
+
+/**
  * A cada firma, su contenido (`contenido_firmas`: quien firmó, el tutor legal, la profe del niño y
- * la Dirección). Solo las columnas que la sección entrega; lo que la función no le da a quien
- * exporta, no sale. Si la función falla, el export falla: nunca una firma sin su contenido como si
- * no lo tuviera.
+ * la Dirección; `contenido_firmas_documentos`: quien firmó, el tutor legal y la Dirección). Solo las
+ * columnas que la sección entrega; lo que la función no le da a quien exporta, no sale. Si la
+ * función falla, el export falla: nunca una firma sin su contenido como si no lo tuviera.
  */
 async function conContenido<R extends RutaRecolectar>(
   client: Client,
   ruta: R,
-  filasLeidas: FilaDe<R>[]
+  filasLeidas: FilaDe<R>[],
+  origen: typeof FIRMAS_AUTORIZACION | typeof FIRMAS_DOCUMENTOS = FIRMAS_AUTORIZACION
 ): Promise<FilaDe<R>[]> {
-  const pedidas = COLUMNAS_CONTENIDO_FIRMA.filter((c) => columnasDe(ruta).split(', ').includes(c))
+  const pedidas = (origen.columnas as readonly string[]).filter((c) =>
+    columnasDe(ruta).split(', ').includes(c)
+  )
   if (pedidas.length === 0 || filasLeidas.length === 0) return filasLeidas
   const filasConId = filasLeidas as unknown as Array<Record<string, unknown>>
-  const contenido = await leerContenidoFirmas(
+  const contenido = await origen.leer(
     client,
     filasConId.map((f) => f.id).filter((x): x is string => typeof x === 'string')
   )
@@ -431,9 +452,20 @@ export async function recolectarUsuario(
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client
       .from('firmas_documentos_centro')
-      .select(columnasDe('usuario.firmas_documentos_realizadas'))
+      .select(
+        deLaTabla('usuario.firmas_documentos_realizadas', COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO, [
+          'id',
+        ])
+      )
       .eq('firmante_id', usuarioId)
-      .then((r) => filasDe('usuario.firmas_documentos_realizadas', r)),
+      .then((r) =>
+        conContenido(
+          client,
+          'usuario.firmas_documentos_realizadas',
+          filasDe('usuario.firmas_documentos_realizadas', r),
+          FIRMAS_DOCUMENTOS
+        )
+      ),
   ])
 
   const centroId = roles.map((r) => r.centro_id)[0] ?? null
@@ -726,9 +758,16 @@ export async function recolectarNino(
       .then((r) => conContenido(client, 'nino.firmas', filasDe('nino.firmas', r))),
     client
       .from('firmas_documentos_centro')
-      .select(columnasDe('nino.firmas_documentos'))
+      .select(deLaTabla('nino.firmas_documentos', COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO, ['id']))
       .eq('nino_id', ninoId)
-      .then((r) => filasDe('nino.firmas_documentos', r)),
+      .then((r) =>
+        conContenido(
+          client,
+          'nino.firmas_documentos',
+          filasDe('nino.firmas_documentos', r),
+          FIRMAS_DOCUMENTOS
+        )
+      ),
     client
       .from('administraciones_medicacion')
       .select(columnasDe('nino.administraciones_medicacion'))

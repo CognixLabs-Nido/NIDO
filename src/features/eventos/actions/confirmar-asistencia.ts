@@ -11,10 +11,11 @@ import { confirmarAsistenciaSchema, type ConfirmarAsistenciaInput } from '../sch
 import { fail, ok, type ActionResult } from '../types'
 
 /**
- * La familia confirma / rechaza la asistencia de un niño a un evento (D2/D9).
+ * El tutor legal confirma / rechaza la asistencia de un niño a un evento (D2/D9).
  * UPSERT idempotente por `(evento_id, nino_id)`, last-write-wins. RLS
- * (`confirmaciones_*`) asegura: solo un tutor del niño, sobre un evento que lo
- * incluye, y `confirmado_por = auth.uid()`. Ventana hasta la fecha de inicio (D12).
+ * (`confirmaciones_*`) asegura: solo un tutor legal del niño (desde `20270125130000`:
+ * «solo confirman los padres», Jose, 2026-11-13; el autorizado recibe 42501), sobre un
+ * evento que lo incluye, y `confirmado_por = auth.uid()`. Ventana hasta la fecha de inicio (D12).
  *
  * **Asistencia ligera, no autorización legal** (D13): sin firma ni consentimiento
  * (eso es F8). El audit NO cubre confirmaciones.

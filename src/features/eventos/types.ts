@@ -47,6 +47,12 @@ export interface RosterConfirmacion {
   estado: ConfirmacionEstado
   comentario: string | null
   confirmado_at: string | null
+  /**
+   * Quien mira es tutor legal de este niño: confirma por él. El autorizado no confirma ni lee las
+   * confirmaciones (decisión de Jose del 2026-11-13, «solo confirman los padres»; sustituye a la
+   * ADR-0038, que dejaba a cualquier tutor del niño).
+   */
+  puede_confirmar: boolean
 }
 
 /** Detalle de un evento + su roster (filtrado por RLS según el rol que consulta). */

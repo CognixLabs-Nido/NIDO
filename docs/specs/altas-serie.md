@@ -1580,6 +1580,20 @@ viven las decisiones no existe**: por eso va aquí, con sus palabras.
     caso nuevo de `gate-familia.test.ts`, rojo sin el arreglo («promise resolved … instead of
     rejecting») y verde con él.
 
+**Construido** (2026-11-17), en dos migraciones con la app en medio, como la 5:
+
+- **La primera** (`20270125120000`, #533): `contenido_firmas_documentos`. Solo añade. Aplicada el
+  2026-11-17 (md5 del fichero `62eb3cd6…`, verificado en producción en solo lectura: la versión en
+  el registro, la función con el cuerpo del fichero y el trazo todavía abierto).
+- **La segunda** (`20270125130000`, con la app; se aplica **después del despliegue**): la sesión deja
+  de leer de `firmas_documentos_centro` el trazo, la IP, el navegador y el nombre tecleado (la
+  exportación del niño y la del usuario los piden a la función); `confirmaciones_evento` y
+  `acuses_alta` pasan de `es_tutor_de` a `es_tutor_legal_de`. En la app, el calendario de la familia
+  enseña y deja confirmar solo a los niños de los que quien mira es tutor legal; al autorizado que
+  solo lo es no le sale el bloque de confirmaciones, y el evento sí. En producción hoy: 0
+  confirmaciones y 0 vínculos de autorizado (2026-11-17), así que el cierre no deja ninguna fila sin
+  dueño.
+
 **Medido abierto otra vez** (2026-11-16, ensayo en producción terminado en RAISE, las predicciones
 escritas antes; 21 de 21): un autorizado con todos los permisos a falso lee la fila de las cuatro,
 y en `firmas_documentos_centro` el trazo, la IP, el navegador y el nombre del tutor legal que firmó.
