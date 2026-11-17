@@ -2189,7 +2189,9 @@ exige la imagen**: la exige solo la app (`finalizarAlta`, bloque `imagen`, con
 - `pide_refirma` para Dirección.
 - La exportación del art. 15 y la purga con el niño.
 
-**Sin decidir** (las preguntas son tuyas)
+**Sin decidir**: ninguna. Las cinco preguntas, con su respuesta debajo («Las cinco, resueltas»).
+
+**Las preguntas que hubo** (2026-11-17)
 
 1. **Entre firmar y validar.** Con el alta en `lista` la cola no rige y el tutor puede cambiar datos
    que acaba de firmar. ¿La cola empieza al firmar (en `lista`), o un cambio en `lista` deja la firma
@@ -2207,6 +2209,35 @@ exige la imagen**: la exige solo la app (`finalizarAlta`, bloque `imagen`, con
 5. **La profe y la ficha firmada.** La decisión deja fuera a la profe. Hoy la profe del aula lee las
    alertas médicas y la ficha médica (`get_info_medica_emergencia`). ¿Confirmas que la ficha firmada
    no la ve aunque lea la médica viva?
+
+### Las cinco, resueltas (el responsable, 2026-11-17)
+
+«Spec aprobada con esas cinco dentro. Adelante con el código.»
+
+1. **Entre firmar y validar: el cambio INVALIDA LA FIRMA y hay que volver a firmar.** Literal: «Nada
+   de meter la cola antes de validar: eso obligaría a Dirección a aprobar cambios de un alta que
+   todavía no ha validado, que es trabajo sin sentido. Y es coherente con lo demás: la firma es la
+   foto de lo que se firmó, así que si cambias la foto, firmas otra vez. Que la pantalla lo diga
+   antes de dejar cambiar nada, no después.»
+2. **La imagen: la base exige una RESPUESTA, no un «sí», y se guarda el «no».** Literal: «esto es lo
+   más importante de las cinco y no es un detalle técnico: hoy una familia que no quiere fotos de su
+   hijo tiene que aceptar para poder matricularlo, y eso es exactamente lo que el art. 7.4 prohíbe,
+   condicionar el servicio a un consentimiento que por definición es libre. D3 ya invocaba ese
+   artículo en junio para decir que la imagen era opcional, así que esto no es una decisión nueva:
+   es que la app se desvió.» «Guarda el «no» como respuesta de primera clase, con su fecha y quién
+   la dio, revocable y reversible como el «sí». Y mide antes qué hace hoy la app cuando no hay
+   consentimiento, porque si alguna pantalla trata «no hay fila» como «no quiere», eso cambia de
+   significado en cuanto el «no» exista.»
+3. **El test de la purga: basta con eso.** Literal: «Que afirme que la fila se va y que no queda
+   ningún objeto de la ficha en ningún bucket. Con la (C) no hay fichero que perseguir, y comprobar
+   que no aparece ninguno es precisamente lo que impide que alguien vuelva a meter uno sin darse
+   cuenta.»
+4. **Lo médico: los seis campos.** Literal: «Jose dijo «todo lo que ha declarado, incluido lo médico,
+   alergias incluidas», y el teléfono de emergencia o el médico de familia son tan declarados como
+   las alergias. No recortes por tu cuenta lo que él dijo entero.»
+5. **La profe no ve la ficha firmada, confirmado.** Literal: «Sigue viendo la ficha médica VIVA de su
+   aula, que es lo que necesita para trabajar: el documento firmado es una prueba jurídica, no una
+   herramienta del día a día, y para cuidar a un niño hace falta el dato de hoy, no el de la firma.»
 
 ## Orden de la serie
 
