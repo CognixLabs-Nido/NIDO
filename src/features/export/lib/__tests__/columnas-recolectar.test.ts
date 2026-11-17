@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/db'
 import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenido-firmas'
+import { COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO } from '@/features/documentos-centro/lib/contenido-firmas-documentos'
 import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
 import { COLUMNAS_TARJETA_NINO } from '@/features/ninos/lib/tarjeta-sanitaria'
 
@@ -216,6 +217,19 @@ function clienteDeMentira(fallaEn?: string) {
           error: null,
         }
       }
+      // Las firmas de los documentos del centro (`20270125130000`): de las mismas filas.
+      if (fn === 'contenido_firmas_documentos') {
+        const ids = args.p_firma_ids as string[]
+        return {
+          data: (FILAS.firmas_documentos_centro ?? [])
+            .filter((f) => ids.includes(f.id as string))
+            .map((f) => ({
+              firma_id: f.id,
+              ...Object.fromEntries(COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO.map((c) => [c, f[c]])),
+            })),
+          error: null,
+        }
+      }
       return { data: null, error: null }
     },
     storage: {
@@ -265,13 +279,14 @@ function seDebenEntregar(r: RutaRecolectar): string[] {
 
 /**
  * Desde `20270115130000` estas columnas no se leen de la tabla: salen por su función
- * (`ficha_gestion_ninos`, `contenido_firmas`), y a la tabla se le pide además lo que las une (el id
- * de la firma). Que las listas son las de la migración lo afirma `columnas-cerradas-migracion.test.ts`.
+ * (`ficha_gestion_ninos`, `contenido_firmas`; desde `20270125130000`, también
+ * `contenido_firmas_documentos`), y a la tabla se le pide además lo que las une (el id de la firma). Que las listas son las de la migración lo afirma `columnas-cerradas-migracion.test.ts`.
  */
 const POR_FUNCION: Record<string, { cerradas: readonly string[]; une: string[] }> = {
   // Fase 7: la tarjeta sanitaria sale por `sip_de_ninos`.
   ninos: { cerradas: [...COLUMNAS_GESTION_NINO, ...COLUMNAS_TARJETA_NINO], une: [] },
   firmas_autorizacion: { cerradas: COLUMNAS_CONTENIDO_FIRMA, une: ['id'] },
+  firmas_documentos_centro: { cerradas: COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO, une: ['id'] },
 }
 
 /** Lo que se pide a la TABLA: lo del catálogo, sin lo que llega por función, más lo que lo une. */

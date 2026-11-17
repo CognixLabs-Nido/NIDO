@@ -63,7 +63,7 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0035 | Modelo de recordatorios bidireccionales (F6-A)                            | superseded (por ADR-0037)                 |
 | 0036 | Completar recordatorio idempotente (F6)                                   | accepted                                  |
 | 0037 | Modelo granular de destinatarios de recordatorios (F6-C)                  | accepted (supera a 0035)                  |
-| 0038 | Modelo de eventos y confirmaciones de asistencia (F7)                     | accepted                                  |
+| 0038 | Modelo de eventos y confirmaciones de asistencia (F7)                     | accepted (D2 sustituida el 2026-11-17)    |
 | 0039 | Agenda: citas con invitados nominales y RSVP (F7b)                        | accepted                                  |
 | 0040 | Inicio «resumen de la semana» y Calendario Escolar único por rol          | accepted                                  |
 | 0041 | Autorizaciones + firma digital (cierre F8)                                | accepted                                  |

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenido-firmas'
+import { COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO } from '@/features/documentos-centro/lib/contenido-firmas-documentos'
 import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
 
 /**
@@ -12,24 +13,24 @@ import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
  * si alguien cierra o abre una columna en una y no en la otra, la app pediría de la tabla una
  * columna cerrada (42501 y la pantalla sin datos) o dejaría de pedir una abierta.
  */
-const SQL = readFileSync(
-  join(process.cwd(), 'supabase/migrations/20270115130000_fix_autorizado_lee_solo_lo_suyo.sql'),
-  'utf8'
-)
+const leer = (f: string) => readFileSync(join(process.cwd(), 'supabase/migrations', f), 'utf8')
+const SQL = leer('20270115130000_fix_autorizado_lee_solo_lo_suyo.sql')
+/** Las firmas de los documentos del centro (`20270125130000`, 2026-11-17), con la misma forma. */
+const SQL_DOCUMENTOS = leer('20270125130000_fix_cierra_gravedad_media.sql')
 
 /** El ARRAY[...] de la guarda posterior que recorre las columnas cerradas de `tabla`. */
-function cerradasEnLaGuarda(tabla: string): string[] {
+function cerradasEnLaGuarda(tabla: string, sql = SQL): string[] {
   const re = new RegExp(
     String.raw`FOREACH c IN ARRAY ARRAY\[([^\]]+)\] LOOP\s+IF has_column_privilege\('authenticated', 'public\.${tabla}'`
   )
-  const m = SQL.match(re)
+  const m = sql.match(re)
   if (!m) throw new Error(`no encuentro la lista de ${tabla} en la migración`)
-  return [...m[1]!.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]!)
+  return [...m[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((x) => x[1]!)
 }
 
 /** Las columnas del GRANT SELECT (...) ON public.<tabla>. */
-function abiertasEnElGrant(tabla: string): string[] {
-  const m = SQL.match(
+function abiertasEnElGrant(tabla: string, sql = SQL): string[] {
+  const m = sql.match(
     new RegExp(String.raw`GRANT SELECT \(([^)]+)\) ON public\.${tabla} TO authenticated`)
   )
   if (!m) throw new Error(`no encuentro el GRANT de ${tabla}`)
@@ -37,10 +38,10 @@ function abiertasEnElGrant(tabla: string): string[] {
 }
 
 /** Todas las columnas que la guarda previa exige a la tabla. */
-function todasEnLaGuardaPrevia(tabla: string): string[] {
-  const m = SQL.match(
+function todasEnLaGuardaPrevia(tabla: string, sql = SQL): string[] {
+  const m = sql.match(
     new RegExp(
-      String.raw`'public\.${tabla}'::regclass AND attnum > 0 AND NOT attisdropped;\s+IF v IS DISTINCT FROM '([a-z_,]+)'`
+      String.raw`'public\.${tabla}'::regclass AND attnum > 0 AND NOT attisdropped;\s+IF v IS DISTINCT FROM '([a-z0-9_,]+)'`
     )
   )
   if (!m) throw new Error(`no encuentro la guarda previa de ${tabla}`)
@@ -62,5 +63,18 @@ describe('las columnas cerradas de la app son las de la migración', () => {
     expect(
       [...abiertasEnElGrant('firmas_autorizacion'), ...COLUMNAS_CONTENIDO_FIRMA].sort()
     ).toEqual(todasEnLaGuardaPrevia('firmas_autorizacion').sort())
+  })
+
+  it('firmas_documentos_centro: COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO = las cerradas, y con el GRANT suman la tabla', () => {
+    const cerradas = cerradasEnLaGuarda('firmas_documentos_centro', SQL_DOCUMENTOS)
+    // Premisa: la guarda cierra algo (una lista vacía casaría con una app que no pide nada).
+    expect(cerradas.length).toBeGreaterThan(0)
+    expect([...COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO].sort()).toEqual(cerradas.sort())
+    expect(
+      [
+        ...abiertasEnElGrant('firmas_documentos_centro', SQL_DOCUMENTOS),
+        ...COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO,
+      ].sort()
+    ).toEqual(todasEnLaGuardaPrevia('firmas_documentos_centro', SQL_DOCUMENTOS).sort())
   })
 })

@@ -849,6 +849,28 @@ Migraciones `20270123120000_feat_gastos_gestion` (antes del despliegue) y
 - Test: `gastos-gestion.rls.test.ts` (con la purga de verdad sobre los ficheros del bucket),
   `purga-rgpd-nino.test.ts` y `catalogo-buckets.rls.test.ts`.
 
+### Las cuatro de gravedad media y baja (serie de altas, antes de la fase 10)
+
+Migraciones `20270125120000_feat_contenido_firmas_documentos` (la función; solo añade) y
+`20270125130000_fix_cierra_gravedad_media` (el cierre, después del despliegue); spec
+`docs/specs/altas-serie.md`, «Las cuatro de gravedad media y baja». Medido abierto en producción el
+2026-11-16 (ensayo terminado en RAISE, 21/21).
+
+- **`firmas_documentos_centro`, por columnas** (opción b, como `firmas_autorizacion`):
+  `authenticated` no tiene el SELECT de tabla, solo el de las 14 columnas de la fila (quién firmó,
+  en calidad de qué, qué y cuándo). El trazo, la IP, el navegador y el nombre tecleado salen por
+  **`contenido_firmas_documentos(firmas)`**: quien firmó, el tutor legal y la Dirección, respetando
+  `privado.firma_bloqueada`. La profe no, porque la política tampoco le deja la fila. **Cada columna
+  nueva necesita su `GRANT SELECT (columna)` o su sitio en la función.**
+- **`confirmaciones_evento`**: «solo confirman los padres» (Jose, 2026-11-13; ADR-0038 sustituida en
+  D2). SELECT, INSERT y UPDATE pasan de `es_tutor_de` a `es_tutor_legal_de`; la profe del niño y la
+  Dirección siguen leyendo. El autorizado ve el evento en su calendario, no la confirmación.
+- **`acuses_alta_select`**: `es_tutor_legal_de` o `es_admin` (decisión del responsable del
+  2026-11-16).
+- `matriculas` se queda abierta: el autorizado lee el aula del niño, y `motivo_baja` ya estaba
+  cerrada por columna.
+- Tests: `contenido-firmas-documentos.rls.test.ts` (la primera) y `cierra-gravedad-media.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de

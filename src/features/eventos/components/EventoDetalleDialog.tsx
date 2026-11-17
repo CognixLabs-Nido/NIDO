@@ -19,7 +19,10 @@ interface Props {
   detalle: EventoDetalle | null
   /** admin del centro → puede editar/cancelar cualquier evento (D8, junto a `es_autor`). */
   esAdmin: boolean
-  /** tutor/autorizado → confirma/rechaza la asistencia de sus hijos. */
+  /**
+   * Vista de familia: ve y confirma solo a los niños de los que es tutor legal (`puede_confirmar`).
+   * El autorizado no confirma ni lee las confirmaciones (Jose, 2026-11-13, «solo confirman los padres»).
+   */
   esFamilia: boolean
   /** Hoy en huso Madrid ('YYYY-MM-DD'), para la ventana de confirmación (D12). */
   hoyYmd: string
@@ -50,7 +53,11 @@ export function EventoDetalleDialog({
   const [ninoEnCurso, setNinoEnCurso] = useState<string | null>(null)
 
   if (!detalle) return null
-  const { evento, roster } = detalle
+  const { evento } = detalle
+  // En la vista de familia, solo los niños por los que confirma; el staff ve el roster entero.
+  const roster = esFamilia ? detalle.roster.filter((r) => r.puede_confirmar) : detalle.roster
+  // Un autorizado que solo lo es: el evento se ve, el bloque de confirmaciones no.
+  const conConfirmaciones = evento.requiere_confirmacion && !(esFamilia && roster.length === 0)
   const cancelado = evento.estado === 'cancelado'
   // D8: gestiona (editar/cancelar) el autor o un admin del centro; nunca sobre cancelado.
   // (un tutor nunca es autor, así que esto implica staff por construcción.)
@@ -122,7 +129,7 @@ export function EventoDetalleDialog({
           )}
           {evento.descripcion && <p className="whitespace-pre-wrap">{evento.descripcion}</p>}
 
-          {evento.requiere_confirmacion && (
+          {conConfirmaciones && (
             <div className="border-border space-y-2 rounded-lg border p-3">
               <p className="font-medium">{t('detalle.confirmaciones')}</p>
               {roster.length === 0 && (

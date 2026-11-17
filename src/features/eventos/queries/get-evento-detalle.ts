@@ -15,6 +15,11 @@ const COLS =
  * sus hijos (las queries a `ninos`/`matriculas`/`confirmaciones_evento` heredan
  * la RLS del usuario). `estado='pendiente'` = sin fila de confirmación.
  *
+ * `puede_confirmar`: quien mira es tutor legal del niño. Solo confirman los padres (Jose, 2026-11-13): al
+ * autorizado la base no le deja leer ni escribir la confirmación (`20270125130000`), así que su
+ * «pendiente» no sería un dato, y la vista de familia no le enseña esa fila. Si la lectura de sus
+ * vínculos falla, nadie confirma: nunca un botón que la base va a rechazar como si no pasara nada.
+ *
  * Devuelve `null` si el evento no existe o el usuario no es audiencia (RLS).
  */
 export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle | null> {
@@ -55,7 +60,7 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
 
   let roster: RosterConfirmacion[] = []
   if (ninoIds.length > 0) {
-    const [{ data: ninos }, { data: confs }] = await Promise.all([
+    const [{ data: ninos }, { data: confs }, legales] = await Promise.all([
       supabase
         .from('ninos')
         .select('id, nombre, apellidos')
@@ -65,7 +70,22 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
         .from('confirmaciones_evento')
         .select('nino_id, estado, comentario, confirmado_at')
         .eq('evento_id', eventoId),
+      user
+        ? supabase
+            .from('vinculos_familiares')
+            .select('nino_id')
+            .eq('usuario_id', user.id)
+            .in('nino_id', ninoIds)
+            .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario'])
+            .is('deleted_at', null)
+        : Promise.resolve({ data: [], error: null }),
     ])
+    if (legales.error) {
+      logger.warn('getEventoDetalle: vinculos_familiares.select', legales.error.message)
+    }
+    const deLosQueEsTutorLegal = new Set(
+      legales.error ? [] : (legales.data ?? []).map((v) => v.nino_id)
+    )
 
     const confMap = new Map((confs ?? []).map((c) => [c.nino_id, c]))
     roster = (ninos ?? [])
@@ -77,6 +97,7 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
           estado: c?.estado ?? 'pendiente',
           comentario: c?.comentario ?? null,
           confirmado_at: c?.confirmado_at ?? null,
+          puede_confirmar: deLosQueEsTutorLegal.has(n.id),
         } satisfies RosterConfirmacion
       })
       .sort((a, b) => a.nino_nombre.localeCompare(b.nino_nombre))

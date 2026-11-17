@@ -2,7 +2,8 @@
 
 ## Estado
 
-`accepted`
+`accepted`. **D2 y la RLS de `confirmaciones_*`, sustituidas el 2026-11-17** en lo de «cualquier
+tutor del niño»: solo confirman los padres (ver la nota en D2).
 
 **Fecha:** 2026-06-01
 **Aceptado:** 2026-06-02 (decisiones tomadas; fase cerrada)
@@ -54,6 +55,14 @@ trade-off real. El resto se listan en **Decisión**.
 "yo voy/no voy".
 **Opción B: por niño** — UNIQUE `(evento_id, nino_id)` con `confirmado_por`.
 Cualquier tutor del niño confirma por él, last-write-wins.
+
+_(**Sustituida** el 2026-11-17 en lo de «cualquier tutor»: solo confirman los padres. Decisión de Jose
+del 2026-11-13 («solo confirman los padres»; la pregunta, del 2026-11-12), escrita en `docs/specs/altas-serie.md`, «Las cuatro de
+gravedad media y baja». Motivo: el autorizado recoge al niño, no decide sobre él, y leía y escribía
+las confirmaciones como un tutor legal (medido en producción el 2026-11-16). Desde
+`20270125130000` confirma y lee las confirmaciones el tutor legal del niño (`es_tutor_legal_de`);
+la profe del niño y la Dirección las siguen leyendo, y el autorizado ve el evento en su calendario.
+PR: [#534](https://github.com/CognixLabs-Nido/NIDO/pull/534).)_
 
 - A es más simple pero no responde la pregunta real del centro ("¿qué **niños**
   vienen a la excursión?") y se rompe con dos tutores que responden distinto.
@@ -130,21 +139,21 @@ marginal frente al valor.
 
 ### Decisiones D1–D13 (cerradas)
 
-| #   | Decisión                                                                                                                  |
-| --- | ------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Tipos: `excursion`/`reunion`/`fiesta`/`vacaciones`/`otro`.                                                                |
-| D2  | Confirmación **por niño**, UNIQUE `(evento_id, nino_id)` + `confirmado_por`/`confirmado_at`; cualquier tutor, LWW.        |
-| D3  | Sin multi-aula: un evento de aula apunta a 1 aula.                                                                        |
-| D4  | Push respeta `puede_recibir_mensajes` (vía `expandirDestinatariosRecordatorio`).                                          |
-| D5  | `lugar` y `hora` (inicio/fin) opcionales **SÍ**; adjuntos **NO** (Storage es F10).                                        |
-| D6  | Rango: `fecha_fin` nullable (CHECK `>= fecha`).                                                                           |
-| D7  | Cancelación: `estado='cancelado'` (no DELETE) + **push a quien ya había confirmado**.                                     |
-| D8  | Edita/cancela: el **autor o un admin** del centro.                                                                        |
-| D9  | Confirmación 3 estados (`pendiente`/`confirmado`/`rechazado`); `pendiente` = sin fila.                                    |
-| D10 | Overlay sobre `/calendario` (reusa F4.5a). Sin ruta `/eventos` separada.                                                  |
-| D11 | Sin Realtime (fuera del LEAN).                                                                                            |
-| D12 | Ventana de confirmación: hasta la **fecha (inicio)** del evento, inclusive.                                               |
-| D13 | `confirmaciones_evento` **NO se audita** (telemetría, como `lectura_*`/`push_subscriptions`). `eventos` **sí** se audita. |
+| #   | Decisión                                                                                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Tipos: `excursion`/`reunion`/`fiesta`/`vacaciones`/`otro`.                                                                                                       |
+| D2  | Confirmación **por niño**, UNIQUE `(evento_id, nino_id)` + `confirmado_por`/`confirmado_at`; ~~cualquier tutor~~ el tutor legal (sustituida el 2026-11-17), LWW. |
+| D3  | Sin multi-aula: un evento de aula apunta a 1 aula.                                                                                                               |
+| D4  | Push respeta `puede_recibir_mensajes` (vía `expandirDestinatariosRecordatorio`).                                                                                 |
+| D5  | `lugar` y `hora` (inicio/fin) opcionales **SÍ**; adjuntos **NO** (Storage es F10).                                                                               |
+| D6  | Rango: `fecha_fin` nullable (CHECK `>= fecha`).                                                                                                                  |
+| D7  | Cancelación: `estado='cancelado'` (no DELETE) + **push a quien ya había confirmado**.                                                                            |
+| D8  | Edita/cancela: el **autor o un admin** del centro.                                                                                                               |
+| D9  | Confirmación 3 estados (`pendiente`/`confirmado`/`rechazado`); `pendiente` = sin fila.                                                                           |
+| D10 | Overlay sobre `/calendario` (reusa F4.5a). Sin ruta `/eventos` separada.                                                                                         |
+| D11 | Sin Realtime (fuera del LEAN).                                                                                                                                   |
+| D12 | Ventana de confirmación: hasta la **fecha (inicio)** del evento, inclusive.                                                                                      |
+| D13 | `confirmaciones_evento` **NO se audita** (telemetría, como `lectura_*`/`push_subscriptions`). `eventos` **sí** se audita.                                        |
 
 > **Límite RGPD (D13):** la confirmación es asistencia ligera, **no** autorización
 > legal — sin firma, sin tratarse como consentimiento. Eso es F8. F7 no cruza esa
@@ -159,7 +168,8 @@ nino_id)` para `eventos_select` (evita el gotcha MVCC en `INSERT…RETURNING`).
 WITH CHECK` simétricos. DELETE → default DENY (D7).
 - `confirmaciones_*`: SELECT tutor/profe/admin de la audiencia; INSERT/UPDATE solo
   tutor del niño + `evento_aplica_a_nino(evento_id, nino_id)` + `confirmado_por =
-auth.uid()`.
+auth.uid()`. _(**Sustituida** el 2026-11-17 en «tutor»: desde `20270125130000`, el tutor legal
+  (`es_tutor_legal_de`) en SELECT, INSERT y UPDATE; ver la nota en D2.)_
 - Audit: rama nueva `eventos` en `audit_trigger_function` (`centro_id` directo);
   `confirmaciones_evento` no auditada.
 

@@ -112,6 +112,12 @@ serie de altas (`docs/specs/altas-serie.md`).
 - [ ] **D14: un teléfono por tutor, no varios** (2026-11-13, 08:31): «D14 · Teléfono obligatorio
       para TODO tutor que se dé de alta, también cuando solo hay uno. Un teléfono por tutor, no
       varios.» La spec dice «Teléfono (D14)» sin la segunda frase. _(Ola 1)_
+- [ ] **`puede_confirmar_eventos`, un permiso que no mira nada** (encontrado el 2026-11-17, al cerrar
+      las confirmaciones al autorizado): es una de las 7 claves de `PERMISOS_KEYS`
+      (`src/features/vinculos/schemas/vinculo.ts`), `false` por defecto para el autorizado, pero
+      ninguna política, función ni pantalla la lee, y ninguna pantalla la enseña. Desde
+      `20270125130000` («solo confirman los padres») tampoco podría dar nada: confirmar es del tutor
+      legal por la RLS. Decidir si se quita la clave. Sin tocar en ese PR. _(Ola 1)_
 
 ## Reactivos / condicionales (solo cuando se cumpla la condición)
 
