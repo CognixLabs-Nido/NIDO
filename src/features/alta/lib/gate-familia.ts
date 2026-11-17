@@ -74,12 +74,16 @@ export const estadoAltaFamilia = cache(async (centroId: string): Promise<EstadoA
 
   const supabase = await createClient()
 
-  const { data: matriculas } = await supabase
+  const { data: matriculas, error } = await supabase
     .from('matriculas')
     .select('nino_id, estado')
     .in('nino_id', ninoIds)
     .is('fecha_baja', null)
     .is('deleted_at', null)
+  // Una lectura que falla no se lee como «no tiene matrícula» (2026-11-16, la puerta de la del
+  // 2026-11-12): con `[]`, un hijo en alta daba «sin alta» y el tutor caía en el panel en vez del
+  // asistente. Se lanza, y la página dice que no pudo, en vez de decidir sobre algo que no leyó.
+  if (error) throw new Error(`estadoAltaFamilia: matrículas no leídas (${error.message})`)
 
   return clasificarAltaPorHijo(ninoIds, matriculas ?? [])
 })

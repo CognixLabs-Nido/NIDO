@@ -38,6 +38,7 @@ export const FUNCIONES_RETURNS_TABLE = [
   'anadir_cargo_puntual',
   'buscar_auth_user_por_email',
   'contenido_firmas',
+  'contenido_firmas_documentos',
   'cuentas_vencidas',
   'documentos_firma_centro',
   'documentos_firma_nino',
@@ -110,6 +111,8 @@ export const NO_NULAS = {
   buscar_auth_user_por_email: ['id'],
   /** `firmas_autorizacion.id`, la clave. */
   contenido_firmas: ['firma_id'],
+  /** `firmas_documentos_centro.id`, la clave. */
+  contenido_firmas_documentos: ['firma_id'],
   /** `roles_usuario`, `vinculos_familiares` (NOT NULL) y `familia_tutores` con `usuario_id IS NOT NULL`. */
   cuentas_vencidas: ['usuario_id', 'centro_id'],
   /** `ninos.id` y, de `documentos_centro` (NOT NULL, por JOIN en las dos ramas), el documento; `estado`, CASE con ELSE. */

@@ -5424,6 +5424,16 @@ export type Database = {
           user_agent: string
         }[]
       }
+      contenido_firmas_documentos: {
+        Args: { p_firma_ids: string[] }
+        Returns: {
+          firma_id: string
+          firma_imagen: string
+          ip_address: unknown
+          nombre_tecleado: string
+          user_agent: string
+        }[]
+      }
       crear_documento_centro: {
         Args: {
           p_centro_id: string
