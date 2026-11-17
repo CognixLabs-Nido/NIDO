@@ -2249,13 +2249,40 @@ la rama.
 3 matrículas `activa`, 2 tienen el «sí» y 1 no; la `pendiente`, no. `ninos.puede_aparecer_en_fotos`
 coincide con el «sí» en las dos (2 y 0): es el control cruzado.
 
-**Los siete lectores del «sí», en la base.** `existe_consentimiento_imagen`,
-`tiene_consentimiento_imagen` (y con él `consentimiento_imagen_sync` y `ninos_flag_imagen_derivado`,
-que mantienen `puede_aparecer_en_fotos`), `revocar_consentimiento_imagen`, `firma_imagen_sync`,
-`otorgar_consentimiento_imagen`, `export_datos_sujeto` y `marcar_matricula_lista`. Todos leen «una
-fila `tipo = 'imagen'` sin `revocado_en`» como un «sí». **Por eso el «no» no puede ser una fila
-`tipo = 'imagen'`** (ni con una columna `respuesta`): los siete lo leerían como «sí», y el niño que
-no quiere fotos aparecería en ellas.
+**Los lectores del «sí», en la base.** Hoy deciden «autorizado» con una fila `tipo = 'imagen'` sin
+`revocado_en`: `existe_consentimiento_imagen`, `tiene_consentimiento_imagen` (y con él
+`consentimiento_imagen_sync` y `ninos_flag_imagen_derivado`, que mantienen
+`ninos.puede_aparecer_en_fotos`), y lo que bebe de ese indicador: `privado.nino_puede_aparecer`
+(etiquetar fotos, `media_etiquetas_insert`; subir la foto del niño, `ninos_fotos_insert`,
+`ninos_fotos_insert_tutor` y `actualizar_foto_nino_tutor`) y `publicacion_tiene_nino_sin_permiso`
+(ocultar a la familia una publicación). Escriben un «sí»: `otorgar_consentimiento_imagen` y
+`firma_imagen_sync`; lo retira `revocar_consentimiento_imagen`. **Por eso el «no» no puede ser una
+fila `tipo = 'imagen'`** (ni con una columna `respuesta`): todos lo leerían como «sí».
+_Corregido el 2026-11-17: la primera versión de este párrafo decía «siete» y contaba
+`export_datos_sujeto` y `marcar_matricula_lista`, que no leen el «sí» (la palabra «imagen» les sale
+por `firma_imagen` del mandato y por un comentario). El censo había contado la palabra, no la
+lectura. El comentario de `20270126120000` repite «siete»; está aplicada y no se edita._
+
+**Medido ABIERTO con el «no» ya en la base** (2026-11-17, producción, ensayo terminado en RAISE,
+`~/nido-logs/10/abierto/`; lo pidió el responsable antes de cerrarlo): un niño con dos tutores
+legales y sin consentimientos; el tutor B dice «no» (`imagen_denegada`) y después el tutor A otorga
+el «sí» con su sesión. Predicho y medido igual:
+
+| Punto                                                                    | Con solo el «no» de B | Con el «no» de B y el «sí» de A |
+| ------------------------------------------------------------------------ | --------------------- | ------------------------------- |
+| `otorgar_consentimiento_imagen` de A                                     | —                     | **acepta** (no mira el «no»)    |
+| `existe_consentimiento_imagen` (sesión de A y de B)                      | false                 | **true** para los dos           |
+| `tiene_consentimiento_imagen`                                            | false                 | **true**                        |
+| `ninos.puede_aparecer_en_fotos`                                          | false                 | **true**                        |
+| `privado.nino_puede_aparecer`                                            | false                 | **true**                        |
+| `publicacion_tiene_nino_sin_permiso` (una publicación con él etiquetado) | —                     | **false**: no se oculta         |
+
+**El agujero: 6 de 6 puntos medidos dan al niño por autorizado contra el «no» vigente de B.** Los
+controles: sin «sí», todo false (el «no» solo no abre nada); revocado el «sí» de A, la misma
+publicación sí se oculta (`true`), y el «no» de B sigue vigente al final. `firma_imagen_sync` no se
+midió (pide una autorización de imagen publicada); leída del código, inserta el «sí» sin mirar el
+«no». Hoy no se puede dar un «no» por ninguna función: el agujero se abre con la 10a-2, y la 10a-2
+lo cierra en las mismas piezas.
 
 **Los lectores genéricos de `consentimientos`.** `privado.contenido_bloqueado`,
 `privado.datos_bloqueados`, `privado.queda_conservado_nino`, `privado.quedan_firmas_usuario`,
