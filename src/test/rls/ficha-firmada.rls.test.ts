@@ -354,6 +354,15 @@ describe('la ficha firmada (fase 10b-1)', () => {
   })
 
   it('B13 la firma no cambia: service_role sin privilegio, y postgres choca con el trigger', async () => {
+    // El privilegio, del catálogo: el 42501 de la API de abajo no basta solo. Ese UPDATE filtra por
+    // nino_id y devuelve id, y sin SELECT en la tabla también da 42501: con UPDATE concedido seguía
+    // verde (mutación M19 en la CI, 2026-11-18).
+    expect(
+      comoPostgres(
+        `SELECT has_table_privilege('service_role', 'public.firmas_ficha', 'UPDATE')::text || ':' ||
+                has_table_privilege('authenticated', 'public.firmas_ficha', 'UPDATE')::text`
+      )
+    ).toBe('false:false')
     const u = await serviceClient
       .from('firmas_ficha')
       .update({ nombre_tecleado: 'otro' })
