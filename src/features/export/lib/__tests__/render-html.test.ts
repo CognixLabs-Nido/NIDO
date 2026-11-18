@@ -113,6 +113,33 @@ describe('renderExportHtml', () => {
     expect(renderExportHtml(docDeNino(), t, 'es')).not.toContain('doc.secciones.datos_bloqueados')
   })
 
+  it('10b: con firmas de la ficha, dice que la copia firmada existe y la fecha de cada una; sin firmas, nada', () => {
+    const firma = (firmado_at: string) => ({
+      firmado_at,
+      metodo_firma: 'digital',
+      rol_firmante: 'tutor_legal_principal',
+      contenido_sha256: 'a'.repeat(64),
+      ficha_version: 1,
+      plantilla_pdf_version: 1,
+    })
+    const html = renderExportHtml(
+      docDeNino({ firmas_ficha: [firma('2026-11-18T10:00:00Z'), firma('2026-11-20T09:00:00Z')] }),
+      t,
+      'es'
+    )
+    // Premisa: la sección sale.
+    expect(html).toContain('doc.secciones.firmas_ficha')
+    expect(html).toContain(
+      '<h3>doc.secciones.firmas_ficha</h3><p class="nota">doc.copia_ficha_firmada 18/11/2026, 20/11/2026.</p>'
+    )
+    // El sello se enseña: es con lo que se comprueba la copia.
+    expect(html).toContain('doc.campos.contenido_sha256')
+    // Sin firmas no se dice que exista ninguna copia.
+    const vacio = renderExportHtml(docDeNino({ firmas_ficha: [] }), t, 'es')
+    expect(vacio).toContain('doc.secciones.firmas_ficha')
+    expect(vacio).not.toContain('doc.copia_ficha_firmada')
+  })
+
   it('oculta identificadores, hashes, versiones y timestamps técnicos', () => {
     const html = renderExportHtml(docDeNino(), t, 'es')
     expect(html).not.toContain('11111111-1111-1111-1111-111111111111') // ficha.id

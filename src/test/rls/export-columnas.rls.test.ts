@@ -57,7 +57,9 @@ describe('la red del export: el catálogo y las columnas vivas', () => {
       }
       expect(Object.keys(s.columnas).sort(), ruta).toEqual(cols)
     }
-    // Premisa: hoy, las dos secciones de las firmas de documentos (3b) salen del catálogo de la base.
-    expect(deLaBase).toBe(2)
+    // Premisa: hoy, las dos secciones de las firmas de documentos (3b) y, desde la 10b-1
+    // (`20270128120000`), las tres de la ficha firmada (`firmas_ficha` en las dos y
+    // `refirmas_ficha`), sin privilegios para el servicio, salen del catálogo de la base.
+    expect(deLaBase).toBe(5)
   })
 })

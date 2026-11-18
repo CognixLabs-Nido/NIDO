@@ -176,6 +176,27 @@ const NS_DOCUMENTO_COPIADO = {
     'R5 (2026-11-01): apunta a la versión o al documento del centro, que este export no entrega. Lo firmado sale por la copia que guarda la propia firma: `titulo`, `numero`, `curso_nombre` y `sha256`.',
 } as const
 
+/*
+ * Fase 10b (`20270128120000`), la ficha firmada. Decisión del responsable del 2026-11-18: «Quién
+ * firmó, cuándo, cómo, las dos versiones y el hash. La foto entera no», y el export DICE que la
+ * copia firmada existe y de qué fecha es (`render-html.ts`, `doc.copia_ficha_firmada`); el «cómo
+ * obtenerla», en la 10c, con la forma de entregarla («Los dos huecos», 2026-11-18).
+ */
+const NS_FOTO_FICHA = {
+  noSale:
+    'Fase 10b (decisión del 2026-11-18): es la foto cifrada de lo que se firmó. Sus datos son los de la ficha del niño, que salen en este mismo export tal como están hoy, y repetir los de salud en cada descarga sería crear otra copia que proteger. Que la copia firmada existe, su fecha (`firmado_at`) y su sello (`contenido_sha256`), sí salen.',
+} as const
+
+const NS_IP_FICHA_OTROS = {
+  noSale:
+    'R7 (2026-11-01), en las firmas de la ficha del alta (10b): la IP y el navegador desde los que se firmó son datos de quien firmó, y aquí salen también las firmas del otro tutor y las que registró Dirección. Las de la propia persona salen en `usuario.firmas_ficha_realizadas`.',
+} as const
+
+const NS_IMAGEN_FICHA_OTROS = {
+  noSale:
+    '2d (2026-11-01), en las firmas de la ficha del alta (10b): aquí salen también las firmas del otro tutor del niño, y la imagen de una firma se copia. Quién firmó, cuándo, cómo y con qué nombre tecleado sí sale. Las firmas de la propia persona salen con su imagen en `usuario.firmas_ficha_realizadas` (`firma_imagen`).',
+} as const
+
 /** Quién está vinculado al niño (2d): un adulto de su familia, con su nombre (la raya del 2026-11-01). */
 const ADULTO_POR_NOMBRE = {
   enSuLugar: 'adulto',
@@ -337,6 +358,22 @@ export const SECCIONES_RECOLECTAR = {
     titulo: SALE,
     user_agent: SALE,
     version_id: NS_DOCUMENTO_COPIADO,
+  }),
+  'usuario.firmas_ficha_realizadas': seccion('firmas_ficha', {
+    contenido_cifrado: NS_FOTO_FICHA,
+    contenido_sha256: SALE,
+    ficha_version: SALE,
+    firma_imagen: SALE,
+    firmado_at: SALE,
+    firmante_id: NS_SUJETO,
+    id: NS_ID,
+    ip_address: SALE,
+    metodo_firma: SALE,
+    nino_id: NINO_POR_NOMBRE,
+    nombre_tecleado: SALE,
+    plantilla_pdf_version: SALE,
+    rol_firmante: SALE,
+    user_agent: SALE,
   }),
   'nino.ficha': seccion('ninos', {
     apellidos: SALE,
@@ -581,6 +618,30 @@ export const SECCIONES_RECOLECTAR = {
     medicamento: SALE,
     nino_id: NS_SUJETO,
     notas: SALE,
+  }),
+  'nino.firmas_ficha': seccion('firmas_ficha', {
+    contenido_cifrado: NS_FOTO_FICHA,
+    contenido_sha256: SALE,
+    ficha_version: SALE,
+    firma_imagen: NS_IMAGEN_FICHA_OTROS,
+    firmado_at: SALE,
+    firmante_id: NS_PERSONA,
+    id: NS_ID,
+    ip_address: NS_IP_FICHA_OTROS,
+    metodo_firma: SALE,
+    nino_id: NS_SUJETO,
+    nombre_tecleado: SALE,
+    plantilla_pdf_version: SALE,
+    rol_firmante: SALE,
+    user_agent: NS_IP_FICHA_OTROS,
+  }),
+  // Dirección pidió volver a firmar la ficha (10b): cuándo. Quién, no: es Dirección por definición,
+  // y la sesión no lee la columna (`20270128120000` no la da en el GRANT).
+  'nino.refirmas_ficha': seccion('refirmas_ficha', {
+    id: NS_ID,
+    nino_id: NS_SUJETO,
+    pedida_at: SALE,
+    pedida_por: NS_PERSONA,
   }),
 }
 

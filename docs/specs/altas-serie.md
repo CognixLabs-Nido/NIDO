@@ -2373,6 +2373,196 @@ se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
 «sí» de quien rechaza y nada más, así que con el «sí» del otro tutor el niño sale en las fotos. ¿Un
 rechazo firmado cuenta como un «no» (que el «sí» del otro no tumba)? La 10a-2 la deja como está.
 
+### Adelante con la 10b (el responsable, 2026-11-18)
+
+«Adelante con el 10b, la ficha firmada, con todo lo ya decidido». Lo que repite, literal, y que ya
+estaba arriba (16 y 17 de noviembre):
+
+- «La foto de lo firmado lleva TODO lo declarado, incluidos los SEIS campos médicos, cifrados como
+  en info_medica_emergencia. No se guarda en claro: se guarda cifrada y su hash.»
+- «Texto canónico VERSIONADO, sha256 en el servidor, trazo. Y la PLANTILLA DEL PDF también
+  versionada, guardada en la firma: sin eso la (C) no se sostiene, porque el PDF que descargue una
+  familia dentro de un año no sería el que firmó.»
+- «Tabla propia, NACIDA CERRADA POR COLUMNAS con el criterio de firmas_autorizacion: se ve quién
+  firmó y cuándo, no el trazo, la IP, el navegador ni el nombre tecleado.»
+- «Basta que firme UN tutor y se guarda quién. Con dos tutores no se espera al segundo.»
+- «FIRMAR ES FINALIZAR. Y un cambio entre firmar y validar INVALIDA la firma: hay que volver a
+  firmar, y la pantalla lo dice antes de dejar cambiar nada.»
+- «La firma es inmutable. Dirección puede pedir refirma con pide_refirma, nada automático.»
+- «Alta en papel: Dirección registra la firma presencial, teclea el nombre, sin trazo, y el papel
+  es la prueba.»
+- «Las tres altas ya validadas no firman hacia atrás.»
+- «Y EL CONSENTIMIENTO DE IMAGEN ENTRA EN marcar_matricula_lista, que es el hueco que hoy solo
+  vigila la app: ahora que el «no» existe, la base exige una RESPUESTA, sí o no, no un «sí».»
+- «Export del art. 15, purga con el niño, y el test que afirma que la fila se va y que no queda
+  ningún objeto de la ficha en ningún bucket.»
+- **La 10c** va después: «leerla y componer el PDF … función para el tutor legal y Dirección, con su
+  fila en lecturas_ficha_medica, respetando el bloqueo tras la baja, sin URL pública».
+- El método: «Mide abierto, controles negativos y positivo, predicciones antes, una sonda una
+  mutación con su arrastre previsto, y el md5 cuando ensayes.»
+
+**La 10a-2, verificada en producción el mismo día** (`~/nido-logs/10/b/verif/`): el registro tiene
+`20270127120000` como la última; las seis funciones reescritas llevan su marcador (los de la guarda
+posterior) y los tres controles no; las sondas del ensayo cerrado, repetidas sin la migración (ensayo
+terminado en RAISE), dan C0–C13 iguales, con el control positivo C8; producción sin tocar después.
+
+### 10b: lo medido abierto (2026-11-18)
+
+Producción, ensayo terminado en RAISE (`~/nido-logs/10/b/abierto/`), predicciones escritas antes, sobre
+el alta pendiente real (un niño con un tutor legal). Montaje: los datos del niño y del titular, como
+`postgres` (contexto: el tutor los escribe en la app, y las tres altas activas llegaron a `lista` por
+esa vía); los servicios y el acuse médico, con la sesión del tutor; ninguna respuesta de imagen.
+
+- **Sin el acuse** (control negativo), `marcar_matricula_lista` con la sesión del tutor: 42501 «falta
+  el acuse…». La llamada pasa por las puertas.
+- **Con el acuse y sin respuesta de imagen**: el tutor **cierra el alta** (devuelve la matrícula, que
+  queda en `lista`). Es el hueco que la decisión manda cerrar.
+- **En `lista`**, el tutor cambia el lugar de nacimiento por `actualizar_identidad_nino_tutor`: pasa
+  directo, sin cola, y nada lo ata a nada firmado.
+- Ninguna tabla ni función de la firma de la ficha.
+- Producción, igual que antes.
+
+### 10b: el diseño (propuesta, 2026-11-18)
+
+- **La foto la compone la base**, no el cliente («si la base puede derivar un valor, no lo acepta del
+  cliente»): `privado.ficha_canonica(niño, versión)` arma un `jsonb` con lo declarado en los seis
+  sitios (el niño, los dos tutores, lo pedagógico, los servicios pedidos, los gastos de gestión, la
+  respuesta de imagen de cada tutor y los seis campos médicos descifrados). Versión 1. El hash es el
+  sha256 de su texto, calculado en la base. Se guarda cifrada con la clave médica
+  (`pgp_sym_encrypt`, como `info_medica_emergencia`) y su hash; en claro, nada.
+- **La plantilla del PDF, versionada**: `plantilla_pdf_version` en cada firma (hoy la 1; la compone
+  la 10c, que conserva las anteriores).
+- **Ver antes de firmar**: `ficha_para_firmar(niño)` devuelve la foto y su hash a quien puede firmar,
+  y deja su fila en `lecturas_ficha_medica` (origen `alta`): enseña lo médico descifrado.
+- **Firmar es finalizar, en una transacción**: `firmar_ficha(niño, hash_visto, nombre, trazo, ip,
+navegador)` (tutor legal) y `registrar_firma_ficha_presencial(niño, hash_visto, nombre, ip,
+navegador)` (Dirección en persona, sin el superusuario, sin trazo, rol `admin`). Con un cerrojo por
+  niño, recomponen la foto: si su hash no es el que se vio, `ficha_cambiada` (algo cambió entre ver y
+  firmar). Guardan la firma y, con la matrícula pendiente, cierran con las puertas de
+  `marcar_matricula_lista`; si una falla, no queda ni la firma.
+- **Un cambio invalida la firma, sin triggers en las seis tablas**: la firma vale mientras la foto
+  recompuesta tenga su hash. Un cambio en cualquier dato de la foto la deja sin valor sin que nadie
+  tenga que acordarse de marcarla; un dato que no esté en la foto no la invalida, que es lo mismo
+  que no estar firmado. _(**Precisado** el 2026-11-18: la respuesta de imagen está en la foto
+  pero no en el hash, y cambiarla no invalida nada; ver «La imagen, fuera del hash».)_ Con la firma sin valor, `validar_alta` frena (`firma_invalidada`) y se vuelve
+  a firmar (fila nueva). La pantalla lo avisa antes de dejar cambiar (la app de la 10b).
+- **`marcar_matricula_lista`** exige, además de lo de hoy, una firma que valga y la respuesta de
+  imagen de quien cierra (`privado.respuesta_imagen(usuario, niño)`: su «sí» o su «no» vigente).
+- **La tabla, `firmas_ficha`**: niño, centro, quién firmó y en calidad de qué, cómo (`digital` con
+  trazo / `presencial` sin él, CHECK), nombre tecleado, IP, navegador, cuándo, versión de la foto,
+  versión de la plantilla, la foto cifrada y su hash. Inmutable (trigger). Nace cerrada por columnas:
+  la sesión lee quién, en calidad de qué, cómo y cuándo; el trazo, la IP, el navegador y el nombre,
+  por `contenido_firmas_ficha` (quien firmó, el tutor legal y la Dirección), y la foto, solo en la
+  10c. La fila la ven el tutor legal y la Dirección del centro; la profe y el autorizado, no. Con la
+  política `RESTRICTIVE` del bloqueo de la retención. Sin escritura con sesión: solo las funciones.
+- **Pedir que se vuelva a firmar**: `pedir_refirma_ficha(niño)` (Dirección), una fila en su propia
+  tabla, para que la firma siga sin cambiar nunca. Una firma anterior a la petición deja de valer.
+  Nada automático.
+- **No se audita por trigger**: es inmutable y es su propio histórico (como `consentimientos`), y así
+  no entra la foto cifrada en `audit_log`. La petición de refirma deja un evento directo.
+- **Purga con el niño** (`privado.purgar_nino` y `anular_alta`): la fila se va. El test lo afirma y
+  afirma que no queda ningún objeto de la ficha en ningún bucket.
+- **Las tres altas ya validadas no firman**: las puertas solo miran el alta pendiente y `validar_alta`
+  solo la matrícula en `lista`; hoy no hay ninguna en `lista`.
+- **En dos migraciones, como la 8a, la 8b y la 9**: la primera solo añade (la tabla, las funciones,
+  la purga y la exportación; la app de antes no la llama) y se aplica antes del despliegue; la
+  segunda, después, endurece `marcar_matricula_lista` y `validar_alta`. Si fueran juntas, el
+  «Finalizar» de la app de antes dejaría de cerrar.
+
+**Las dos preguntas que hubo** (2026-11-18): la exportación del art. 15 (¿los metadatos o la foto
+entera?) y quién puede firmar (¿el tutor legal que puede leer la ficha médica, o cualquiera?).
+
+### Las dos, resueltas (el responsable, 2026-11-18)
+
+«El diseño me gusta, y una pieza en particular: que la firma valga solo mientras la foto
+reconstruida siga dando su hash, sin triggers en las seis tablas. Eso convierte «invalidar la firma»
+en una propiedad en vez de en seis sitios que alguien puede olvidar. Adelante con las migraciones.»
+
+1. **La exportación: los metadatos sí, la foto no, y DICE que la copia existe.** Literal: «Quién
+   firmó, cuándo, cómo, las dos versiones y el hash. La foto entera no: su contenido ya va en el
+   mismo export en vivo, y duplicar los datos de salud en cada descarga es crear otra copia que
+   proteger sin dar nada nuevo.» «el export tiene que DECIR que existe una copia firmada y cómo
+   obtenerla. Si no, un titular que lea su export no sabe que ese documento existe, y el art. 15 es
+   el derecho a saber qué se trata, no solo a recibir un volcado. Y es importante de verdad cuando
+   los datos vivos ya no son los firmados: ahí la copia firmada contiene cosas que el export no
+   muestra.»
+   _(Precisado el 2026-11-18, «Los dos huecos»: en la 10b-1 el export dice que la copia existe y de
+   qué fecha es; el «cómo obtenerla» entra en la 10c, con la forma de entregarla.)_
+2. **Firma solo el tutor legal que puede ver la ficha médica.** Literal: «Nadie firma lo que no puede
+   leer». Y: «MIDE CUÁNTOS TUTORES LEGALES HAY HOY SIN puede_ver_info_medica, y dime si el permiso le
+   nace puesto a un tutor legal o se lo tiene que dar Dirección.» «cuando no pueda firmar, la
+   pantalla lo dice claro —que no tiene acceso a la ficha médica y que se lo pida a Dirección—, no
+   un error opaco. Y Dirección ve en su lista a los tutores legales sin ese permiso cuyo alta está
+   esperando firma, igual que ve quién está sin SIP.»
+
+**Medido el mismo día** (producción, solo lectura; `~/nido-logs/10/b/permiso/`):
+
+- **Hoy, 0 tutores legales sin el permiso**: los 6 vínculos vivos de tutor legal (4 principales, 2
+  secundarios) lo tienen a `true`.
+- **Le nace puesto.** La columna `permisos` tiene `'{}'` por defecto, y el `true` lo pone quien crea
+  el vínculo: los tres caminos de la app que lo crean (aceptar la invitación, `crear_vinculo` e
+  invitar o completar el alta en `crear_o_anadir_a_familia`) pasan `permisosDefault`, que al tutor
+  legal le da todos los permisos y al autorizado ninguno. `crear_o_anadir_a_familia` guarda `'{}'` si
+  le llega NULL; ningún camino de la app se lo manda.
+- **Dirección se lo puede quitar** (`vinculos_admin_all` y el privilegio de columna), pero ninguna
+  pantalla lo hace hoy. Por eso el caso se atiende aunque hoy no haya ninguno: la pantalla y la
+  lista de Dirección, en la app de la 10b.
+
+### La imagen, fuera del hash (el responsable, 2026-11-18)
+
+1. **La foto guarda las dos respuestas.** Literal: «Si solo guardara la del firmante, la foto
+   mentiría: podría decir «sí» cuando el estado real del niño es «no» porque el otro tutor se opuso.
+   Una foto que no refleja el estado no sirve como prueba de nada.»
+2. **El consentimiento de imagen sale del hash que invalida la firma.** Literal: «el consentimiento
+   es revocable en cualquier momento, por derecho, y si su cambio invalidara la ficha firmada, cada
+   vez que una madre ejerciera ese derecho la familia tendría que volver a firmar la ficha entera. Eso
+   castiga el ejercicio de un derecho y además llena a Dirección de refirmas que no significan nada.»
+   «la foto lo REGISTRA —qué respondió cada tutor y cuándo, que es la verdad de aquel momento— pero
+   el bloque de imagen no entra en el hash que sella la firma. Cambiar una respuesta de imagen no
+   invalida nada.» Y: «revisa si hay algo más dentro del hash que sea revocable por derecho del
+   titular. Si aparece otro, mismo tratamiento; si no hay ninguno, dilo y queda cerrado.»
+3. **En la app (10b-2), cada tutor legal ve que el otro se ha opuesto.** Literal: «hoy un padre que
+   dio el «sí» no entiende por qué su hijo no sale en las fotos, y la respuesta está escondida. No
+   hace falta un detalle morboso, basta con que el estado del niño sea visible y se vea que hay una
+   oposición.»
+
+**El repaso de lo demás (2026-11-18): no hay otro.** Lo que lleva la foto, bloque a bloque: la
+identidad y la gestión del niño, los datos de los tutores, lo pedagógico, lo médico, los servicios
+pedidos y los gastos de gestión son datos declarados; su titular puede **rectificarlos** (art. 16),
+y rectificar es justo el cambio que la decisión del 2026-11-17 manda volver a firmar. No dependen de
+un consentimiento que se retire. La imagen es el único bloque que existe por un consentimiento
+(art. 6.1.a y 7.3: retirable en cualquier momento). El acuse médico (`datos_medicos`) también es un
+consentimiento, pero no está en la foto. Queda cerrado: solo la imagen sale del hash.
+
+**Cómo queda**: el bloque `imagen` de la foto guarda, por tutor, su respuesta y cuándo la dio
+(`aceptado_en`); `privado.ficha_hash` sella la foto sin ese bloque. La foto cifrada lo conserva
+entero.
+
+### Los dos huecos (el responsable, 2026-11-18)
+
+Al terminar el export de la 10b-1 salieron dos huecos, y el responsable los resolvió así:
+
+1. **La nota no promete lo que no se puede dar.** Literal: «Pártela: en el 10b-1 la nota dice que
+   EXISTE una copia firmada de la ficha y de qué fecha es, que es cierto y es lo que el art. 15 pide
+   saber. El «pídesela a la Dirección del centro» entra en el 10c, en el mismo PR que crea la forma
+   de entregarla. Decirle hoy a una familia que se la pida a Dirección cuando Dirección no puede
+   sacarla genera una solicitud que nadie puede atender, y una solicitud de acceso sin atender tiene
+   plazo legal. No es un detalle de redacción.» Y: «compruébame una cosa: que no pueda existir
+   ninguna firma antes de que lleguen las pantallas del 10b-2».
+2. **`contenido_bloqueado` va en el 10b-3, no en un PR aparte.** Literal: «Esa tabla la estamos
+   creando nosotros ahora, y nace sin aparecer en la vista de datos bloqueados que las demás firmas
+   sí tienen: eso no es deuda heredada, es un hueco que abrimos hoy. El 10b-3 ya lleva migración,
+   así que entra ahí y no se queda colgando de un PR que nadie priorizará.»
+
+**El `EXECUTE` de firmar se queda** (el responsable, 2026-11-18). Medido: con la migración
+aplicada, una sesión puede firmar llamando a la API a mano antes de las pantallas de la 10b-2 (el
+alta pendiente de producción tiene un tutor legal con el permiso). Literal: «EL EXECUTE SE QUEDA COMO
+ESTÁ. Firmar a mano por la API requiere que alguien se lo monte a propósito, y en producción las tres
+familias son el buzón de Jose: el riesgo es nulo. Y un GRANT retenido es peor que el problema que
+evita: el día del estreno alguien abre la pantalla de firmar, no funciona, y nadie se acuerda de que
+hay un permiso esperando. Lo que sí quiero es que el 10b-2 y el 10c vayan pegados, que es lo que de
+verdad cierra esto.»
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2386,9 +2576,22 @@ rechazo firmado cuenta como un «no» (que el «sí» del otro no tumba)? La 10a
    sitios (los seis campos médicos incluidos), el hash, la versión del texto canónico y la de la
    plantilla del PDF, firmar y firmar presencial, `marcar_matricula_lista` exige la firma y la
    respuesta de la imagen, un cambio en `lista` invalida la firma (la pantalla lo avisa antes),
-   `pide_refirma`, exportación y purga.
-4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
-   el bloqueo tras la baja) y el PDF que compone el servidor.
+   `pide_refirma`, exportación y purga. **En tres PR** (2026-11-18, por tamaño; el orden de
+   aplicación es el de la 8a, la 8b y la 9):
+   - **10b-1**: la migración `20270128120000` (solo añade: las dos tablas, la foto, las funciones
+     y la purga), la exportación desde la app (`recolectar.ts`, que lee con la sesión de quien
+     exporta), los tipos, los tests y la documentación. Se aplica antes de mergear. La nota del
+     export dice que la copia firmada existe y de qué fecha es, sin «pídesela» («Los dos huecos»).
+   - **10b-2**: las pantallas: firmar en el último paso del alta, el aviso antes de cambiar un dato
+     firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la
+     lista de Dirección y que cada tutor legal vea que el otro se ha opuesto a la imagen.
+   - **10b-3**: la segunda migración, después del despliegue de la 10b-2: `marcar_matricula_lista`
+     exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
+     Y `firmas_ficha` en la vista de datos bloqueados (`privado.contenido_bloqueado` y lo que la
+     acompaña), como las demás firmas («Los dos huecos», 2026-11-18).
+4. **10c** (pegada a la 10b-2, decisión del 2026-11-18): leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
+   el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
+   obtenerla» de la nota del export («Los dos huecos», 2026-11-18).
 
 ## Orden de la serie
 

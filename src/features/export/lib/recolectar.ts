@@ -12,6 +12,10 @@ import {
   COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO,
   leerContenidoFirmasDocumentos,
 } from '@/features/documentos-centro/lib/contenido-firmas-documentos'
+import {
+  COLUMNAS_CONTENIDO_FIRMA_FICHA,
+  leerContenidoFirmasFicha,
+} from '@/features/alta/lib/contenido-firmas-ficha'
 import { COLUMNAS_GESTION_NINO, leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import {
   COLUMNAS_TARJETA_NINO,
@@ -203,6 +207,11 @@ const FIRMAS_DOCUMENTOS = {
   columnas: COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO,
   leer: leerContenidoFirmasDocumentos,
 } as const
+/** Fase 10b (`20270128120000`): las firmas de la ficha del alta, por `contenido_firmas_ficha`. */
+const FIRMAS_FICHA = {
+  columnas: COLUMNAS_CONTENIDO_FIRMA_FICHA,
+  leer: leerContenidoFirmasFicha,
+} as const
 
 /**
  * A cada firma, su contenido (`contenido_firmas`: quien firmó, el tutor legal, la profe del niño y
@@ -214,7 +223,10 @@ async function conContenido<R extends RutaRecolectar>(
   client: Client,
   ruta: R,
   filasLeidas: FilaDe<R>[],
-  origen: typeof FIRMAS_AUTORIZACION | typeof FIRMAS_DOCUMENTOS = FIRMAS_AUTORIZACION
+  origen:
+    | typeof FIRMAS_AUTORIZACION
+    | typeof FIRMAS_DOCUMENTOS
+    | typeof FIRMAS_FICHA = FIRMAS_AUTORIZACION
 ): Promise<FilaDe<R>[]> {
   const pedidas = (origen.columnas as readonly string[]).filter((c) =>
     columnasDe(ruta).split(', ').includes(c)
@@ -422,51 +434,67 @@ export async function recolectarUsuario(
       )
     : []
 
-  const [ausencias, citasInvitado, recordatorios, firmas, firmasDocumentos] = await Promise.all([
-    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client
-      .from('ausencias')
-      .select(columnasDe('usuario.ausencias_reportadas'))
-      .eq('reportada_por', usuarioId)
-      .then((r) => filasDe('usuario.ausencias_reportadas', r)),
-    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client
-      .from('cita_invitados')
-      .select(columnasDe('usuario.invitaciones_a_citas'))
-      .eq('usuario_id', usuarioId)
-      .then((r) => filasDe('usuario.invitaciones_a_citas', r)),
-    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client
-      .from('recordatorios')
-      .select(columnasDe('usuario.recordatorios_recibidos'))
-      .eq('usuario_destinatario_id', usuarioId)
-      .then((r) => filasDe('usuario.recordatorios_recibidos', r)),
-    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client
-      .from('firmas_autorizacion')
-      .select(deLaTabla('usuario.firmas_realizadas', COLUMNAS_CONTENIDO_FIRMA, ['id']))
-      .eq('firmante_id', usuarioId)
-      .then((r) =>
-        conContenido(client, 'usuario.firmas_realizadas', filasDe('usuario.firmas_realizadas', r))
-      ),
-    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client
-      .from('firmas_documentos_centro')
-      .select(
-        deLaTabla('usuario.firmas_documentos_realizadas', COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO, [
-          'id',
-        ])
-      )
-      .eq('firmante_id', usuarioId)
-      .then((r) =>
-        conContenido(
-          client,
-          'usuario.firmas_documentos_realizadas',
-          filasDe('usuario.firmas_documentos_realizadas', r),
-          FIRMAS_DOCUMENTOS
+  const [ausencias, citasInvitado, recordatorios, firmas, firmasDocumentos, firmasFicha] =
+    await Promise.all([
+      // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+      client
+        .from('ausencias')
+        .select(columnasDe('usuario.ausencias_reportadas'))
+        .eq('reportada_por', usuarioId)
+        .then((r) => filasDe('usuario.ausencias_reportadas', r)),
+      // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+      client
+        .from('cita_invitados')
+        .select(columnasDe('usuario.invitaciones_a_citas'))
+        .eq('usuario_id', usuarioId)
+        .then((r) => filasDe('usuario.invitaciones_a_citas', r)),
+      // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+      client
+        .from('recordatorios')
+        .select(columnasDe('usuario.recordatorios_recibidos'))
+        .eq('usuario_destinatario_id', usuarioId)
+        .then((r) => filasDe('usuario.recordatorios_recibidos', r)),
+      // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+      client
+        .from('firmas_autorizacion')
+        .select(deLaTabla('usuario.firmas_realizadas', COLUMNAS_CONTENIDO_FIRMA, ['id']))
+        .eq('firmante_id', usuarioId)
+        .then((r) =>
+          conContenido(client, 'usuario.firmas_realizadas', filasDe('usuario.firmas_realizadas', r))
+        ),
+      // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+      client
+        .from('firmas_documentos_centro')
+        .select(
+          deLaTabla('usuario.firmas_documentos_realizadas', COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO, [
+            'id',
+          ])
         )
-      ),
-  ])
+        .eq('firmante_id', usuarioId)
+        .then((r) =>
+          conContenido(
+            client,
+            'usuario.firmas_documentos_realizadas',
+            filasDe('usuario.firmas_documentos_realizadas', r),
+            FIRMAS_DOCUMENTOS
+          )
+        ),
+      // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+      client
+        .from('firmas_ficha')
+        .select(
+          deLaTabla('usuario.firmas_ficha_realizadas', COLUMNAS_CONTENIDO_FIRMA_FICHA, ['id'])
+        )
+        .eq('firmante_id', usuarioId)
+        .then((r) =>
+          conContenido(
+            client,
+            'usuario.firmas_ficha_realizadas',
+            filasDe('usuario.firmas_ficha_realizadas', r),
+            FIRMAS_FICHA
+          )
+        ),
+    ])
 
   const centroId = roles.map((r) => r.centro_id)[0] ?? null
 
@@ -480,6 +508,7 @@ export async function recolectarUsuario(
       ...ausencias.map((a) => a.nino_id),
       ...firmas.map((f) => f.nino_id),
       ...firmasDocumentos.map((f) => f.nino_id),
+      ...firmasFicha.map((f) => f.nino_id),
       ...convs.map((c) => c.nino_id),
     ],
     autorizacionIds: firmas.map((f) => f.autorizacion_id),
@@ -625,6 +654,14 @@ export async function recolectarUsuario(
         sinRol,
         { nino: legibles.nino }
       ),
+      firmas_ficha_realizadas: entregadas(
+        'usuario.firmas_ficha_realizadas',
+        firmasFicha,
+        historia,
+        usuarioId,
+        sinRol,
+        { nino: legibles.nino }
+      ),
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
       adjuntos,
       _aportado_por_ti: [
@@ -709,6 +746,8 @@ export async function recolectarNino(
     firmas,
     firmasDocumentos,
     administraciones,
+    firmasFicha,
+    refirmasFicha,
   ] = await Promise.all([
     client
       .from('datos_pedagogicos_nino')
@@ -773,6 +812,20 @@ export async function recolectarNino(
       .select(columnasDe('nino.administraciones_medicacion'))
       .eq('nino_id', ninoId)
       .then((r) => filasDe('nino.administraciones_medicacion', r)),
+    // Fase 10b: la ficha firmada. Los metadatos y el sello; la foto de lo firmado no sale
+    // (decisión del 2026-11-18), y `render-html` dice que la copia firmada existe y de qué fecha es (el «cómo», la 10c).
+    client
+      .from('firmas_ficha')
+      .select(deLaTabla('nino.firmas_ficha', COLUMNAS_CONTENIDO_FIRMA_FICHA, ['id']))
+      .eq('nino_id', ninoId)
+      .then((r) =>
+        conContenido(client, 'nino.firmas_ficha', filasDe('nino.firmas_ficha', r), FIRMAS_FICHA)
+      ),
+    client
+      .from('refirmas_ficha')
+      .select(columnasDe('nino.refirmas_ficha'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.refirmas_ficha', r)),
   ])
 
   // Foto de perfil (enlace firmado, #4) y libro de familia (2d, decisión del responsable del
@@ -926,6 +979,8 @@ export async function recolectarNino(
         null,
         delNino
       ),
+      firmas_ficha: entregadas('nino.firmas_ficha', firmasFicha, historia, null, delNino),
+      refirmas_ficha: entregadas('nino.refirmas_ficha', refirmasFicha, historia, null, delNino),
       adjuntos,
       fotos_compartidas: fotosCompartidas,
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
