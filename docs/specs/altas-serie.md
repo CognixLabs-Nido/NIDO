@@ -2554,6 +2554,15 @@ Al terminar el export de la 10b-1 salieron dos huecos, y el responsable los reso
    sí tienen: eso no es deuda heredada, es un hueco que abrimos hoy. El 10b-3 ya lleva migración,
    así que entra ahí y no se queda colgando de un PR que nadie priorizará.»
 
+**El `EXECUTE` de firmar se queda** (el responsable, 2026-11-18). Medido: con la migración
+aplicada, una sesión puede firmar llamando a la API a mano antes de las pantallas de la 10b-2 (el
+alta pendiente de producción tiene un tutor legal con el permiso). Literal: «EL EXECUTE SE QUEDA COMO
+ESTÁ. Firmar a mano por la API requiere que alguien se lo monte a propósito, y en producción las tres
+familias son el buzón de Jose: el riesgo es nulo. Y un GRANT retenido es peor que el problema que
+evita: el día del estreno alguien abre la pantalla de firmar, no funciona, y nadie se acuerda de que
+hay un permiso esperando. Lo que sí quiero es que el 10b-2 y el 10c vayan pegados, que es lo que de
+verdad cierra esto.»
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2580,7 +2589,7 @@ Al terminar el export de la 10b-1 salieron dos huecos, y el responsable los reso
      exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
      Y `firmas_ficha` en la vista de datos bloqueados (`privado.contenido_bloqueado` y lo que la
      acompaña), como las demás firmas («Los dos huecos», 2026-11-18).
-4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
+4. **10c** (pegada a la 10b-2, decisión del 2026-11-18): leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
    el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
    obtenerla» de la nota del export («Los dos huecos», 2026-11-18).
 
