@@ -2620,6 +2620,44 @@ ofrecerlo.
    prohíbe. No está anotado en ningún sitio. ¿Se cierra en la 10b-2 (a qué tutor se atribuye el «no»
    del papel: al titular de la familia, que en el alta en papel puede no tener cuenta) o aparte?
 
+### Las dos de la 10b-2, resueltas (el responsable, 2026-11-18)
+
+1. **La oposición al tutor que no ha contestado va en la 10b-3.** Literal: «LA FUNCIÓN DEL TUTOR QUE
+   NO HA CONTESTADO VA EN EL 10B-3. Ya lleva migración, y no vamos a abrir una tercera por una
+   función. El 10b-2 cubre al que dijo «sí», que es lo que se puede hacer sin base, y el 10b-3
+   completa al que no ha contestado. Van pegados, así que la ventana con el mensaje ambiguo dura lo
+   que tarde el despliegue.»
+2. **El «no» en papel se cierra en esta tanda.** Literal: «EL «NO» EN PAPEL SE CIERRA EN ESTA TANDA,
+   no aparte. Es la misma puerta que cerramos ayer por la vía digital, y dejarla abierta en el papel
+   significa que Dirección tendría que teclear un «sí» que la familia no ha dado para poder cerrar
+   el alta. Eso es poner a la directora a falsificar un consentimiento por culpa de nuestra
+   pantalla.» **A quién se atribuye**: «AL TUTOR LEGAL QUE FIRMÓ EL PAPEL, registrado por Dirección,
+   con el papel como prueba y el mismo rol admin que ya usáis en la firma presencial. No es un «no»
+   de la directora: es el de la familia, anotado por ella.» **El camino, medido, no inventado**:
+   «MIDE CÓMO SE GUARDA HOY EL «SÍ» EN EL ALTA EN PAPEL —a qué tutor se atribuye, y qué pasa si ese
+   tutor todavía no tiene cuenta— y el «no» va por ahí mismo. Si resulta que el «sí» en papel se
+   atribuye a la directora, o que la tabla exige una cuenta que el tutor no tiene, para y dímelo
+   antes de construir: eso cambia la respuesta.» «Si necesita migración, va en el 10b-3 con la otra.
+   Si no, en el 10b-2.» Y el comentario de `RespuestaImagenAlta` («el «no» espera a decidir a qué
+   tutor se atribuye») se borra: «Un comentario que pregunta algo ya contestado manda al siguiente a
+   preguntarlo otra vez.»
+
+**Medido el mismo día: el «sí» en papel se atribuye a Dirección, y la tabla exige una cuenta**
+(código de `main` y producción en solo lectura, `~/nido-logs/10/b2/papel/`). Las dos condiciones de
+parar se cumplen:
+
+- **En el código**: `otorgarConsentimientoImagenAlta` llama a `otorgar_consentimiento_imagen` con
+  `p_tutor` = quien tiene la sesión, y la función lo deja así cuando es Dirección (solo lo cambia por
+  el propio uid cuando **no** lo es). En el alta en papel, el «sí» queda a nombre de la persona de
+  Dirección. Y `firmar_ficha_comun` exige la respuesta de imagen de quien firma: en papel, la de
+  Dirección.
+- **En producción**: de los 2 «sí» de imagen (los dos vigentes, `checkbox`, del 2026-08-13), uno es
+  de un tutor legal del niño; **el otro es de una cuenta que fue la admin del centro (el rol, hoy
+  retirado) y es superusuario de la plataforma, sin vínculo con el niño**, que tiene dos tutores
+  legales vivos. Es el único «sí» de ese niño: su indicador de fotos descansa en él.
+- **La tabla**: `consentimientos.usuario_id` es `NOT NULL` con FK a `usuarios`: un tutor sin cuenta
+  no puede tener una respuesta. Hoy, 0 de 4 tutores vivos sin cuenta.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.

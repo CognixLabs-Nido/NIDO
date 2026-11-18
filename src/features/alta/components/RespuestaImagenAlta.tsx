@@ -17,8 +17,9 @@ interface Props {
   /** La respuesta de quien hace el alta, leída en el servidor (`leerRespuestaImagen`). */
   respuestaInicial: RespuestaImagen
   /**
-   * Solo el «sí» (el alta en papel, Dirección): el «no» espera a decidir a qué tutor se atribuye,
-   * así que en ese modo se ofrece lo de antes.
+   * Solo el «sí» (el alta en papel, Dirección). Decidido el 2026-11-18: la respuesta en papel, «sí» o
+   * «no», es del tutor legal que firmó el papel, anotada por Dirección (`altas-serie.md`, «Las dos de
+   * la 10b-2, resueltas»). Se construye en la 10b-2 o la 10b-3 según lo medido ahí.
    */
   soloSi?: boolean
   /** Aviso al padre tras contestar: la foto del niño depende de la respuesta (refresca la ruta). */
