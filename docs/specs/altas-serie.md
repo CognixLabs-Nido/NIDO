@@ -2563,6 +2563,63 @@ evita: el día del estreno alguien abre la pantalla de firmar, no funciona, y na
 hay un permiso esperando. Lo que sí quiero es que el 10b-2 y el 10c vayan pegados, que es lo que de
 verdad cierra esto.»
 
+### 10b-2: el diseño (propuesta, 2026-11-18)
+
+Las pantallas, sin migración, sobre las funciones de la 10b-1. Leído en el código de `main`
+(b6f8bb49). Hasta la 10b-3, «Finalizar» sigue cerrando sin firma por la base; la app deja de
+ofrecerlo.
+
+- **Firmar es el último paso del alta.** Un paso nuevo, `firma`, detrás de todos (también de `sepa`):
+  el que hoy es el último deja de llamar a `finalizarAlta` y pasa a «Siguiente». El paso lee
+  `ficha_para_firmar` (la foto y su sello; deja su fila en `lecturas_ficha_medica`, origen `alta`, y
+  por eso se lee al entrar en el paso, no antes) y la enseña entera, lo médico incluido. Debajo, el
+  nombre tecleado y el trazo (`FirmaPad`, como `DocumentosParaFirmar`), y «Firmar y terminar el
+  alta». Antes de firmar, las comprobaciones de `finalizarAlta` (la misma lista de lo que falta);
+  después, `firmar_ficha` con el sello visto, y sus HINT a la misma lista (`documentos_por_firmar`,
+  `datos_nino_por_completar`…) o a su texto (`ficha_cambiada`: «algo ha cambiado desde que la
+  abriste; vuelve a leerla»; `imagen_sin_respuesta`; `nada_que_firmar`).
+- **El tutor que no puede leer la ficha médica** (`estado_firma_ficha.puede_firmar =
+'sin_acceso_ficha_medica'`): el paso no lee nada y dice, en claro, que no tiene acceso a la ficha
+  médica y que se lo pida a Dirección («Nadie firma lo que no puede leer»).
+- **El alta en papel** (Dirección, `modoDireccion`): el mismo paso, sin trazo, con el aviso de la
+  firma en papel, y `registrar_firma_ficha_presencial`. Y en la ficha del niño de Dirección, una
+  tarjeta «Ficha firmada»: quién firmó, cuándo y cómo, si vale, y la petición de refirma;
+  «Registrar la firma en papel» cuando no hay una que valga, y «Pedir que se vuelva a firmar» cuando
+  hay firma (`pedir_refirma_ficha`).
+- **El aviso, antes de dejar cambiar nada** («la pantalla lo dice antes de dejar cambiar nada, no
+  después»). Con la matrícula en `lista` y la firma vigente, en todos los sitios desde los que se
+  cambia un dato sellado: «Revisar o editar» de `AltaCompletadaScreen` pide confirmar antes de abrir
+  el asistente («si cambias algo, la firma deja de valer y hay que volver a firmar»), y el asistente
+  en `?editar=1` lo repite arriba; la ficha del niño de la familia (lo médico y los gastos) y la de
+  Dirección (servicios, gastos, pedagógicos) lo dicen encima de su formulario. Hoy nada de eso mira
+  `lista`: todo escribe directo.
+- **La firma que dejó de valer**: `AltaCompletadaScreen` y la ficha del niño lo dicen y llevan al
+  paso `firma`; en `lista`, `firmar_ficha` firma de nuevo. Con el alta validada, solo si Dirección
+  pidió la refirma: la ficha del niño de la familia ofrece firmar.
+- **La lista de Dirección** (`/admin/altas`, como «Sin tarjeta sanitaria»): los tutores legales sin
+  `puede_ver_info_medica` cuya alta espera la firma (matrícula `pendiente`, o `lista` sin firma que
+  valga). `null` si una lectura falla, nunca vacía.
+- **Cada tutor legal ve que hay una oposición a las fotos.** La RLS solo le deja leer sus propias
+  respuestas, pero con su «sí» vigente y `existe_consentimiento_imagen` en `false` hay un «no» vigente
+  de otro (leído del cuerpo de la función: «hay un sí vigente Y ningún no vigente de nadie»). Hoy esa
+  pantalla dice «falta la autorización del otro tutor **o** no la autoriza», sin decir cuál; pasa a
+  decir que hay una oposición. **Para el tutor que no ha contestado no se puede deducir**: sin «sí»
+  propio, `false` es tanto «nadie ha dicho que sí» como «alguien ha dicho que no». Ver la pregunta 1.
+
+**Las preguntas** (2026-11-18):
+
+1. **La oposición, al tutor que no ha contestado.** Para él hace falta leer la respuesta del otro, y
+   eso es una función nueva en la base (sí o no: «hay un «no» vigente de otro tutor legal», a los
+   tutores legales y a Dirección, sin decir de quién). ¿Va en la migración de la 10b-3, y la 10b-2
+   enseña ya la del tutor que dijo que sí; o la 10b-2 lleva su propia migración pequeña?
+2. **El alta en papel no puede guardar un «no» a las fotos.** `RespuestaImagenAlta` con `soloSi`
+   (el comentario: «el «no» espera a decidir a qué tutor se atribuye») y `otorgar` con `p_tutor` =
+   la persona de Dirección. Con la firma, el paso `firma` exige la respuesta de quien firma, y en
+   papel la única respuesta que la pantalla deja dar es «sí»: **una familia que en papel no quiere
+   fotos solo puede terminar el alta aceptándolas**, lo que la decisión del 2026-11-17 (art. 7.4)
+   prohíbe. No está anotado en ningún sitio. ¿Se cierra en la 10b-2 (a qué tutor se atribuye el «no»
+   del papel: al titular de la familia, que en el alta en papel puede no tener cuenta) o aparte?
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
