@@ -2249,13 +2249,50 @@ la rama.
 3 matrículas `activa`, 2 tienen el «sí» y 1 no; la `pendiente`, no. `ninos.puede_aparecer_en_fotos`
 coincide con el «sí» en las dos (2 y 0): es el control cruzado.
 
-**Los siete lectores del «sí», en la base.** `existe_consentimiento_imagen`,
-`tiene_consentimiento_imagen` (y con él `consentimiento_imagen_sync` y `ninos_flag_imagen_derivado`,
-que mantienen `puede_aparecer_en_fotos`), `revocar_consentimiento_imagen`, `firma_imagen_sync`,
-`otorgar_consentimiento_imagen`, `export_datos_sujeto` y `marcar_matricula_lista`. Todos leen «una
-fila `tipo = 'imagen'` sin `revocado_en`» como un «sí». **Por eso el «no» no puede ser una fila
-`tipo = 'imagen'`** (ni con una columna `respuesta`): los siete lo leerían como «sí», y el niño que
-no quiere fotos aparecería en ellas.
+**Los lectores del «sí», en la base.** Hoy deciden «autorizado» con una fila `tipo = 'imagen'` sin
+`revocado_en`: `existe_consentimiento_imagen`, `tiene_consentimiento_imagen` (y con él
+`consentimiento_imagen_sync` y `ninos_flag_imagen_derivado`, que mantienen
+`ninos.puede_aparecer_en_fotos`), y lo que bebe de ese indicador: `privado.nino_puede_aparecer`
+(etiquetar fotos, `media_etiquetas_insert`; subir la foto del niño, `ninos_fotos_insert`,
+`ninos_fotos_insert_tutor` y `actualizar_foto_nino_tutor`) y `publicacion_tiene_nino_sin_permiso`
+(ocultar a la familia una publicación). Escriben un «sí»: `otorgar_consentimiento_imagen` y
+`firma_imagen_sync`; lo retira `revocar_consentimiento_imagen`. **Por eso el «no» no puede ser una
+fila `tipo = 'imagen'`** (ni con una columna `respuesta`): todos lo leerían como «sí».
+_Corregido el 2026-11-17: la primera versión de este párrafo decía «siete» y contaba
+`export_datos_sujeto` y `marcar_matricula_lista`, que no leen el «sí» (la palabra «imagen» les sale
+por `firma_imagen` del mandato y por un comentario). El censo había contado la palabra, no la
+lectura. El comentario de `20270126120000` repite «siete»; está aplicada y no se edita._
+
+**Medido ABIERTO con el «no» ya en la base** (2026-11-17, producción, ensayo terminado en RAISE,
+`~/nido-logs/10/abierto/`; lo pidió el responsable antes de cerrarlo): un niño con dos tutores
+legales y sin consentimientos; el tutor B dice «no» (`imagen_denegada`) y después el tutor A otorga
+el «sí» con su sesión. Predicho y medido igual:
+
+| Punto                                                                    | Con solo el «no» de B | Con el «no» de B y el «sí» de A |
+| ------------------------------------------------------------------------ | --------------------- | ------------------------------- |
+| `otorgar_consentimiento_imagen` de A                                     | —                     | **acepta** (no mira el «no»)    |
+| `existe_consentimiento_imagen` (sesión de A y de B)                      | false                 | **true** para los dos           |
+| `tiene_consentimiento_imagen`                                            | false                 | **true**                        |
+| `ninos.puede_aparecer_en_fotos`                                          | false                 | **true**                        |
+| `privado.nino_puede_aparecer`                                            | false                 | **true**                        |
+| `publicacion_tiene_nino_sin_permiso` (una publicación con él etiquetado) | —                     | **false**: no se oculta         |
+
+**El agujero: 6 de 6 puntos medidos dan al niño por autorizado contra el «no» vigente de B.** Los
+controles: sin «sí», todo false (el «no» solo no abre nada); revocado el «sí» de A, la misma
+publicación sí se oculta (`true`), y el «no» de B sigue vigente al final. **La séptima, medida abierta también** (2026-11-17, `~/nido-logs/10/septima/`; el responsable:
+«móntala dentro del ensayo»). Producción no tiene ninguna autorización de imagen: se montaron dentro
+la plantilla y su instancia de ámbito niño, publicadas (premisa: firmable y aplica al niño). Con el
+«no» de B vigente, A firma la autorización con su sesión y `firma_imagen_sync` le deja el «sí»: las
+cinco lecturas de arriba pasan a `true` y el «no» de B sigue vigente. **7 de 7 puertas abiertas.**
+
+**`registrar_consentimiento` sin sesión, medido** (mismo ensayo): con `service_role` y
+`p_tipo = 'imagen_denegada'` **inserta**, y B queda con **dos** «no» vigentes (nada impide
+duplicarlos). Controles: con `p_tipo = 'imagen'`, 22023 HINT `imagen`; con la sesión de B y
+`imagen_denegada`, 20000 «case not found» (`privado.puede_consentir` sin rama).
+
+**La condición del responsable para cerrarlas** (2026-11-17, literal): «una función que mire «hay sí»
+y luego «hay no» en dos sentencias separadas puede dar autorizado en el hueco entre las dos. Que la
+decisión salga de una sola consulta.»
 
 **Los lectores genéricos de `consentimientos`.** `privado.contenido_bloqueado`,
 `privado.datos_bloqueados`, `privado.queda_conservado_nino`, `privado.quedan_firmas_usuario`,
@@ -2284,22 +2321,65 @@ se redacta (IP y navegador a NULL) y se purga. Un «no» es eso mismo.
   `tipo = 'imagen'`. Lleva quién, cuándo, la versión del texto, cómo (digital o presencial), IP y
   navegador, como el «sí». Una tabla aparte habría que cablearla en las once piezas genéricas, y la
   que se olvide falla en silencio.
-- **Una respuesta vigente por niño, la última.** Dar el «no» retira los «sí» vigentes del niño, de
-  todos los tutores, como ya hace revocar («Se retira la autorización de todos los tutores»). Dar el
-  «sí» retira el «no» vigente. Así el «no» es reversible como el «sí», y revocable: retirarlo deja
-  al niño sin respuesta.
-- **El cierre exige una respuesta**: `privado.respuesta_imagen` (hay un «sí» o un «no» vigente).
-  Entra en `marcar_matricula_lista` en el PR de la firma, como decidió el responsable el
-  2026-11-16.
+- ~~**Una respuesta vigente por niño, la última.**~~ **Sustituida el 2026-11-17 por «Cada tutor
+  responde por sí» (abajo), decisión del responsable.** Era: dar el «no» retiraba los «sí» de todos
+  y dar el «sí» retiraba el «no», así que mandaba el último que contestaba.
+- **Cada tutor responde por sí, y un «no» vigente de cualquiera es «no hay consentimiento»** (el
+  responsable, 2026-11-17, literal): «Para publicar la imagen de un menor hace falta el
+  consentimiento de quienes tienen la patria potestad, y si uno se opone no hay consentimiento
+  válido. Con tu regla, un tutor podría anular el «no» del otro contestando después, y el niño
+  saldría en las fotos contra la voluntad expresa de su madre o de su padre.» «La regla es: CADA
+  TUTOR RESPONDE POR SÍ, Y SI HAY ALGÚN «NO» VIGENTE, NO HAY CONSENTIMIENTO. Un «no» solo lo retira
+  quien lo puso, o Dirección con su rastro; el «sí» del otro tutor no lo tumba. Y para cerrar el
+  alta basta que haya respuesta de quien firma, como el resto.»
+  - **Revocar, como está**: «Lo de revocar, que hoy retira los «sí» de todos, déjalo como está:
+    revocar es retirar, no imponer.»
+  - **Las siete funciones del «sí» cambian**: hoy les basta una fila `imagen` sin revocar; a partir
+    de la 10a-2 miran además que no haya un «no» vigente de nadie. **Antes se mide abierto** (lo pide
+    el responsable): un «sí» de un tutor y un «no» del otro, y en cuáles de las siete sale el niño
+    como autorizado.
+- **El cierre exige la respuesta de quien firma** (un «sí» o un «no» vigente suyo para ese niño):
+  `privado.respuesta_imagen`. Entra en `marcar_matricula_lista` en el PR de la firma, como decidió
+  el responsable el 2026-11-16.
 - **Dos migraciones, y la primera sola.** Postgres no deja usar un valor de enum en la transacción
   que lo añade: la primera solo añade `imagen_denegada`, y la segunda, con la primera aplicada, trae
   las funciones.
 
+### 10a-2: el diseño (2026-11-17)
+
+- **Una sola consulta decide** (condición del responsable): `tiene_consentimiento_imagen` (SQL, una
+  sentencia) y `existe_consentimiento_imagen` (un `RETURN` de un `SELECT`) preguntan «hay un «sí»
+  que vale» y «no hay ningún «no» vigente» en la misma consulta, sobre la misma foto de la base.
+- **El indicador** (`ninos.puede_aparecer_en_fotos`) se recalcula también cuando entra o se retira un
+  «no» (`consentimiento_imagen_sync` deja de ignorar `imagen_denegada`); de él beben
+  `nino_puede_aparecer` y `publicacion_tiene_nino_sin_permiso`, que no se tocan.
+- **`denegar_consentimiento_imagen`**: la puerta de `otorgar` (tutor legal del niño, o Dirección en
+  persona sin el superusuario, que lo atribuye a un tutor legal del niño). Retira **el propio** «sí»
+  de ese tutor para ese niño, nunca el de otro, y deja su «no»; uno vigente por tutor y niño (índice
+  único parcial), y repetirlo devuelve el mismo.
+- **El «sí» de un tutor** (`otorgar` y `firma_imagen_sync` al firmar) retira solo **su propio** «no».
+- **`retirar_denegacion_imagen`**: el tutor, el suyo; Dirección (sin el superusuario), el de
+  cualquiera, y deja su rastro en `audit_log` (evento directo `imagen_no_retirado`: quién, cuándo y
+  qué fila, sin datos de la familia). También deja el rastro `otorgar` cuando Dirección registra en
+  persona el «sí» de un tutor que tenía un «no».
+- **`registrar_consentimiento`** rechaza `imagen_denegada` como ya rechaza `imagen` (22023, HINT
+  `imagen`).
+- **Revocar no cambia** (decisión del 2026-11-17).
+- **Una migración, aplicar antes de mergear**: solo endurece (sin un «no» en la base, todo contesta
+  como hoy) y añade dos funciones que la app de antes no llama.
+- `privado.respuesta_imagen` pasa a la 10b, con el cierre que la usa.
+
+**Sin decidir (del responsable):** la firma `rechazado` de una autorización de imagen. Hoy retira el
+«sí» de quien rechaza y nada más, así que con el «sí» del otro tutor el niño sale en las fotos. ¿Un
+rechazo firmado cuenta como un «no» (que el «sí» del otro no tumba)? La 10a-2 la deja como está.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
-2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen`; `otorgar_consentimiento_imagen`
-   retira el «no» vigente; `registrar_consentimiento` lo rechaza; `privado.respuesta_imagen`. La app:
+2. **10a-2**: el «no» de la imagen. `denegar_consentimiento_imagen` (cada tutor el suyo); el «sí»
+   de un tutor retira solo su propio «no»; el «no» de otro lo retira solo Dirección, con su rastro;
+   las siete funciones del «sí» miran que no haya un «no» vigente de nadie; `registrar_consentimiento`
+   lo rechaza. La app:
    la pregunta de la imagen con sus dos respuestas en el paso del niño, el avance y el aviso de
    `finalizarAlta` piden respuesta, y la ficha del niño ofrece cambiarla.
 3. **10b**: la ficha firmada. Tabla propia cerrada por columnas, la foto cifrada de los seis

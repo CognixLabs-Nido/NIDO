@@ -25,6 +25,7 @@ import type { GastosCurso } from '@/features/gastos-gestion/lib/gastos'
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
+import type { RespuestaImagen } from '../lib/respuesta-imagen'
 import type { IdentidadInicial, ImagenPanelData, MedicaInicial } from '../lib/tipos'
 import type { DocumentoParaFirmarFila } from '@/features/documentos-centro/components/DocumentosParaFirmar'
 
@@ -62,8 +63,10 @@ interface Props {
   /** Los documentos del centro que le tocan al niño (fase 4; las normas, entre ellos); en la
    *  invitación no hay. */
   documentosCentro?: DocumentoParaFirmarFila[]
-  /** Consent de imagen del niño vigente (IU-2): la casilla de imagen otorga el consent. */
+  /** ¿El niño puede salir en fotos? (un «sí» vigente y ningún «no», desde la 10a-2). */
   imagenAceptado: boolean
+  /** La respuesta de quien hace el alta a la imagen (fase 10, 10a-2). */
+  miRespuestaImagen: RespuestaImagen
   familiaEstadoCivil: EstadoCivil | null
   datosTutor1: DatosTutorInicial | null
   datosTutor2: DatosTutorInicial | null
@@ -151,6 +154,7 @@ export function AltaTutorWizard({
   imagenSinPlantilla,
   documentosCentro = [],
   imagenAceptado,
+  miRespuestaImagen,
   familiaEstadoCivil,
   datosTutor1,
   datosTutor2,
@@ -365,6 +369,7 @@ export function AltaTutorWizard({
             imagenPanel={imagenPanel}
             imagenSinPlantilla={imagenSinPlantilla}
             imagenAceptado={imagenAceptado}
+            miRespuestaImagen={miRespuestaImagen}
             puedeConsentirImagen={puedeConsentirImagen}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}

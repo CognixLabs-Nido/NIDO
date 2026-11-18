@@ -190,6 +190,7 @@ function AltaInvitacionFlow({
         imagenPanel={null}
         imagenSinPlantilla={false}
         imagenAceptado={false}
+        miRespuestaImagen={null}
         familiaEstadoCivil={null}
         datosTutor1={null}
         datosTutor2={null}

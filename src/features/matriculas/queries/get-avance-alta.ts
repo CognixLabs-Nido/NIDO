@@ -21,7 +21,8 @@ type Client = SupabaseClient<Database>
  * Lo que lleva hecho cada alta (`avance-alta.ts`), leído con la **sesión de Dirección**. Cada fuente
  * la abre a Dirección del centro su RLS: `ninos`, `familia_tutores` y `mandatos_sepa` por `es_admin`
  * del centro; `consentimientos` si el tutor tiene rol en el centro (el que firma en el alta lo tiene
- * desde que acepta); la imagen por `existe_consentimiento_imagen` y los documentos del centro por
+ * desde que acepta), también la respuesta a la imagen (fase 10: un «sí» o un «no» vigente de algún
+ * tutor; antes, solo el «sí», por `existe_consentimiento_imagen`); los documentos del centro por
  * `documentos_firma_nino` (`es_admin` del centro del niño), las mismas señales que el gate de
  * `finalizarAlta`.
  *
@@ -66,7 +67,7 @@ export async function getAvanceAltas(
   if (centroR.error || !centroR.data) return falla('centros', centroR.error?.message)
 
   const familias = [...new Set(ninosR.data.map((n) => n.familia_id))]
-  const [tutoresR, mandatosR, imagenes, documentos, peticiones, gastos] = await Promise.all([
+  const [tutoresR, mandatosR, imagenesR, documentos, peticiones, gastos] = await Promise.all([
     // Por `tutores_de_familia` (fase 6): los datos que exige el cierre no se leen con la sesión.
     Promise.all(
       familias.map(async (f) => ({
@@ -81,9 +82,14 @@ export async function getAvanceAltas(
       .eq('estado', 'activo')
       .is('deleted_at', null)
       .in('familia_id', familias),
-    Promise.all(
-      ninoIds.map((id) => supabase.rpc('existe_consentimiento_imagen', { p_nino_id: id }))
-    ),
+    // La imagen (fase 10, 10a-2): contestada, sí o no, por algún tutor. Como el médico, basta uno
+    // para enseñarlo hecho; al finalizar decide el gate, que pide la respuesta de quien cierra.
+    supabase
+      .from('consentimientos')
+      .select('nino_id')
+      .in('tipo', ['imagen', 'imagen_denegada'])
+      .is('revocado_en', null)
+      .in('nino_id', ninoIds),
     Promise.all(ninoIds.map((id) => supabase.rpc('documentos_firma_nino', { p_nino_id: id }))),
     // Fase 8b: lo que se ofrece y lo contestado, con la regla del gate.
     Promise.all(ninoIds.map((id) => leerPeticionServicios(supabase, id))),
@@ -97,8 +103,8 @@ export async function getAvanceAltas(
     return falla('tutores_de_familia', tutoresFallo.r.error?.message ?? 'sin permiso')
   const tutoresDe = new Map(tutoresR.map(({ f, r }) => [f, r.data ?? []]))
   if (mandatosR.error || !mandatosR.data) return falla('mandatos_sepa', mandatosR.error?.message)
-  const imagenFallo = imagenes.find((r) => r.error)
-  if (imagenFallo) return falla('existe_consentimiento_imagen', imagenFallo.error?.message)
+  if (imagenesR.error || !imagenesR.data) return falla('consentimientos', imagenesR.error?.message)
+  const contestadaImagen = new Set(imagenesR.data.map((c) => c.nino_id))
   const documentosFallo = documentos.find((r) => r.error || !r.data)
   if (documentosFallo) return falla('documentos_firma_nino', documentosFallo.error?.message)
   if (peticiones.some((p) => !p.ok)) return falla('peticion_servicio', 'no se lee')
@@ -118,7 +124,7 @@ export async function getAvanceAltas(
       documentosCentro: documentos[i]?.data ?? [],
       libroFamilia: Boolean(gestion.get(nino.id)?.libro_familia_path),
       sip: Boolean(tarjetas.get(nino.id)?.sip),
-      imagen: imagenes[i]?.data === true,
+      imagen: contestadaImagen.has(ninoId),
       tutor1: Boolean(titular && tutorCompleto(titular)),
       tutor2: !segundo ? 'no_hay' : tutorCompleto(segundo) ? 'completo' : 'incompleto',
       medico: medico.has(ninoId),

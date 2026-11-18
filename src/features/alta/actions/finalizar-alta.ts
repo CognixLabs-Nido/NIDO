@@ -15,6 +15,7 @@ import { porContestar } from '@/features/gastos-gestion/lib/gastos'
 import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 import { frenaElAlta } from '../lib/regla-documentos-alta'
 import { tutorCompleto } from '../lib/datos-tutor'
+import { leerRespuestaImagen } from '../lib/respuesta-imagen'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
 
 import { fail, ok } from '../../centros/types'
@@ -26,8 +27,9 @@ import { fail, ok } from '../../centros/types'
  * NOTA — `tutor2` es OPCIONAL (no aparece aquí): no bloquea.
  * El mandato SEPA tampoco (D10 de `docs/specs/altas-serie.md`): la familia que lo omite cierra
  *   el alta y paga en efectivo, que es el método por defecto de `familias.metodo_pago`.
- * `imagen` es OBLIGATORIO y lo cumple el consentimiento de imagen del niño (lo dan la casilla y
- *   la firma, IU-2).
+ * `imagen` es OBLIGATORIO y lo cumple la RESPUESTA de quien cierra, «sí» o «no» (fase 10, 10a-2:
+ *   «la base exige una RESPUESTA, no un «sí»» y «basta que haya respuesta de quien firma», decisiones
+ *   del responsable del 2026-11-17; art. 7.4). Un «no» no frena el alta.
  * `documentos_centro` (fase 4, 4b-2): ningún documento del centro OBLIGATORIO por firmar
  *   (`regla-documentos-alta.ts`). Las normas son uno de ellos: desde el 2026-11-06 ya no se
  *   cumplen con la autorización de normas ni con la casilla de `acuses_alta`. Uno que el centro
@@ -169,15 +171,12 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // (tutor 2 es opcional).
   if (!nino.libro_familia_path || !tutor1?.dni_documento_path) faltan.push('documentos')
 
-  // Autorización de IMAGEN (acuse obligatorio). Fuente de verdad = el CONSENTIMIENTO de
-  // imagen del niño (IU-2): lo otorgan tanto el checkbox como la firma (vía A). La señal es
-  // "existe consent vigente" (ANY) — equivalente EXACTO a la vieja "firma firmada O acuse"
-  // (una aceptación basta); no se endurece con requiere_ambos. NO relaja la obligatoriedad,
-  // solo cambia la señal (acuse → consent).
-  const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
-    p_nino_id: id,
-  })
-  if (!imagenConsentida) faltan.push('imagen')
+  // IMAGEN (fase 10, 10a-2): la respuesta de quien cierra, «sí» o «no»; cada tutor responde por sí
+  // (decisiones del responsable del 2026-11-17). Hasta aquí se exigía un «sí» de cualquiera, y una
+  // familia que no quería fotos tenía que aceptar para matricular. Si no se lee, no se cierra.
+  const imagen = await leerRespuestaImagen(supabase, id, user.id)
+  if (!imagen.ok) return fail('alta.errors.finalizar_fallo')
+  if (imagen.respuesta === null) faltan.push('imagen')
 
   // Los documentos del centro (fase 4, 4b-2): ninguno obligatorio por firmar. La lista es la de la
   // pantalla (`documentos_firma_nino`, con la sesión) y la regla, la de la base. Si la lectura falla

@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 /**
  * Paso del menor del alta — la sección «Autorización de imagen» solo la ve quien puede dar
  * el consentimiento (tutor legal o modo Dirección). A un vínculo `autorizado` se le oculta
- * entera (documento, «Cargar documento» y casilla) y se le explica por qué.
+ * entera (documento, «Cargar documento» y la pregunta) y se le explica por qué. Desde la fase 10
+ * (10a-2) la pregunta tiene dos respuestas; en el alta en papel (Dirección), solo el «sí».
  *
  * Los hijos pesados (formularios, subida de foto, panel de firma) se sustituyen por stubs:
  * aquí solo se prueba qué se pinta en la sección de imagen.
@@ -34,8 +35,10 @@ vi.mock('@/features/ninos/components/SubirFotoNino', () => ({
   ),
 }))
 vi.mock('../SubirDocumentoPdf', () => ({ SubirDocumentoPdf: () => <div /> }))
-vi.mock('../AcuseAltaCheckbox', () => ({
-  AcuseAltaCheckbox: () => <div data-testid="stub-casilla-imagen" />,
+vi.mock('../RespuestaImagenAlta', () => ({
+  RespuestaImagenAlta: ({ soloSi }: { soloSi?: boolean }) => (
+    <div data-testid="stub-casilla-imagen" data-solo-si={String(Boolean(soloSi))} />
+  ),
 }))
 
 import { PasoMenor } from '../PasoMenor'
@@ -45,6 +48,7 @@ const NINO = '22222222-2222-4222-8222-222222222222'
 function renderPaso(props: {
   puedeConsentirImagen?: boolean
   imagenPanel?: { autorizacionId: string; firmable: boolean; roster: [] } | null
+  modoDireccion?: boolean
 }) {
   return render(
     <PasoMenor
@@ -81,7 +85,9 @@ function renderPaso(props: {
       imagenPanel={props.imagenPanel ?? null}
       imagenSinPlantilla={false}
       imagenAceptado={false}
+      miRespuestaImagen={null}
       puedeConsentirImagen={props.puedeConsentirImagen}
+      modoDireccion={props.modoDireccion}
       currentUserId="11111111-1111-4111-8111-111111111111"
       currentUserNombre="Tutor Pruebas"
       onDireccionChange={vi.fn()}
@@ -92,11 +98,11 @@ function renderPaso(props: {
 }
 
 describe('PasoMenor — sección de autorización de imagen', () => {
-  it('tutor legal (por defecto): casilla y «Cargar documento» visibles, sin el aviso', () => {
+  it('tutor legal (por defecto): la pregunta con sus dos respuestas y «Cargar documento», sin el aviso', () => {
     renderPaso({})
     const seccion = screen.getByTestId('alta-imagen-autorizacion')
     expect(seccion).toBeInTheDocument()
-    expect(screen.getByTestId('stub-casilla-imagen')).toBeInTheDocument()
+    expect(screen.getByTestId('stub-casilla-imagen')).toHaveAttribute('data-solo-si', 'false')
     expect(screen.getByText('imagen.cargar')).toBeInTheDocument()
     expect(screen.queryByTestId('alta-imagen-solo-tutor-legal')).not.toBeInTheDocument()
   })
@@ -105,6 +111,11 @@ describe('PasoMenor — sección de autorización de imagen', () => {
     renderPaso({ imagenPanel: { autorizacionId: 'a1', firmable: true, roster: [] } })
     expect(screen.getByTestId('stub-panel-firma-imagen')).toBeInTheDocument()
     expect(screen.getByTestId('stub-casilla-imagen')).toBeInTheDocument()
+  })
+
+  it('alta en papel (Dirección): la pregunta solo con el «sí» (el «no» espera a saber de qué tutor)', () => {
+    renderPaso({ modoDireccion: true })
+    expect(screen.getByTestId('stub-casilla-imagen')).toHaveAttribute('data-solo-si', 'true')
   })
 
   it('autorizado: se oculta la sección entera y se explica que la da el tutor legal', () => {

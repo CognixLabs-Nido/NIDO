@@ -210,6 +210,7 @@ describe('el alta no guarda lo que no pudo leer', () => {
         imagenPanel: p.imagenPanel,
         imagenSinPlantilla: p.imagenSinPlantilla,
         imagenAceptado: p.imagenAceptado,
+        miRespuestaImagen: p.miRespuestaImagen,
         puedeConsentirImagen: p.puedeConsentirImagen,
         currentUserId: p.currentUserId,
         currentUserNombre: p.currentUserNombre,

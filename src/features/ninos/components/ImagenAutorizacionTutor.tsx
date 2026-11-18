@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl'
 
 import type { EstadoImagenNino } from '../queries/get-estado-imagen-nino'
 import { AutorizarImagenNinoButton } from './AutorizarImagenNinoButton'
+import { DenegarImagenNinoButton } from './DenegarImagenNinoButton'
+import { RetirarNoImagenNinoButton } from './RetirarNoImagenNinoButton'
 import { RevocarImagenNinoButton } from './RevocarImagenNinoButton'
 
 interface Props {
@@ -12,18 +14,24 @@ interface Props {
   estado: EstadoImagenNino
 }
 
-/** Clave del estado que ve el tutor. */
+/**
+ * Clave del estado que ve el tutor. `denegada_por_mi`: ha dicho que no (10a-2). `pendiente_otro`:
+ * hay un «sí» (el suyo u otro) y el niño no aparece, porque falta el otro tutor o porque el otro ha
+ * dicho que no; desde aquí no se sabe cuál.
+ */
 export function estadoImagenClave(
   estado: EstadoImagenNino
-): 'concedida' | 'pendiente_otro' | 'no_autorizada' {
+): 'concedida' | 'denegada_por_mi' | 'pendiente_otro' | 'no_autorizada' {
   if (estado.visible) return 'concedida'
-  return estado.hayVigente ? 'pendiente_otro' : 'no_autorizada'
+  if (estado.miNo) return 'denegada_por_mi'
+  return estado.hayVigente || estado.miVigente ? 'pendiente_otro' : 'no_autorizada'
 }
 
 /**
- * Portal de familia — bloque «Autorización de imagen» de la ficha del niño (solo tutor
- * legal). Revocar si hay algún consentimiento vigente (cae el de todos los tutores, como
- * IU-4); autorizar si el tutor no tiene uno vigente.
+ * Portal de familia — bloque «Autorización de imagen» de la ficha del niño (solo tutor legal). Cada
+ * tutor responde por sí (decisión del responsable del 2026-11-17): autorizar si no ha dicho que sí;
+ * decir que no si no lo ha dicho; retirar su «no» si lo tiene; y revocar si hay algún «sí» (cae el de
+ * todos los tutores, como IU-4, y deja los «no»).
  */
 export function ImagenAutorizacionTutor({ ninoId, nombreCompleto, estado }: Props) {
   const t = useTranslations('family.nino.imagen')
@@ -38,7 +46,13 @@ export function ImagenAutorizacionTutor({ ninoId, nombreCompleto, estado }: Prop
         {!estado.miVigente && (
           <AutorizarImagenNinoButton ninoId={ninoId} nombreCompleto={nombreCompleto} />
         )}
-        {estado.hayVigente && (
+        {!estado.miNo && (
+          <DenegarImagenNinoButton ninoId={ninoId} nombreCompleto={nombreCompleto} />
+        )}
+        {estado.miNo && (
+          <RetirarNoImagenNinoButton ninoId={ninoId} nombreCompleto={nombreCompleto} />
+        )}
+        {(estado.hayVigente || estado.miVigente) && (
           <RevocarImagenNinoButton
             ninoId={ninoId}
             nombreCompleto={nombreCompleto}

@@ -53,7 +53,7 @@ export interface SenalesAvance {
   libroFamilia: boolean
   /** Fase 7: el número de la tarjeta sanitaria (`sip_de_ninos`). Lo teclea la familia en el paso del niño. */
   sip: boolean
-  /** Consentimiento de imagen vigente del niño (`existe_consentimiento_imagen`). */
+  /** La imagen, contestada (un «sí» o un «no» vigente de algún tutor; fase 10, 10a-2). */
   imagen: boolean
   /**
    * El titular, completo como lo exige el cierre (`tutorCompleto`, espejo de `privado.tutor_completo`):
