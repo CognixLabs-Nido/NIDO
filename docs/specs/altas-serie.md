@@ -2851,6 +2851,21 @@ A5 | segundo tutor sin el PDF del DNI | P0001 faltan datos de los tutores por co
   había pasado (Postgres evaluó la subconsulta antes); repetido con las dos lecturas en sentencias
   separadas, lo de arriba. La primera, en `ensayo-1-estado-leido-antes.log`.
 
+**Los dos tutores con cuenta no podían cerrar el alta desde la app** (hallazgo del 2026-11-18 al
+construir el test de la 10b-2; existe en `main` desde la fase 6, #526, 2026-11-13). El gate de la
+app daba «no se pudo leer» (`{ ok: false }` → `alta.errors.finalizar_fallo`) si no veía los datos
+personales de algún tutor. Pero la regla de la fase 6 oculta los del otro tutor en cuanto tiene
+cuenta («en cuanto tiene cuenta, el tutor 1 deja de ver sus datos personales»): no es un fallo de
+lectura, es la regla. Así que en toda familia con los dos tutores con cuenta, «Finalizar» fallaba, y
+desde la 10b-2 también la firma. Medido en producción (solo lectura, `~/nido-logs/10/b2/dos-cuentas/`):
+el alta `pendiente` de hoy no tiene segundo tutor (no la afecta); 2 de las 3 `activa` tienen dos
+tutores con cuenta: la próxima así no habría podido cerrar.
+**Arreglo en la 10b-2 (decisión de diseño mía, 2026-11-18, a revisar por el responsable):** el tutor
+con cuenta PROPIA que no es quien cierra no lo juzga la app; lo juzga la base (`tutor_completo`,
+SECURITY DEFINER, medido arriba: A4a, A4b y A5 frenan), que frena con `datos_tutor_por_completar` y la
+pantalla lo nombra (`faltanDeHint` → `tutor1`, `tutor2`). La regla del 2026-11-12 («Una lectura que
+falla no se lee como «no hay»») sigue: si la que no se lee es la fila de quien cierra, no se cierra.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.

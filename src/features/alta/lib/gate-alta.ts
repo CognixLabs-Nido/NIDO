@@ -107,9 +107,18 @@ export async function comprobarAlta(
   const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
   // Fase 6: la regla de la base (`privado.tutor_completo`). Lo que no se pudo leer no es «falta».
-  if ([tutor1, tutor2].some((t) => t && !t.ve_personales)) return { ok: false }
-  if (!tutor1 || !tutorCompleto(tutor1, { conPdf: false })) faltan.push('tutor1')
-  if (tutor2 && !tutorCompleto(tutor2)) faltan.push('tutor2')
+  // Pero el tutor con cuenta PROPIA que no es quien cierra no se lee POR LA REGLA de la fase 6 («en
+  // cuanto tiene cuenta, el tutor 1 deja de ver sus datos personales»): eso no es un fallo, es que
+  // aquí no se puede juzgar. Ese lo juzga la base (`tutor_completo`, SECURITY DEFINER), que frena con
+  // `datos_tutor_por_completar` y `faltanDeHint` lo dice. Antes daba `{ ok: false }` siempre que los
+  // dos tutores tenían cuenta: ninguna de esas familias podía cerrar desde la app (desde la fase 6,
+  // #526; lo destapó el test de la 10b-2 el 2026-11-18).
+  const ajeno = (t: (typeof tutores)[number] | undefined) =>
+    !!t && !t.ve_personales && t.tiene_cuenta && t.usuario_id !== usuarioId
+  if ([tutor1, tutor2].some((t) => t && !t.ve_personales && !ajeno(t))) return { ok: false }
+  if (!tutor1 || (!ajeno(tutor1) && !tutorCompleto(tutor1, { conPdf: false })))
+    faltan.push('tutor1')
+  if (tutor2 && !ajeno(tutor2) && !tutorCompleto(tutor2)) faltan.push('tutor2')
 
   // El acuse de confidencialidad médica de quien cierra, POR NIÑO (U-3), como la base
   // (`marcar_matricula_lista`, `auth.uid()`).
