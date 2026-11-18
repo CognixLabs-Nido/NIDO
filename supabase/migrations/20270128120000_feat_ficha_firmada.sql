@@ -17,7 +17,7 @@
 --   1. `firmas_ficha` y `refirmas_ficha`, nacidas cerradas: la sesión no escribe ninguna y lee de la
 --      primera solo quién, en calidad de qué, cómo, cuándo, las versiones y el hash.
 --   2. `privado.ficha_canonica` compone la foto en la base (versión 1) y `privado.ficha_hash` su
---      sha256; `privado.firma_ficha_vigente`: la firma vale mientras la foto recompuesta dé su hash y
+--      sha256, sin el bloque de imagen (retirable por derecho: cambiarlo no invalida nada); `privado.firma_ficha_vigente`: la firma vale mientras la foto recompuesta dé su hash y
 --      ninguna petición de refirma sea posterior (sin triggers en las seis tablas).
 --   3. `ficha_para_firmar` (con su lectura en `lecturas_ficha_medica`), `firmar_ficha` (tutor legal
 --      con el permiso de la ficha médica; si no lo tiene, HINT `sin_acceso_ficha_medica`),
@@ -340,11 +340,13 @@ BEGIN
                'con_justificante', g.justificante_path IS NOT NULL)
              ORDER BY g.curso_academico_id)
         FROM public.gastos_gestion g WHERE g.nino_id = p_nino_id), '[]'::jsonb),
-    -- La respuesta de imagen de cada tutor: su «sí» o su «no» vigente.
+    -- La respuesta de imagen de cada tutor (su «sí» o su «no» vigente) y cuándo la dio: las dos, para
+    -- que la foto refleje el estado (decisión del 2026-11-18). No entra en el sello: ver ficha_hash.
     'imagen', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
                'usuario_id', c.usuario_id,
-               'respuesta', CASE c.tipo::text WHEN 'imagen' THEN 'si' ELSE 'no' END)
+               'respuesta', CASE c.tipo::text WHEN 'imagen' THEN 'si' ELSE 'no' END,
+               'aceptado_en', c.aceptado_en)
              ORDER BY c.usuario_id, c.tipo::text)
         FROM public.consentimientos c
        WHERE c.nino_id = p_nino_id AND c.tipo::text IN ('imagen', 'imagen_denegada')
@@ -361,9 +363,14 @@ BEGIN
   );
 END $f$;
 
+-- El sello de la firma: el sha256 de la foto SIN el bloque `imagen`. La foto lo registra (qué respondió
+-- cada tutor y cuándo), pero el consentimiento de imagen es retirable en cualquier momento por derecho
+-- (art. 7.3): si su cambio invalidara la firma, ejercer ese derecho obligaría a volver a firmar la ficha
+-- entera (decisión del 2026-11-18). Es el único bloque de la foto que nace de un consentimiento; lo demás
+-- son datos declarados, y rectificarlos sí pide volver a firmar.
 CREATE FUNCTION privado.ficha_hash(p_ficha jsonb)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path = public, extensions AS $f$
-  SELECT encode(extensions.digest(convert_to(p_ficha::text, 'UTF8'), 'sha256'), 'hex');
+  SELECT encode(extensions.digest(convert_to((p_ficha - 'imagen')::text, 'UTF8'), 'sha256'), 'hex');
 $f$;
 
 -- La versión de la plantilla del PDF con la que se firma hoy (la compone la 10c, que conserva las
@@ -743,6 +750,14 @@ BEGIN
     FROM jsonb_object_keys(privado.ficha_canonica('00000000-0000-0000-0000-000000000000', 1)) k;
   IF v IS DISTINCT FROM 'gastos_gestion,imagen,medico,nino,pedagogicos,servicios,tutores,version' THEN
     RAISE EXCEPTION 'la foto no tiene las claves esperadas: %', v;
+  END IF;
+
+  -- El sello no ve la imagen y sí lo demás (por su efecto, no por el texto).
+  IF privado.ficha_hash('{"nino": {"a": 1}, "imagen": [{"respuesta": "si"}]}')
+       IS DISTINCT FROM privado.ficha_hash('{"nino": {"a": 1}, "imagen": [{"respuesta": "no"}]}')
+     OR privado.ficha_hash('{"nino": {"a": 1}, "imagen": []}')
+       = privado.ficha_hash('{"nino": {"a": 2}, "imagen": []}') THEN
+    RAISE EXCEPTION 'privado.ficha_hash no sella la foto sin la imagen';
   END IF;
 
   -- La purga, reescrita: borra las dos tablas (en el texto sin comentarios).

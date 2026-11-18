@@ -2443,7 +2443,8 @@ navegador)` (Dirección en persona, sin el superusuario, sin trazo, rol `admin`)
 - **Un cambio invalida la firma, sin triggers en las seis tablas**: la firma vale mientras la foto
   recompuesta tenga su hash. Un cambio en cualquier dato de la foto la deja sin valor sin que nadie
   tenga que acordarse de marcarla; un dato que no esté en la foto no la invalida, que es lo mismo
-  que no estar firmado. Con la firma sin valor, `validar_alta` frena (`firma_invalidada`) y se vuelve
+  que no estar firmado. _(**Precisado** el 2026-11-18: la respuesta de imagen está en la foto
+  pero no en el hash, y cambiarla no invalida nada; ver «La imagen, fuera del hash».)_ Con la firma sin valor, `validar_alta` frena (`firma_invalidada`) y se vuelve
   a firmar (fila nueva). La pantalla lo avisa antes de dejar cambiar (la app de la 10b).
 - **`marcar_matricula_lista`** exige, además de lo de hoy, una firma que valga y la respuesta de
   imagen de quien cierra (`privado.respuesta_imagen(usuario, niño)`: su «sí» o su «no» vigente).
@@ -2505,6 +2506,36 @@ en una propiedad en vez de en seis sitios que alguien puede olvidar. Adelante co
   pantalla lo hace hoy. Por eso el caso se atiende aunque hoy no haya ninguno: la pantalla y la
   lista de Dirección, en la app de la 10b.
 
+### La imagen, fuera del hash (el responsable, 2026-11-18)
+
+1. **La foto guarda las dos respuestas.** Literal: «Si solo guardara la del firmante, la foto
+   mentiría: podría decir «sí» cuando el estado real del niño es «no» porque el otro tutor se opuso.
+   Una foto que no refleja el estado no sirve como prueba de nada.»
+2. **El consentimiento de imagen sale del hash que invalida la firma.** Literal: «el consentimiento
+   es revocable en cualquier momento, por derecho, y si su cambio invalidara la ficha firmada, cada
+   vez que una madre ejerciera ese derecho la familia tendría que volver a firmar la ficha entera. Eso
+   castiga el ejercicio de un derecho y además llena a Dirección de refirmas que no significan nada.»
+   «la foto lo REGISTRA —qué respondió cada tutor y cuándo, que es la verdad de aquel momento— pero
+   el bloque de imagen no entra en el hash que sella la firma. Cambiar una respuesta de imagen no
+   invalida nada.» Y: «revisa si hay algo más dentro del hash que sea revocable por derecho del
+   titular. Si aparece otro, mismo tratamiento; si no hay ninguno, dilo y queda cerrado.»
+3. **En la app (10b-2), cada tutor legal ve que el otro se ha opuesto.** Literal: «hoy un padre que
+   dio el «sí» no entiende por qué su hijo no sale en las fotos, y la respuesta está escondida. No
+   hace falta un detalle morboso, basta con que el estado del niño sea visible y se vea que hay una
+   oposición.»
+
+**El repaso de lo demás (2026-11-18): no hay otro.** Lo que lleva la foto, bloque a bloque: la
+identidad y la gestión del niño, los datos de los tutores, lo pedagógico, lo médico, los servicios
+pedidos y los gastos de gestión son datos declarados; su titular puede **rectificarlos** (art. 16),
+y rectificar es justo el cambio que la decisión del 2026-11-17 manda volver a firmar. No dependen de
+un consentimiento que se retire. La imagen es el único bloque que existe por un consentimiento
+(art. 6.1.a y 7.3: retirable en cualquier momento). El acuse médico (`datos_medicos`) también es un
+consentimiento, pero no está en la foto. Queda cerrado: solo la imagen sale del hash.
+
+**Cómo queda**: el bloque `imagen` de la foto guarda, por tutor, su respuesta y cuándo la dio
+(`aceptado_en`); `privado.ficha_hash` sella la foto sin ese bloque. La foto cifrada lo conserva
+entero.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2524,8 +2555,8 @@ en una propiedad en vez de en seis sitios que alguien puede olvidar. Adelante co
      y la purga), la exportación desde la app (`recolectar.ts`, que lee con la sesión de quien
      exporta), los tipos, los tests y la documentación. Se aplica antes de mergear.
    - **10b-2**: las pantallas: firmar en el último paso del alta, el aviso antes de cambiar un dato
-     firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica y la
-     lista de Dirección.
+     firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la
+     lista de Dirección y que cada tutor legal vea que el otro se ha opuesto a la imagen.
    - **10b-3**: la segunda migración, después del despliegue de la 10b-2: `marcar_matricula_lista`
      exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
 4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
