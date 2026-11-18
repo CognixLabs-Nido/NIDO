@@ -5539,7 +5539,6 @@ export type Database = {
         }
         Returns: string
       }
-      dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       denegar_consentimiento_imagen: {
         Args: {
           p_ip?: unknown
@@ -5551,6 +5550,7 @@ export type Database = {
         }
         Returns: string
       }
+      dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       desarchivar_nino: {
         Args: {
           p_aula_id: string
