@@ -327,6 +327,14 @@ describe('la ficha firmada (fase 10b-1)', () => {
   it('B12 en papel: Dirección registra la firma presencial, sin trazo y con rol admin', async () => {
     const v = await ver(s.dir)
     expect(v.error).toBeNull()
+    // El tutor legal no registra una firma en papel: es de Dirección en persona.
+    const tutor = await s.A.rpc('registrar_firma_ficha_presencial', {
+      p_nino_id: N,
+      p_hash_visto: v.hash!,
+      p_nombre_tecleado: 'Legal A Ficha',
+    })
+    expect(tutor.error?.code).toBe('42501')
+    expect(nFirmas()).toBe('2')
     const r = await s.dir.rpc('registrar_firma_ficha_presencial', {
       p_nino_id: N,
       p_hash_visto: v.hash!,

@@ -6178,8 +6178,8 @@ export type Database = {
         }
         Returns: string
       }
-      pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       pedir_refirma_ficha: { Args: { p_nino_id: string }; Returns: string }
+      pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       peticiones_olvido_centro: {
         Args: { p_centro_id: string }
         Returns: {
