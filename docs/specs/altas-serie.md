@@ -2468,14 +2468,42 @@ navegador)` (Dirección en persona, sin el superusuario, sin trazo, rol `admin`)
   segunda, después, endurece `marcar_matricula_lista` y `validar_alta`. Si fueran juntas, el
   «Finalizar» de la app de antes dejaría de cerrar.
 
-**Para decidir (del responsable):**
+**Las dos preguntas que hubo** (2026-11-18): la exportación del art. 15 (¿los metadatos o la foto
+entera?) y quién puede firmar (¿el tutor legal que puede leer la ficha médica, o cualquiera?).
 
-1. **La exportación del art. 15.** Propuesta: quién firmó, cuándo, cómo, las dos versiones y el hash;
-   no la foto. Lo que contiene ya sale vivo en la misma exportación, y la copia firmada se descarga
-   por la 10c, con su lectura registrada. ¿O la foto entera, descifrada, en la exportación?
-2. **Quién puede firmar.** La foto lleva lo médico. Propuesta: el tutor legal que puede leer la
-   ficha médica (`puede_ver_info_medica`), para que nadie firme lo que no puede ver. ¿Vale, o firma
-   cualquier tutor legal?
+### Las dos, resueltas (el responsable, 2026-11-18)
+
+«El diseño me gusta, y una pieza en particular: que la firma valga solo mientras la foto
+reconstruida siga dando su hash, sin triggers en las seis tablas. Eso convierte «invalidar la firma»
+en una propiedad en vez de en seis sitios que alguien puede olvidar. Adelante con las migraciones.»
+
+1. **La exportación: los metadatos sí, la foto no, y DICE que la copia existe.** Literal: «Quién
+   firmó, cuándo, cómo, las dos versiones y el hash. La foto entera no: su contenido ya va en el
+   mismo export en vivo, y duplicar los datos de salud en cada descarga es crear otra copia que
+   proteger sin dar nada nuevo.» «el export tiene que DECIR que existe una copia firmada y cómo
+   obtenerla. Si no, un titular que lea su export no sabe que ese documento existe, y el art. 15 es
+   el derecho a saber qué se trata, no solo a recibir un volcado. Y es importante de verdad cuando
+   los datos vivos ya no son los firmados: ahí la copia firmada contiene cosas que el export no
+   muestra.»
+2. **Firma solo el tutor legal que puede ver la ficha médica.** Literal: «Nadie firma lo que no puede
+   leer». Y: «MIDE CUÁNTOS TUTORES LEGALES HAY HOY SIN puede_ver_info_medica, y dime si el permiso le
+   nace puesto a un tutor legal o se lo tiene que dar Dirección.» «cuando no pueda firmar, la
+   pantalla lo dice claro —que no tiene acceso a la ficha médica y que se lo pida a Dirección—, no
+   un error opaco. Y Dirección ve en su lista a los tutores legales sin ese permiso cuyo alta está
+   esperando firma, igual que ve quién está sin SIP.»
+
+**Medido el mismo día** (producción, solo lectura; `~/nido-logs/10/b/permiso/`):
+
+- **Hoy, 0 tutores legales sin el permiso**: los 6 vínculos vivos de tutor legal (4 principales, 2
+  secundarios) lo tienen a `true`.
+- **Le nace puesto.** La columna `permisos` tiene `'{}'` por defecto, y el `true` lo pone quien crea
+  el vínculo: los tres caminos de la app que lo crean (aceptar la invitación, `crear_vinculo` e
+  invitar o completar el alta en `crear_o_anadir_a_familia`) pasan `permisosDefault`, que al tutor
+  legal le da todos los permisos y al autorizado ninguno. `crear_o_anadir_a_familia` guarda `'{}'` si
+  le llega NULL; ningún camino de la app se lo manda.
+- **Dirección se lo puede quitar** (`vinculos_admin_all` y el privilegio de columna), pero ninguna
+  pantalla lo hace hoy. Por eso el caso se atiende aunque hoy no haya ninguno: la pantalla y la
+  lista de Dirección, en la app de la 10b.
 
 ### Fase 10, por PRs
 
