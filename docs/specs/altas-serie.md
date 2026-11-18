@@ -2776,6 +2776,40 @@ autorización de imagen en el «sí», deja pasar a quien firma **en persona y e
 Dirección, como el de N2. Leído del cuerpo de `20270127120000`, sin ensayar. Es base: va a la 10b-3
 con N2, medido abierto antes.
 
+**Las dos, confirmadas** (respuesta del responsable, 2026-11-18). Literal:
+
+1. «La firma en papel al 10b-3, de acuerdo: no tiene sentido construir una pantalla que la base va a
+   rechazar. Dos condiciones: que el 10b-3 vaya pegado, y que si en ese hueco Dirección cerrara un
+   alta en papel sin firma, quede cubierta por «pedir que se vuelva a firmar», porque las altas ya
+   validadas no firman hacia atrás y un alta cerrada en esa ventana se quedaría sin ficha firmada
+   para siempre. Compruébalo y dilo en el PR.»
+2. «firma_imagen_sync al 10b-3 con N2, y mídelo allí: lo tienes leído del cuerpo, no ensayado. Es
+   la misma puerta por otra entrada, y conviene que las dos caigan con su control negativo en el
+   mismo PR, para que quede claro que no era un caso suelto sino un patrón.»
+
+**Comprobado: hoy NO queda cubierta** (ensayo en producción terminado en RAISE, 2026-11-18, guarda
+de md5 sobre `pedir_refirma_ficha`, `firmar_ficha_comun`, `puerta_firma_tutor` y `firma_ficha`;
+predicciones escritas antes; `~/nido-logs/10/b2/refirma-sin-firma/`). Sobre un niño con la matrícula
+`activa` y 0 firmas, copiado del log:
+
+```
+N1 | tutor firma sin refirma | P0001 no hay nada que firmar HINT=nada_que_firmar
+R1 | dir pide refirma | P0001 la ficha no estÃ¡ firmada HINT=sin_firma
+C+ | cuentas tras meter la refirma | firmas=0 refirmas=1
+C+ | tutor firma con refirma | PASA true
+C+ | cuentas | firmas=1 refirmas=1
+```
+
+El lado de firmar ya contempla la ficha que nunca se firmó (con 0 firmas le basta cualquier
+refirma); el de pedir no la deja pedir (`pedir_refirma_ficha` exige una firma previa, `sin_firma`).
+Una mitad bien y la otra no. Mientras el alta está en `lista` el tutor aún puede firmar (la base lo
+deja sin refirma); en cuanto pasa a `activa`, nadie. **No es solo la ventana**: en producción hay hoy
+3 matrículas `activa`, las 3 sin ficha firmada, y 0 refirmas (lectura del mismo día): esas tres
+están ya en ese caso. **Va en la 10b-3**: `pedir_refirma_ficha` acepta la ficha sin firma, con R1 de
+control negativo (hoy `sin_firma`, después pasa) y C+ por la función (sin meter la fila a mano). Y la
+tarjeta de Dirección ofrece «Pedir que se firme» también cuando no hay firma; en la 10b-2 no lo
+ofrece, porque la base lo rechazaría.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2808,7 +2842,10 @@ con N2, medido abierto antes.
      tutor, no se registra), con su pantalla; `otorgar_consentimiento_imagen` exige que el titular
      sea tutor legal del niño (la puerta de N2, con N2 de control negativo) y lo mismo
      `firma_imagen_sync` con la firma presencial; y la función que le dice al tutor que no ha
-     contestado que hay una oposición («Las dos de la 10b-2, resueltas», 1).
+     contestado que hay una oposición («Las dos de la 10b-2, resueltas», 1) Y `pedir_refirma_ficha` sin firma previa, para el alta cerrada sin ficha firmada
+     (las 3 `activa` de hoy y la que se cierre en papel antes de la 10b-3), con R1 de control
+     negativo («Las dos, confirmadas», 2026-11-18). `firma_imagen_sync` se mide abierto **en la
+     10b-3** y cae con N2 en el mismo PR, cada una con su control negativo. La 10b-3 va pegada.
 4. **10c** (pegada a la 10b-2, decisión del 2026-11-18): leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
    el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
    obtenerla» de la nota del export («Los dos huecos», 2026-11-18).
