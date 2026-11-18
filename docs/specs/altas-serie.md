@@ -2718,6 +2718,40 @@ y la firma no guarda qué tutor firmó el papel. Atribuida la respuesta al tutor
 un alta pendiente se para en `imagen_sin_respuesta`. Para que mire la del tutor que firmó, la firma
 presencial tiene que recibir quién es, y eso es la base: la 10b-3.
 
+**La (b), decidida (el responsable, 2026-11-18).** Literal: «La (b). Y tu medida la convierte en la
+única razonable … lo peor no es el tamaño sino la dirección en que falla … Todo eso falla CONTRA el
+tutor y en silencio, que es la combinación que no aceptamos en 10a-2 y tampoco aquí.» «la (b) no es
+una decisión aparte: es la consecuencia de lo que ya decidimos. Firmar exige ser tutor legal con
+acceso a la ficha médica, y eso exige cuenta. Si quien firma necesita cuenta, su respuesta de imagen
+la tiene también. El alta en papel ya crea esa cuenta en la rama normal, así que no estamos añadiendo
+un requisito: estamos escribiendo el que ya existe.» **Las dos ramas raras** (el email de otra
+cuenta y el tutor 2 sin aceptar) no cierran el alta, «y eso ESTÁ BIEN siempre que la pantalla lo
+diga con nombre: «falta que acepte la invitación», no un error. Un alta que no se cierra con un
+motivo legible es un trámite; un alta que se cierra con un consentimiento de la directora es un
+documento inválido.» **La 10b-3**: «la firma presencial tiene que saber a qué tutor se atribuye. Hoy
+comprueba la respuesta de quien la teclea, que es Dirección, y eso es la raíz de todo esto. Va en el
+10b-3 y con su control negativo: una firma presencial sin decir de qué tutor es no debe poder
+registrarse.» **Antes de construir**: «que en la rama normal el «sí» y el «no» en papel puedan ir a
+la cuenta del tutor con las funciones de hoy. Si resulta que no, dímelo antes.»
+
+**Medido: sí se puede** (2026-11-18, producción, ensayo terminado en RAISE sobre el alta pendiente
+real, predicciones escritas antes; `~/nido-logs/10/b2/papel-ensayo/`). Con la sesión de una persona
+de Dirección del centro (no superusuario), y el tutor legal con cuenta y vínculo (la rama normal):
+
+|     | Llamada                                                                    | Resultado                                                                             |
+| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| P1  | `otorgar_consentimiento_imagen(niño, p_tutor = el tutor, …, 'presencial')` | pasa; el «sí» vigente es del tutor (`presencial`); la respuesta de Dirección, ninguna |
+| P2  | `denegar_consentimiento_imagen(niño, p_tutor = el tutor, …, 'presencial')` | pasa; el «sí» del tutor se retira y queda su «no»                                     |
+| P3  | `retirar_denegacion_imagen(niño, el tutor)`                                | pasa, y deja su fila `imagen_no_retirado` en `audit_log`                              |
+| N1  | `denegar` con `p_tutor` = la propia Dirección                              | 22023, HINT `no_es_tutor_legal`                                                       |
+| N2  | `otorgar` con `p_tutor` = la propia Dirección                              | **pasa**: el «sí» queda a nombre de Dirección                                         |
+| N3  | el tutor con su sesión, `otorgar` con `p_tutor` = Dirección                | pasa, y la fila es del tutor (la función le pone su uid)                              |
+
+Producción, igual después (2 filas de imagen, 0 rastros nuevos). **N2 es la raíz en la base**:
+`otorgar` no mira que `p_tutor` sea tutor legal del niño (`denegar` sí). La 10b-2 deja de pasarle a
+Dirección; **la 10b-3 lo cierra en la base**, con N2 como control negativo, junto a la firma
+presencial con el tutor.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
