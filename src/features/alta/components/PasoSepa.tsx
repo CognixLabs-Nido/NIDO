@@ -85,6 +85,11 @@ interface Props {
   modoDireccion?: boolean
   /** Último paso: al guardar (o al omitir) se finaliza el alta. */
   onFinalizar: () => void
+  /**
+   * Fase 10b-2: `false` cuando detrás viene la firma de la ficha (la familia): los botones dicen
+   * «Siguiente» y «Guardar y continuar», no «Finalizar». Por defecto true (el alta en papel).
+   */
+  esUltimo?: boolean
   onBack: () => void
 }
 
@@ -120,6 +125,7 @@ export function PasoSepa({
   onNombreTecleadoChange,
   modoDireccion = false,
   onFinalizar,
+  esUltimo = true,
   onBack,
 }: Props) {
   const t = useTranslations('alta')
@@ -259,7 +265,7 @@ export function PasoSepa({
             {t('wizard.atras')}
           </Button>
           <Button type="button" onClick={onFinalizar} disabled={pending}>
-            {t('wizard.finalizar')}
+            {esUltimo ? t('wizard.finalizar') : t('wizard.siguiente')}
           </Button>
         </div>
       </div>
@@ -419,7 +425,11 @@ export function PasoSepa({
               {tSepa('omitir')}
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? t('wizard.guardando') : t('wizard.finalizar')}
+              {pending
+                ? t('wizard.guardando')
+                : esUltimo
+                  ? t('wizard.finalizar')
+                  : t('wizard.guardar_siguiente')}
             </Button>
           </div>
         </div>

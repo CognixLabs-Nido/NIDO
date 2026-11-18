@@ -8,10 +8,12 @@ import { toast } from 'sonner'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-import { finalizarAlta, type BloqueAlta } from '../actions/finalizar-alta'
+import { finalizarAlta } from '../actions/finalizar-alta'
+import type { BloqueAlta } from '../lib/gate-alta'
 import { PASO_MIN_AUTENTICADO, pasosAlta, type PasoAlta } from '../lib/estado-alta'
 import { PasoAcuses } from './PasoAcuses'
 import { PasoCuenta } from './PasoCuenta'
+import { PasoFirma } from './PasoFirma'
 import { PasoGastos } from './PasoGastos'
 import { PasoMedico } from './PasoMedico'
 import { PasoMenor, type DireccionInicial } from './PasoMenor'
@@ -26,6 +28,7 @@ import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
 import type { RespuestaImagen } from '../lib/respuesta-imagen'
+import type { TutorImagenPapel } from './RespuestaImagenAlta'
 import type { IdentidadInicial, ImagenPanelData, MedicaInicial } from '../lib/tipos'
 import type { DocumentoParaFirmarFila } from '@/features/documentos-centro/components/DocumentosParaFirmar'
 
@@ -67,6 +70,8 @@ interface Props {
   imagenAceptado: boolean
   /** La respuesta de quien hace el alta a la imagen (fase 10, 10a-2). */
   miRespuestaImagen: RespuestaImagen
+  /** Alta en papel (10b-2): los tutores legales con cuenta y su respuesta de imagen. */
+  tutoresImagenPapel?: TutorImagenPapel[] | null
   familiaEstadoCivil: EstadoCivil | null
   datosTutor1: DatosTutorInicial | null
   datosTutor2: DatosTutorInicial | null
@@ -118,6 +123,11 @@ interface Props {
    * `/invitation/[token]` (alta de familia nueva) → nada se da por resuelto.
    */
   reutilizacion?: ReutilizacionFamilia
+  /**
+   * Fase 10b-2: `false` si el tutor legal no puede leer la ficha médica (`estado_firma_ficha`); el paso
+   * de firma lo dice en claro en vez de dar un error. Por defecto true.
+   */
+  puedeLeerFichaMedica?: boolean
 }
 
 const SIN_REUTILIZACION: ReutilizacionFamilia = {
@@ -155,6 +165,7 @@ export function AltaTutorWizard({
   documentosCentro = [],
   imagenAceptado,
   miRespuestaImagen,
+  tutoresImagenPapel = null,
   familiaEstadoCivil,
   datosTutor1,
   datosTutor2,
@@ -174,6 +185,7 @@ export function AltaTutorWizard({
   modoDireccion = false,
   puedeConsentirImagen = true,
   reutilizacion = SIN_REUTILIZACION,
+  puedeLeerFichaMedica = true,
 }: Props) {
   const t = useTranslations('alta')
   const tErrors = useTranslations()
@@ -184,10 +196,15 @@ export function AltaTutorWizard({
   // el principio («1 de 7»), también en la invitación, y no cambian aunque la página se vuelva a
   // pintar con otro dato del centro a mitad del alta. Sin CID el último es `emergencia`; los
   // índices de los demás no cambian (`sepa` es el último).
-  const [pasos] = useState(() => pasosAlta(centroTieneCid, centroTieneServicios, cursoTieneGastos))
+  // Fase 10b-2: la familia termina firmando la ficha; el alta en papel, con «Finalizar» (su firma en
+  // papel llega con la 10b-3).
+  const [pasos] = useState(() =>
+    pasosAlta(centroTieneCid, centroTieneServicios, cursoTieneGastos, !modoDireccion)
+  )
   const conSepa = pasos.includes('sepa')
   const conServicios = pasos.includes('servicios')
   const conGastos = pasos.includes('gastos')
+  const conFirma = pasos.includes('firma')
   // El CID también, con los pasos: si el centro lo quita a mitad del alta, el paso no se queda en
   // blanco; la ruta rechaza la firma (`centro_sin_cid`, con su mensaje) y «Omitir» finaliza.
   const [cidDelAlta] = useState(centroCid)
@@ -246,6 +263,16 @@ export function AltaTutorWizard({
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, pasoMin))
 
+  /** Tras el alta cerrada (con «Finalizar» o al firmar), la ruta sirve la pantalla «completado». */
+  function cerrado() {
+    setFaltan(null)
+    if (searchParams.get('editar')) {
+      router.replace(`/${locale}/alta/${ninoId}`)
+    } else {
+      router.refresh()
+    }
+  }
+
   function finalizar() {
     startFinalizar(async () => {
       const r = await finalizarAlta(ninoId)
@@ -260,15 +287,13 @@ export function AltaTutorWizard({
         return
       }
       // Éxito explícito: confirmación + la ruta sirve la pantalla "completado" tras navegar.
-      setFaltan(null)
       toast.success(t('finalizar.exito'))
-      if (searchParams.get('editar')) {
-        router.replace(`/${locale}/alta/${ninoId}`)
-      } else {
-        router.refresh()
-      }
+      cerrado()
     })
   }
+
+  // El último paso de datos: con la familia lleva a la firma; en papel, finaliza.
+  const terminar = conFirma ? goNext : finalizar
 
   return (
     <Card className="mx-auto max-w-2xl">
@@ -370,6 +395,7 @@ export function AltaTutorWizard({
             imagenSinPlantilla={imagenSinPlantilla}
             imagenAceptado={imagenAceptado}
             miRespuestaImagen={miRespuestaImagen}
+            tutoresImagenPapel={tutoresImagenPapel}
             puedeConsentirImagen={puedeConsentirImagen}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
@@ -438,8 +464,8 @@ export function AltaTutorWizard({
             onCambio={mergeMedica}
             variante="emergencia"
             fichaNoLeida={!medicaLeida}
-            esUltimo={!conSepa && !conServicios && !conGastos}
-            onNext={conSepa || conServicios || conGastos ? goNext : finalizar}
+            esUltimo={!conFirma && !conSepa && !conServicios && !conGastos}
+            onNext={conSepa || conServicios || conGastos ? goNext : terminar}
             onBack={goBack}
           />
         )}
@@ -449,8 +475,8 @@ export function AltaTutorWizard({
             locale={locale}
             ninoId={ninoId}
             peticion={peticionServicios}
-            esUltimo={!conSepa && !conGastos}
-            onNext={conSepa || conGastos ? goNext : finalizar}
+            esUltimo={!conFirma && !conSepa && !conGastos}
+            onNext={conSepa || conGastos ? goNext : terminar}
             onBack={goBack}
           />
         )}
@@ -460,8 +486,8 @@ export function AltaTutorWizard({
             locale={locale}
             ninoId={ninoId}
             gastos={gastosGestion}
-            esUltimo={!conSepa}
-            onNext={conSepa ? goNext : finalizar}
+            esUltimo={!conFirma && !conSepa}
+            onNext={conSepa ? goNext : terminar}
             onBack={goBack}
           />
         )}
@@ -490,7 +516,20 @@ export function AltaTutorWizard({
             nombreTecleado={sepaNombreTecleado}
             onNombreTecleadoChange={setSepaNombreTecleado}
             modoDireccion={modoDireccion}
-            onFinalizar={finalizar}
+            onFinalizar={terminar}
+            esUltimo={!conFirma}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'firma' && (
+          <PasoFirma
+            ninoId={ninoId}
+            contexto="alta"
+            puedeLeerFichaMedica={puedeLeerFichaMedica}
+            nombreInicial={currentUserNombre}
+            onFaltan={setFaltan}
+            onFirmado={cerrado}
             onBack={goBack}
           />
         )}

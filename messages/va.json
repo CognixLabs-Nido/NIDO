@@ -1605,6 +1605,11 @@
         "subtitulo": "L’alta la demana des d’ara, però no als que ja estaven matriculats. A estes famílies cal reclamar-la.",
         "no_se_pudo_leer": "No s’ha pogut llegir quins xiquets tenen la targeta. Torna a carregar la pàgina.",
         "vacio": "Tots els xiquets matriculats tenen la targeta sanitària."
+      },
+      "sin_acceso_ficha": {
+        "titulo": "Tutors sense accés a la fitxa mèdica",
+        "subtitulo": "No poden firmar la fitxa de l'alta fins que els dones accés a la fitxa mèdica.",
+        "no_se_pudo_leer": "No hem pogut llegir esta llista."
       }
     }
   },
@@ -1748,9 +1753,10 @@
         "titulo": "Autorització d'imatge",
         "estado": {
           "concedida": "Concedida: pot aparéixer en les fotos del centre.",
-          "pendiente_otro": "No apareix en les fotos: falta l'autorització de l'altre tutor, o l'altre tutor no l'autoritza.",
+          "pendiente_otro": "No apareix en les fotos: falta que l'altre tutor també ho autoritze.",
           "no_autorizada": "No autoritzada: no apareix en les fotos del centre.",
-          "denegada_por_mi": "Has dit que no: no apareix en les fotos del centre. Ho pots canviar quan vulgues."
+          "denegada_por_mi": "Has dit que no: no apareix en les fotos del centre. Ho pots canviar quan vulgues.",
+          "oposicion": "No apareix en les fotos: un altre tutor legal s'hi ha oposat. Mentre el seu «no» seguisca vigent no hi ha consentiment, encara que tu ho hages autoritzat."
         },
         "revocar": {
           "boton": "Revocar l'autorització",
@@ -4726,7 +4732,8 @@
         "emergencia": "Emergències",
         "sepa": "Domiciliació bancària",
         "servicios": "Serveis",
-        "gastos": "Despeses de gestió"
+        "gastos": "Despeses de gestió",
+        "firma": "Firma de la fitxa"
       }
     },
     "identidad": {
@@ -4769,7 +4776,8 @@
       "acuse_pendiente": "Confirma abans el justificant de confidencialitat de les dades mèdiques.",
       "incompleto": "Falten dades obligatòries per completar.",
       "acuse_fallo": "No s'ha pogut registrar l'acús. Torna-ho a provar.",
-      "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer."
+      "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer.",
+      "tutor_papel": "Tria quin tutor legal va firmar el paper."
     },
     "acuses": {
       "privacidad_titulo": "Privacitat",
@@ -4781,7 +4789,11 @@
       "imagen_libre": "Pots dir que no: no impedeix acabar l'alta, i ho pots canviar quan vulgues.",
       "imagen_boton_si": "Sí, autoritze",
       "imagen_boton_no": "No autoritze",
-      "imagen_denegado": "Has dit que no autoritzes la imatge."
+      "imagen_denegado": "Has dit que no autoritzes la imatge.",
+      "imagen_papel_ayuda": "Anota el que va contestar en el paper cada tutor legal. Queda al seu nom, no al teu.",
+      "imagen_papel_no_se_pudo_leer": "No hem pogut llegir els tutors legals del xiquet.",
+      "imagen_papel_sin_cuenta": "Falta que el tutor legal accepte la invitació: fins que tinga compte no es pot anotar la seua resposta a les fotos.",
+      "imagen_papel_sin_respuesta": "sense resposta"
     },
     "menor": {
       "direccion_titulo": "Adreça del menor",
@@ -4950,7 +4962,67 @@
         "documentos_centro": "Documents del centre per signar",
         "tutor2": "Dades del tutor 2",
         "servicios": "Serveis (contestar cadascun)",
-        "gastos": "Despeses de gestió (triar com es paguen)"
+        "gastos": "Despeses de gestió (triar com es paguen)",
+        "tutor_sin_cuenta": "Que un tutor legal accepte la seua invitació (sense compte no es pot guardar la seua resposta a les fotos)."
+      }
+    },
+    "firma": {
+      "intro_alta": "Últim pas: llig la fitxa amb tot el que has declarat i firma-la. En firmar acabes l'alta i queda pendent que el centre la valide.",
+      "intro_refirma": "Llig la fitxa amb el que hi ha ara i firma-la de nou.",
+      "abrir": "Veure la fitxa per a firmar-la",
+      "aviso": "En firmar declares que el que diu la fitxa és cert. Queda guardada tal com la veus, amb la data i la teua firma. Si després canvies alguna dada abans que el centre valide l'alta, hauràs de tornar a firmar-la.",
+      "nombre": "El teu nom complet",
+      "trazo": "La teua firma",
+      "firmar_alta": "Firmar i acabar l'alta",
+      "firmar": "Firmar la fitxa",
+      "firmado_alta": "Fitxa firmada: l'alta està acabada.",
+      "firmado": "Fitxa firmada.",
+      "sin_acceso": "No pots firmar la fitxa perquè no tens accés a la fitxa mèdica del xiquet, i la fitxa la inclou. Demana a la Direcció del centre que et done accés; després podràs firmar-la ací.",
+      "aviso_editar": "La fitxa d'esta alta ja està firmada. Si canvies alguna dada de la fitxa abans que el centre valide l'alta, la firma deixa de valdre i caldrà tornar a firmar-la.",
+      "confirmar_editar_titulo": "La fitxa ja està firmada",
+      "confirmar_editar_no": "Cancel·lar",
+      "confirmar_editar_si": "Entés, revisar",
+      "motivo_refirma": {
+        "invalidada": "La firma de la fitxa ja no val perquè ha canviat alguna dada. Torna a firmar-la perquè el centre puga validar l'alta.",
+        "sin_firma": "Falta firmar la fitxa de l'alta. Firma-la perquè el centre puga validar-la.",
+        "pedida": "El centre et demana que tornes a firmar la fitxa."
+      },
+      "secciones": {
+        "nino": "El xiquet o la xiqueta",
+        "tutor": "Tutor o tutora",
+        "pedagogicos": "Dades pedagògiques",
+        "servicios": "Serveis demanats",
+        "gastos": "Despeses de gestió",
+        "imagen": "Fotos: resposta de cada tutor",
+        "medico": "Dades mèdiques"
+      },
+      "errors": {
+        "no_autorizado": "No pots firmar esta fitxa.",
+        "leer": "No hem pogut llegir la fitxa. Torna-ho a provar.",
+        "sin_acceso": "No tens accés a la fitxa mèdica del xiquet. Demana-ho a la Direcció del centre per a poder firmar.",
+        "bloqueada": "La fitxa mèdica d'este xiquet està bloquejada i no es pot firmar.",
+        "invalido": "Falten dades per a firmar.",
+        "sin_trazo": "Dibuixa la teua firma per a firmar.",
+        "ficha_cambiada": "La fitxa ha canviat des que la vas obrir. Torna a obrir-la i firma-la amb el que hi ha ara.",
+        "ya_firmada": "La fitxa ja està firmada i la firma continua valent.",
+        "firmar": "No hem pogut guardar la firma. Torna-ho a provar.",
+        "sin_firma": "La fitxa encara no està firmada: no hi ha res que tornar a firmar.",
+        "refirma": "No hem pogut demanar que es torne a firmar. Torna-ho a provar."
+      },
+      "direccion": {
+        "titulo": "Fitxa firmada",
+        "no_se_pudo_leer": "No hem pogut llegir la firma de la fitxa.",
+        "sin_firma": "La fitxa no està firmada.",
+        "firmada_papel": "Firmada en paper el {fecha}.",
+        "firmada_familia": "Firmada per la família el {fecha}.",
+        "vigente": "La firma val: ningú ha canviat les dades firmades.",
+        "refirma_pendiente": "Has demanat que es torne a firmar: falta que la família la firme.",
+        "sin_valor": "La firma ja no val: ha canviat alguna dada firmada.",
+        "pedir_refirma": "Demanar que es torne a firmar",
+        "refirma_pedida_ok": "Hem demanat a la família que torne a firmar la fitxa.",
+        "pedir_refirma_aviso": "La firma actual deixarà de valdre i la família haurà de tornar a firmar la fitxa. No canvia cap dada.",
+        "cancelar": "Cancel·lar",
+        "pedir_refirma_confirmar": "Demanar-ho"
       }
     }
   },

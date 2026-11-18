@@ -32,6 +32,11 @@ interface Estado {
   consentimientos: Fila[]
   mandatos_sepa: Fila[]
   /**
+   * 10b-2: el vínculo de quien cierra con el niño, que decide el modo (`modoFirmaDocumento`): con
+   * vínculo, la familia; sin él, el alta en papel. Por defecto, la familia.
+   */
+  vinculos_familiares: Fila[]
+  /**
    * Fase 10 (10a-2): la respuesta a la imagen de quien cierra («sí», «no» o ninguna), que el falso
    * sirve a la consulta de `consentimientos` filtrada por los dos tipos de imagen; `'falla'` = la
    * lectura da error.
@@ -105,6 +110,7 @@ function altaCompleta(): Estado {
     ],
     consentimientos: [{ id: '66666666-6666-4666-8666-666666666666' }],
     mandatos_sepa: [],
+    vinculos_familiares: [{ id: '77777777-7777-4777-8777-777777777777' }],
     respuestaImagen: 'si',
     // Las normas, firmadas: el alta completa.
     documentosCentro: [doc('Normas', true, 'firmado')],

@@ -2769,6 +2769,13 @@ imagen ya a nombre del tutor que firmó el papel. La pantalla de la firma en pap
 «Registrar la firma en papel» en la ficha de Dirección) llega con la 10b-3, con la función que
 recibe el tutor. «Pedir que se vuelva a firmar», en la 10b-2.
 
+**La otra cara de N2, leída al construir la 10b-2** (2026-11-18, «cuando encuentres una comprobación
+en un lado, mira siempre el otro»): `firma_imagen_sync`, el trigger que convierte la firma de una
+autorización de imagen en el «sí», deja pasar a quien firma **en persona y es Dirección del centro**
+(`metodo_firma = 'presencial'` y rol `admin`/`directora`), y el «sí» queda a nombre del firmante: de
+Dirección, como el de N2. Leído del cuerpo de `20270127120000`, sin ensayar. Es base: va a la 10b-3
+con N2, medido abierto antes.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2789,12 +2796,19 @@ recibe el tutor. «Pedir que se vuelva a firmar», en la 10b-2.
      exporta), los tipos, los tests y la documentación. Se aplica antes de mergear. La nota del
      export dice que la copia firmada existe y de qué fecha es, sin «pídesela» («Los dos huecos»).
    - **10b-2**: las pantallas: firmar en el último paso del alta, el aviso antes de cambiar un dato
-     firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la
-     lista de Dirección y que cada tutor legal vea que el otro se ha opuesto a la imagen.
+     firmado, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la lista de Dirección y
+     que el tutor legal que dijo «sí» vea que otro se ha opuesto a la imagen. Y la respuesta de
+     imagen del alta en papel, a nombre del tutor legal que firmó el papel (2026-11-18). _La firma en
+     papel de la ficha pasa a la 10b-3_ («La firma en papel de la ficha va con la 10b-3»).
    - **10b-3**: la segunda migración, después del despliegue de la 10b-2: `marcar_matricula_lista`
      exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
      Y `firmas_ficha` en la vista de datos bloqueados (`privado.contenido_bloqueado` y lo que la
-     acompaña), como las demás firmas («Los dos huecos», 2026-11-18).
+     acompaña), como las demás firmas («Los dos huecos», 2026-11-18). Y lo del 2026-11-18: la firma
+     presencial dice de qué tutor legal es y mira su respuesta de imagen (control negativo: sin
+     tutor, no se registra), con su pantalla; `otorgar_consentimiento_imagen` exige que el titular
+     sea tutor legal del niño (la puerta de N2, con N2 de control negativo) y lo mismo
+     `firma_imagen_sync` con la firma presencial; y la función que le dice al tutor que no ha
+     contestado que hay una oposición («Las dos de la 10b-2, resueltas», 1).
 4. **10c** (pegada a la 10b-2, decisión del 2026-11-18): leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
    el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
    obtenerla» de la nota del export («Los dos huecos», 2026-11-18).

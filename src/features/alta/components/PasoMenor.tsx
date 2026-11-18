@@ -39,7 +39,11 @@ import {
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 
 import { actualizarNinoFamilia } from '../actions/actualizar-nino-familia'
-import { RespuestaImagenAlta } from './RespuestaImagenAlta'
+import {
+  RespuestaImagenAlta,
+  RespuestaImagenPapel,
+  type TutorImagenPapel,
+} from './RespuestaImagenAlta'
 import { SubirDocumentoPdf } from './SubirDocumentoPdf'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
@@ -86,6 +90,8 @@ interface Props {
   imagenAceptado: boolean
   /** La respuesta de quien hace el alta a la imagen (fase 10, 10a-2): «sí», «no» o ninguna. */
   miRespuestaImagen: RespuestaImagen
+  /** Alta en papel (10b-2): los tutores legales con cuenta y su respuesta; `null` si no se leyeron. */
+  tutoresImagenPapel?: TutorImagenPapel[] | null
   /** ¿Puede dar el consentimiento de imagen? (tutor legal o modo Dirección). Si no, se oculta
    *  la sección de imagen entera (documento, «Cargar documento» y casilla) y se explica por
    *  qué. Por defecto true. */
@@ -139,6 +145,7 @@ export function PasoMenor({
   imagenSinPlantilla,
   imagenAceptado,
   miRespuestaImagen,
+  tutoresImagenPapel = null,
   puedeConsentirImagen = true,
   currentUserId,
   currentUserNombre,
@@ -743,14 +750,20 @@ export function PasoMenor({
             </div>
           )
         )}
-        {puedeConsentirImagen && (
-          <RespuestaImagenAlta
-            ninoId={ninoId}
-            respuestaInicial={miRespuestaImagen}
-            soloSi={modoDireccion}
-            onRespondido={() => router.refresh()}
-          />
-        )}
+        {puedeConsentirImagen &&
+          (modoDireccion ? (
+            <RespuestaImagenPapel
+              ninoId={ninoId}
+              tutores={tutoresImagenPapel}
+              onRespondido={() => router.refresh()}
+            />
+          ) : (
+            <RespuestaImagenAlta
+              ninoId={ninoId}
+              respuestaInicial={miRespuestaImagen}
+              onRespondido={() => router.refresh()}
+            />
+          ))}
       </section>
 
       <div className="flex justify-between border-t pt-4">

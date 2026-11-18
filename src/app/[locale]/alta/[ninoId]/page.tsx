@@ -19,13 +19,17 @@ import {
   firmarRuta,
 } from '@/shared/lib/adjuntos/storage'
 
+import { AvisoFichaFirmada } from '@/features/alta/components/AvisoFichaFirmada'
+import { leerEstadoFirmaFicha } from '@/features/alta/lib/ficha-firmada'
 import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { resolverSalidaAlta } from '@/features/alta/lib/salida-alta'
 import { puedeConsentirImagenAlta } from '@/features/alta/lib/consentimiento-imagen-alta'
-import { leerRespuestaImagen } from '@/features/alta/lib/respuesta-imagen'
+import { leerRespuestaImagen, type RespuestaImagen } from '@/features/alta/lib/respuesta-imagen'
+import { leerTutoresLegalesConCuenta } from '@/features/alta/lib/gate-alta'
+import type { TutorImagenPapel } from '@/features/alta/components/RespuestaImagenAlta'
 import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
@@ -112,12 +116,29 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // (`?editar=1`). Sin ese flag, el tutor va a su panel. En modo edición, los write-paths
   // detectan `activa` y encolan en `cambios_pendientes` (decisión J) en vez de aplicar.
   if (estadoMatricula === 'activa' && editar !== '1') redirect(`/${locale}/family`)
+  // Fase 10b-2: el estado de la firma de la ficha (tutor legal o Dirección). Si no se lee, no se avisa
+  // ni se ofrece firmar: no se sabe, y el paso de firma lo volverá a mirar la base.
+  const estadoFirma =
+    estadoMatricula === 'pendiente' || estadoMatricula === 'lista'
+      ? await leerEstadoFirmaFicha(supabase, ninoId)
+      : null
+  const firma = estadoFirma?.ok ? estadoFirma.data : null
+  const { data: perfilUsuario } = await supabase
+    .from('usuarios')
+    .select('nombre_completo')
+    .eq('id', user.id)
+    .maybeSingle()
+  const nombreUsuario = perfilUsuario?.nombre_completo ?? ''
   if (estadoMatricula === 'lista' && editar !== '1') {
     return (
       <AltaCompletadaScreen
         ninoNombre={nino.nombre}
         editarHref={`/${locale}/alta/${ninoId}?editar=1`}
         salida={resolverSalidaAlta(modoDireccion, locale)}
+        ninoId={ninoId}
+        firma={firma}
+        modoDireccion={modoDireccion}
+        nombreUsuario={nombreUsuario}
       />
     )
   }
@@ -331,6 +352,25 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const imagenAceptado = imagenConsentida ?? false
   const miRespuesta = await leerRespuestaImagen(supabase, ninoId, user.id)
   if (!miRespuesta.ok) throw new Error('alta: la respuesta a la imagen no se lee')
+  // Alta en papel (10b-2): la respuesta de imagen es del tutor legal que firmó el papel, anotada por
+  // Dirección, nunca a su nombre (decisión del 2026-11-18). Los tutores legales con cuenta y su
+  // respuesta; `null` si no se pudieron leer (la pantalla lo dice y no se anota nada).
+  let tutoresImagenPapel: TutorImagenPapel[] | null = null
+  if (modoDireccion) {
+    const conCuenta = await leerTutoresLegalesConCuenta(supabase, ninoId)
+    if (conCuenta) {
+      const respuestas = await Promise.all(
+        conCuenta.map((c) => leerRespuestaImagen(supabase, ninoId, c.usuarioId))
+      )
+      if (respuestas.every((r) => r.ok)) {
+        tutoresImagenPapel = conCuenta.map((c, k) => ({
+          usuarioId: c.usuarioId,
+          nombre: tutoresRows.find((r) => r.usuario_id === c.usuarioId)?.nombre_completo ?? '—',
+          respuesta: (respuestas[k] as { ok: true; respuesta: RespuestaImagen }).respuesta,
+        }))
+      }
+    }
+  }
 
   // SEPA (G-2): datos del centro (acreedor, con su CID desde el 0c-2) y mandato activo previo del
   // tutor 1 (titular).
@@ -408,6 +448,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         <h1 className="text-h2">{t('titulo')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitulo', { nombre: nino.nombre })}</p>
       </header>
+      {/* Fase 10b-2: la ficha está firmada y la firma vale; cambiar un dato firmado la deja sin valor. */}
+      {estadoMatricula === 'lista' && editar === '1' && firma?.vigente && <AvisoFichaFirmada />}
       {enEdicionValidada && (
         <p className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 rounded-xl border p-3 text-sm">
           {t('edicion_validada_aviso')}
@@ -449,6 +491,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         documentosCentro={documentosCentro.data}
         imagenAceptado={imagenAceptado}
         miRespuestaImagen={miRespuesta.respuesta}
+        tutoresImagenPapel={tutoresImagenPapel}
         familiaEstadoCivil={familiaEstadoCivil}
         datosTutor1={datosTutor1}
         datosTutor2={datosTutor2}
@@ -471,6 +514,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         modoDireccion={modoDireccion}
         puedeConsentirImagen={puedeConsentirImagen}
         reutilizacion={reutilizacion}
+        puedeLeerFichaMedica={firma?.puedeFirmar !== 'sin_acceso_ficha_medica'}
       />
     </div>
   )

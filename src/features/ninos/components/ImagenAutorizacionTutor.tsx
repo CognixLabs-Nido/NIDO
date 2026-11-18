@@ -21,9 +21,15 @@ interface Props {
  */
 export function estadoImagenClave(
   estado: EstadoImagenNino
-): 'concedida' | 'denegada_por_mi' | 'pendiente_otro' | 'no_autorizada' {
+): 'concedida' | 'denegada_por_mi' | 'oposicion' | 'pendiente_otro' | 'no_autorizada' {
   if (estado.visible) return 'concedida'
   if (estado.miNo) return 'denegada_por_mi'
+  // Fase 10b-2 («cada tutor legal ve que el otro se ha opuesto», 2026-11-18): con mi «sí» vigente,
+  // `existe_consentimiento_imagen` solo da false si hay un «no» vigente de otro (es «hay un sí Y ningún
+  // no»). Se dice que hay una oposición, sin decir de quién. Al tutor que no ha contestado no se le
+  // puede deducir (sin «sí» propio, false es también «nadie ha dicho que sí»): eso llega con la 10b-3.
+  if (estado.miVigente && !estado.hayVigente) return 'oposicion'
+  // Hay un «sí» que vale y aun así no sale: falta el «sí» de otro tutor (los dos firmantes).
   return estado.hayVigente || estado.miVigente ? 'pendiente_otro' : 'no_autorizada'
 }
 
