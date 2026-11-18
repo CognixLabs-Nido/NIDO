@@ -290,7 +290,12 @@ describe('la ficha firmada en la app (fase 10b-2)', () => {
     ])
   })
 
-  it('pedir la refirma: con firma, sí; sin firma, «sin_firma»', async () => {
+  // OJO: el «sin_firma» de abajo es el HUECO medido el 2026-11-18, no el estado bueno: un alta que
+  // se cerró sin ficha firmada (las `activa` de antes y la que se cierre en papel antes de la 10b-3)
+  // no se puede pedir que se firme, y fuera de `lista` sin esa petición no firma nadie. La 10b-3 deja
+  // pedirla sin firma previa: entonces este aserto se pone rojo y se da la vuelta, a propósito
+  // (spec, «Las dos, confirmadas»).
+  it('pedir la refirma: con firma, sí; sin firma, hoy «sin_firma» (el hueco que cierra la 10b-3)', async () => {
     const r = await pedirRefirmaFicha(s.dir, N)
     expect(r.ok).toBe(true)
     const e = await leerEstadoFirmaFicha(s.dir, N)
