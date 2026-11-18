@@ -2518,7 +2518,16 @@ en una propiedad en vez de en seis sitios que alguien puede olvidar. Adelante co
    sitios (los seis campos médicos incluidos), el hash, la versión del texto canónico y la de la
    plantilla del PDF, firmar y firmar presencial, `marcar_matricula_lista` exige la firma y la
    respuesta de la imagen, un cambio en `lista` invalida la firma (la pantalla lo avisa antes),
-   `pide_refirma`, exportación y purga.
+   `pide_refirma`, exportación y purga. **En tres PR** (2026-11-18, por tamaño; el orden de
+   aplicación es el de la 8a, la 8b y la 9):
+   - **10b-1**: la migración `20270128120000` (solo añade: las dos tablas, la foto, las funciones
+     y la purga), la exportación desde la app (`recolectar.ts`, que lee con la sesión de quien
+     exporta), los tipos, los tests y la documentación. Se aplica antes de mergear.
+   - **10b-2**: las pantallas: firmar en el último paso del alta, el aviso antes de cambiar un dato
+     firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica y la
+     lista de Dirección.
+   - **10b-3**: la segunda migración, después del despliegue de la 10b-2: `marcar_matricula_lista`
+     exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
 4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
    el bloqueo tras la baja) y el PDF que compone el servidor.
 
