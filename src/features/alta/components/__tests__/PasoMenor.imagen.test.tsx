@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest'
  * Paso del menor del alta — la sección «Autorización de imagen» solo la ve quien puede dar
  * el consentimiento (tutor legal o modo Dirección). A un vínculo `autorizado` se le oculta
  * entera (documento, «Cargar documento» y la pregunta) y se le explica por qué. Desde la fase 10
- * (10a-2) la pregunta tiene dos respuestas; en el alta en papel (Dirección), solo el «sí».
+ * (10a-2) la pregunta tiene dos respuestas; en el alta en papel (Dirección), desde la 10b-2, una
+ * por tutor legal y a su nombre (`RespuestaImagenPapel`).
  *
  * Los hijos pesados (formularios, subida de foto, panel de firma) se sustituyen por stubs:
  * aquí solo se prueba qué se pinta en la sección de imagen.
@@ -36,8 +37,9 @@ vi.mock('@/features/ninos/components/SubirFotoNino', () => ({
 }))
 vi.mock('../SubirDocumentoPdf', () => ({ SubirDocumentoPdf: () => <div /> }))
 vi.mock('../RespuestaImagenAlta', () => ({
-  RespuestaImagenAlta: ({ soloSi }: { soloSi?: boolean }) => (
-    <div data-testid="stub-casilla-imagen" data-solo-si={String(Boolean(soloSi))} />
+  RespuestaImagenAlta: () => <div data-testid="stub-casilla-imagen" />,
+  RespuestaImagenPapel: ({ tutores }: { tutores: unknown[] | null }) => (
+    <div data-testid="stub-imagen-papel" data-tutores={String(tutores?.length ?? 'null')} />
   ),
 }))
 
@@ -102,7 +104,8 @@ describe('PasoMenor — sección de autorización de imagen', () => {
     renderPaso({})
     const seccion = screen.getByTestId('alta-imagen-autorizacion')
     expect(seccion).toBeInTheDocument()
-    expect(screen.getByTestId('stub-casilla-imagen')).toHaveAttribute('data-solo-si', 'false')
+    expect(screen.getByTestId('stub-casilla-imagen')).toBeInTheDocument()
+    expect(screen.queryByTestId('stub-imagen-papel')).not.toBeInTheDocument()
     expect(screen.getByText('imagen.cargar')).toBeInTheDocument()
     expect(screen.queryByTestId('alta-imagen-solo-tutor-legal')).not.toBeInTheDocument()
   })
@@ -113,9 +116,10 @@ describe('PasoMenor — sección de autorización de imagen', () => {
     expect(screen.getByTestId('stub-casilla-imagen')).toBeInTheDocument()
   })
 
-  it('alta en papel (Dirección): la pregunta solo con el «sí» (el «no» espera a saber de qué tutor)', () => {
+  it('alta en papel (Dirección): la respuesta por tutor legal, no la de quien teclea', () => {
     renderPaso({ modoDireccion: true })
-    expect(screen.getByTestId('stub-casilla-imagen')).toHaveAttribute('data-solo-si', 'true')
+    expect(screen.getByTestId('stub-imagen-papel')).toHaveAttribute('data-tutores', 'null')
+    expect(screen.queryByTestId('stub-casilla-imagen')).not.toBeInTheDocument()
   })
 
   it('autorizado: se oculta la sección entera y se explica que la da el tutor legal', () => {
