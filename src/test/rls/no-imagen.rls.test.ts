@@ -106,7 +106,10 @@ describe('el «no» de la imagen: cada tutor responde por sí', () => {
     await asignarRol(legalA.id, centro.id, 'tutor_legal')
     await asignarRol(legalB.id, centro.id, 'tutor_legal')
     await asignarRol(autorizado.id, centro.id, 'autorizado')
-    await crearVinculo(nino.id, legalA.id, 'tutor_legal_principal', {})
+    await crearVinculo(nino.id, legalA.id, 'tutor_legal_principal', {
+      // firmas_insert lo exige para firmar la autorización de imagen (caso de firma_imagen_sync).
+      puede_firmar_autorizaciones: true,
+    })
     await crearVinculo(nino.id, legalB.id, 'tutor_legal_secundario', {})
     await crearVinculo(nino.id, autorizado.id, 'autorizado', {})
 
