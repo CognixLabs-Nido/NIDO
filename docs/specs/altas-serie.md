@@ -2658,6 +2658,66 @@ parar se cumplen:
 - **La tabla**: `consentimientos.usuario_id` es `NOT NULL` con FK a `usuarios`: un tutor sin cuenta
   no puede tener una respuesta. Hoy, 0 de 4 tutores vivos sin cuenta.
 
+**Lo que cambia (el responsable, 2026-11-18).** Literal: «el consentimiento en papel se atribuye AL
+TUTOR LEGAL QUE FIRMÓ EL PAPEL, nunca a la persona de Dirección. Eso vale para el «sí» y para el
+«no». Lo que está hoy en producción es un consentimiento sin titular válido.» Esa primera «no admite
+debate». La segunda, el tutor sin cuenta, espera a una medida: «(a) que un consentimiento pueda
+apuntar al tutor de la familia (familia_tutores) y no solo a una cuenta; (b) que el alta en papel no
+se cierre hasta que el tutor tenga cuenta; (c) que Dirección registre la respuesta con la identidad
+del tutor y el papel como prueba, y se vincule cuando acepte la invitación». «MÍDEME EL RADIO DE LA
+(a) … Con el número decido.» **El niño concreto**: «no toques ese consentimiento. Lo que yo haría es
+revocarlo, porque no lo dio quien tenía que darlo, pero el dato es suyo y la decisión también»: se
+pregunta a Jose.
+
+**El radio de la (a), medido** (2026-11-18; cuerpos vivos de producción en solo lectura y código de
+`main`; `~/nido-logs/10/b2/radio/`):
+
+- **En la base, 38 piezas nombran `consentimientos`**: 25 cuerpos de función (23 y las dos de sus
+  triggers), 4 políticas, 4 índices, 5 restricciones y 2 triggers. **20 de los 25 cuerpos se apoyan
+  en `usuario_id`** (filtran, cruzan o escriben por él); 5 solo por el niño o nada
+  (`queda_conservado_nino`, `existe_consentimiento_imagen`, `revocar_consentimiento_imagen`,
+  `consentimiento_imagen_sync`, y `estado_retencion_nino`, que solo la nombra en un comentario).
+  También 3 de las 4 políticas (`bloqueo_retencion`, `consentimientos_self_select`,
+  `consentimientos_insert`; la cuarta, `consentimientos_admin_select`, nombra el `usuario_id` de
+  otra tabla) y el índice único `consentimientos_un_no_imagen_vigente` (`nino_id, usuario_id`).
+- **De las once piezas genéricas, 9 se apoyan en `usuario_id`** (todas salvo `queda_conservado_nino` y
+  `estado_retencion_nino`).
+- **Qué se rompería con `usuario_id` nulo, leído del cuerpo (sin ensayar):** nada da error; todo
+  contesta «nadie». Los ayudantes que reciben el titular (`retenido`, `usuario_olvidado_en`,
+  `usuario_olvidado_desde`, `consentimiento_bloqueado`) comparan `= p_usuario_id`, y con NULL dan
+  «no». Así:
+  - la retención no lo frena (`destruir_firmas_nino` lo destruye con el tutor retenido);
+  - la purga del tutor no lo redacta (`purgar_sujeto_db` borra la IP y el navegador por `usuario_id`);
+  - el bloqueo tras el olvido del tutor no lo ve;
+  - un «no» en papel no se puede retirar (`retirar_no_imagen`, `usuario_id = p_tutor`);
+  - el índice único no impide dos «no» (un NULL no choca con otro), y `denegar` no lo encuentra
+    después;
+  - con «los dos firmantes», el «sí» no cuenta nunca (`tiene_consentimiento_imagen`);
+  - la foto de la ficha no dice de quién es la respuesta (`privado.ficha_canonica`);
+  - el export lo saca sin «otorgado por».
+    Todos fallan en silencio, y casi todos **abiertos contra el tutor**: su olvido, su retención, su
+    bloqueo.
+- **En la app, 27 ficheros nombran `consentimientos`; 7 leen o filtran por su `usuario_id`**: la
+  página del alta, `finalizar-alta`, `respuesta-imagen`, `get-autorizacion-detalle`, `recolectar`
+  (el export), `otorgar-imagen-nino` y `get-alta-documentacion`.
+
+**Lo que dice el dato sobre la (b)** (mismas fuentes):
+
+- **El alta en papel ya crea la cuenta del tutor.** «Completar en Dirección» (`completarEnDireccion`
+  → `crearTutorDirecto`) le crea la cuenta (`createUser`, sin correo ni contraseña) y la vincula. Sin
+  cuenta enlazada queda solo una rama: un email que ya es de una cuenta que ha operado en otro sitio
+  (otro centro, el personal, el superusuario), que se invita y no se enlaza hasta que acepta. Y el
+  segundo tutor, hasta que acepta su invitación.
+- **Hoy, 0 tutores sin cuenta**: 0 de 3 titulares y 0 de 1 segundo tutor.
+- **Invitaciones de tutor legal**: 4, 3 aceptadas, todas en menos de 0,2 horas (la media, 0,1), y 1
+  caducada sin aceptar. **No es representativo**: son las familias de prueba del buzón de Jose.
+
+**Y una consecuencia para la firma, leída en `20270128120000`:** `firmar_ficha_comun` exige la
+respuesta de imagen de `auth.uid()` (línea 527). En la firma en papel esa persona es la de Dirección,
+y la firma no guarda qué tutor firmó el papel. Atribuida la respuesta al tutor, la firma en papel de
+un alta pendiente se para en `imagen_sin_respuesta`. Para que mire la del tutor que firmó, la firma
+presencial tiene que recibir quién es, y eso es la base: la 10b-3.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
