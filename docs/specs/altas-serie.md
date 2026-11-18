@@ -2486,6 +2486,8 @@ en una propiedad en vez de en seis sitios que alguien puede olvidar. Adelante co
    el derecho a saber qué se trata, no solo a recibir un volcado. Y es importante de verdad cuando
    los datos vivos ya no son los firmados: ahí la copia firmada contiene cosas que el export no
    muestra.»
+   _(Precisado el 2026-11-18, «Los dos huecos»: en la 10b-1 el export dice que la copia existe y de
+   qué fecha es; el «cómo obtenerla» entra en la 10c, con la forma de entregarla.)_
 2. **Firma solo el tutor legal que puede ver la ficha médica.** Literal: «Nadie firma lo que no puede
    leer». Y: «MIDE CUÁNTOS TUTORES LEGALES HAY HOY SIN puede_ver_info_medica, y dime si el permiso le
    nace puesto a un tutor legal o se lo tiene que dar Dirección.» «cuando no pueda firmar, la
@@ -2536,6 +2538,22 @@ consentimiento, pero no está en la foto. Queda cerrado: solo la imagen sale del
 (`aceptado_en`); `privado.ficha_hash` sella la foto sin ese bloque. La foto cifrada lo conserva
 entero.
 
+### Los dos huecos (el responsable, 2026-11-18)
+
+Al terminar el export de la 10b-1 salieron dos huecos, y el responsable los resolvió así:
+
+1. **La nota no promete lo que no se puede dar.** Literal: «Pártela: en el 10b-1 la nota dice que
+   EXISTE una copia firmada de la ficha y de qué fecha es, que es cierto y es lo que el art. 15 pide
+   saber. El «pídesela a la Dirección del centro» entra en el 10c, en el mismo PR que crea la forma
+   de entregarla. Decirle hoy a una familia que se la pida a Dirección cuando Dirección no puede
+   sacarla genera una solicitud que nadie puede atender, y una solicitud de acceso sin atender tiene
+   plazo legal. No es un detalle de redacción.» Y: «compruébame una cosa: que no pueda existir
+   ninguna firma antes de que lleguen las pantallas del 10b-2».
+2. **`contenido_bloqueado` va en el 10b-3, no en un PR aparte.** Literal: «Esa tabla la estamos
+   creando nosotros ahora, y nace sin aparecer en la vista de datos bloqueados que las demás firmas
+   sí tienen: eso no es deuda heredada, es un hueco que abrimos hoy. El 10b-3 ya lleva migración,
+   así que entra ahí y no se queda colgando de un PR que nadie priorizará.»
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2553,14 +2571,18 @@ entero.
    aplicación es el de la 8a, la 8b y la 9):
    - **10b-1**: la migración `20270128120000` (solo añade: las dos tablas, la foto, las funciones
      y la purga), la exportación desde la app (`recolectar.ts`, que lee con la sesión de quien
-     exporta), los tipos, los tests y la documentación. Se aplica antes de mergear.
+     exporta), los tipos, los tests y la documentación. Se aplica antes de mergear. La nota del
+     export dice que la copia firmada existe y de qué fecha es, sin «pídesela» («Los dos huecos»).
    - **10b-2**: las pantallas: firmar en el último paso del alta, el aviso antes de cambiar un dato
      firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la
      lista de Dirección y que cada tutor legal vea que el otro se ha opuesto a la imagen.
    - **10b-3**: la segunda migración, después del despliegue de la 10b-2: `marcar_matricula_lista`
      exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
+     Y `firmas_ficha` en la vista de datos bloqueados (`privado.contenido_bloqueado` y lo que la
+     acompaña), como las demás firmas («Los dos huecos», 2026-11-18).
 4. **10c**: leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
-   el bloqueo tras la baja) y el PDF que compone el servidor.
+   el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
+   obtenerla» de la nota del export («Los dos huecos», 2026-11-18).
 
 ## Orden de la serie
 

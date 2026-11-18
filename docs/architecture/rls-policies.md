@@ -943,6 +943,45 @@ tutor responde por sí» y «10a-2: el diseño».
   «no» del otro tutor) y cerrado (ensayo terminado en RAISE, LF y CRLF).
 - Test: `src/test/rls/no-imagen.rls.test.ts`.
 
+### La ficha firmada (serie de altas, fase 10, 10b-1)
+
+Migración `20270128120000_feat_ficha_firmada` (solo añade; antes del despliegue); spec
+`docs/specs/altas-serie.md`, «10b: el diseño», «Las dos, resueltas» y «La imagen, fuera del hash».
+
+- **`firmas_ficha` y `refirmas_ficha`, nacidas cerradas.** RLS, sin privilegios de escritura para
+  nadie (tampoco `service_role`) y `SELECT` por columnas: de la firma, quién, en calidad de qué, cómo,
+  cuándo, las dos versiones y el sello; de la petición, el niño y la fecha. Políticas
+  `firmas_ficha_select` y `refirmas_ficha_select` (tutor legal o Dirección del centro del niño) y la
+  `bloqueo_retencion` `RESTRICTIVE` de las firmas. El autorizado y la profe no las leen. Las dos son
+  inmutables (`privado.ficha_firmada_inmutable`, 23514 `firma_inmutable`).
+- **La foto y el sello los pone la base:** `privado.ficha_canonica(niño, versión)` compone todo lo
+  declarado (niño, tutores, pedagógicos, servicios, gastos, imagen y los seis campos médicos,
+  descifrados), y `privado.ficha_hash` es su sha256 sin el bloque de imagen. La foto se guarda
+  cifrada con la clave médica. **No hay triggers en las tablas de los datos**: la firma vale mientras
+  la foto recompuesta dé su sello (`privado.firma_ficha_vigente`), sea la última y no haya una
+  petición de refirma posterior.
+- **Ver para firmar** (`ficha_para_firmar`): el tutor legal con `puede_ver_info_medica` o Dirección
+  (sin el superusuario). Deja su fila en `lecturas_ficha_medica` (origen `alta`), y con la ficha
+  médica bloqueada contesta 55000. Al tutor legal sin el permiso, 42501 con HINT
+  `sin_acceso_ficha_medica` («Nadie firma lo que no puede leer»).
+- **Firmar:** `firmar_ficha` (el tutor legal, con su trazo) y `registrar_firma_ficha_presencial`
+  (Dirección en persona, rol `admin`, sin trazo). Un cerrojo por niño; lo que se firma es el sello
+  que se vio (`ficha_cambiada` si cambió entre medias); con la matrícula `pendiente` exige la
+  respuesta de imagen de quien firma (`imagen_sin_respuesta`) y cierra el alta
+  (`marcar_matricula_lista`); en `lista`, firma de nuevo si la firma no vale; con una que vale,
+  `nada_que_firmar`.
+- **`pedir_refirma_ficha`** (Dirección), **`estado_firma_ficha`** (tutor legal o Dirección: firmada,
+  vigente, refirma pedida y `puede_firmar`: `si`, `sin_acceso_ficha_medica`, `presencial` o `no`) y
+  **`contenido_firmas_ficha`** (el trazo, la IP, el navegador y el nombre: quien firmó, el tutor legal
+  y la Dirección, respetando `privado.firma_bloqueada`). Las seis públicas son `SECURITY DEFINER` con
+  `EXECUTE` solo para `authenticated`; las de `privado`, cerradas a todos.
+- **La purga del niño** (`privado.purgar_nino`) borra las dos tablas. La foto no sale en el export:
+  sale la fila y el sello, y el export dice que la copia firmada existe y de qué fecha es (el
+  «cómo obtenerla», con la 10c).
+- `marcar_matricula_lista` y `validar_alta` no cambian aquí: las endurece la 10b-3.
+- Medido abierto y cerrado en producción el 2026-11-18 (ensayos terminados en RAISE, LF y CRLF).
+- Test: `src/test/rls/ficha-firmada.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.

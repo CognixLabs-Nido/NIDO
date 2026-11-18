@@ -813,7 +813,7 @@ export async function recolectarNino(
       .eq('nino_id', ninoId)
       .then((r) => filasDe('nino.administraciones_medicacion', r)),
     // Fase 10b: la ficha firmada. Los metadatos y el sello; la foto de lo firmado no sale
-    // (decisión del 2026-11-18), y `render-html` dice que la copia firmada existe y cómo pedirla.
+    // (decisión del 2026-11-18), y `render-html` dice que la copia firmada existe y de qué fecha es (el «cómo», la 10c).
     client
       .from('firmas_ficha')
       .select(deLaTabla('nino.firmas_ficha', COLUMNAS_CONTENIDO_FIRMA_FICHA, ['id']))

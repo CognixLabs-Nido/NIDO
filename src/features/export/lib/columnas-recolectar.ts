@@ -179,11 +179,12 @@ const NS_DOCUMENTO_COPIADO = {
 /*
  * Fase 10b (`20270128120000`), la ficha firmada. Decisión del responsable del 2026-11-18: «Quién
  * firmó, cuándo, cómo, las dos versiones y el hash. La foto entera no», y el export DICE que la
- * copia firmada existe y cómo obtenerla (`render-html.ts`, `doc.copia_ficha_firmada`).
+ * copia firmada existe y de qué fecha es (`render-html.ts`, `doc.copia_ficha_firmada`); el «cómo
+ * obtenerla», en la 10c, con la forma de entregarla («Los dos huecos», 2026-11-18).
  */
 const NS_FOTO_FICHA = {
   noSale:
-    'Fase 10b (decisión del 2026-11-18): es la foto cifrada de lo que se firmó. Sus datos son los de la ficha del niño, que salen en este mismo export tal como están hoy, y repetir los de salud en cada descarga sería crear otra copia que proteger. Que la copia firmada existe, su sello (`contenido_sha256`) y cómo pedirla, sí salen.',
+    'Fase 10b (decisión del 2026-11-18): es la foto cifrada de lo que se firmó. Sus datos son los de la ficha del niño, que salen en este mismo export tal como están hoy, y repetir los de salud en cada descarga sería crear otra copia que proteger. Que la copia firmada existe, su fecha (`firmado_at`) y su sello (`contenido_sha256`), sí salen.',
 } as const
 
 const NS_IP_FICHA_OTROS = {

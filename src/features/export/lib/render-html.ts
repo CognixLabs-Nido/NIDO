@@ -592,12 +592,19 @@ function seccionObjeto(tituloKey: string, obj: unknown, c: Ctx): string {
 
 /**
  * Fase 10b: las firmas de la ficha del alta. Si hay alguna, el export DICE que la copia firmada
- * existe y cómo obtenerla (decisión del responsable del 2026-11-18): la foto de lo firmado no va en
- * el fichero, y quien lee su export tiene que saber que ese documento existe.
+ * existe y de qué fecha es (decisiones del responsable del 2026-11-18): la foto de lo firmado no va
+ * en el fichero, y quien lee su export tiene que saber que ese documento existe. Cada firma guarda
+ * su copia: una fecha por firma. El «cómo obtenerla» entra en la 10c, con la forma de entregarla
+ * («Los dos huecos»: no se promete lo que hoy nadie puede dar).
  */
 function seccionFirmasFicha(tituloKey: string, items: unknown, c: Ctx): string {
-  const hay = Array.isArray(items) && items.length > 0
-  const nota = hay ? `<p class="nota">${escape(c.t('doc.copia_ficha_firmada'))}</p>` : ''
+  const fechas = (Array.isArray(items) ? (items as Record<string, unknown>[]) : [])
+    .map((f) => f.firmado_at)
+    .filter((f): f is string => typeof f === 'string')
+    .map((f) => formatearTexto(f, c))
+  const nota = fechas.length
+    ? `<p class="nota">${escape(c.t('doc.copia_ficha_firmada'))} ${fechas.join(', ')}.</p>`
+    : ''
   return seccion(tituloKey, items, c).replace('</h3>', `</h3>${nota}`)
 }
 

@@ -4690,7 +4690,7 @@
         "transferencia": "Transferència",
         "efectivo": "Efectiu"
       },
-      "copia_ficha_firmada": "Hi ha una còpia signada de la fitxa de l'alta: les dades tal com estaven el dia de la signatura, guardades amb el segell que veus ací. No va en aquest arxiu: les seues dades, les de salut incloses, són les de la fitxa, que ix en aquesta mateixa exportació tal com està hui i pot haver canviat des de la signatura. Per a obtindre la còpia signada, demana-la a la Direcció del centre."
+      "copia_ficha_firmada": "Hi ha una còpia signada de la fitxa de l'alta per cada signatura d'aquesta llista, amb les dades tal com estaven el dia que es va signar i segellada amb el valor que veus en cada una. No va en aquest arxiu: les seues dades, les de salut incloses, són les de la fitxa, que ix en aquesta mateixa exportació tal com està hui i pot haver canviat des de llavors. Data de cada còpia:"
     },
     "descargar_mis_datos": "Descarregar les meues dades",
     "exportar_nino": "Exportar dades del xiquet",

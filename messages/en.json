@@ -4690,7 +4690,7 @@
         "transferencia": "Bank transfer",
         "efectivo": "Cash"
       },
-      "copia_ficha_firmada": "A signed copy of the enrolment form exists: the details as they were on the day it was signed, stored with the seal shown here. It is not included in this file: its details, health details included, are those of the form, which appears in this same export as it is today and may have changed since it was signed. To obtain the signed copy, ask the centre management."
+      "copia_ficha_firmada": "A signed copy of the enrolment form exists for each signature in this list, with the details as they were on the day it was signed and sealed with the value shown in each one. It is not included in this file: its details, health details included, are those of the form, which appears in this same export as it is today and may have changed since then. Date of each copy:"
     },
     "descargar_mis_datos": "Download my data",
     "exportar_nino": "Export child data",

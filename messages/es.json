@@ -4690,7 +4690,7 @@
         "transferencia": "Transferencia",
         "efectivo": "Efectivo"
       },
-      "copia_ficha_firmada": "Existe una copia firmada de la ficha del alta: los datos tal como estaban el día de la firma, guardados con el sello que ves aquí. No va en este archivo: sus datos, los de salud incluidos, son los de la ficha, que sale en este mismo export tal como está hoy y puede haber cambiado desde la firma. Para obtener la copia firmada, pídesela a la Dirección del centro."
+      "copia_ficha_firmada": "Existe una copia firmada de la ficha del alta por cada firma de esta lista, con los datos tal como estaban el día en que se firmó y sellada con el valor que ves en cada una. No va en este archivo: sus datos, los de salud incluidos, son los de la ficha, que sale en este mismo export tal como está hoy y puede haber cambiado desde entonces. Fecha de cada copia:"
     },
     "descargar_mis_datos": "Descargar mis datos",
     "exportar_nino": "Exportar datos del niño",
