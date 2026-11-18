@@ -4302,7 +4302,10 @@
         "beca_comedor_tramos": "Lunch grant instalments",
         "lecturas_ficha_medica": "Who has viewed the medical record",
         "servicios_pedidos": "Services requested at enrolment",
-        "gastos_gestion": "Management fees"
+        "gastos_gestion": "Management fees",
+        "firmas_ficha_realizadas": "Enrolment forms you signed",
+        "firmas_ficha": "Signed enrolment form",
+        "refirmas_ficha": "Requests to sign the form again"
       },
       "campos": {
         "nombre_completo": "Name",
@@ -4518,7 +4521,11 @@
         "respuesta": "Answer",
         "forma": "Payment method",
         "con_justificante": "Receipt attached",
-        "cobrado_en": "Paid on"
+        "cobrado_en": "Paid on",
+        "contenido_sha256": "Seal of what was signed (SHA-256)",
+        "ficha_version": "Form version",
+        "plantilla_pdf_version": "PDF template version",
+        "pedida_at": "Requested on"
       },
       "valores": {
         "terminos": "Terms",
@@ -4682,7 +4689,8 @@
       "forma_gastos": {
         "transferencia": "Bank transfer",
         "efectivo": "Cash"
-      }
+      },
+      "copia_ficha_firmada": "A signed copy of the enrolment form exists: the details as they were on the day it was signed, stored with the seal shown here. It is not included in this file: its details, health details included, are those of the form, which appears in this same export as it is today and may have changed since it was signed. To obtain the signed copy, ask the centre management."
     },
     "descargar_mis_datos": "Download my data",
     "exportar_nino": "Export child data",

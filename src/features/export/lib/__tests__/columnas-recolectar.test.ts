@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/db'
+import { COLUMNAS_CONTENIDO_FIRMA_FICHA } from '@/features/alta/lib/contenido-firmas-ficha'
 import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenido-firmas'
 import { COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO } from '@/features/documentos-centro/lib/contenido-firmas-documentos'
 import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
@@ -148,6 +149,9 @@ const FILAS: Record<string, Fila[]> = {
   ],
   autorizaciones: [filaCompleta('autorizaciones', { id: 'au1' })],
   firmas_documentos_centro: [filaCompleta('firmas_documentos_centro', { nino_id: 'n1' })],
+  // Fase 10b: la ficha firmada y la petición de volver a firmarla.
+  firmas_ficha: [filaCompleta('firmas_ficha', { nino_id: 'n1' })],
+  refirmas_ficha: [filaCompleta('refirmas_ficha', { nino_id: 'n1' })],
   cita_invitados: [filaCompleta('cita_invitados', { cita_id: 'ci1' })],
   citas: [{ id: 'ci1', titulo: 'Tutoría de octubre', fecha: '2026-10-20' }],
   informes_evolucion: [filaCompleta('informes_evolucion', { creado_por: 'p1' })],
@@ -230,6 +234,19 @@ function clienteDeMentira(fallaEn?: string) {
           error: null,
         }
       }
+      // Las firmas de la ficha (`20270128120000`): de las mismas filas.
+      if (fn === 'contenido_firmas_ficha') {
+        const ids = args.p_firma_ids as string[]
+        return {
+          data: (FILAS.firmas_ficha ?? [])
+            .filter((f) => ids.includes(f.id as string))
+            .map((f) => ({
+              firma_id: f.id,
+              ...Object.fromEntries(COLUMNAS_CONTENIDO_FIRMA_FICHA.map((c) => [c, f[c]])),
+            })),
+          error: null,
+        }
+      }
       return { data: null, error: null }
     },
     storage: {
@@ -287,6 +304,7 @@ const POR_FUNCION: Record<string, { cerradas: readonly string[]; une: string[] }
   ninos: { cerradas: [...COLUMNAS_GESTION_NINO, ...COLUMNAS_TARJETA_NINO], une: [] },
   firmas_autorizacion: { cerradas: COLUMNAS_CONTENIDO_FIRMA, une: ['id'] },
   firmas_documentos_centro: { cerradas: COLUMNAS_CONTENIDO_FIRMA_DOCUMENTO, une: ['id'] },
+  firmas_ficha: { cerradas: COLUMNAS_CONTENIDO_FIRMA_FICHA, une: ['id'] },
 }
 
 /** Lo que se pide a la TABLA: lo del catálogo, sin lo que llega por función, más lo que lo une. */
@@ -586,7 +604,9 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
         } else if (c === 'ip_address' || c === 'user_agent') {
           // Del niño salen también las firmas del otro tutor: de autorizaciones y, desde el 3b, de
           // los documentos del centro.
-          const delNino = r === 'nino.firmas' || r === 'nino.firmas_documentos'
+          // Desde la 10b, también de la ficha del alta.
+          const delNino =
+            r === 'nino.firmas' || r === 'nino.firmas_documentos' || r === 'nino.firmas_ficha'
           expect(t, `R7 ${donde}`).toBe(delNino ? 'noSale' : 'sale')
         } else if (c === 'texto_hash' || c === 'texto_version' || c === 'metodo_firma') {
           expect(t, `R7 ${donde}`).toBe('sale')
@@ -596,8 +616,10 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
     // Premisa: las reglas alcanzan las 146 columnas técnicas que decidieron (2026-11-01), más las 20
     // de las dos secciones de firmas de documentos del 3b (2026-11-05): por sección, centro_id,
     // firmante_id, id, curso_academico_id, documento_id, nino_id, version_id, ip_address, user_agent
-    // y metodo_firma.
-    expect(n).toBe(166)
+    // y metodo_firma; y las 15 de la ficha firmada de la 10b (2026-11-18): firmante_id, id, nino_id,
+    // ip_address, user_agent y metodo_firma en sus dos secciones, e id, nino_id y pedida_por en la
+    // de las peticiones de volver a firmar.
+    expect(n).toBe(181)
   })
 
   it('lo que sale sin repasar es lo del 2026-11-01, y solo mengua', () => {

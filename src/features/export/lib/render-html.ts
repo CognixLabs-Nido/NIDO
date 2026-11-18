@@ -100,6 +100,11 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'vigencia_hasta',
   'decision',
   'nombre_tecleado',
+  // Fase 10b: la ficha firmada (el sello sí se enseña: es con lo que se comprueba la copia firmada).
+  'contenido_sha256',
+  'ficha_version',
+  'plantilla_pdf_version',
+  'pedida_at',
   'comentario',
   'firmado_at',
   'datos',
@@ -585,6 +590,17 @@ function seccionObjeto(tituloKey: string, obj: unknown, c: Ctx): string {
   return `<h3>${escape(c.t(`doc.secciones.${tituloKey}`))}</h3>${cuerpo}`
 }
 
+/**
+ * Fase 10b: las firmas de la ficha del alta. Si hay alguna, el export DICE que la copia firmada
+ * existe y cómo obtenerla (decisión del responsable del 2026-11-18): la foto de lo firmado no va en
+ * el fichero, y quien lee su export tiene que saber que ese documento existe.
+ */
+function seccionFirmasFicha(tituloKey: string, items: unknown, c: Ctx): string {
+  const hay = Array.isArray(items) && items.length > 0
+  const nota = hay ? `<p class="nota">${escape(c.t('doc.copia_ficha_firmada'))}</p>` : ''
+  return seccion(tituloKey, items, c).replace('</h3>', `</h3>${nota}`)
+}
+
 /** Nota de «sin acceso a los datos ampliados» (la profe que exporta, p. ej.). */
 function seccionDatosAmpliados(v: unknown, c: Ctx): string {
   return v && typeof v === 'object' ? seccionObjeto('datos_ampliados', v, c) : ''
@@ -628,6 +644,7 @@ function renderUsuario(u: Record<string, unknown>, c: Ctx): string {
   ${seccion('recordatorios', u.recordatorios_recibidos, c)}
   ${seccion('firmas_realizadas', u.firmas_realizadas, c)}
   ${seccion('firmas_documentos_realizadas', u.firmas_documentos_realizadas, c)}
+  ${seccionFirmasFicha('firmas_ficha_realizadas', u.firmas_ficha_realizadas, c)}
   ${seccion('mandatos_sepa', u.mandatos_sepa, c)}
   ${seccion('cobros_familia', u.cobros_familia, c)}
   ${seccion('lista_espera_contacto', u.lista_espera_contacto, c)}
@@ -749,6 +766,8 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('consentimientos_nino', n.consentimientos, c)}
   ${seccion('acuses_alta', n.acuses_alta, c)}
   ${seccion('firmas_documentos', n.firmas_documentos, c)}
+  ${seccionFirmasFicha('firmas_ficha', n.firmas_ficha, c)}
+  ${seccion('refirmas_ficha', n.refirmas_ficha, c)}
   ${seccion('cambios_solicitados', n.cambios_solicitados, c)}
   ${seccion('citas', n.citas, c)}
   ${seccion('eventos', n.eventos, c)}

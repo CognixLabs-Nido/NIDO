@@ -2612,6 +2612,72 @@ export type Database = {
           },
         ]
       }
+      firmas_ficha: {
+        Row: {
+          contenido_cifrado: string
+          contenido_sha256: string
+          ficha_version: number
+          firma_imagen: string | null
+          firmado_at: string
+          firmante_id: string
+          id: string
+          ip_address: unknown
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
+          nino_id: string
+          nombre_tecleado: string
+          plantilla_pdf_version: number
+          rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
+          user_agent: string | null
+        }
+        Insert: {
+          contenido_cifrado: string
+          contenido_sha256: string
+          ficha_version: number
+          firma_imagen?: string | null
+          firmado_at?: string
+          firmante_id: string
+          id?: string
+          ip_address?: unknown
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
+          nino_id: string
+          nombre_tecleado: string
+          plantilla_pdf_version: number
+          rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
+          user_agent?: string | null
+        }
+        Update: {
+          contenido_cifrado?: string
+          contenido_sha256?: string
+          ficha_version?: number
+          firma_imagen?: string | null
+          firmado_at?: string
+          firmante_id?: string
+          id?: string
+          ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
+          nino_id?: string
+          nombre_tecleado?: string
+          plantilla_pdf_version?: number
+          rol_firmante?: Database["public"]["Enums"]["tipo_vinculo"]
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firmas_ficha_firmante_id_fkey"
+            columns: ["firmante_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_ficha_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gastos_gestion: {
         Row: {
           centro_id: string
@@ -4671,6 +4737,42 @@ export type Database = {
           },
         ]
       }
+      refirmas_ficha: {
+        Row: {
+          id: string
+          nino_id: string
+          pedida_at: string
+          pedida_por: string
+        }
+        Insert: {
+          id?: string
+          nino_id: string
+          pedida_at?: string
+          pedida_por: string
+        }
+        Update: {
+          id?: string
+          nino_id?: string
+          pedida_at?: string
+          pedida_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refirmas_ficha_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refirmas_ficha_pedida_por_fkey"
+            columns: ["pedida_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       remesa_fichero_adeudos: {
         Row: {
           end_to_end_id: string
@@ -5434,6 +5536,16 @@ export type Database = {
           user_agent: string
         }[]
       }
+      contenido_firmas_ficha: {
+        Args: { p_firma_ids: string[] }
+        Returns: {
+          firma_id: string
+          firma_imagen: string
+          ip_address: unknown
+          nombre_tecleado: string
+          user_agent: string
+        }[]
+      }
       crear_documento_centro: {
         Args: {
           p_centro_id: string
@@ -5650,6 +5762,7 @@ export type Database = {
         Returns: boolean
       }
       es_tutor_legal_de: { Args: { p_nino_id: string }; Returns: boolean }
+      estado_firma_ficha: { Args: { p_nino_id: string }; Returns: Json }
       estado_retencion_nino: {
         Args: {
           p_anios_cuenta: number
@@ -5707,6 +5820,7 @@ export type Database = {
           observaciones_familia: string
         }[]
       }
+      ficha_para_firmar: { Args: { p_nino_id: string }; Returns: Json }
       fichero_remesa_vigente: {
         Args: { p_remesa_id: string }
         Returns: {
@@ -5776,6 +5890,17 @@ export type Database = {
           p_nombre_tecleado: string
           p_user_agent: string
           p_version_id: string
+        }
+        Returns: string
+      }
+      firmar_ficha: {
+        Args: {
+          p_firma_imagen: string
+          p_hash_visto: string
+          p_ip_address?: unknown
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_user_agent?: string
         }
         Returns: string
       }
@@ -6054,6 +6179,7 @@ export type Database = {
         Returns: string
       }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      pedir_refirma_ficha: { Args: { p_nino_id: string }; Returns: string }
       peticiones_olvido_centro: {
         Args: { p_centro_id: string }
         Returns: {
@@ -6238,6 +6364,16 @@ export type Database = {
           p_nombre_tecleado: string
           p_user_agent: string
           p_version_id: string
+        }
+        Returns: string
+      }
+      registrar_firma_ficha_presencial: {
+        Args: {
+          p_hash_visto: string
+          p_ip_address?: unknown
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_user_agent?: string
         }
         Returns: string
       }

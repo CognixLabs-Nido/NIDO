@@ -4302,7 +4302,10 @@
         "beca_comedor_tramos": "Trams de beca de menjador",
         "lecturas_ficha_medica": "Qui ha llegit la fitxa mèdica",
         "servicios_pedidos": "Serveis demanats en l’alta",
-        "gastos_gestion": "Despeses de gestió"
+        "gastos_gestion": "Despeses de gestió",
+        "firmas_ficha_realizadas": "Fitxes de l'alta que vas signar",
+        "firmas_ficha": "Fitxa de l'alta signada",
+        "refirmas_ficha": "Peticions de tornar a signar la fitxa"
       },
       "campos": {
         "nombre_completo": "Nom",
@@ -4518,7 +4521,11 @@
         "respuesta": "Resposta",
         "forma": "Forma de pagament",
         "con_justificante": "Justificant adjunt",
-        "cobrado_en": "Cobrat el"
+        "cobrado_en": "Cobrat el",
+        "contenido_sha256": "Segell del que es va signar (SHA-256)",
+        "ficha_version": "Versió de la fitxa",
+        "plantilla_pdf_version": "Versió de la plantilla del PDF",
+        "pedida_at": "Demanada el"
       },
       "valores": {
         "terminos": "Termes",
@@ -4682,7 +4689,8 @@
       "forma_gastos": {
         "transferencia": "Transferència",
         "efectivo": "Efectiu"
-      }
+      },
+      "copia_ficha_firmada": "Hi ha una còpia signada de la fitxa de l'alta: les dades tal com estaven el dia de la signatura, guardades amb el segell que veus ací. No va en aquest arxiu: les seues dades, les de salut incloses, són les de la fitxa, que ix en aquesta mateixa exportació tal com està hui i pot haver canviat des de la signatura. Per a obtindre la còpia signada, demana-la a la Direcció del centre."
     },
     "descargar_mis_datos": "Descarregar les meues dades",
     "exportar_nino": "Exportar dades del xiquet",

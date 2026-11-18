@@ -4302,7 +4302,10 @@
         "beca_comedor_tramos": "Tramos de beca de comedor",
         "lecturas_ficha_medica": "Quién ha leído la ficha médica",
         "servicios_pedidos": "Servicios pedidos en el alta",
-        "gastos_gestion": "Gastos de gestión"
+        "gastos_gestion": "Gastos de gestión",
+        "firmas_ficha_realizadas": "Fichas del alta que firmaste",
+        "firmas_ficha": "Ficha del alta firmada",
+        "refirmas_ficha": "Peticiones de volver a firmar la ficha"
       },
       "campos": {
         "nombre_completo": "Nombre",
@@ -4518,7 +4521,11 @@
         "respuesta": "Respuesta",
         "forma": "Forma de pago",
         "con_justificante": "Justificante adjunto",
-        "cobrado_en": "Cobrado el"
+        "cobrado_en": "Cobrado el",
+        "contenido_sha256": "Sello de lo firmado (SHA-256)",
+        "ficha_version": "Versión de la ficha",
+        "plantilla_pdf_version": "Versión de la plantilla del PDF",
+        "pedida_at": "Pedida el"
       },
       "valores": {
         "terminos": "Términos",
@@ -4682,7 +4689,8 @@
       "forma_gastos": {
         "transferencia": "Transferencia",
         "efectivo": "Efectivo"
-      }
+      },
+      "copia_ficha_firmada": "Existe una copia firmada de la ficha del alta: los datos tal como estaban el día de la firma, guardados con el sello que ves aquí. No va en este archivo: sus datos, los de salud incluidos, son los de la ficha, que sale en este mismo export tal como está hoy y puede haber cambiado desde la firma. Para obtener la copia firmada, pídesela a la Dirección del centro."
     },
     "descargar_mis_datos": "Descargar mis datos",
     "exportar_nino": "Exportar datos del niño",
