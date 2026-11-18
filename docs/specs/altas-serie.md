@@ -2810,6 +2810,47 @@ control negativo (hoy `sin_firma`, después pasa) y C+ por la función (sin mete
 tarjeta de Dirección ofrece «Pedir que se firme» también cuando no hay firma; en la 10b-2 no lo
 ofrece, porque la base lo rechazaría.
 
+**La 10b-3 cierra el punto 3 entero** (decisión del responsable, 2026-11-18, al ver el libro de
+familia). Literal: «Lo del libro de familia es el hallazgo de esta vuelta y encaja donde ya íbamos:
+el 10b-3 no exige solo la firma y la respuesta de imagen, exige en la BASE todo lo que la app exige
+para cerrar el alta. Es el punto 3 que quedó pendiente desde el 12 de noviembre, y estamos tocando
+esa función de todas formas. Lista: la firma válida, la respuesta de imagen, el libro de familia y
+los DNI de los tutores. Mide CADA UNO abierto antes de cerrarlo, uno por uno, y dime cuáles resultan
+estar ya exigidos: tú mismo me dijiste que «los documentos sí los exige la base (4b-2)», y el libro de
+familia resulta que no, así que no me fío de la generalización ni para los DNI. El número que quiero
+es cuántos de los cuatro están abiertos de verdad. Con eso el cierre del alta deja de depender de que
+nadie llame a la API por fuera, que es lo que llevamos toda la serie cerrando.»
+
+De dónde salió (CI, 2026-11-18, la sonda que quita el gate de `firmarFichaNino`): con el libro de
+familia sin subir, la firma cerró el alta (`lista`). «Los documentos» del 4b-2 eran los **del centro**
+(`documentos_centro`, las normas), no los del alta (libro de familia y DNI): la frase generalizaba un
+nombre. La medida, una por una:
+
+**Medido: 3 de los 4 están abiertos** (2026-11-18; producción, ensayo terminado en RAISE, guarda de
+md5 sobre `marcar_matricula_lista` y `privado.tutor_completo`, predicciones escritas antes, las
+siete acertadas; `~/nido-logs/10/b2/punto3/`). Sobre el único alta `pendiente`, completada dentro de
+la transacción (niño, titular, acuse médico, servicios, respuesta de imagen, libro); cada caso quita
+UNA cosa en su subtransacción y el tutor llama a `marcar_matricula_lista`. Copiado del log:
+
+```
+C0 | sin completar | 42501 falta el acuse de confidencialidad de datos medicos HINT= | estado=pendiente
+C+ | todo puesto, 0 firmas (A1: la firma) | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A2 | sin la respuesta de imagen | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A3 | sin libro de familia | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A4a | sin el PDF del DNI del titular | P0001 faltan datos de los tutores por completar HINT=datos_tutor_por_completar | estado=pendiente
+A4b | sin el nÃºmero del DNI del titular | P0001 faltan datos de los tutores por completar HINT=datos_tutor_por_completar | estado=pendiente
+A5+ | segundo tutor completo, con DNI | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A5 | segundo tutor sin el PDF del DNI | P0001 faltan datos de los tutores por completar HINT=datos_tutor_por_completar | estado=pendiente
+```
+
+- **Abiertos de verdad: la firma, la respuesta de imagen y el libro de familia.** La 10b-3 los
+  cierra en `marcar_matricula_lista`, cada uno con su caso de este ensayo como control negativo.
+- **Ya exigido: el DNI de los tutores**, número y PDF, del titular y del segundo si lo hay
+  (`privado.tutor_completo`, fase 6). La 10b-3 no lo toca; su control se queda como está.
+- Una primera pasada leyó `estado` en la misma expresión que la llamada y salió `pendiente` donde
+  había pasado (Postgres evaluó la subconsulta antes); repetido con las dos lecturas en sentencias
+  separadas, lo de arriba. La primera, en `ensayo-1-estado-leido-antes.log`.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2846,6 +2887,9 @@ ofrece, porque la base lo rechazaría.
      (las 3 `activa` de hoy y la que se cierre en papel antes de la 10b-3), con R1 de control
      negativo («Las dos, confirmadas», 2026-11-18). `firma_imagen_sync` se mide abierto **en la
      10b-3** y cae con N2 en el mismo PR, cada una con su control negativo. La 10b-3 va pegada.
+     Y **el punto 3 entero** en `marcar_matricula_lista`: todo lo que exige el gate de la app, en la
+     base (la firma que vale, la respuesta de imagen, el libro de familia y los DNI de los tutores),
+     cada uno medido abierto antes («La 10b-3 cierra el punto 3 entero», 2026-11-18).
 4. **10c** (pegada a la 10b-2, decisión del 2026-11-18): leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
    el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
    obtenerla» de la nota del export («Los dos huecos», 2026-11-18).

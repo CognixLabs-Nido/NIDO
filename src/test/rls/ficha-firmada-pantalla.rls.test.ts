@@ -25,6 +25,7 @@ import {
   createTestCurso,
   createTestNino,
   createTestUser,
+  crearFamiliaTutor,
   crearVinculo,
   deleteTestCentro,
   deleteTestUser,
@@ -89,8 +90,18 @@ describe('la ficha firmada en la app (fase 10b-2)', () => {
     vinculoB = await crearVinculo(N, legalB.id, 'tutor_legal_secundario', {
       puede_ver_info_medica: true,
     })
-    // El alta, completa salvo la imagen (como `ficha-firmada.rls.test.ts`).
+    // El alta, completa salvo la imagen, para la base Y para el gate de la app. El gate lee el perfil
+    // de los tutores en `familia_tutores` con la sesión de quien firma: sin las filas de A y B con su
+    // cuenta, `completarTutoresAlta` crea un titular sin cuenta que A no ve, y para la app «falta el
+    // tutor 1» y su DNI (medido en la CI el 2026-11-18: la base cerraba y el gate decía
+    // `['tutor1', 'documentos', 'imagen']`). En la app el tutor con cuenta siempre tiene su fila.
+    const familia = (await serviceClient.from('ninos').select('familia_id').eq('id', N).single())
+      .data?.familia_id
+    if (!familia) throw new Error('el niño no tiene familia')
+    await crearFamiliaTutor(familia, legalA.id, 'titular')
+    await crearFamiliaTutor(familia, legalB.id, 'segundo_tutor')
     await completarDatosAlta(N)
+    // El libro de familia se deja SIN subir: lo pone el it de «firmar sin respuesta de imagen».
     const acuse = await serviceClient.from('consentimientos').insert({
       usuario_id: legalA.id,
       tipo: 'datos_medicos',
@@ -163,16 +174,35 @@ describe('la ficha firmada en la app (fase 10b-2)', () => {
     expect(secciones).toEqual(['nino', ...Array(tutores).fill('tutor'), 'pedagogicos', 'medico'])
   })
 
-  it('firmar sin respuesta de imagen: el gate lo dice como «Finalizar» y no queda firma', async () => {
+  it('firmar con el alta incompleta: el gate lo dice entero, como «Finalizar», y no queda firma', async () => {
+    // Premisa: para la app faltan el libro de familia y la respuesta de imagen, y nada más.
+    expect(await comprobarAlta(s.A, N, legalA.id, false)).toEqual({
+      ok: true,
+      faltan: ['documentos', 'imagen'],
+    })
     const r = await firmarFichaNino(
       s.A,
       legalA.id,
       { ninoId: N, hashVisto, nombreTecleado: 'Legal A Pantalla', firmaImagen: TRAZO },
       SIN_CONTEXTO
     )
-    expect(r).toEqual({ ok: false, error: 'alta.errors.incompleto', faltan: ['imagen'] })
+    // Los dos bloques: la base solo frena por la imagen (y solo diría el primero), y el libro de
+    // familia no lo mira: sin el gate, la firma cerraba el alta sin él (medido en la CI, 2026-11-18,
+    // la sonda que quita el gate de `firmarFichaNino`).
+    expect(r).toEqual({
+      ok: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['documentos', 'imagen'],
+    })
     expect(nFirmas()).toBe('0')
     expect(await matricula()).toBe('pendiente')
+    // Se sube el libro: para la app ya solo falta la imagen.
+    const libro = await serviceClient
+      .from('ninos')
+      .update({ libro_familia_path: `${centro.id}/${N}/libro-demo.pdf` })
+      .eq('id', N)
+    expect(libro.error).toBeNull()
+    expect(await comprobarAlta(s.A, N, legalA.id, false)).toEqual({ ok: true, faltan: ['imagen'] })
   })
 
   it('el titular de la respuesta en papel: el tutor que nombra Dirección, nunca Dirección (N2)', async () => {
