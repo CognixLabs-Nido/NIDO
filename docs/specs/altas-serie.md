@@ -2752,6 +2752,23 @@ Producción, igual después (2 filas de imagen, 0 rastros nuevos). **N2 es la ra
 Dirección; **la 10b-3 lo cierra en la base**, con N2 como control negativo, junto a la firma
 presencial con el tutor.
 
+**N2 es una puerta, no un detalle de atribución** (el responsable, 2026-11-18). Literal: «cualquiera
+con rol de Dirección puede autorizar la imagen de un niño del que no es nada, y ese «sí» basta para
+que el niño salga en las fotos. No es solo un dato mal atribuido, es una puerta. Que se cierre en el
+10b-3 me vale porque va pegado, pero que en el cuerpo del PR quede escrito así, como puerta y no como
+detalle de atribución.» Y el patrón: «el «no» comprueba que el titular sea tutor legal y el «sí» no.
+Una mitad sabía hacerlo bien, como /export/me frente a /export/nino, o como la rama de Dirección que
+no comprobaba el centro. Cuando encuentres una comprobación en un lado, mira siempre el otro.»
+
+**La firma en papel de la ficha va con la 10b-3** (decisión de diseño, 2026-11-18, por la medida de
+arriba). Hasta la 10b-3, `registrar_firma_ficha_presencial` mira la respuesta de imagen de quien la
+teclea, y desde la 10b-2 esa persona ya no tiene ninguna: con la pantalla en la 10b-2, ninguna alta
+en papel pendiente se podría firmar. Así que la 10b-2 no ofrece la firma en papel de la ficha: el
+alta en papel termina con «Finalizar», como hoy (la base aún no exige la firma), con la respuesta de
+imagen ya a nombre del tutor que firmó el papel. La pantalla de la firma en papel (el paso del alta y
+«Registrar la firma en papel» en la ficha de Dirección) llega con la 10b-3, con la función que
+recibe el tutor. «Pedir que se vuelva a firmar», en la 10b-2.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
