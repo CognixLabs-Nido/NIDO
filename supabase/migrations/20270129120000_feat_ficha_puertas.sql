@@ -21,6 +21,8 @@
 --   4. `pedir_refirma_ficha` ya no exige una firma previa (decisión del 2026-11-19).
 --   5. `privado.contenido_bloqueado` y `privado.datos_bloqueados` con `firmas_ficha` (sin la foto).
 --   6. `oposicion_imagen(niño)`: si hay un «no» vigente de otro, sin decir de quién.
+--   7. Operación de datos: se revoca el «sí» de imagen vigente que N2 dejó escrito a nombre de quien no
+--      es tutor legal del niño (decisión del responsable, 2026-11-19; abajo, antes de la guarda posterior).
 --
 -- ORDEN: aplicar ANTES del despliegue de la app de la 10b-3. No rompe la app de la 10b-2: el «sí» en
 -- papel ya va a nombre de un tutor legal (`titularRespuestaImagen`), esa app no llama a
@@ -566,6 +568,89 @@ BEGIN
 END $function$;
 REVOKE ALL ON FUNCTION public.oposicion_imagen(uuid) FROM PUBLIC, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.oposicion_imagen(uuid) TO authenticated;
+
+-- ─────────────────────────────────────────────────────────────── operación de datos: el «sí» que N2 dejó
+-- Decisión del responsable (2026-11-19): el «sí» de imagen que hay en producción a nombre de la antigua
+-- admin del centro, que no es tutor legal del niño, se revoca AQUÍ, como operación de datos. Por qué:
+-- N2 cierra la puerta para lo que entre desde ahora, pero no toca lo ya escrito, y ese «sí» es justo lo
+-- que N2 impide. Era el único «sí» de ese niño: con él, el niño salía como autorizado para fotos sin que
+-- ninguno de sus dos tutores legales lo hubiera dicho. Revocado, el niño queda sin respuesta de imagen
+-- y su indicador (`ninos.puede_aparecer_en_fotos`) vuelve a false, recalculado por su trigger
+-- (`consentimiento_imagen_sync_trg`). Se revoca, no se borra: queda la fila con su `revocado_en`.
+--
+-- Medido en producción el 2026-11-19 (solo lectura): 1 fila; su titular no tiene vínculo con el niño y
+-- su único rol (admin del centro) está borrado; era el único «sí» del niño, sin ningún «no»; el
+-- indicador, true; 0 fotos con el niño etiquetado. La fila se elige por esa condición, no por su id: el
+-- repo es público.
+--
+-- En la base del CI no hay ninguna (se crea vacía): avisa y no hace nada. En producción tiene que ser
+-- exactamente esa; cualquier otra cosa para la migración entera, sin tocar nada.
+DO $datos$
+DECLARE
+  v_n int;
+  v_id uuid;
+  v_nino uuid;
+  v_usuario uuid;
+  v_otros_si int;
+BEGIN
+  SELECT count(*) INTO v_n
+    FROM public.consentimientos c
+   WHERE c.tipo = 'imagen' AND c.revocado_en IS NULL
+     AND NOT EXISTS (SELECT 1 FROM public.vinculos_familiares v
+                      WHERE v.nino_id = c.nino_id AND v.usuario_id = c.usuario_id AND v.deleted_at IS NULL
+                        AND v.tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario'));
+  IF v_n = 0 THEN
+    RAISE NOTICE 'operación de datos: ningún «sí» de imagen vigente fuera de un tutor legal (la base del CI se crea vacía): nada que revocar';
+    RETURN;
+  END IF;
+  IF v_n <> 1 THEN
+    RAISE EXCEPTION 'operación de datos: % «sí» de imagen vigentes fuera de un tutor legal, y se midió 1 el 2026-11-19: no se toca nada', v_n;
+  END IF;
+
+  SELECT c.id, c.nino_id, c.usuario_id INTO v_id, v_nino, v_usuario
+    FROM public.consentimientos c
+   WHERE c.tipo = 'imagen' AND c.revocado_en IS NULL
+     AND NOT EXISTS (SELECT 1 FROM public.vinculos_familiares v
+                      WHERE v.nino_id = c.nino_id AND v.usuario_id = c.usuario_id AND v.deleted_at IS NULL
+                        AND v.tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario'));
+
+  -- La forma medida: la antigua admin. Sin ningún rol vivo, y con el de admin borrado.
+  IF EXISTS (SELECT 1 FROM public.roles_usuario r WHERE r.usuario_id = v_usuario AND r.deleted_at IS NULL) THEN
+    RAISE EXCEPTION 'operación de datos: el titular del «sí» tiene un rol vivo; se midió sin ninguno: no se toca nada';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.roles_usuario r
+                  WHERE r.usuario_id = v_usuario AND r.rol::text = 'admin' AND r.deleted_at IS NOT NULL
+                    AND r.centro_id = privado.centro_de_nino(v_nino)) THEN
+    RAISE EXCEPTION 'operación de datos: el titular del «sí» no fue admin del centro del niño: no se toca nada';
+  END IF;
+  -- Nada colgando: ninguna foto con el niño etiquetado (se midieron 0).
+  IF EXISTS (SELECT 1 FROM public.media_etiquetas e WHERE e.nino_id = v_nino) THEN
+    RAISE EXCEPTION 'operación de datos: hay fotos con el niño etiquetado; se midieron 0: no se toca nada';
+  END IF;
+
+  UPDATE public.consentimientos SET revocado_en = now() WHERE id = v_id;
+
+  -- Después: ninguno fuera de un tutor legal, y el indicador es el que se deriva. Sin otro «sí» del
+  -- niño (se midieron 0), false.
+  IF EXISTS (SELECT 1 FROM public.consentimientos c
+              WHERE c.tipo = 'imagen' AND c.revocado_en IS NULL
+                AND NOT EXISTS (SELECT 1 FROM public.vinculos_familiares v
+                                 WHERE v.nino_id = c.nino_id AND v.usuario_id = c.usuario_id AND v.deleted_at IS NULL
+                                   AND v.tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario'))) THEN
+    RAISE EXCEPTION 'operación de datos: después de revocar sigue un «sí» fuera de un tutor legal';
+  END IF;
+  SELECT count(*) INTO v_otros_si FROM public.consentimientos
+   WHERE tipo = 'imagen' AND nino_id = v_nino AND revocado_en IS NULL;
+  IF (SELECT n.puede_aparecer_en_fotos FROM public.ninos n WHERE n.id = v_nino)
+       IS DISTINCT FROM public.tiene_consentimiento_imagen(v_nino) THEN
+    RAISE EXCEPTION 'operación de datos: el indicador del niño no es el derivado después de revocar';
+  END IF;
+  IF v_otros_si = 0 AND (SELECT n.puede_aparecer_en_fotos FROM public.ninos n WHERE n.id = v_nino) THEN
+    RAISE EXCEPTION 'operación de datos: sin ningún «sí», el indicador del niño sigue en true';
+  END IF;
+  RAISE NOTICE 'operación de datos: revocado 1 «sí» de imagen fuera de un tutor legal; «sí» que le quedan al niño: %', v_otros_si;
+END
+$datos$;
 
 -- ─────────────────────────────────────────────────────────────── guarda posterior
 DO $posterior$

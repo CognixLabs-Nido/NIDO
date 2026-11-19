@@ -3025,8 +3025,8 @@ O2 | A dijo «no», B no ha contestado: B pregunta | PASA false | respuesta(B)=N
   dos ramas, por simetría con las demás firmas, y el test mide la del tutor.
 - **Producción hoy** (solo lectura, `~/nido-logs/10/b3/vivas/estado.log`): 1 `pendiente` (sin libro),
   3 `activa`, 0 en `lista`, 0 firmas de ficha, 0 refirmas, 0 autorizaciones de imagen por niño, y 1 «sí»
-  de imagen vigente de alguien sin vínculo de tutor legal (el de la antigua admin; no se toca: la
-  pregunta está con el responsable).
+  de imagen vigente de alguien sin vínculo de tutor legal (el de la antigua admin). _(Decidido el
+  2026-11-19, abajo: «El «sí» de la antigua admin».)_
 
 **La precisión de N2: quién registra y quién es titular** (el responsable, 2026-11-19, recordando una
 premisa de Jose). Literal: «UNA MADRE PUEDE TRAER LA DOCUMENTACIÓN EN PAPEL Y LA DIRECTORA SUBIRLA EN SU
@@ -3099,6 +3099,24 @@ despliegue de la app de la 10b-3.**
   está incompleta.
 - La segunda se ensaya con la primera aplicada (en serie), con su guarda previa sobre el md5 de lo que
   deja la primera.
+
+**El «sí» de la antigua admin** (el responsable, 2026-11-19; Jose le dejó la decisión). Literal: «va
+revocado DENTRO de la primera migración, como operación de datos, con el comentario de por qué y la
+medición antes y después en el cuerpo del PR». Y: «que al revocarlo no quede nada colgando —ninguna
+publicación con ese niño etiquetado y el indicador en false—».
+
+- **Por qué:** N2 cierra la puerta para lo que entre desde ahora y no toca lo ya escrito; ese «sí» es
+  justo lo que N2 impide, y era el único del niño: lo daba por autorizado para fotos sin que ninguno de
+  sus dos tutores legales lo hubiera dicho.
+- **Cómo:** en `20270129120000`, antes de su guarda posterior. Se revoca (`revocado_en`), no se borra, y
+  el indicador lo recalcula su trigger. La fila se elige por su condición (un «sí» vigente cuyo titular
+  no es tutor legal del niño), no por su id: el repo es público. Su guarda: tiene que ser exactamente
+  una, con su titular sin rol vivo y con el de admin del centro borrado, y sin fotos del niño
+  etiquetadas; después, ninguna fuera de un tutor legal y el indicador en false. Si no, la migración
+  entera para. En la base del CI no hay ninguna: avisa y sigue.
+- **Medido** (producción, 2026-11-19): antes, 1 fila, indicador true, único «sí» del niño, 0 «no», 0
+  etiquetas; en el ensayo, después, 0 fuera de un tutor legal, la fila revocada, indicador false, 0
+  etiquetas. Cada defensa de su guarda, rota por separado, para la migración.
 
 **R4 del export por el esquema, no por el nombre** (el responsable, 2026-11-19, en este PR). Las dos
 `firmas_ficha.tutor_id` pusieron rojo el recuento de reglas de `columnas-recolectar.test.ts`

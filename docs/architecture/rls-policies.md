@@ -1035,6 +1035,11 @@ tutor)` en `bloqueo_retencion` de `firmas_ficha` y en `contenido_firmas_ficha`: 
 - **`oposicion_imagen(niño)`:** si hay un «no» vigente de otro, sin decir de quién; al tutor legal y a
   Dirección (a cualquier otro, 42501). Con ella el tutor que no ha contestado distingue «nadie ha
   dicho que sí» de «otro se ha opuesto».
+- **Operación de datos** (decisión del responsable del 2026-11-19): se revoca el «sí» de imagen que N2
+  dejó escrito a nombre de quien no es tutor legal del niño (el de la antigua admin, el único de ese
+  niño), y su indicador vuelve a false. Se elige por la condición, no por el id; su guarda exige
+  exactamente esa fila y ninguna foto del niño etiquetada, o para la migración. En la base del CI no
+  hay ninguna.
 - `marcar_matricula_lista` y `validar_alta` no cambian aquí: las endurece la segunda migración,
   después del despliegue.
 - Tests: `ficha-puertas.rls.test.ts`, `consent-imagen-rpc-seguridad.rls.test.ts`,
