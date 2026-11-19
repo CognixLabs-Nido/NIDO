@@ -2091,7 +2091,8 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   cuando quiera, con el mecanismo de `pide_refirma`. Nada automático.
 - **Alta en papel**: Dirección registra la firma presencial, teclea el nombre, sin trazo, y el papel
   es la prueba. Igual que en los documentos.
-- **Las tres altas ya validadas no firman nada hacia atrás.**
+- **Las tres altas ya validadas no firman nada hacia atrás.** _Matizada el 2026-11-19 («Pedir la
+  firma de cualquier alta sin ficha firmada»): no se les obliga, pero Dirección puede pedírselo._
 - **No se vuelve a firmar cada curso**: la renovación quedó fuera de la serie y sigue fuera.
 - **Lo de siempre**: exportación del art. 15, purga con el niño, el autorizado no ve nada de esto, y
   el test de la purga llega a los ficheros del bucket nuevo, no solo a su nombre.
@@ -2164,7 +2165,8 @@ todavía no rige: las funciones del tutor escriben directamente. Ver «Sin decid
 
 **3. Quién firma.** En producción, 4 niños vivos: 2 con dos tutores legales, 2 con uno. Ninguno con
 `requiere_ambos_firmantes`. Basta uno, y se guarda quién (decisión del 16). Matrículas: 3 activas
-(las tres altas validadas, que no firman hacia atrás) y 1 pendiente.
+(las tres altas validadas, que no firman hacia atrás; matizado el 2026-11-19: Dirección puede pedírselo)
+y 1 pendiente.
 
 **4. El cierre hoy** (`marcar_matricula_lista`, md5 normalizado `d8d7de95…`): exige el acuse médico,
 los documentos obligatorios, los datos del niño, los de los tutores, los servicios y los gastos. **No
@@ -2391,7 +2393,8 @@ estaba arriba (16 y 17 de noviembre):
 - «La firma es inmutable. Dirección puede pedir refirma con pide_refirma, nada automático.»
 - «Alta en papel: Dirección registra la firma presencial, teclea el nombre, sin trazo, y el papel
   es la prueba.»
-- «Las tres altas ya validadas no firman hacia atrás.»
+- «Las tres altas ya validadas no firman hacia atrás.» _(Matizada el 2026-11-19: es una regla de
+  no obligar, no un muro; ver «Pedir la firma de cualquier alta sin ficha firmada».)_
 - «Y EL CONSENTIMIENTO DE IMAGEN ENTRA EN marcar_matricula_lista, que es el hueco que hoy solo
   vigila la app: ahora que el «no» existe, la base exige una RESPUESTA, sí o no, no un «sí».»
 - «Export del art. 15, purga con el niño, y el test que afirma que la fila se va y que no queda
@@ -2863,6 +2866,31 @@ y dura hasta la 10b-3**, que lo cierra en `marcar_matricula_lista` con esos caso
 negativo. Mientras tanto, a un alta cerrada así no se le puede pedir que vuelva a firmar
 (`pedir_refirma_ficha` → `sin_firma`); también lo abre la 10b-3.
 
+**Pedir la firma de cualquier alta sin ficha firmada** (decisión del responsable, 2026-11-19; corrige
+el alcance de «Las tres altas ya validadas no firman hacia atrás», del 2026-11-17). Literal: «EN EL
+10B-3: Dirección puede pedir la firma de CUALQUIER alta que no tenga ficha firmada, no solo refirmar
+una que ya la tenía. Hoy la refirma exige una firma previa y eso deja fuera dos casos que importan:
+las altas cerradas en esta ventana; las tres altas ya validadas. Y fíjate en lo que eso cambia de lo
+que decidí el 17: «las ya validadas no firman hacia atrás» seguía siendo correcto como regla —no se
+les obliga—, pero no tenía que significar que Dirección no PUEDA pedírselo si quiere. Con esto, el
+«no retroactivo» pasa a ser una decisión de la directora en vez de un muro del sistema, que es como
+debería haber estado desde el principio. Déjalo escrito así, con la corrección fechada. Mídelo
+abierto antes, como todo: hoy pedir firma a un alta sin firma da sin_firma, y eso es el control
+negativo del arreglo.»
+
+- **La regla, corregida el 2026-11-19:** ninguna alta validada está obligada a firmar la ficha hacia
+  atrás (eso sigue igual), y **Dirección puede pedir la firma de cualquier alta sin ficha firmada**,
+  cuando quiera. El «no retroactivo» es una decisión de la directora, no un muro del sistema.
+- **Por qué importa:** sin esto, el estado transitorio no es transitorio para el alta que cae dentro:
+  cerrada sin firma, se queda sin ficha firmada para siempre. Y las 3 `activa` de hoy están ya ahí.
+- **Medido abierto** (2026-11-18, `~/nido-logs/10/b2/refirma-sin-firma/`, el bloque de «Las dos,
+  confirmadas»): `R1 | dir pide refirma | P0001 la ficha no está firmada HINT=sin_firma`. Ese R1 es el
+  control negativo del arreglo: la 10b-3 lo repite en su ensayo antes de la migración (`sin_firma`) y
+  después (pasa), y el tutor firma por la función, sin meter la fila a mano.
+- **En la 10b-3:** `pedir_refirma_ficha` acepta el alta sin firma previa; la tarjeta de Dirección
+  ofrece «Pedir que se firme» también sin firma; el test que hoy afirma `sin_firma` (nombrado como el
+  hueco) se pone rojo y se reescribe al estado bueno.
+
 **Los dos tutores con cuenta no podían cerrar el alta desde la app** (hallazgo del 2026-11-18 al
 construir el test de la 10b-2; existe en `main` desde la fase 6, #526, 2026-11-13). El gate de la
 app daba «no se pudo leer» (`{ ok: false }` → `alta.errors.finalizar_fallo`) si no veía los datos
@@ -2972,9 +3000,10 @@ tests hacen como `postgres`, no solo para este REVOKE.
      tutor, no se registra), con su pantalla; `otorgar_consentimiento_imagen` exige que el titular
      sea tutor legal del niño (la puerta de N2, con N2 de control negativo) y lo mismo
      `firma_imagen_sync` con la firma presencial; y la función que le dice al tutor que no ha
-     contestado que hay una oposición («Las dos de la 10b-2, resueltas», 1) Y `pedir_refirma_ficha` sin firma previa, para el alta cerrada sin ficha firmada
-     (las 3 `activa` de hoy y la que se cierre en papel antes de la 10b-3), con R1 de control
-     negativo («Las dos, confirmadas», 2026-11-18). `firma_imagen_sync` se mide abierto **en la
+     contestado que hay una oposición («Las dos de la 10b-2, resueltas», 1) Y `pedir_refirma_ficha` sin firma previa: Dirección pide la firma de **cualquier** alta sin ficha
+     firmada (las 3 `activa` de hoy y la que se cierre antes de la 10b-3), con R1 de control
+     negativo («Las dos, confirmadas», 2026-11-18; «Pedir la firma de cualquier alta sin ficha
+     firmada», 2026-11-19). `firma_imagen_sync` se mide abierto **en la
      10b-3** y cae con N2 en el mismo PR, cada una con su control negativo. La 10b-3 va pegada.
      Y **el punto 3 entero** en `marcar_matricula_lista`: todo lo que exige el gate de la app, en la
      base (la firma que vale, la respuesta de imagen, el libro de familia y los DNI de los tutores),
