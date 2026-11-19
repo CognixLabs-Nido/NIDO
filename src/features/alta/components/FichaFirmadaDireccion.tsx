@@ -20,6 +20,8 @@ import {
 import { pedirRefirmaFichaAction } from '../actions/firmar-ficha'
 import type { EstadoFirmaFicha, UltimaFirmaFicha } from '../lib/ficha-firmada'
 
+import { CopiaFichaFirmada } from './CopiaFichaFirmada'
+
 interface Props {
   ninoId: string
   /** `null`: no se pudo leer. Se dice, y no se ofrece nada. */
@@ -30,7 +32,7 @@ interface Props {
 /**
  * La ficha firmada en la ficha del niño de Dirección (10b-2): si está firmada, cuándo y cómo, si
  * vale, si se pidió volver a firmar, y el botón para pedirlo (`pedir_refirma_ficha`; nada
- * automático, lo pide una persona).
+ * automático, lo pide una persona). Y la copia firmada en PDF (10c).
  *
  * Sin ninguna firma (un alta validada antes de la ficha firmada, o cerrada sin ella), Dirección puede
  * pedir que se firme (10b-3, decisión del 2026-11-19): a la familia no se le obliga, pero que se le
@@ -107,6 +109,8 @@ export function FichaFirmadaDireccion({ ninoId, estado, ultima }: Props) {
                   ? t('refirma_pendiente')
                   : t('sin_valor')}
             </p>
+            {/* 10c: la copia de lo que se firmó, valga hoy o no (es la de ese día). */}
+            <CopiaFichaFirmada firmaId={ultima.id} />
             {!estado.refirmaPedida && (
               <div className="flex justify-end">
                 <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>

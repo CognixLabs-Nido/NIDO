@@ -15,7 +15,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { AltaEnCursoCard } from '@/features/alta/components/AltaEnCursoCard'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
@@ -32,7 +32,8 @@ import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { AvisoFichaFirmada, RefirmaFicha } from '@/features/alta/components/AvisoFichaFirmada'
-import { leerEstadoFirmaFicha } from '@/features/alta/lib/ficha-firmada'
+import { CopiaFichaFirmada } from '@/features/alta/components/CopiaFichaFirmada'
+import { leerEstadoFirmaFicha, leerUltimaFirmaFicha } from '@/features/alta/lib/ficha-firmada'
 import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { ImagenAutorizacionTutor } from '@/features/ninos/components/ImagenAutorizacionTutor'
 import { getEstadoImagenNino } from '@/features/ninos/queries/get-estado-imagen-nino'
@@ -74,6 +75,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const tFicha = await getTranslations('messages.ficha_nino')
   const tFotos = await getTranslations('fotos.nino')
   const tPed = await getTranslations('pedagogico')
+  const tCopia = await getTranslations('alta.firma.copia')
   const nino = await getNinoById(id)
   if (!nino) notFound()
   // Multicentro · Fase 2: un hijo de otro centro no se abre aquí, aunque sea suyo.
@@ -139,6 +141,12 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // por Dirección y la firma sin valor, se ofrece firmar aquí. Si no se lee, ni aviso ni firma.
   const firmaFicha = esTutorLegal ? await leerEstadoFirmaFicha(supabase, id) : null
   const estadoFirma = firmaFicha?.ok ? firmaFicha.data : null
+  // 10c: la copia firmada, al tutor legal que puede leer la ficha médica (lo mismo que exige la base).
+  const ultimaFirma =
+    estadoFirma?.firmada && estadoFirma.puedeFirmar !== 'sin_acceso_ficha_medica'
+      ? await leerUltimaFirmaFicha(supabase, id)
+      : null
+  const copiaFirmada = ultimaFirma?.ok ? ultimaFirma.data : null
   const { data: matriculasNino } = esTutorLegal
     ? await supabase
         .from('matriculas')
@@ -309,6 +317,17 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           tarjeta={tarjeta}
           urlImagen={urlTarjeta}
         />
+      )}
+
+      {copiaFirmada && (
+        <Card data-testid="copia-firmada-familia">
+          <CardHeader>
+            <CardTitle className="text-base">{tCopia('titulo')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CopiaFichaFirmada firmaId={copiaFirmada.id} />
+          </CardContent>
+        </Card>
       )}
 
       {refirmaPedida && estadoFirma && (

@@ -4699,7 +4699,8 @@
         "transferencia": "Bank transfer",
         "efectivo": "Cash"
       },
-      "copia_ficha_firmada": "A signed copy of the enrolment form exists for each signature in this list, with the details as they were on the day it was signed and sealed with the value shown in each one. It is not included in this file: its details, health details included, are those of the form, which appears in this same export as it is today and may have changed since then. Date of each copy:"
+      "copia_ficha_firmada": "A signed copy of the enrolment form exists for each signature in this list, with the details as they were on the day it was signed and sealed with the value shown in each one. It is not included in this file: its details, health details included, are those of the form, which appears in this same export as it is today and may have changed since then. Date of each copy:",
+      "copia_ficha_firmada_como": "Ask the centre management for it: they will give it to you as a PDF, with the details as they were on the day it was signed."
     },
     "descargar_mis_datos": "Download my data",
     "exportar_nino": "Export child data",
@@ -5038,6 +5039,11 @@
         "registrar": "Record the paper signature and complete the enrolment",
         "sin_tutor_con_cuenta": "To record the paper signature, the guardian who signed it must have accepted their invitation: without an account it cannot be stored in their name.",
         "no_se_pudo_leer": "We couldn't read the child's guardians. Please try again."
+      },
+      "copia": {
+        "titulo": "Signed copy",
+        "descargar": "Download the signed copy (PDF)",
+        "ayuda": "The details as they were on the day it was signed, with the template it was signed with."
       }
     }
   },
@@ -5386,7 +5392,9 @@
     "origen": {
       "ficha": "from the child's profile",
       "alta": "from the enrolment form",
-      "export": "in a data export"
+      "export": "in a data export",
+      "datos_bloqueados": "when management consulted the blocked data",
+      "ficha_firmada": "when downloading the signed copy of the form"
     },
     "campo": {
       "alergias_graves": "severe allergies",

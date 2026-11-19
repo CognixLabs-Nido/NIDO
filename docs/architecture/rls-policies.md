@@ -1045,6 +1045,26 @@ tutor)` en `bloqueo_retencion` de `firmas_ficha` y en `contenido_firmas_ficha`: 
 - Tests: `ficha-puertas.rls.test.ts`, `consent-imagen-rpc-seguridad.rls.test.ts`,
   `roles-directora.rls.test.ts`, `superusuario.rls.test.ts` y `ficha-firmada.rls.test.ts`.
 
+### Leer la copia firmada de la ficha (serie de altas, fase 10, 10c)
+
+Migración `20270131120000_feat_leer_ficha_firmada` (antes del despliegue); spec
+`docs/specs/altas-serie.md`, «10c: el encargo, lo medido abierto y la condición de la (C)».
+
+- **`public.leer_ficha_firmada(firma)`**, `SECURITY DEFINER`, solo `authenticated`: la foto descifrada
+  de una firma de `firmas_ficha` y lo de la firma que enseña el PDF (no la IP ni el navegador). Las
+  puertas de `ficha_para_firmar`: Dirección del centro del niño sin el superusuario (rol `admin` o
+  `directora` en la lectura), o el tutor legal con `puede_ver_info_medica` (`privado.puerta_firma_tutor`;
+  sin el permiso, 42501 `sin_acceso_ficha_medica`). El autorizado, la profe y el tutor de otro niño,
+  42501; un id que no es de ninguna firma, el mismo 42501.
+- **Los dos bloqueos**: la firma del tutor olvidado (`privado.firma_ficha_bloqueada`, 55000
+  `firma_bloqueada`) y la ficha médica tras el curso de la baja o desde la purga
+  (`privado.ficha_medica_bloqueada_desde`, 55000 `ficha_bloqueada`, la fecha en DETAIL).
+- **El sello**: si la foto descifrada no da `contenido_sha256`, no se entrega (XX001 `sello_distinto`).
+- **Cada lectura deja su fila** en `lecturas_ficha_medica`, origen `ficha_firmada` (CHECK ampliado), con
+  los campos médicos que lleva la foto. Una lectura rechazada no deja fila.
+- **Sin URL pública**: el PDF lo compone el route handler `/[locale]/ficha-firmada/[firmaId]` con la
+  sesión de quien lo pide y lo entrega sin caché; no se sube a ningún bucket ni se firma un enlace.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.

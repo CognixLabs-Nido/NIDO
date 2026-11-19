@@ -6027,6 +6027,7 @@ export type Database = {
           rol_lector: string
         }[]
       }
+      leer_ficha_firmada: { Args: { p_firma_id: string }; Returns: Json }
       listado_pase_servicios: {
         Args: { p_centro_id: string; p_fecha?: string }
         Returns: {

@@ -594,8 +594,9 @@ function seccionObjeto(tituloKey: string, obj: unknown, c: Ctx): string {
  * Fase 10b: las firmas de la ficha del alta. Si hay alguna, el export DICE que la copia firmada
  * existe y de qué fecha es (decisiones del responsable del 2026-11-18): la foto de lo firmado no va
  * en el fichero, y quien lee su export tiene que saber que ese documento existe. Cada firma guarda
- * su copia: una fecha por firma. El «cómo obtenerla» entra en la 10c, con la forma de entregarla
- * («Los dos huecos»: no se promete lo que hoy nadie puede dar).
+ * su copia: una fecha por firma. Y cómo obtenerla (10c, decisión del 2026-11-19): se la pide a la
+ * Dirección del centro, que ya puede dársela (`leer_ficha_firmada` y el PDF que compone el servidor).
+ * Hasta la 10c la nota no lo decía: «no se promete lo que hoy nadie puede dar» («Los dos huecos»).
  */
 function seccionFirmasFicha(tituloKey: string, items: unknown, c: Ctx): string {
   const fechas = (Array.isArray(items) ? (items as Record<string, unknown>[]) : [])
@@ -603,7 +604,7 @@ function seccionFirmasFicha(tituloKey: string, items: unknown, c: Ctx): string {
     .filter((f): f is string => typeof f === 'string')
     .map((f) => formatearTexto(f, c))
   const nota = fechas.length
-    ? `<p class="nota">${escape(c.t('doc.copia_ficha_firmada'))} ${fechas.join(', ')}.</p>`
+    ? `<p class="nota">${escape(c.t('doc.copia_ficha_firmada'))} ${fechas.join(', ')}. ${escape(c.t('doc.copia_ficha_firmada_como'))}</p>`
     : ''
   return seccion(tituloKey, items, c).replace('</h3>', `</h3>${nota}`)
 }

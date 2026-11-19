@@ -3144,6 +3144,87 @@ siguiente nombre». Lo decidido:
   2 de menos son `olvido_solicitudes.tutores_legales` (un `uuid[]`, sin clave ajena posible), que
   entra decidida. Uuid sin clave ajena fuera de la clave primaria: 5.
 
+### 10b-3, verificada en producción (2026-11-19)
+
+Aplicadas y registradas por Jose (`20270129120000` y `20270130120000`; en el registro, las dos
+versiones, sin nombre ni sentencias, como la `20270128120000`). Medido en solo lectura y en un
+ensayo terminado en RAISE (`~/nido-logs/10/c/verifica-b3/`, predicciones antes):
+
+- **Las 13 funciones que crean las dos migraciones son las del fichero commiteado**: el cuerpo vivo,
+  sin los CR que mete el SQL Editor, da el mismo md5 que el cuerpo del fichero en `origin/main` (13
+  de 13; el comparador dice DISTINTO con un cuerpo mutado). Las md5 de los ficheros, `b570933b…` y
+  `a6359ccc…`.
+- **Las seis puertas, cerradas**, con los casos de los dos ensayos cerrados (52 de 52 líneas como se
+  predijo): A1-A5, V1 y V- (el cierre y validar); N2a, N2b y S1 (N2 por las dos entradas); Pn, Pd y
+  Px (la presencial sin tutor legal); R1 (pedir la firma sin firma) pasa; B1-B4 (el bloqueo); O1-O5
+  (la oposición). Los controles positivos pasan: N2+, N2-, N2t, S1+, P+, C+, V+, RA.
+- **El «sí» de la antigua admin, revocado y sin nada colgando**: revocado el 2026-11-19 a las
+  16:29 UTC; «sí» fuera de tutor legal = 0; el indicador del niño `false`, igual a
+  `tiene_consentimiento_imagen`; 0 «sí» vigentes, 0 etiquetas, 0 publicaciones con el niño. Y 0 niños
+  cuyo indicador no sea el de la regla.
+- Después del ensayo, producción sin tocar (1 alta pendiente, 0 firmas, 0 refirmas).
+
+### 10c: el encargo, lo medido abierto y la condición de la (C) (2026-11-19)
+
+**El encargo** (el responsable, 2026-11-19), literal: «Leer la ficha firmada va por una FUNCIÓN,
+abierta al tutor legal y a Dirección. El autorizado no, la profe tampoco. Cada lectura deja su fila
+en lecturas_ficha_medica con un origen nuevo, y respeta el bloqueo tras el curso de la baja. NADA DE
+URL PÚBLICA. El PDF se sirve desde el servidor, o con un enlace de segundos, no el de una hora del
+mandato. Ese fue uno de los motivos por los que descartamos guardar el fichero. El PDF se compone
+desde la foto descifrada y la PLANTILLA VERSIONADA que guarda la firma. Comprueba que con la versión
+guardada se compone el mismo documento: esa es la condición que sostiene la opción (C), y si no se
+cumple, la (C) no vale y hay que hablarlo. Y ahora sí, el export añade cómo obtenerla: el «existe una
+copia firmada» que ya pusiste se completa con el «pídesela a la Dirección del centro», porque ya
+habrá forma de dársela. El test de la purga: que la fila se va con el niño y que no queda ningún
+objeto de la ficha en ningún bucket.» Y el método: «Mide abierto, controles negativos y positivo, una
+sonda una defensa con su arrastre previsto, y el md5 cuando ensayes.»
+
+**Medido abierto** (producción, 2026-11-19; ensayo terminado en RAISE, nacido de la plantilla, guarda
+de md5 sobre las 5 funciones de las que dependerá la lectura; `~/nido-logs/10/c/abierto/`, 13 de 13
+como se predijo). Con una firma real de T dentro del ensayo (C+): T y Dirección leen
+`contenido_cifrado` → 42501 (A1, A2); `contenido_firmas_ficha` trae el trazo y no la foto (A3); el
+CHECK de `lecturas_ficha_medica` no admite un origen nuevo (A4); firmar no deja ningún fichero en
+storage (15 objetos antes y después, A5). En el catálogo, solo dos funciones nombran la foto: la que
+la escribe y `contenido_bloqueado`, que la deja fuera. **La copia existe y nadie puede sacarla**:
+hoy el «pídesela» del export generaría una solicitud que nadie puede atender.
+
+**La condición de la (C), medida antes de escribir la plantilla** (pdf-lib 1.17.1, el mismo
+documento con texto, tildes y un PNG; `scratchpad/det/compone.cjs`): con las opciones por defecto,
+dos composiciones seguidas dan **bytes distintos** (el control negativo: pdf-lib escribe la fecha de
+creación en los metadatos); con `updateMetadata: false`, **el mismo sha256** en procesos separados,
+otra hora, otro huso (`Pacific/Auckland`, `America/New_York`) y otro idioma. Se cumple con cuatro
+condiciones, y cada una la sostiene algo:
+
+1. **La plantilla no lee nada vivo**: ni las traducciones (`messages/`), ni `Intl` ni `toLocale*`
+   (dependen de la versión de ICU de Node), ni el logo ni el nombre del centro, ni los helpers
+   compartidos de `src/shared/lib/pdf` (cambian por otros documentos). Sus textos van dentro, en
+   castellano; las fechas, a mano y en UTC. Lo sostiene un test que lee el fichero.
+2. **La entrada es la de la firma**: la foto descifrada, y la función comprueba que da el sello
+   guardado (`ficha_hash` = `contenido_sha256`) antes de devolverla; si no, no hay copia.
+3. **Cada versión se conserva**: la plantilla de la firma se elige por `plantilla_pdf_version`; la
+   versión que pone la base (`privado.ficha_plantilla_pdf_version`) tiene que existir en el registro
+   de plantillas. Lo sostiene un test.
+4. **El generador fijado**: un test dorado compone la v1 desde una foto fija y compara su sha256
+   con el escrito. Si alguien toca la v1 o actualiza pdf-lib y cambia un byte, se pone rojo: entonces
+   se decide (una v2, o comprobar que es el mismo documento), no se reescribe el número.
+
+**Lo que no cubre**: el trazo es el PNG que se guardó; un texto con caracteres fuera de Latin-1
+(WinAnsi, la fuente estándar) sale con «?», como en los demás PDF de la casa.
+
+**Los textos del registro de lecturas, preguntados a la base** (el responsable, 2026-11-19). Al añadir
+el origen `ficha_firmada` salió que `datos_bloqueados` (20261211120000) no tenía texto en ningún idioma
+y el test de los textos seguía en verde: leía los valores del CHECK solo de la migración que creó la
+tabla. Literal: «Si has hecho que el test pregunte a la BASE por todos los orígenes vivos y exija texto
+en los tres idiomas para cada uno, entonces está cerrado de verdad. [...] es el mismo cambio que
+acabamos de hacer con R4 por el esquema en vez de por una lista. Su control negativo: un origen nuevo
+sin texto tiene que poner el test rojo sin tocar nada más.» Mi primer arreglo había sido a medias (el
+texto, y el test leyendo la última migración que escribe el CHECK: otra lista, que depende de cómo
+está escrito). Ahora `src/test/rls/lecturas-textos-del-check.rls.test.ts` lee del catálogo de la base
+del CI los CHECK de `rol_lector`, `origen` y `campos`, exige que la app conozca exactamente esos
+valores y que cada uno tenga texto en es, en y va, con su control negativo dentro (un origen nuevo en
+el CHECK, en una transacción que se deshace, sale sin texto en los tres). El test unit se queda con
+los textos de lo que la app conoce.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.

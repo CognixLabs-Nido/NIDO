@@ -29,12 +29,19 @@ export const CAMPOS_FICHA = [
 ] as const
 export type CampoFicha = (typeof CAMPOS_FICHA)[number]
 
-/** Desde dónde se leyó (`lecturas_ficha_medica.origen`). */
+/**
+ * Desde dónde se leyó (`lecturas_ficha_medica.origen`): las tres de `getInfoMedica`, y las que dejan
+ * sus propias funciones: `datos_bloqueados` (`ver_datos_bloqueados`, 20261211120000) y `ficha_firmada`
+ * (`leer_ficha_firmada`, 10c). Cada uno con su texto en `ficha_medica_lecturas.origen`.
+ */
 export const ORIGENES_LECTURA = [
   'ficha',
   'alta',
   'export',
-] as const satisfies readonly OrigenLecturaFicha[]
+  'datos_bloqueados',
+  'ficha_firmada',
+] as const satisfies readonly (OrigenLecturaFicha | 'datos_bloqueados' | 'ficha_firmada')[]
+export type OrigenRegistro = (typeof ORIGENES_LECTURA)[number]
 
 /**
  * Quién leyó, tal como lo puede ver quien mira (20261217120000):
@@ -53,7 +60,7 @@ export interface LecturaFichaMedica {
   leidaEn: string
   lector: LectorLectura
   rol: RolLector
-  origen: OrigenLecturaFicha
+  origen: OrigenRegistro
   campos: CampoFicha[]
 }
 
@@ -91,7 +98,7 @@ export async function getLecturasFichaMedica(ninoId: string): Promise<RegistroLe
           ? { tipo: 'nombre', nombre: l.lector_nombre }
           : { tipo: 'cuenta_borrada' },
       rol: l.rol_lector as RolLector,
-      origen: l.origen as OrigenLecturaFicha,
+      origen: l.origen as OrigenRegistro,
       campos: (l.campos ?? []) as CampoFicha[],
     })),
   }
