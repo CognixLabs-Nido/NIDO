@@ -2909,6 +2909,25 @@ de 4 (los predichos); sin el del lector, 2 rojos. La primera vez salió 1 de los
 del gate con la función fallida pasaba igual porque la fila propia ilegible ya frenaba sola; rehecho
 con todas las filas ajenas (como Dirección en papel), da los 2.
 
+**La variante nueva, y una mutación que repetir** (responsable, 2026-11-19). Literal: «PERO EL SEGUNDO
+ES UNA VARIANTE QUE NO TENÍAMOS ESCRITA, y es más peligrosa que la original. Un fallo leído como
+AUSENCIA deja un hueco visible: «no hay nadie autorizado», «sin libro de familia». Un fallo leído como
+REGLA —«lo gestiona el otro tutor»— no deja hueco: deja una explicación plausible que nadie va a
+cuestionar. Si yo veo «sin libro de familia» sospecho; si veo «lo gestiona el otro tutor» me lo creo.
+Apúntalo como variante del patrón de los 454, con este caso, y que quede claro para cuando ataquemos
+el censo: hay que buscar las dos formas, y la segunda no se encuentra mirando valores vacíos. Y REPITE
+UNA MUTACIÓN, no las doce: la que cubre el lector común, porque personalesLeidos cambió DESPUÉS de la
+ronda 3.» Y, sobre el test: «que corra solo contra la base efímera del CI. Si ese test pudiera
+ejecutarse alguna vez apuntando a producción, un runner que muera entre el revoke y el finally deja la
+función sin permisos en producción. Compruébalo antes de subirlo».
+
+**Comprobado: no lo impedía la construcción.** La guarda de la suite (`comprobarBdLocal`) mira la URL
+de la API (`NEXT_PUBLIC_SUPABASE_URL`), no `DB_URL`, que es con lo que `comoPostgres` entra como
+`postgres`; y se salta a mano con `RLS_ALLOW_REMOTE=1`. Hoy ningún `.env.local` define `DB_URL` (en
+la CI sale de `supabase status`), pero eso es una circunstancia, no una garantía. Cerrado en
+`comoPostgres`: solo `127.0.0.1` o `localhost`, sin salida de emergencia. Vale para todo lo que los
+tests hacen como `postgres`, no solo para este REVOKE.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.

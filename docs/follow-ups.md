@@ -149,6 +149,10 @@ serie de altas (`docs/specs/altas-serie.md`).
       quedan —menú del mes, pase de comidas, los dos de dinero y los dos duplicados— y el SEPA
       silencioso quedan apuntados con fecha para después de las altas. No los toques ahora.» Del censo
       de «una lectura que falla no se lee como "no hay"» (`altas-serie.md`, 454 sitios). _(Ola 1)_
+      **Buscar las DOS formas** (2026-11-19): el fallo leído como AUSENCIA («no hay nadie
+      autorizado») y el fallo leído como REGLA («lo gestiona el otro tutor», `leerTutoresDeNino`,
+      10b-2). La segunda no sale mirando `[]`/`null`: se busca dónde se ignora el `error` de una
+      lectura cuyo valor por defecto coincide con una respuesta legítima (un `false` de permiso).
 - [ ] **El esquema estricto en la agenda, las citas y los eventos** (2026-11-13, 08:13): «Lo del
       esquema estricto en la agenda, las citas y los eventos queda ANOTADO sin medir, para después de
       las altas. No lo toques ahora.» Sin medir. _(Ola 1)_

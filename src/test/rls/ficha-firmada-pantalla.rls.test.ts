@@ -264,6 +264,28 @@ describe('la ficha firmada en la app (fase 10b-2)', () => {
     expect(sin.faltan).not.toContain('imagen')
   })
 
+  it('si tutores_de_familia falla, Dirección en papel no lo lee como «lo gestiona el otro»: no se cierra', async () => {
+    // Todas las filas son ajenas a Dirección: sin `personalesLeidos`, un fallo de la función (todo
+    // `ve_personales` en falso) pasaría por la regla de la fase 6, «lo juzga la base». Con A como quien
+    // cierra no se mediría: su propia fila ilegible ya frena sola (2026-11-19).
+    // Premisa: con la función, el gate del papel lee (no se rinde) y los dos tutores tienen cuenta.
+    expect((await comprobarAlta(s.dir, N, direccion.id, true)).ok).toBe(true)
+    expect(
+      comoPostgres(
+        `SELECT count(*) FROM public.familia_tutores ft JOIN public.ninos n ON n.familia_id = ft.familia_id
+          WHERE n.id = '${N}' AND ft.deleted_at IS NULL AND ft.usuario_id IS NOT NULL`
+      )
+    ).toBe('2')
+    comoPostgres('REVOKE EXECUTE ON FUNCTION public.tutores_de_familia(uuid) FROM authenticated')
+    try {
+      expect(await comprobarAlta(s.dir, N, direccion.id, true)).toEqual({ ok: false })
+    } finally {
+      comoPostgres('GRANT EXECUTE ON FUNCTION public.tutores_de_familia(uuid) TO authenticated')
+    }
+    // Repuesto: vuelve a leer.
+    expect((await comprobarAlta(s.dir, N, direccion.id, true)).ok).toBe(true)
+  })
+
   it('A firma: firmar es finalizar (matrícula en lista, una firma, y vale)', async () => {
     const r = await firmarFichaNino(
       s.A,
