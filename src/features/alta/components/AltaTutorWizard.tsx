@@ -1,14 +1,12 @@
 'use client'
 
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useState } from 'react'
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { toast } from 'sonner'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-import { finalizarAlta } from '../actions/finalizar-alta'
 import type { BloqueAlta } from '../lib/gate-alta'
 import { PASO_MIN_AUTENTICADO, pasosAlta, type PasoAlta } from '../lib/estado-alta'
 import { PasoAcuses } from './PasoAcuses'
@@ -188,7 +186,6 @@ export function AltaTutorWizard({
   puedeLeerFichaMedica = true,
 }: Props) {
   const t = useTranslations('alta')
-  const tErrors = useTranslations()
   const router = useRouter()
   const searchParams = useSearchParams()
   // Sin CID del centro el paso `sepa` no se monta: el último es `emergencia`, que finaliza.
@@ -196,11 +193,9 @@ export function AltaTutorWizard({
   // el principio («1 de 7»), también en la invitación, y no cambian aunque la página se vuelva a
   // pintar con otro dato del centro a mitad del alta. Sin CID el último es `emergencia`; los
   // índices de los demás no cambian (`sepa` es el último).
-  // Fase 10b-2: la familia termina firmando la ficha; el alta en papel, con «Finalizar» (su firma en
-  // papel llega con la 10b-3).
-  const [pasos] = useState(() =>
-    pasosAlta(centroTieneCid, centroTieneServicios, cursoTieneGastos, !modoDireccion)
-  )
+  // Fase 10b-2: la familia termina firmando la ficha; desde la 10b-3, también el alta en papel, con la
+  // firma del tutor legal que firmó el papel registrada por Dirección.
+  const [pasos] = useState(() => pasosAlta(centroTieneCid, centroTieneServicios, cursoTieneGastos))
   const conSepa = pasos.includes('sepa')
   const conServicios = pasos.includes('servicios')
   const conGastos = pasos.includes('gastos')
@@ -214,7 +209,6 @@ export function AltaTutorWizard({
     Math.min(Math.max(modoInvitacion ? 0 : pasoInicial, pasoMin), total - 1)
   )
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
-  const [, startFinalizar] = useTransition()
 
   // Dirección del NIÑO elevada al contenedor (BUG 5 / PR-4d), mismo patrón que SEPA: el
   // paso del menor se desmonta al navegar, pero los pasos de tutor necesitan leerla para
@@ -263,7 +257,7 @@ export function AltaTutorWizard({
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, pasoMin))
 
-  /** Tras el alta cerrada (con «Finalizar» o al firmar), la ruta sirve la pantalla «completado». */
+  /** Tras el alta cerrada (al firmar o al registrar la firma en papel), la ruta sirve «completado». */
   function cerrado() {
     setFaltan(null)
     if (searchParams.get('editar')) {
@@ -273,27 +267,8 @@ export function AltaTutorWizard({
     }
   }
 
-  function finalizar() {
-    startFinalizar(async () => {
-      const r = await finalizarAlta(ninoId)
-      if (!r.success) {
-        if (r.faltan && r.faltan.length > 0) {
-          // Gate de completitud: no se finaliza; se muestra el checklist de lo que falta.
-          setFaltan(r.faltan)
-          toast.error(t('finalizar.incompleto_titulo'))
-        } else {
-          toast.error(tErrors(r.error))
-        }
-        return
-      }
-      // Éxito explícito: confirmación + la ruta sirve la pantalla "completado" tras navegar.
-      toast.success(t('finalizar.exito'))
-      cerrado()
-    })
-  }
-
-  // El último paso de datos: con la familia lleva a la firma; en papel, finaliza.
-  const terminar = conFirma ? goNext : finalizar
+  // El último paso de datos lleva a la firma (10b-3: también en el alta en papel).
+  const terminar = goNext
 
   return (
     <Card className="mx-auto max-w-2xl">
@@ -528,6 +503,7 @@ export function AltaTutorWizard({
             contexto="alta"
             puedeLeerFichaMedica={puedeLeerFichaMedica}
             nombreInicial={currentUserNombre}
+            tutoresPapel={modoDireccion ? tutoresImagenPapel : undefined}
             onFaltan={setFaltan}
             onFirmado={cerrado}
             onBack={goBack}

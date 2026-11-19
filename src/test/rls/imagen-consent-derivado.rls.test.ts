@@ -4,6 +4,7 @@ import {
   createTestCentro,
   createTestNino,
   createTestUser,
+  crearVinculo,
   deleteTestCentro,
   deleteTestUser,
   serviceClient,
@@ -44,6 +45,9 @@ describe('IU-0 imagen consent por-niño + flag derivado', () => {
     centro = await createTestCentro('IU0-imagen')
     tutor = await createTestUser({ nombre: 'Tutor IU0' })
     ninoA = await createTestNino(centro.id, 'Nino A IU0')
+    // El «sí» es de un tutor legal del niño, también con service_role (10b-3, N2). Solo de A: B
+    // es el hermano que no se toca.
+    await crearVinculo(ninoA.id, tutor.id, 'tutor_legal_principal')
     // B = hermano de A (misma familia) para probar el aislamiento por-niño.
     const { data, error } = await serviceClient
       .from('ninos')

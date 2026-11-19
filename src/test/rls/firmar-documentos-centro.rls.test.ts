@@ -24,6 +24,7 @@ import {
   type TestCentro,
   type TestUser,
 } from './setup'
+import { dejarListaParaCerrar } from './ficha-para-cerrar'
 
 vi.mock('server-only', () => ({}))
 
@@ -402,6 +403,8 @@ describe('Firmar los documentos del centro', () => {
     const porFirmar = (suyos ?? []).filter((d) => d.obligatorio && d.estado === 'por_firmar')
     expect(porFirmar.length).toBeGreaterThan(0)
     for (const d of porFirmar) expect(await firma(madre, d.version_id!, pablo)).toBe('ok')
+    // 10b-3: el cierre exige también el libro, la ficha firmada y la respuesta de imagen.
+    await dejarListaParaCerrar(pablo, madre.id)
     expect(await cierra()).toBe('lista')
   })
 })

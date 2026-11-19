@@ -105,6 +105,12 @@ describe('la ficha firmada (fase 10b-1)', () => {
     // El alta, completa salvo la imagen: los datos del niño y de los tutores, y el acuse médico de A
     // para este niño (como `gastos-gestion.rls.test.ts`). Sin gastos ni servicios ofrecidos.
     await completarDatosAlta(N)
+    // Desde la 10b-3 (`20270130120000`) el cierre exige también el libro de familia: firmar cierra.
+    const libro = await serviceClient
+      .from('ninos')
+      .update({ libro_familia_path: `${centro.id}/${N}/libro-demo.pdf` })
+      .eq('id', N)
+    if (libro.error) throw new Error(`libro: ${libro.error.message}`)
     const acuse = await serviceClient.from('consentimientos').insert({
       usuario_id: legalA.id,
       tipo: 'datos_medicos',
@@ -324,29 +330,37 @@ describe('la ficha firmada (fase 10b-1)', () => {
     expect(await estado(s.A)).toBe('firmada=true vigente=false refirma=true puede=si')
   })
 
-  it('B12 en papel: Dirección registra la firma presencial, sin trazo y con rol admin', async () => {
+  it('B12 en papel: Dirección registra la firma presencial del tutor, sin trazo y con rol admin', async () => {
     const v = await ver(s.dir)
     expect(v.error).toBeNull()
     // El tutor legal no registra una firma en papel: es de Dirección en persona.
     const tutor = await s.A.rpc('registrar_firma_ficha_presencial', {
       p_nino_id: N,
+      p_tutor: legalA.id,
       p_hash_visto: v.hash!,
       p_nombre_tecleado: 'Legal A Ficha',
     })
     expect(tutor.error?.code).toBe('42501')
     expect(nFirmas()).toBe('2')
+    // 10b-3: la registra Dirección y es la del tutor legal que firmó el papel (`tutor_id`).
     const r = await s.dir.rpc('registrar_firma_ficha_presencial', {
       p_nino_id: N,
+      p_tutor: legalA.id,
       p_hash_visto: v.hash!,
       p_nombre_tecleado: 'Legal A Ficha',
     })
     expect(r.error).toBeNull()
     const fila = await s.dir
       .from('firmas_ficha')
-      .select('rol_firmante, metodo_firma, firmante_id')
+      .select('rol_firmante, metodo_firma, firmante_id, tutor_id')
       .eq('id', r.data as string)
     expect(fila.data).toEqual([
-      { rol_firmante: 'admin', metodo_firma: 'presencial', firmante_id: direccion.id },
+      {
+        rol_firmante: 'admin',
+        metodo_firma: 'presencial',
+        firmante_id: direccion.id,
+        tutor_id: legalA.id,
+      },
     ])
     const c = await s.dir.rpc('contenido_firmas_ficha', { p_firma_ids: [r.data as string] })
     expect(c.data?.[0]?.firma_imagen).toBeNull()

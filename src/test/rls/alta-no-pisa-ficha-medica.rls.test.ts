@@ -212,12 +212,9 @@ describe('el alta no guarda la ficha médica que no pudo leer', () => {
 
   /** El asistente, con lo que le da la página, abierto en el paso de emergencia. */
   function pintarEmergencia(p: PropsAsistente) {
-    const i = pasosAlta(
-      p.centroTieneCid,
-      p.centroTieneServicios,
-      p.cursoTieneGastos,
-      !p.modoDireccion
-    ).indexOf('emergencia')
+    const i = pasosAlta(p.centroTieneCid, p.centroTieneServicios, p.cursoTieneGastos).indexOf(
+      'emergencia'
+    )
     expect(i).toBeGreaterThan(0)
     render(createElement(AltaTutorWizard, { ...p, pasoInicial: i }))
     // premisa: el asistente está en el paso de emergencia (el botón de omitir sale siempre)

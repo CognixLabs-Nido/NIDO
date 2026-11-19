@@ -93,6 +93,8 @@ describe('lo que falta según el HINT con que la base frena el cierre', () => {
     expect(faltanDeHint('gastos_por_contestar')).toEqual(['gastos'])
     expect(faltanDeHint('documentos_por_firmar')).toEqual(['documentos_centro'])
     expect(faltanDeHint('imagen_sin_respuesta')).toEqual(['imagen'])
+    // 10b-3: el libro de familia, que la base exige desde `20270130120000`.
+    expect(faltanDeHint('libro_familia_por_subir')).toEqual(['documentos'])
     expect(faltanDeHint('ficha_cambiada')).toBeNull()
     expect(faltanDeHint(null)).toBeNull()
   })

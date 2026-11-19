@@ -22,6 +22,10 @@ import {
  *   2. el gate ya no se salta con auth.uid() NULL (solo service_role o sesión directa sin JWT);
  *   3. un tutor (no admin) solo otorga en su propio nombre: p_tutor se fuerza a auth.uid().
  *
+ * Y la puerta N2 (`20270129120000`, 10b-3): el TITULAR del «sí» es un tutor legal del niño. Dirección
+ * lo registra a nombre del tutor (el papel), pero no a nombre de quien no lo es, ni al suyo. Hasta
+ * entonces este test afirmaba el hueco: el admin otorgaba a nombre de `otro`, que no es nada del niño.
+ *
  * El caso «uid NULL por un camino con EXECUTE» y la sesión directa no se pueden provocar
  * desde PostgREST; quedaron cubiertos por el ensayo con rollback contra el remoto.
  */
@@ -128,14 +132,35 @@ describe('RPCs consentimiento de imagen — autorización', () => {
     expect(await flagDe(nino.id)).toBe(false)
   })
 
-  it('el admin sí puede otorgar en nombre de un tutor', async () => {
+  it('el admin registra el «sí» a nombre del tutor legal, y no a nombre de quien no lo es (N2)', async () => {
+    // Premisa: `otro` y el admin no son nada del niño, el tutor sí; y el niño no sale en fotos.
+    const { data: vinculos } = await serviceClient
+      .from('vinculos_familiares')
+      .select('usuario_id')
+      .eq('nino_id', nino.id)
+      .is('deleted_at', null)
+    expect((vinculos ?? []).map((v) => v.usuario_id)).toEqual([tutor.id])
+    expect(await flagDe(nino.id)).toBe(false)
     const client = await clientFor(admin)
+    // Controles negativos: el titular no es tutor legal del niño (una persona cualquiera, la propia
+    // Dirección). Quien llama sí puede registrar: lo que se rechaza es el titular.
+    for (const titular of [otro, admin]) {
+      const { error } = await client.rpc('otorgar_consentimiento_imagen', {
+        p_nino_id: nino.id,
+        p_tutor: titular.id,
+      })
+      expect.soft(error?.code, titular.email).toBe('22023')
+      expect.soft(error?.hint, titular.email).toBe('no_es_tutor_legal')
+    }
+    expect(await flagDe(nino.id)).toBe(false)
+    // Control positivo: Dirección registra el «sí» del tutor legal, a su nombre (el papel).
     const { data, error } = await client.rpc('otorgar_consentimiento_imagen', {
       p_nino_id: nino.id,
-      p_tutor: otro.id,
+      p_tutor: tutor.id,
+      p_metodo: 'presencial',
     })
     expect(error).toBeNull()
-    expect(await autorDe(data!)).toBe(otro.id)
+    expect(await autorDe(data!)).toBe(tutor.id)
     expect(await flagDe(nino.id)).toBe(true)
     // El otro niño no se ha tocado en ningún caso.
     expect(await flagDe(ninoAjeno.id)).toBe(false)

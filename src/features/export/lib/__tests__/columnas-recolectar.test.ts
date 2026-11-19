@@ -572,7 +572,9 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
   it('las reglas R1-R7 se cumplen en todo el catálogo, también en las columnas que lleguen', () => {
     // La clase se saca aquí del nombre, sin mirar el catálogo: así una decisión cambiada a mano
     // contra su regla se pone roja, y una columna nueva de una clase técnica hereda su regla.
-    const PERSONA = /(^|_)(autor|firmante|usuario|usuario_destinatario)_id$|_por$/
+    // R4 (el uuid de una persona) ya no: desde el 2026-11-19 la clase la decide la base por su clave
+    // ajena, en `export-columnas.rls.test.ts`. Por el nombre, `firmas_ficha.tutor_id` entró aquí
+    // como un id corriente, en verde.
     const tipo = (d: DecisionColumnaApp) =>
       'rol' in d
         ? 'rol'
@@ -594,13 +596,11 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
           expect(t, `R2 ${donde}`).toBe(r === 'nino.vinculos_familiares' ? 'noSale' : 'sale')
         } else if (c === 'centro_id') {
           expect(t, `R3 ${donde}`).toBe('noSale')
-        } else if (PERSONA.test(c)) {
-          // Quién está vinculado al niño sale con su nombre: es su familia (la raya, 2026-11-01).
-          const familia = r === 'nino.vinculos_familiares' && c === 'usuario_id'
-          expect(familia ? ['enSuLugar'] : ['noSale', 'rol'], `R4 ${donde}`).toContain(t)
         } else if (c === 'id' || c.endsWith('_id')) {
-          // `enSuLugar`: el id no sale, sale lo legible (2c).
-          expect(['sale', 'noSale', 'enSuLugar'], `R5 ${donde}`).toContain(t)
+          // `enSuLugar`: el id no sale, sale lo legible (2c). `rol`, si es de una persona (R4): eso
+          // lo decide la base (`export-columnas.rls.test.ts`), que también mira que `rol` no vaya en
+          // una columna que no lo es.
+          expect(['sale', 'noSale', 'enSuLugar', 'rol'], `R5 ${donde}`).toContain(t)
         } else if (c === 'ip_address' || c === 'user_agent') {
           // Del niño salen también las firmas del otro tutor: de autorizaciones y, desde el 3b, de
           // los documentos del centro.
@@ -618,8 +618,9 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
     // firmante_id, id, curso_academico_id, documento_id, nino_id, version_id, ip_address, user_agent
     // y metodo_firma; y las 15 de la ficha firmada de la 10b (2026-11-18): firmante_id, id, nino_id,
     // ip_address, user_agent y metodo_firma en sus dos secciones, e id, nino_id y pedida_por en la
-    // de las peticiones de volver a firmar.
-    expect(n).toBe(181)
+    // de las peticiones de volver a firmar. Desde el 2026-11-19, 171: las 2 `tutor_id` de la 10b-3
+    // entran (por R5 aquí; por R4 en la base) y las 12 `_por` salen (solo las miraba R4 por el nombre).
+    expect(n).toBe(171)
   })
 
   it('lo que sale sin repasar es lo del 2026-11-01, y solo mengua', () => {

@@ -69,8 +69,8 @@ describe('la red del export: el catálogo y el export de verdad', () => {
   it('las reglas R1-R7 se cumplen en todo el catálogo, también en las columnas que lleguen', () => {
     // La clase se saca aquí del nombre, sin mirar el catálogo: así una decisión cambiada a mano
     // contra su regla se pone roja, y una columna nueva de una clase técnica hereda su regla.
-    const PERSONA =
-      /(^|_)(autor|firmante|usuario|usuario_destinatario|tutor_usuario|lector|organizador)_id$|_por$|^created_by$|^tutores_legales$/
+    // R4 (el uuid de una persona) ya no: desde el 2026-11-19 la clase la decide la base por su clave
+    // ajena, en `export-columnas.rls.test.ts`, con los uuid que no la tienen decididos a mano.
     const SECRETO = new Set(['token', 'endpoint', 'p256dh', 'auth'])
     const tipo = (d: DecisionColumna) =>
       'sale' in d ? 'sale' : 'noSale' in d ? 'noSale' : 'porDecidir'
@@ -87,10 +87,6 @@ describe('la red del export: el catálogo y el export de verdad', () => {
           expect(t, `R3 ${donde}`).toBe('noSale')
         } else if (SECRETO.has(c)) {
           expect(t, `R6 ${donde}`).toBe('noSale')
-        } else if (PERSONA.test(c)) {
-          // Puede salir algo calculado con ella, nunca el uuid: entonces lo dice su nota.
-          if (t === 'sale') expect('sale' in d && d.nota, `R4 ${donde}: sale sin nota`).toBeTruthy()
-          else expect(t, `R4 ${donde}`).toBe('noSale')
         } else if (c === 'id' || c.endsWith('_id')) {
           expect(['sale', 'noSale'], `R5 ${donde}`).toContain(t)
         } else if (c === 'ip_address' || c === 'user_agent') {

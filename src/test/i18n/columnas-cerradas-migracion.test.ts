@@ -20,6 +20,17 @@ const SQL = leer('20270115130000_fix_autorizado_lee_solo_lo_suyo.sql')
 const SQL_DOCUMENTOS = leer('20270125130000_fix_cierra_gravedad_media.sql')
 /** La ficha firmada (`20270128120000`, 2026-11-18): nace cerrada, sin guarda previa de columnas. */
 const SQL_FICHA = leer('20270128120000_feat_ficha_firmada.sql')
+/** La 10b-3 (`20270129120000`, 2026-11-19) le añade una columna con su GRANT: de qué tutor es el papel. */
+const SQL_PUERTAS = leer('20270129120000_feat_ficha_puertas.sql')
+
+/** Las columnas que una migración añade a `tabla` con ALTER TABLE … ADD COLUMN. */
+function columnasAnadidas(tabla: string, sql: string): string[] {
+  return [
+    ...sql.matchAll(
+      new RegExp(String.raw`ALTER TABLE public\.${tabla}\s+ADD COLUMN ([a-z_0-9]+)`, 'g')
+    ),
+  ].map((x) => x[1]!)
+}
 
 /** Las columnas del CREATE TABLE de `tabla` (las líneas que empiezan por un nombre y un tipo). */
 function columnasDelCreate(tabla: string, sql: string): string[] {
@@ -102,10 +113,12 @@ describe('las columnas cerradas de la app son las de la migración', () => {
     ).toEqual(todasEnLaGuardaPrevia('firmas_documentos_centro', SQL_DOCUMENTOS).sort())
   })
 
-  it('firmas_ficha: COLUMNAS_CONTENIDO_FIRMA_FICHA = las de la función, y con el GRANT y la foto suman la tabla', () => {
-    const tabla = columnasDelCreate('firmas_ficha', SQL_FICHA)
-    // Premisa: el CREATE TABLE se lee entero (14 columnas, la foto incluida).
-    expect(tabla).toHaveLength(14)
+  it('firmas_ficha: COLUMNAS_CONTENIDO_FIRMA_FICHA = las de la función, y con los GRANT y la foto suman la tabla', () => {
+    const anadidas = columnasAnadidas('firmas_ficha', SQL_PUERTAS)
+    const tabla = [...columnasDelCreate('firmas_ficha', SQL_FICHA), ...anadidas]
+    // Premisa: el CREATE TABLE se lee entero (14 columnas, la foto incluida) y la 10b-3 añade una.
+    expect(anadidas).toEqual(['tutor_id'])
+    expect(tabla).toHaveLength(15)
     expect(tabla).toContain('contenido_cifrado')
     expect([...COLUMNAS_CONTENIDO_FIRMA_FICHA].sort()).toEqual(
       columnasDeLaFuncion(SQL_FICHA).sort()
@@ -114,6 +127,7 @@ describe('las columnas cerradas de la app son las de la migración', () => {
     expect(
       [
         ...abiertasEnElGrant('firmas_ficha', SQL_FICHA),
+        ...abiertasEnElGrant('firmas_ficha', SQL_PUERTAS),
         ...COLUMNAS_CONTENIDO_FIRMA_FICHA,
         'contenido_cifrado',
       ].sort()

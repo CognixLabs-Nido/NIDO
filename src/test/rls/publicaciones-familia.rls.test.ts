@@ -85,19 +85,19 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     // activa en `aula`.
     ninoHist = await createTestNino(centro.id)
     const matriculaHist = await matricular(ninoHist.id, aula.id, curso.id)
-    await otorgarImagen(ninoHist.id, tutorHist.id)
     await crearVinculo(ninoHist.id, tutorHist.id, 'tutor_legal_principal', {
       puede_ver_fotos: true,
     })
+    await otorgarImagen(ninoHist.id, tutorHist.id)
     await cerrarMatriculaSinTocarVinculo(matriculaHist)
 
     // ninoNoVe: matriculado en `aula`, permiso de aparecer, pero el vínculo NO ve fotos.
     ninoNoVe = await createTestNino(centro.id)
     await matricular(ninoNoVe.id, aula.id, curso.id)
-    await otorgarImagen(ninoNoVe.id, tutorNoVe.id)
     await crearVinculo(ninoNoVe.id, tutorNoVe.id, 'tutor_legal_principal', {
       puede_ver_fotos: false,
     })
+    await otorgarImagen(ninoNoVe.id, tutorNoVe.id)
 
     // tutorAjeno: su hijo está en `aulaB` (activo), con permiso de ver — no etiquetado aquí.
     const ninoAjeno = await createTestNino(centro.id)
@@ -110,10 +110,10 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     // Las publicaciones de `aula` solo le llegan por la vía «mi hijo etiquetado».
     ninoBaja = await createTestNino(centro.id)
     await matricular(ninoBaja.id, aulaB.id, curso.id)
-    await otorgarImagen(ninoBaja.id, tutorBaja.id)
     await crearVinculo(ninoBaja.id, tutorBaja.id, 'tutor_legal_principal', {
       puede_ver_fotos: true,
     })
+    await otorgarImagen(ninoBaja.id, tutorBaja.id)
   })
 
   afterAll(async () => {
@@ -148,8 +148,9 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
 
   // El flag `puede_aparecer_en_fotos` es DERIVADO del consentimiento (IU-0): se otorga/
   // revoca el consent de imagen POR NIÑO y el trigger consent-based deriva el flag (IU-1b:
-  // un trigger fuerza el flag al valor derivado e ignora escrituras directas). p_tutor solo
-  // debe ser un usuario válido (service_role salta el guard).
+  // un trigger fuerza el flag al valor derivado e ignora escrituras directas). Desde la 10b-3
+  // (N2), p_tutor tiene que ser tutor legal del niño, también con service_role: el vínculo va
+  // ANTES del «sí».
   async function otorgarImagen(nino_id: string, tutor_id: string): Promise<void> {
     const { error } = await serviceClient.rpc('otorgar_consentimiento_imagen', {
       p_nino_id: nino_id,

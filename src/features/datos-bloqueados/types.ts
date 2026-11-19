@@ -32,6 +32,8 @@ export const APARTADOS = [
   'consentimientos',
   'acuses_alta',
   'firmas_documentos',
+  // 10b-3 (`20270129120000`): la ficha del alta firmada, sin la foto (la foto es de la 10c).
+  'firmas_ficha',
   'medicacion_administrada',
   'lecturas_ficha_medica',
 ] as const

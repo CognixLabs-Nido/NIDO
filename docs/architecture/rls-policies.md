@@ -994,18 +994,56 @@ Sin migración: usa las funciones de la 10b-1 con la sesión de quien mira. Spec
   (`faltanDeHint`). El libro de familia **solo lo mira el gate** (medido: sin él, la firma cerraba el
   alta); la base lo exigirá en la 10b-3.
 - **La respuesta de imagen del alta en papel, a nombre del tutor legal** (`titularRespuestaImagen`):
-  Dirección anota la de uno de los tutores legales del niño con cuenta, nunca la suya. **N2 sigue
-  abierta en la base** (`otorgar_consentimiento_imagen` acepta a Dirección como titular, medido el
-  2026-11-18), y la otra entrada, `firma_imagen_sync` con la firma presencial: las cierra la 10b-3.
+  Dirección anota la de uno de los tutores legales del niño con cuenta, nunca la suya. En la base
+  lo cierra la 10b-3 (la sección siguiente).
 - **El otro tutor con cuenta** (fase 6: sus datos personales no los ve el tutor 1): el gate no lo lee
   como «no se pudo leer»; lo juzga la base (`tutor_completo`). Si la que no se lee es la fila de quien
   cierra, o falló `tutores_de_familia` (`personalesLeidos`), no se cierra.
-- **«Pedir que se vuelva a firmar»** (`pedir_refirma_ficha`) no deja pedirlo sin una firma previa
-  (`sin_firma`): un alta cerrada sin ficha firmada no tiene hoy camino para firmarla fuera de `lista`.
-  Lo abre la 10b-3.
+- **«Pedir que se vuelva a firmar»** (`pedir_refirma_ficha`) no dejaba pedirlo sin una firma previa
+  (`sin_firma`). Lo abre la 10b-3 (la sección siguiente).
 - **`comoPostgres`** (los tests que actúan como `postgres`) solo contra `127.0.0.1` o `localhost`,
   sin salida de emergencia: la guarda de la suite mira la URL de la API, no `DB_URL`.
 - Test: `src/test/rls/ficha-firmada-pantalla.rls.test.ts`.
+
+### Las puertas de la ficha firmada (serie de altas, fase 10, 10b-3, migración 1)
+
+Migración `20270129120000_feat_ficha_puertas` (antes del despliegue de la app de la 10b-3); spec
+`docs/specs/altas-serie.md`, «10b-3: el encargo, lo medido abierto y el orden» y «La precisión de N2».
+Medido abierto en producción el 2026-11-19 y cerrado (ensayos terminados en RAISE, LF y CRLF, 48/48).
+
+- **N2, la puerta del «sí» de imagen:** `otorgar_consentimiento_imagen` exige que el **titular**
+  (`p_tutor` ya resuelto) sea tutor legal del niño, con el mismo 22023 `no_es_tutor_legal` que
+  `denegar`. No mira a quien llama: Dirección registra el papel a nombre del tutor. Antes, Dirección
+  otorgaba la imagen a su nombre o al de cualquiera (una profe sin vínculo).
+- **N2 por la otra entrada:** `firma_imagen_sync` rechaza (22023 `no_es_tutor_legal`) la firma
+  presencial de Dirección sobre una autorización de imagen: no dice de qué tutor es, así que su
+  titular sería Dirección. Se rechaza por su titular, no por quién la registra.
+- **La firma presencial de la ficha dice de qué tutor es:** `firmas_ficha.tutor_id` (FK `RESTRICT` a
+  `usuarios`; CHECK `firmas_ficha_tutor_por_metodo`: la presencial la lleva, la digital no; legible
+  por la sesión) y `registrar_firma_ficha_presencial(niño, tutor, …)`, que exige un tutor legal del
+  niño y mira **su** respuesta de imagen. La de cinco argumentos ya no existe.
+- **El bloqueo mira también al tutor del papel:** `privado.firma_ficha_bloqueada(niño, firmante,
+tutor)` en `bloqueo_retencion` de `firmas_ficha` y en `contenido_firmas_ficha`: la firma que
+  registró Dirección se oculta si el tutor está olvidado.
+- **Pedir la firma de cualquier alta sin ficha firmada:** `pedir_refirma_ficha` ya no exige una firma
+  previa (decisión del 2026-11-19). No se obliga a nadie: sin petición, un alta validada sigue sin
+  nada que firmar (`nada_que_firmar`).
+- **La vista de datos bloqueados:** `privado.contenido_bloqueado` y `privado.datos_bloqueados` con
+  `firmas_ficha` (sin la foto cifrada), en la rama del niño y en la del usuario (el firmante o el tutor
+  del papel). La del niño no tiene filas mientras la purga del niño las borre; la del tutor olvidado
+  con el niño vivo, sí.
+- **`oposicion_imagen(niño)`:** si hay un «no» vigente de otro, sin decir de quién; al tutor legal y a
+  Dirección (a cualquier otro, 42501). Con ella el tutor que no ha contestado distingue «nadie ha
+  dicho que sí» de «otro se ha opuesto».
+- **Operación de datos** (decisión del responsable del 2026-11-19): se revoca el «sí» de imagen que N2
+  dejó escrito a nombre de quien no es tutor legal del niño (el de la antigua admin, el único de ese
+  niño), y su indicador vuelve a false. Se elige por la condición, no por el id; su guarda exige
+  exactamente esa fila y ninguna foto del niño etiquetada, o para la migración. En la base del CI no
+  hay ninguna.
+- `marcar_matricula_lista` y `validar_alta` no cambian aquí: las endurece la segunda migración,
+  después del despliegue.
+- Tests: `ficha-puertas.rls.test.ts`, `consent-imagen-rpc-seguridad.rls.test.ts`,
+  `roles-directora.rls.test.ts`, `superusuario.rls.test.ts` y `ficha-firmada.rls.test.ts`.
 
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 

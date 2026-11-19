@@ -32,10 +32,19 @@ export async function columnasVivas(): Promise<Record<string, string[]>> {
   )
 }
 
-/** Una consulta de solo lectura contra la BD efímera del CI, por psql. Devuelve la salida cruda. */
+/**
+ * Una consulta de solo lectura contra la BD efímera del CI, por psql. Devuelve la salida cruda.
+ *
+ * Solo contra una base local (127.0.0.1 o localhost), como `comoPostgres`, y sin variable de entorno
+ * que lo desactive: negarse sin `DB_URL` no basta, porque `DB_URL` puede apuntar a cualquier sitio
+ * (decisión del 2026-11-19).
+ */
 export function consultaBase(sql: string): string {
   const url = process.env.DB_URL
   if (!url) throw new Error('DB_URL: este test solo corre contra la BD efímera del CI')
+  const host = new URL(url).hostname
+  if (host !== '127.0.0.1' && host !== 'localhost')
+    throw new Error(`consultaBase: DB_URL no es local (${host}); solo la BD efímera del CI`)
   return execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
     input: sql,
     encoding: 'utf8',

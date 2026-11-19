@@ -22,6 +22,7 @@ import {
   type TestCentro,
   type TestUser,
 } from './setup'
+import { dejarListaParaCerrar } from './ficha-para-cerrar'
 
 type Cliente = SupabaseClient<Database>
 
@@ -170,6 +171,8 @@ describe('El alta exige los datos del niño (5b)', () => {
       .update({ primer_apellido: 'Apellido Test', fecha_nacimiento: '2024-03-15' })
       .eq('id', carla)
     await completarDatosAlta(carla)
+    // 10b-3: el cierre exige también el libro, la ficha firmada y la respuesta de imagen.
+    await dejarListaParaCerrar(carla, madre.id)
     const { data, error } = await cierra('madre', carla)
     expect(error).toBeNull()
     expect(data).not.toBeNull()
@@ -239,6 +242,8 @@ describe('El alta exige los datos del niño (5b)', () => {
     expect(data).toHaveLength(1)
     // Fase 6: el alta en papel cumple lo mismo que la del tutor, también los datos de los tutores.
     await completarTutoresAlta(pablo)
+    // 10b-3: también la ficha firmada (aquí, la de la tutora; la de papel está en `ficha-puertas`).
+    await dejarListaParaCerrar(pablo, madre.id)
     const cierre = await cierra('admin', pablo)
     expect(cierre.error).toBeNull()
     expect(await estado(pablo)).toBe('lista')

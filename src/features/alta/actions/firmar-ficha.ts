@@ -8,7 +8,12 @@ import { getRequestContext } from '@/features/autorizaciones/lib/request-context
 import { createClient } from '@/lib/supabase/server'
 
 import type { BloqueAlta } from '../lib/gate-alta'
-import { firmarFichaNino, leerFichaParaFirmar, pedirRefirmaFicha } from '../lib/ficha-firmada'
+import {
+  firmarFichaNino,
+  leerFichaParaFirmar,
+  pedirRefirmaFicha,
+  registrarFirmaPresencialFicha,
+} from '../lib/ficha-firmada'
 import { fichaLegible, type SeccionLegible } from '../lib/ficha-legible'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
 
@@ -71,7 +76,27 @@ export async function firmarFicha(input: unknown): Promise<FirmarFichaResult> {
   return { success: true, data: r.data }
 }
 
-/** Dirección pide que se vuelva a firmar la ficha. Nada automático: lo pide una persona. */
+/**
+ * Dirección registra la firma en papel de la ficha (10b-3): la del tutor legal que firmó el papel, a su
+ * nombre. Con el alta pendiente, registrarla es finalizar.
+ */
+export async function registrarFirmaPresencial(input: unknown): Promise<FirmarFichaResult> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'alta.firma.errors.no_autorizado' }
+  const r = await registrarFirmaPresencialFicha(supabase, user.id, input, await getRequestContext())
+  if (!r.ok) return { success: false, error: r.error, faltan: r.faltan }
+  revalidatePath('/[locale]/alta/[ninoId]', 'page')
+  revalidatePath('/[locale]/admin/ninos/[id]', 'page')
+  return { success: true, data: r.data }
+}
+
+/**
+ * Dirección pide la firma de la ficha: que se vuelva a firmar, o que se firme un alta cerrada sin ella
+ * (10b-3). Nada automático: lo pide una persona.
+ */
 export async function pedirRefirmaFichaAction(
   ninoId: string
 ): Promise<{ success: true; data: { id: string } } | { success: false; error: string }> {

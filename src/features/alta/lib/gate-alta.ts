@@ -27,8 +27,8 @@ type Client = SupabaseClient<Database>
  * - `imagen`: la RESPUESTA, «sí» o «no», no un «sí» (10a-2, art. 7.4). Con la familia, la de quien
  *   cierra. En el alta en papel, la del tutor legal que firmó el papel, anotada por Dirección: nunca
  *   la de la persona de Dirección (decisión del responsable del 2026-11-18, «Las dos de la 10b-2,
- *   resueltas»). Hasta la 10b-3 la base no sabe qué tutor firmó el papel, así que aquí basta la de
- *   uno de los tutores legales del niño.
+ *   resueltas»). Antes de registrar la firma aquí basta la de uno de los tutores legales del niño:
+ *   el que firmó el papel se dice al registrarla, y desde la 10b-3 la base mira la suya.
  * - `tutor_sin_cuenta` (alta en papel): ningún tutor legal tiene todavía cuenta vinculada al niño
  *   (su email era de otra cuenta y está invitado, o falta que acepte). La respuesta de imagen es de
  *   una cuenta (`consentimientos.usuario_id`), así que el alta espera a que acepte la invitación: la
@@ -227,6 +227,9 @@ export function faltanDeHint(hint: string | null | undefined): BloqueAlta[] | nu
       return ['identidad']
     case 'datos_tutor_por_completar':
       return ['tutor1', 'tutor2']
+    // 10b-3 (`20270130120000`): el libro de familia, que hasta entonces solo miraba la app.
+    case 'libro_familia_por_subir':
+      return ['documentos']
     case 'servicios_por_contestar':
       return ['servicios']
     case 'gastos_por_contestar':

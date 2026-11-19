@@ -28,6 +28,7 @@ import {
   type TestCentro,
   type TestUser,
 } from './setup'
+import { dejarListaParaCerrar } from './ficha-para-cerrar'
 
 /**
  * El alta se cierra con los documentos del centro firmados (fase 4, 4b-2; `20270109120000`), contra
@@ -190,6 +191,10 @@ describe('El cierre del alta y los documentos del centro (4b-2)', () => {
     // La base, después de la app: Bea (firmado, con uno sin subir y uno opcional pendientes) y Carla
     // (solo uno sin subir) cierran; Ana no.
     expect(await cierra(tutora, n.ana)).toBe('P0001 documentos_por_firmar')
+    // 10b-3: el cierre exige también el libro, la ficha firmada y la respuesta de imagen, que van
+    // después de los documentos (Ana frena antes, por ellos).
+    await dejarListaParaCerrar(n.bea, tutora.id)
+    await dejarListaParaCerrar(n.carla, tutora.id)
     expect(await cierra(tutora, n.bea)).toBe('lista')
     expect(await cierra(tutora, n.carla)).toBe('lista')
   })
@@ -209,6 +214,7 @@ describe('El cierre del alta y los documentos del centro (4b-2)', () => {
     expect(await estados(n.ana)).toBe(
       'Normas=firmado, Sin subir=falta_documento, Opcional=por_firmar'
     )
+    await dejarListaParaCerrar(n.ana, tutora.id)
     expect(await cierra(admin, n.ana)).toBe('lista')
   })
 

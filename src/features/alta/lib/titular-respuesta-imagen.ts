@@ -14,9 +14,9 @@ import { leerTutoresLegalesConCuenta } from './gate-alta'
  *
  * - La familia (vínculo con el niño) contesta por sí: el titular es quien tiene la sesión.
  * - La Dirección en el alta en papel (sin vínculo) anota la del tutor legal que firmó el papel, que
- *   tiene que ser uno de los tutores legales del niño con cuenta. Nunca ella misma: hasta la 10b-3 la
- *   base no lo impide en el «sí» (N2, medido el 2026-11-18: `otorgar` acepta a Dirección como
- *   titular), así que se impide aquí, y la 10b-3 lo cierra en la base.
+ *   tiene que ser uno de los tutores legales del niño con cuenta. Nunca ella misma, ni nadie que no lo
+ *   sea: lo dice aquí, antes, y la base lo frena desde la 10b-3 (N2, `20270129120000`; antes
+ *   `otorgar` aceptaba a Dirección, o a cualquiera, como titular).
  *
  * El modo lo decide el servidor (`modoFirmaDocumento`), nunca el navegador.
  */

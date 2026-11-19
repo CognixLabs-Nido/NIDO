@@ -373,6 +373,9 @@ export const SECCIONES_RECOLECTAR = {
     nombre_tecleado: SALE,
     plantilla_pdf_version: SALE,
     rol_firmante: SALE,
+    // 10b-3: en la presencial, el tutor del papel. Aquí las firmas son las que hizo la persona (la
+    // digital no lleva tutor); en las de Dirección, el tutor es otra persona.
+    tutor_id: NS_PERSONA,
     user_agent: SALE,
   }),
   'nino.ficha': seccion('ninos', {
@@ -633,6 +636,8 @@ export const SECCIONES_RECOLECTAR = {
     nombre_tecleado: SALE,
     plantilla_pdf_version: SALE,
     rol_firmante: SALE,
+    // 10b-3: el tutor legal de quien es la firma en papel; su uuid, como el del firmante, no se lee.
+    tutor_id: NS_PERSONA,
     user_agent: NS_IP_FICHA_OTROS,
   }),
   // Dirección pidió volver a firmar la ficha (10b): cuándo. Quién, no: es Dirección por definición,

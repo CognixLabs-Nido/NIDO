@@ -45,21 +45,19 @@ export const PASO_MIN_AUTENTICADO = PASOS_ALTA.indexOf('acuses')
  * 2026-11-04): el paso `sepa` no aparece y el alta se completa en efectivo, como cuando la familia
  * omite. Sin ningún concepto de servicio en Cuotas, el paso `servicios` tampoco (fase 8b, como el
  * SEPA sin CID). Sin importe de gastos de gestión para el curso del alta, el paso `gastos` tampoco
- * (fase 9: «un centro sin importe no ve el paso»). Con la familia, el último es `firma` (10b-2), que
- * cierra el alta al firmar; en el alta en papel (`conFirma` falso) no hay paso de firma y el último que
- * queda finaliza.
+ * (fase 9: «un centro sin importe no ve el paso»). El último es siempre `firma`, que cierra el alta al
+ * firmar: la familia con el dedo (10b-2) y, en el alta en papel, Dirección registra la firma del tutor
+ * legal que firmó el papel (10b-3; hasta entonces el papel terminaba con «Finalizar», sin firma).
  */
 export function pasosAlta(
   centroTieneCid: boolean,
   centroTieneServicios: boolean,
-  cursoTieneGastos: boolean,
-  conFirma: boolean
+  cursoTieneGastos: boolean
 ): readonly PasoAlta[] {
   return PASOS_ALTA.filter(
     (p) =>
       (p !== 'sepa' || centroTieneCid) &&
       (p !== 'servicios' || centroTieneServicios) &&
-      (p !== 'gastos' || cursoTieneGastos) &&
-      (p !== 'firma' || conFirma)
+      (p !== 'gastos' || cursoTieneGastos)
   )
 }
