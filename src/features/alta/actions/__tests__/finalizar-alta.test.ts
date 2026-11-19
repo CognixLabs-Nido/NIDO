@@ -364,6 +364,7 @@ describe('finalizarAlta · la imagen pide respuesta, no un «sí» (fase 10, 10a
 })
 
 const OTRO = '99999999-9999-4999-8999-999999999999'
+const OTRO_TITULAR = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 /** El segundo tutor CON CUENTA PROPIA, visto por el titular: la fase 6 le oculta sus personales. */
 const segundoConCuenta = {
   id: '88888888-8888-4888-8888-888888888888',
@@ -423,8 +424,11 @@ describe('finalizarAlta · el otro tutor con cuenta propia (fase 6, destapado en
     })
   })
 
-  it('si falla la función de los personales, el otro con cuenta NO pasa por «lo juzga la base»: no se cierra', async () => {
+  it('si falla la función de los personales, un tutor ajeno NO pasa por «lo juzga la base»: no se cierra', async () => {
+    // Todas las filas ajenas a quien cierra (como Dirección en el alta en papel): sin esto, la fila
+    // propia ilegible ya frenaba sola y el test pasaba por otra razón (control negativo, 2026-11-19).
     const estado = altaCompleta()
+    estado.familia_tutores[0] = { ...estado.familia_tutores[0], usuario_id: OTRO_TITULAR }
     estado.familia_tutores.push(segundoConCuenta)
     const { fake, rpcSpy } = makeFake(estado)
     const rpc = fake.rpc
