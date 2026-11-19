@@ -86,17 +86,19 @@ describe('RLS blog del aula — F10-0', () => {
     // Niño de tutorVe: matriculado en `aula`, con permiso de aparecer; vínculo con puede_ver_fotos.
     ninoVe = await createTestNino(centro.id)
     await matricular(ninoVe.id, aula.id, curso.id)
-    await otorgarImagen(ninoVe.id, tutorVe.id)
     await crearVinculo(ninoVe.id, tutorVe.id, 'tutor_legal_principal', { puede_ver_fotos: true })
+    await otorgarImagen(ninoVe.id, tutorVe.id)
 
     // Niño de tutorNoVe: matriculado en `aula`, vínculo SIN puede_ver_fotos.
     ninoNoVe = await createTestNino(centro.id)
     await matricular(ninoNoVe.id, aula.id, curso.id)
-    await otorgarImagen(ninoNoVe.id, tutorNoVe.id)
     await crearVinculo(ninoNoVe.id, tutorNoVe.id, 'tutor_legal_principal', {
       puede_ver_fotos: false,
     })
+    await otorgarImagen(ninoNoVe.id, tutorNoVe.id)
   })
+
+  const usuariosExtra: string[] = []
 
   afterAll(async () => {
     for (const id of publicacionesCreadas)
@@ -105,6 +107,7 @@ describe('RLS blog del aula — F10-0', () => {
     await deleteTestCentro(centroB.id)
     for (const u of [admin, coordinadora, tecnico, profeOtraAula, tutorVe, tutorNoVe, adminB])
       await deleteTestUser(u.id)
+    for (const id of usuariosExtra) await deleteTestUser(id)
   })
 
   async function asignarProfeConTipo(
@@ -131,7 +134,8 @@ describe('RLS blog del aula — F10-0', () => {
   // El flag `puede_aparecer_en_fotos` es DERIVADO del consentimiento (IU-0): se otorga/
   // revoca el consent de imagen POR NIÑO y el trigger consent-based deriva el flag. No se
   // setea a mano (IU-1b: un trigger fuerza el flag al valor derivado, ignora escrituras
-  // directas). p_tutor solo debe ser un usuario válido (service_role salta el guard).
+  // directas). Desde la 10b-3 (N2), p_tutor tiene que ser tutor legal del niño, también con
+  // service_role: el vínculo va ANTES del «sí».
   async function otorgarImagen(nino_id: string, tutor_id: string): Promise<void> {
     const { error } = await serviceClient.rpc('otorgar_consentimiento_imagen', {
       p_nino_id: nino_id,
@@ -271,7 +275,12 @@ describe('RLS blog del aula — F10-0', () => {
     // Etiqueta a un niño que de momento tiene permiso.
     const ninoTmp = await createTestNino(centro.id)
     await matricular(ninoTmp.id, aula.id, curso.id)
-    await otorgarImagen(ninoTmp.id, coordinadora.id)
+    // El «sí» es de un tutor legal del niño (10b-3, N2): uno propio, sin ver fotos, para no
+    // cambiar lo que ven los demás.
+    const tutorTmp = await createTestUser({ nombre: 'Tutor Tmp P2' })
+    usuariosExtra.push(tutorTmp.id)
+    await crearVinculo(ninoTmp.id, tutorTmp.id, 'tutor_legal_principal', { puede_ver_fotos: false })
+    await otorgarImagen(ninoTmp.id, tutorTmp.id)
     const { error: etErr } = await serviceClient
       .from('media_etiquetas')
       .insert({ media_id: mediaId, nino_id: ninoTmp.id, centro_id: centro.id })

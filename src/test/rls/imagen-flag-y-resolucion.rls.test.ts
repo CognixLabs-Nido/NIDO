@@ -11,6 +11,7 @@ import {
   createTestFamilia,
   createTestNino,
   createTestUser,
+  crearVinculo,
   deleteTestCentro,
   deleteTestUser,
   serviceClient,
@@ -83,6 +84,8 @@ describe('Imagen — el flag solo se deriva (IU-1b) y la resolución de etiqueta
     await asignarRol(profe.id, centro.id, 'profe')
     await asignarRol(tutor.id, centro.id, 'tutor_legal')
     nino = await createTestNino(centro.id, 'Nino Imagen Flag')
+    // El «sí» es de un tutor legal del niño, también con service_role (10b-3, N2).
+    await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal')
   }, 120_000)
 
   afterAll(async () => {

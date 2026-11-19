@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { hayTestId, propsDe, type SesionConFallos } from './lectura-fallida'
 import {
+  asignarRol,
   clientFor,
   createTestAula,
   createTestCentro,
@@ -91,6 +92,9 @@ describe('la ficha del niño de la familia no guarda la ficha médica que no pud
     nino = await createTestNino(c.id, 'Nino Ficha Familia No Pisa')
     await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Ficha Familia No Pisa' })
+    // Un tutor de verdad es del centro (`pertenece_a_centro`): sin el rol, `existe_consentimiento_imagen`
+    // le dice 42501, y hasta la 10b-3 la página se lo tragaba como «no hay» (ahora lanza).
+    await asignarRol(legal.id, c.id, 'tutor_legal')
     await crearFamiliaTutor(nino.familia_id, legal.id)
     vinculo = await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', {
       puede_ver_info_medica: true,
