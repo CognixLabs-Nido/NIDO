@@ -3028,6 +3028,35 @@ O2 | A dijo «no», B no ha contestado: B pregunta | PASA false | respuesta(B)=N
   de imagen vigente de alguien sin vínculo de tutor legal (el de la antigua admin; no se toca: la
   pregunta está con el responsable).
 
+**La precisión de N2: quién registra y quién es titular** (el responsable, 2026-11-19, recordando una
+premisa de Jose). Literal: «UNA MADRE PUEDE TRAER LA DOCUMENTACIÓN EN PAPEL Y LA DIRECTORA SUBIRLA EN SU
+NOMBRE, indicando que tiene el consentimiento escrito. Eso es legítimo y tiene que seguir funcionando.
+[...] QUIEN REGISTRA puede ser Dirección. Eso no se toca. QUIEN ES TITULAR del consentimiento tiene que
+ser un TUTOR LEGAL DEL NIÑO. Eso es lo que hoy no se comprueba. [...] quiero verlo como CONTROL
+POSITIVO de este cierre, no solo como un caso más. Lo que se rechaza es el titular que no es tutor
+legal del niño: la propia Dirección (tu caso D) y la profe sin vínculo (tu caso X). Esos dos son los
+controles negativos. Si lo implementas como «el llamante tiene que ser el titular», rompes la premisa
+de Jose y el alta en papel deja de funcionar. [...] Es la misma distinción que ya hiciste en la fase 6
+entre quién escribe y de quién son los datos.»
+
+- **La regla:** la comprobación es sobre el **titular** (`p_tutor` después de resolverlo), nunca sobre
+  quien llama. Dirección sigue registrando el «sí» y el «no» del tutor, presencial y a su nombre.
+- **El control positivo, medido el mismo día** (tanda 3 del mismo ensayo; el camino bueno no estaba
+  en las dos primeras: P1 es la firma presencial de la ficha, no esto). Copiado del log:
+
+```
+N2+ | D registra el «sí» de T, presencial, a su nombre | PASA … | respuesta(T)=si | presencial a nombre de T=1 | a nombre de D=0
+N2- | D registra el «no» de T, presencial, a su nombre | PASA … | respuesta(T)=no
+```
+
+Los dos tienen que seguir pasando con N2 cerrada; N2a (Dirección) y N2b (la profe) son los
+controles negativos.
+
+- **`firma_imagen_sync`, con la misma regla:** la firma presencial de una autorización de imagen la
+  registra Dirección y **no dice de qué tutor es**, así que su titular sería Dirección (S1). Se
+  rechaza por eso, no por quién la registra; el papel sigue entrando por `otorgar` con el tutor como
+  titular (N2+).
+
 **Cómo se cierra cada una** (propuesta, 2026-11-19):
 
 1. `marcar_matricula_lista`, con la matrícula `pendiente`, exige: una firma de la ficha que valga
@@ -3036,8 +3065,9 @@ O2 | A dijo «no», B no ha contestado: B pregunta | PASA false | respuesta(B)=N
    y el libro de familia (HINT `libro_familia_por_subir`). `firmar_ficha` ya inserta la firma antes
    de llamarla, así que firmar sigue cerrando. `validar_alta` exige una firma que valga
    (`ficha_sin_firmar`). Controles negativos: A1, A2, A3 y V1; A4 se queda como control positivo.
-2. `otorgar_consentimiento_imagen` exige que el titular sea tutor legal del niño, con la misma
-   comprobación y el mismo 22023 `no_es_tutor_legal` que `denegar` (N2a y N2b). `firma_imagen_sync`
+2. `otorgar_consentimiento_imagen` exige que el **titular** sea tutor legal del niño (no quien llama),
+   con la misma comprobación y el mismo 22023 `no_es_tutor_legal` que `denegar`. Control positivo:
+   N2+ (y N2-); controles negativos: N2a y N2b. `firma_imagen_sync`
    rechaza la firma presencial de una autorización de imagen (22023 `no_es_tutor_legal`): la firma no
    dice de qué tutor es, y el «sí» en papel ya tiene su camino a nombre del tutor (`otorgar` con
    `p_tutor`). La app deja de ofrecerla para ese tipo. Control negativo: S1. En producción no hay
