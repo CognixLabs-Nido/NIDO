@@ -2851,6 +2851,18 @@ A5 | segundo tutor sin el PDF del DNI | P0001 faltan datos de los tutores por co
   había pasado (Postgres evaluó la subconsulta antes); repetido con las dos lecturas en sentencias
   separadas, lo de arriba. La primera, en `ensayo-1-estado-leido-antes.log`.
 
+**El estado transitorio entre la 10b-2 y la 10b-3, escrito a propósito** (confirmado por el
+responsable el 2026-11-19). Literal: «entre este PR y el 10b-3 la base todavía no exige la firma, así
+que un alta puede cerrarse sin ficha firmada por la API. Es el estado transitorio que ya decidimos,
+pero quiero que esté escrito, porque es exactamente la clase de hueco que dentro de un mes alguien
+encuentra y no sabe si era a propósito.» Lo que dice el ensayo de arriba: el tutor llama a
+`marcar_matricula_lista` con todo puesto y 0 firmas, y el alta pasa a `lista` (caso `C+`). La app no
+lo ofrece (la 10b-2 cambia «Finalizar» por firmar), pero una llamada directa a la API cierra el alta
+sin ficha firmada, y lo mismo sin la respuesta de imagen o sin el libro de familia. **Es a propósito
+y dura hasta la 10b-3**, que lo cierra en `marcar_matricula_lista` con esos casos como control
+negativo. Mientras tanto, a un alta cerrada así no se le puede pedir que vuelva a firmar
+(`pedir_refirma_ficha` → `sin_firma`); también lo abre la 10b-3.
+
 **Los dos tutores con cuenta no podían cerrar el alta desde la app** (hallazgo del 2026-11-18 al
 construir el test de la 10b-2; existe en `main` desde la fase 6, #526, 2026-11-13). El gate de la
 app daba «no se pudo leer» (`{ ok: false }` → `alta.errors.finalizar_fallo`) si no veía los datos
