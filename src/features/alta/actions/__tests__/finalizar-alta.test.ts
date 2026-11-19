@@ -392,7 +392,9 @@ describe('finalizarAlta · el otro tutor con cuenta propia (fase 6, destapado en
     const estado = altaCompleta()
     estado.familia_tutores.push(segundoConCuenta)
     const { fake } = makeFake(estado)
-    const { data } = await (fake.rpc('tutores_de_familia', { p_familia_id: FAMILIA }) as Promise<{
+    const { data } = await (fake.rpc('tutores_de_familia', {
+      p_familia_id: FAMILIA,
+    }) as unknown as Promise<{
       data: Array<{ usuario_id: string; ve_personales: boolean }>
     }>)
     expect(data.map((t) => [t.usuario_id, t.ve_personales])).toEqual([
@@ -419,6 +421,23 @@ describe('finalizarAlta · el otro tutor con cuenta propia (fase 6, destapado en
       error: 'alta.errors.incompleto',
       faltan: ['tutor1', 'tutor2'],
     })
+  })
+
+  it('si falla la función de los personales, el otro con cuenta NO pasa por «lo juzga la base»: no se cierra', async () => {
+    const estado = altaCompleta()
+    estado.familia_tutores.push(segundoConCuenta)
+    const { fake, rpcSpy } = makeFake(estado)
+    const rpc = fake.rpc
+    fake.rpc = (fn: string, args: Record<string, unknown>) =>
+      fn === 'tutores_de_familia'
+        ? Promise.resolve({ data: null, error: { code: 'XX000', message: 'fallo' } })
+        : rpc(fn, args)
+    createClientMock.mockReturnValue(fake)
+    expect(await finalizarAlta(NINO)).toEqual({
+      success: false,
+      error: 'alta.errors.finalizar_fallo',
+    })
+    expect(rpcSpy).not.toHaveBeenCalledWith('marcar_matricula_lista', expect.anything())
   })
 
   it('la fila de QUIEN CIERRA sin leer sí es un fallo: no se cierra', async () => {

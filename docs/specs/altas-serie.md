@@ -2866,6 +2866,19 @@ SECURITY DEFINER, medido arriba: A4a, A4b y A5 frenan), que frena con `datos_tut
 pantalla lo nombra (`faltanDeHint` → `tutor1`, `tutor2`). La regla del 2026-11-12 («Una lectura que
 falla no se lee como «no hay»») sigue: si la que no se lee es la fila de quien cierra, no se cierra.
 
+**Aprobado, y censo** (responsable, 2026-11-18). Literal: «El arreglo es el correcto: dejar al otro
+tutor a la base, que lo ve con permisos de dueño y ya lo comprueba con tutor_completo, y seguir sin
+cerrar cuando la fila ilegible es la del que cierra. Apruébalo como está. PERO ESTO NO ES UN BUG
+SUELTO, ES UNA CONSECUENCIA DE MI DECISIÓN DE LA FASE 6, y lo que me preocupa es lo que no hemos
+visto. La regla única cerró los datos del otro tutor, y al menos un sitio de la app leyó ese «no tengo
+permiso» como «no se pudo leer» y se rindió. Eso es el patrón de los 454 por la puerta de atrás: no un
+fallo de red, sino un permiso que ahora dice no. CÉNSALO, acotado: todos los sitios de la app que leen
+datos de OTRO tutor, y qué hacen cuando la lectura no devuelve lo que esperaban. Dime el número y
+cuántos de ellos se rinden, se quedan en blanco o lo cuentan como «falta». El radio de 17 ficheros
+que mediste en la fase 6 era de quién LEE esas columnas; esto es otra cosa: qué hacen con el no. Si
+aparece más de uno, lo arreglamos todo en este PR, porque lleva cinco días en producción y es el
+mismo defecto.»
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.

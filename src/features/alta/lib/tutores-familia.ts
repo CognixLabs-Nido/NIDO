@@ -44,7 +44,17 @@ export interface TutorFamiliaRow {
 export async function leerTutoresDeNino(
   client: SupabaseClient<Database>,
   ninoId: string
-): Promise<{ familiaId: string | null; tutores: TutorFamiliaRow[]; leidos: boolean }> {
+): Promise<{
+  familiaId: string | null
+  tutores: TutorFamiliaRow[]
+  leidos: boolean
+  /**
+   * `false`: falló `tutores_de_familia`, y los `ve_personales` en falso NO son la regla de la fase 6
+   * («este tutor tiene cuenta y gestiona él sus datos»), son que no se pudo leer. Sin esto las dos
+   * cosas llegaban iguales (censo del 2026-11-18, «qué hacen con el no»).
+   */
+  personalesLeidos: boolean
+}> {
   const { data: nino, error: errorNino } = await client
     .from('ninos')
     .select('familia_id')
@@ -53,9 +63,9 @@ export async function leerTutoresDeNino(
   // `leidos: false` = una de las dos lecturas falló: los tutores vacíos NO son «no hay perfil». Quien
   // va a escribir o a decidir con ellos lo mira (el paso del tutor del alta guarda los seis campos:
   // sobre un perfil que no se leyó pisaba el nombre y vaciaba la dirección, 2026-11-12, medido).
-  if (errorNino) return { familiaId: null, tutores: [], leidos: false }
+  if (errorNino) return { familiaId: null, tutores: [], leidos: false, personalesLeidos: false }
   const familiaId = nino?.familia_id ?? null
-  if (!familiaId) return { familiaId: null, tutores: [], leidos: true }
+  if (!familiaId) return { familiaId: null, tutores: [], leidos: true, personalesLeidos: true }
 
   const { data: rows, error: errorTutores } = await client
     .from('familia_tutores')
@@ -65,10 +75,12 @@ export async function leerTutoresDeNino(
     .eq('familia_id', familiaId)
     .is('deleted_at', null)
 
-  if (errorTutores) return { familiaId, tutores: [], leidos: false }
+  if (errorTutores) return { familiaId, tutores: [], leidos: false, personalesLeidos: false }
 
   // Los cinco nuevos: si la función falla, ningún tutor los tiene leídos (y la pantalla lo dice).
-  const { data: nuevos } = await client.rpc('tutores_de_familia', { p_familia_id: familiaId })
+  const { data: nuevos, error: errorNuevos } = await client.rpc('tutores_de_familia', {
+    p_familia_id: familiaId,
+  })
   const nuevoDe = new Map((nuevos ?? []).map((n) => [n.id, n]))
 
   const tutores: TutorFamiliaRow[] = (rows ?? [])
@@ -100,7 +112,7 @@ export async function leerTutoresDeNino(
       a.tipo_vinculo === b.tipo_vinculo ? 0 : a.tipo_vinculo === 'tutor_legal_principal' ? -1 : 1
     )
 
-  return { familiaId, tutores, leidos: true }
+  return { familiaId, tutores, leidos: true, personalesLeidos: !errorNuevos }
 }
 
 /** Reexport del mapeador para quien solo necesita el sentido vínculo→rol. */

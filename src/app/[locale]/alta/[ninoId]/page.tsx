@@ -250,7 +250,12 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       // Fase 6: lo que no se pudo leer no se ofrece a guardar (la pantalla lo dice). Un tutor con su
       // propia cuenta, visto por el otro, gestiona él sus datos.
       legibles: row.ve_personales,
-      gestionaElOtro: row.tiene_cuenta && row.usuario_id !== user?.id && !row.ve_personales,
+      // Solo si la lectura funcionó: si falló, no es «lo gestiona el otro», es «no se pudo leer».
+      gestionaElOtro:
+        lecturaTutores.personalesLeidos &&
+        row.tiene_cuenta &&
+        row.usuario_id !== user?.id &&
+        !row.ve_personales,
     }
   }
   let datosTutor1 = await aDatosTutor('tutor_legal_principal')
