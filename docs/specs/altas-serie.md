@@ -2968,6 +2968,108 @@ la CI sale de `supabase status`), pero eso es una circunstancia, no una garantí
 `comoPostgres`: solo `127.0.0.1` o `localhost`, sin salida de emergencia. Vale para todo lo que los
 tests hacen como `postgres`, no solo para este REVOKE.
 
+### 10b-3: el encargo, lo medido abierto y el orden (2026-11-19)
+
+**El encargo** (el responsable, 2026-11-19). Literal, resumido en sus seis puntos: «1 · EL CIERRE DEL
+ALTA, en la base: firma válida, respuesta de imagen y libro de familia [...] Cada uno con su control
+negativo. 2 · N2 Y SU OTRA CARA [...] cualquiera con rol de Dirección autoriza la imagen de un niño
+del que no es nada. Y firma_imagen_sync hace lo mismo por otra entrada [...] mídelo. Las dos caen con
+su control negativo en este PR, y en el cuerpo escritas como puerta, no como detalle de atribución.
+3 · LA FIRMA PRESENCIAL DICE DE QUÉ TUTOR ES [...] Control negativo: una firma presencial sin decir de
+qué tutor es no debe poder registrarse. 4 · PEDIR LA FIRMA DE CUALQUIER ALTA SIN FICHA FIRMADA [...]
+el test de la 10b-2 que afirma ese hueco se reescribe aquí al estado bueno. 5 · firmas_ficha EN
+privado.contenido_bloqueado. 6 · LA FUNCIÓN PARA EL TUTOR QUE NO HA CONTESTADO.» Y: «Mide abierto cada
+una antes de cerrarla [...] Y dime el orden de aplicación: con seis cosas dentro quiero saber qué va
+antes del despliegue y qué después, y por qué.»
+
+**Medido abierto** (producción, 2026-11-19; ensayo terminado en RAISE, nacido de la plantilla, guarda
+de md5 sobre las 12 funciones vivas, predicciones escritas antes; `~/nido-logs/10/b3/abierto/`, 34 de
+34 como se predijo en la tanda 2; la 1.ª no llegó a medir S1 por un CHECK de la preparación). N es el
+alta `pendiente`, T su tutor legal, D la admin del centro, X una profe sin vínculo, O un niño `activa`
+con dos tutores legales, A y B. Copiado del log (los uuid, abreviados):
+
+```
+C+ | T firma la ficha | PASA … | estado=lista | firmas=1 | presenciales=0 | refirmas=0
+A1 | marcar con todo y 0 firmas | PASA … | estado=lista | firmas=0
+A2 | marcar sin la respuesta de imagen de T | PASA … | estado=lista | firmas=0
+A3 | marcar sin libro de familia | PASA … | estado=lista | firmas=0
+A4 | marcar sin el número del DNI del titular | P0001 … HINT=datos_tutor_por_completar | estado=pendiente
+V1 | validar_alta de una lista sin firma | PASA … | estado=activa | firmas=0
+N2a | D otorga a su propio nombre | PASA … | respuesta(D)=si
+N2b | D otorga a nombre de X (profe) | PASA … | respuesta(X)=si
+N2c | D deniega a nombre de X (profe) | 22023 … HINT=no_es_tutor_legal | respuesta(X)=NULL
+S1 | D firma presencial la autorización de imagen | PASA … | «sí» vigentes de D=1
+S1+ | T firma digital la autorización de imagen | PASA … | «sí» vigentes de T=1
+P1 | D registra la presencial sin respuesta propia | P0001 … HINT=imagen_sin_respuesta
+P1+ | D con un «sí» propio registra la presencial | PASA … | estado=lista | firmas=1 | presenciales=1
+R1 | D pide la firma de N sin firma | P0001 la ficha no está firmada HINT=sin_firma
+R1+ | D pide la firma de N firmada | PASA … | refirmas=1
+B1 | nino: clave firmas_ficha | id de la firma | … | false | false | firmas=1 | true
+B2 | usuario T: clave firmas_ficha | id de la firma | … | false | false
+O0 | B con «sí», A con «no»: existe | respuesta(B) | PASA false | respuesta(B)=si
+O1 | nadie ha contestado: B pregunta | PASA false | respuesta(B)=NULL
+O2 | A dijo «no», B no ha contestado: B pregunta | PASA false | respuesta(B)=NULL
+```
+
+- **N2 tiene dos caras, las dos abiertas:** a su propio nombre (N2a) y **a nombre de cualquiera** (N2b,
+  una profe sin vínculo con el niño). El «no» del mismo par ya lo frena (N2c).
+- **`firma_imagen_sync` es la misma puerta por otra entrada (S1):** la firma presencial de Dirección
+  sobre una autorización de imagen escribe un «sí» a nombre de Dirección. `firmas_autorizacion` no
+  tiene dónde decir de qué tutor es esa firma.
+- **La firma presencial de la ficha mira a quien la teclea (P1) y no dice de quién es (P1+):** con un
+  «sí» propio de Dirección, se registra y cierra el alta.
+- **El punto 5 tiene un matiz:** la purga del niño **borra** `firmas_ficha` (`privado.purgar_nino`,
+  10b-1), así que la rama «niño» de la vista de bloqueados no tendría nunca filas. El hueco con filas
+  es el del **tutor olvidado con el niño vivo**: `firma_bloqueada` le oculta su firma por
+  `bloqueo_retencion` y ni `contenido_bloqueado` ni `datos_bloqueados` la enseñan (B2). Entran las
+  dos ramas, por simetría con las demás firmas, y el test mide la del tutor.
+- **Producción hoy** (solo lectura, `~/nido-logs/10/b3/vivas/estado.log`): 1 `pendiente` (sin libro),
+  3 `activa`, 0 en `lista`, 0 firmas de ficha, 0 refirmas, 0 autorizaciones de imagen por niño, y 1 «sí»
+  de imagen vigente de alguien sin vínculo de tutor legal (el de la antigua admin; no se toca: la
+  pregunta está con el responsable).
+
+**Cómo se cierra cada una** (propuesta, 2026-11-19):
+
+1. `marcar_matricula_lista`, con la matrícula `pendiente`, exige: una firma de la ficha que valga
+   (`privado.firma_ficha_vigente`; HINT `ficha_sin_firmar`), la respuesta de imagen **del tutor de esa
+   firma** (el firmante en la digital, el tutor nombrado en la presencial; HINT `imagen_sin_respuesta`)
+   y el libro de familia (HINT `libro_familia_por_subir`). `firmar_ficha` ya inserta la firma antes
+   de llamarla, así que firmar sigue cerrando. `validar_alta` exige una firma que valga
+   (`ficha_sin_firmar`). Controles negativos: A1, A2, A3 y V1; A4 se queda como control positivo.
+2. `otorgar_consentimiento_imagen` exige que el titular sea tutor legal del niño, con la misma
+   comprobación y el mismo 22023 `no_es_tutor_legal` que `denegar` (N2a y N2b). `firma_imagen_sync`
+   rechaza la firma presencial de una autorización de imagen (22023 `no_es_tutor_legal`): la firma no
+   dice de qué tutor es, y el «sí» en papel ya tiene su camino a nombre del tutor (`otorgar` con
+   `p_tutor`). La app deja de ofrecerla para ese tipo. Control negativo: S1. En producción no hay
+   ninguna autorización de imagen por niño, así que no corta nada en uso.
+3. `registrar_firma_ficha_presencial(niño, tutor, …)`: el tutor es obligatorio, tiene que ser tutor
+   legal del niño con cuenta, y su respuesta de imagen es la que se mira. `firmas_ficha.tutor_id`
+   (nueva, FK `RESTRICT` a `usuarios`; CHECK: la presencial la lleva, la digital no) guarda de quién
+   es. Sin tutor no se registra (control negativo: P1+ con la firma de antes, y sin tutor).
+4. `pedir_refirma_ficha` deja de exigir una firma previa (control negativo: R1); el tutor firma por
+   la función, sin meter la fila a mano. La tarjeta de Dirección ofrece «Pedir que se firme» también
+   sin firma.
+5. `privado.contenido_bloqueado` y `privado.datos_bloqueados` con `firmas_ficha`, en las dos ramas,
+   sin la foto cifrada (la foto es de la 10c). Control negativo: B2.
+6. `oposicion_imagen(niño)`: sí o no, «hay un «no» vigente de un tutor legal del niño que no es quien
+   pregunta», a los tutores legales del niño y a Dirección, sin decir de quién. Control: O1 contra O2.
+
+**El orden de aplicación** (propuesta, 2026-11-19): **dos migraciones, una antes y otra después del
+despliegue de la app de la 10b-3.**
+
+- **Antes del despliegue** (`…_feat_ficha_puertas`): 2, 3, 4, 5 y 6. Ninguna rompe la app de la 10b-2
+  que está en producción: el «sí» en papel ya va a nombre de un tutor legal (`titularRespuestaImagen`)
+  y el «sí» del tutor, a su nombre; la app de la 10b-2 no llama a `registrar_firma_ficha_presencial`;
+  `pedir_refirma_ficha` solo se abre; lo 5 y lo 6 solo añaden. N2 se cierra así lo antes posible.
+- **Después del despliegue** (`…_feat_alta_exige_ficha_firmada`): 1. La app de la 10b-2 termina el
+  alta en papel con «Finalizar» (`marcar_matricula_lista` sin firma): con el cierre aplicado antes de
+  que llegue la pantalla de la firma presencial, Dirección no podría cerrar ninguna alta en papel.
+  Y un alta que quedó en `lista` sin firma no se podría validar hasta que la app enseñe por qué y
+  ofrezca pedir la firma. En producción hoy no la frena nada: 0 altas en `lista` y la `pendiente`
+  está incompleta.
+- La segunda se ensaya con la primera aplicada (en serie), con su guarda previa sobre el md5 de lo que
+  deja la primera.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
