@@ -1035,6 +1035,7 @@ export const DATOS_BLOQUEADOS: Record<string, string> = {
   consentimientos: 'consentimientos',
   acuses_alta: 'acuses del alta',
   firmas_documentos: 'firmas de los documentos del centro (presupuesto, normas…)',
+  firmas_ficha: 'firmas de la ficha del alta',
   medicacion_administrada: 'medicación administrada',
   lecturas_ficha_medica: 'registro de consultas de la ficha médica',
 }

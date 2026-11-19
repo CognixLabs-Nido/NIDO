@@ -128,6 +128,12 @@ async function registrarDecision(
       return fail('autorizaciones.errors.presencial_solo_direccion')
     rolFirmante = 'admin'
     metodoFirma = 'presencial'
+    // La autorización de imagen en papel no se firma aquí: la firma no dice de qué tutor es, y el «sí»
+    // quedaría a nombre de Dirección. Se anota en el alta en papel a nombre del tutor legal que firmó el
+    // papel; la base también la rechaza (`firma_imagen_sync`, 10b-3: por su
+    // TITULAR, no por quién la registra).
+    if (aut.tipo === 'autorizacion_imagenes' && d.decision === 'firmado')
+      return fail('autorizaciones.errors.imagen_presencial')
   } else {
     return fail('autorizaciones.errors.no_es_tutor')
   }
@@ -176,6 +182,7 @@ async function registrarDecision(
   if (insErr || !firma) {
     logger.warn('registrarDecision: insert', insErr?.message)
     if (insErr?.code === '42501') return fail('autorizaciones.errors.no_firmable')
+    if (insErr?.hint === 'no_es_tutor_legal') return fail('autorizaciones.errors.imagen_presencial')
     return fail('autorizaciones.errors.firma_fallo')
   }
 

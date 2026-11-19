@@ -51,6 +51,8 @@ export async function activarMatricula(
     if (error.code === '42501') return fail('matricula.errors.no_autorizado')
     if (error.hint === 'falta_fecha_incorporacion')
       return fail('matricula.validation.fecha_incorporacion_requerida')
+    // 10b-3 (`20270130120000`): sin una firma de la ficha que valga no se valida.
+    if (error.hint === 'ficha_sin_firmar') return fail('matricula.errors.ficha_sin_firmar')
     return fail('matricula.errors.activar_failed')
   }
   if (!data) return fail('matricula.errors.no_lista')

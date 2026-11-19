@@ -23,6 +23,7 @@ const e = (p: Partial<EstadoImagenNino>): EstadoImagenNino => ({
   hayVigente: false,
   miVigente: false,
   miNo: false,
+  hayOposicion: false,
   ...p,
 })
 const NINO = '22222222-2222-4222-8222-222222222222'
@@ -39,13 +40,15 @@ describe('ImagenAutorizacionTutor', () => {
       'concedida'
     )
     expect(estadoImagenClave(e({ miNo: true }))).toBe('denegada_por_mi')
-    // 10b-2: mi «sí» vigente y `existe_consentimiento_imagen` en false solo puede ser un «no» vigente
-    // de otro (es «hay un sí Y ningún no»): se dice que hay una oposición.
-    expect(estadoImagenClave(e({ miVigente: true }))).toBe('oposicion')
+    // Mi «sí» y un «no» vigente de otro (lo dice `oposicion_imagen`): hay una oposición.
+    expect(estadoImagenClave(e({ miVigente: true, hayOposicion: true }))).toBe('oposicion')
+    // 10b-3: sin respuesta mía, la base distingue «otro se ha opuesto» de «nadie ha dicho que sí».
+    expect(estadoImagenClave(e({ hayOposicion: true }))).toBe('oposicion_sin_respuesta')
+    expect(estadoImagenClave(e({}))).toBe('no_autorizada')
     // Mi «sí» y un consentimiento que vale, y aun así no sale: falta el «sí» del otro (los dos firmantes).
     expect(estadoImagenClave(e({ miVigente: true, hayVigente: true }))).toBe('pendiente_otro')
-    // Sin respuesta mía, false no distingue «nadie dijo sí» de «alguien dijo no» (la 10b-3).
-    expect(estadoImagenClave(e({}))).toBe('no_autorizada')
+    // Mi «no» manda sobre la oposición de otro: lo que se le dice es lo suyo.
+    expect(estadoImagenClave(e({ miNo: true, hayOposicion: true }))).toBe('denegada_por_mi')
   })
 
   it('sin respuesta: autorizar y no autorizar', () => {

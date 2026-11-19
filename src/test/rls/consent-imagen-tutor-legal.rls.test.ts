@@ -18,17 +18,17 @@ import {
 } from './setup'
 
 /**
- * El consentimiento de imagen solo lo da el tutor LEGAL (o Dirección en firma presencial).
+ * El consentimiento de imagen solo lo da el tutor LEGAL.
  *
  * Migración: 20261002120000_fix_consent_imagen_solo_tutor_legal
  *   - otorgar/revocar_consentimiento_imagen: `es_tutor_de` → `es_tutor_legal_de`.
  *   - firma_imagen_sync: la firma `firmado` del documento de imagen solo genera
- *     consentimiento si el firmante es tutor legal de ese niño (o Dirección presencial).
+ *     consentimiento si el firmante es tutor legal de ese niño. La firma presencial de Dirección
+ *     también lo generaba, a su nombre, hasta la 10b-3 (`20270129120000`): desde entonces se
+ *     rechaza, porque su titular sería Dirección (`roles-directora.rls.test.ts`).
  *
  * Un vínculo `autorizado` (persona de recogida) no puede otorgar ni revocar por las RPCs, y
  * aunque tenga `puede_firmar_autorizaciones` y firme el documento, no genera consentimiento.
- * La firma presencial de Dirección no se puede provocar desde PostgREST (la deriva el server
- * action); quedó cubierta por el ensayo con rollback contra el remoto.
  */
 
 type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']

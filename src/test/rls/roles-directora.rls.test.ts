@@ -271,7 +271,24 @@ describe('hace el día a día', () => {
     if (data) autorizaciones.push(data.id)
   })
 
-  it('su firma presencial del consentimiento de imagen lo registra (firma_imagen_sync)', async () => {
+  it('registra el «sí» de imagen en papel a nombre del tutor legal (otorgar_consentimiento_imagen)', async () => {
+    const { data, error } = await cDirectora.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: nino.id,
+      p_tutor: tutor.id,
+      p_metodo: 'presencial',
+    })
+    expect(error).toBeNull()
+    const fila = await serviceClient
+      .from('consentimientos')
+      .select('usuario_id, metodo_firma')
+      .eq('id', data as string)
+    expect(fila.data).toEqual([{ usuario_id: tutor.id, metodo_firma: 'presencial' }])
+  })
+
+  it('su firma presencial de la autorización de imagen no le da el «sí» a su nombre (N2, 10b-3)', async () => {
+    // Hasta la 10b-3 este caso afirmaba lo contrario: `firma_imagen_sync` dejaba un «sí» a nombre de la
+    // directora. La firma presencial no dice de qué tutor es; se rechaza por su titular, no por quién
+    // la registra (el «sí» en papel va por `otorgar_consentimiento_imagen`, arriba).
     const { error } = await cDirectora.from('firmas_autorizacion').insert({
       autorizacion_id: instanciaImg,
       nino_id: nino.id,
@@ -283,7 +300,8 @@ describe('hace el día a día', () => {
       texto_version: 'v1',
       nombre_tecleado: 'Directora Pruebas',
     })
-    expect(error).toBeNull()
+    expect(error?.code).toBe('22023')
+    expect(error?.hint).toBe('no_es_tutor_legal')
     const { data } = await serviceClient
       .from('consentimientos')
       .select('id')
@@ -291,7 +309,7 @@ describe('hace el día a día', () => {
       .eq('nino_id', nino.id)
       .eq('tipo', 'imagen')
       .is('revocado_en', null)
-    expect(data).toHaveLength(1)
+    expect(data).toEqual([])
   })
 })
 

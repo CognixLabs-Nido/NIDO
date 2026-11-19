@@ -15,20 +15,25 @@ interface Props {
 }
 
 /**
- * Clave del estado que ve el tutor. `denegada_por_mi`: ha dicho que no (10a-2). `pendiente_otro`:
- * hay un «sí» (el suyo u otro) y el niño no aparece, porque falta el otro tutor o porque el otro ha
- * dicho que no; desde aquí no se sabe cuál.
+ * Clave del estado que ve el tutor. `denegada_por_mi`: ha dicho que no (10a-2). `oposicion`: ha dicho
+ * que sí y otro se ha opuesto (10b-2); `oposicion_sin_respuesta`: no ha contestado y otro se ha
+ * opuesto (10b-3). `pendiente_otro`: hay un «sí» y nadie se opone, pero falta el «sí» de otro tutor.
  */
 export function estadoImagenClave(
   estado: EstadoImagenNino
-): 'concedida' | 'denegada_por_mi' | 'oposicion' | 'pendiente_otro' | 'no_autorizada' {
+):
+  | 'concedida'
+  | 'denegada_por_mi'
+  | 'oposicion'
+  | 'oposicion_sin_respuesta'
+  | 'pendiente_otro'
+  | 'no_autorizada' {
   if (estado.visible) return 'concedida'
   if (estado.miNo) return 'denegada_por_mi'
-  // Fase 10b-2 («cada tutor legal ve que el otro se ha opuesto», 2026-11-18): con mi «sí» vigente,
-  // `existe_consentimiento_imagen` solo da false si hay un «no» vigente de otro (es «hay un sí Y ningún
-  // no»). Se dice que hay una oposición, sin decir de quién. Al tutor que no ha contestado no se le
-  // puede deducir (sin «sí» propio, false es también «nadie ha dicho que sí»): eso llega con la 10b-3.
-  if (estado.miVigente && !estado.hayVigente) return 'oposicion'
+  // «Cada tutor legal ve que el otro se ha opuesto» (2026-11-18), sin decir quién. Con mi «sí» se
+  // deducía de `existe_consentimiento_imagen` (10b-2); al que no ha contestado se lo dice la base
+  // (`oposicion_imagen`, 10b-3), porque para él false era también «nadie ha dicho que sí».
+  if (estado.hayOposicion) return estado.miVigente ? 'oposicion' : 'oposicion_sin_respuesta'
   // Hay un «sí» que vale y aun así no sale: falta el «sí» de otro tutor (los dos firmantes).
   return estado.hayVigente || estado.miVigente ? 'pendiente_otro' : 'no_autorizada'
 }

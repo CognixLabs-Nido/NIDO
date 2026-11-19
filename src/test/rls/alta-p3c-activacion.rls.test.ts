@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { dejarListaParaCerrar } from './ficha-para-cerrar'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
@@ -151,6 +152,8 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
   }
 
   it('tutor legal con identidad completa finaliza: pendiente → lista', async () => {
+    // Desde la 10b-3 el cierre exige también el libro, la ficha firmada y la respuesta de imagen.
+    await dejarListaParaCerrar(ninoOk.id, tutorLegal.id)
     const { data, error } = await clientTutor.rpc('marcar_matricula_lista', {
       p_nino_id: ninoOk.id,
     })

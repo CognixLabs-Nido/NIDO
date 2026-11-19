@@ -16,6 +16,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { firmarFichaDeFixture } from './ficha-para-cerrar'
 
 /**
  * Fase 8a (`20270120120000` y `20270120130000`) — la fecha de incorporación.
@@ -37,6 +38,8 @@ describe('La fecha de incorporación (fase 8a)', () => {
   let aula: { id: string }
   let admin: TestUser
   let tutora: TestUser
+  /** Firma la ficha de cada alta `lista` (10b-3: `validar_alta` exige una firma que valga). */
+  let firmante: TestUser
   let cAdmin: Awaited<ReturnType<typeof clientFor>>
   let concepto: string
   /** Incorporado desde siempre: el control de que el motor cobra el mes que se mira. */
@@ -61,7 +64,11 @@ describe('La fecha de incorporación (fase 8a)', () => {
     expect(await fecha(ninoId)).toBe(f) // premisa
   }
 
-  /** Un niño con su alta terminada por la familia ('lista') y sin fecha: el de antes de validar. */
+  /**
+   * Un niño con su alta terminada por la familia ('lista') y sin fecha: el de antes de validar. Desde la
+   * 10b-3 un alta así lleva su ficha firmada (`validar_alta` la exige): la de `firmante`, su tutor legal
+   * secundario. Aquí no se mide la firma; la de `validar_alta` está en `ficha-puertas` y `ficha-cierre`.
+   */
   async function altaLista(nombre: string) {
     const n = await createTestNino(centro.id, nombre)
     const q = await serviceClient.from('ninos').update({ fecha_incorporacion: null }).eq('id', n.id)
@@ -73,6 +80,8 @@ describe('La fecha de incorporación (fase 8a)', () => {
       .single()
     if (error || !data) throw new Error(`matrícula lista: ${error?.message}`)
     expect(await fecha(n.id)).toBeNull() // premisa: sin fecha
+    await crearVinculo(n.id, firmante.id, 'tutor_legal_secundario')
+    firmarFichaDeFixture(n.id, firmante.id)
     return { ...n, matricula: data.id }
   }
 
@@ -137,6 +146,7 @@ describe('La fecha de incorporación (fase 8a)', () => {
     admin = await createTestUser({ nombre: 'Admin Incorporacion 8a' })
     await asignarRol(admin.id, centro.id, 'admin')
     tutora = await createTestUser({ nombre: 'Tutora Incorporacion 8a' })
+    firmante = await createTestUser({ nombre: 'Firmante Incorporacion 8a' })
     cAdmin = await clientFor(admin)
     const { data, error } = await serviceClient
       .from('conceptos_cobro')
@@ -180,6 +190,7 @@ describe('La fecha de incorporación (fase 8a)', () => {
     await deleteTestCentro(centro.id)
     await deleteTestUser(admin.id)
     await deleteTestUser(tutora.id)
+    await deleteTestUser(firmante.id)
   }, 60_000)
 
   describe('validar el alta', () => {

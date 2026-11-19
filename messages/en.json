@@ -1756,7 +1756,8 @@
           "pendiente_otro": "They do not appear in the photos: the other guardian also needs to authorise it.",
           "no_autorizada": "Not authorised: not shown in the centre's photos.",
           "denegada_por_mi": "You have said no: they do not appear in the centre's photos. You can change it whenever you like.",
-          "oposicion": "They do not appear in the photos: another legal guardian has objected. While their «no» stands there is no consent, even though you have authorised it."
+          "oposicion": "They do not appear in the photos: another legal guardian has objected. While their «no» stands there is no consent, even though you have authorised it.",
+          "oposicion_sin_respuesta": "Not shown in photos: another legal guardian has objected. While their «no» stands there is no consent. You have not answered yet."
         },
         "revocar": {
           "boton": "Revoke authorisation",
@@ -2584,7 +2585,8 @@
       "tutor2_ya_no": "We couldn't find the child of this invitation. Reload the page.",
       "tutor2_ya_entro": "The second guardian has already signed in: there is nothing to resend.",
       "tutor2_sin_email": "The family has no second guardian with an email: there is nobody to send the invitation to.",
-      "tutor2_correo_no_salio": "The invitation is ready, but the email didn't go out. Try again."
+      "tutor2_correo_no_salio": "The invitation is ready, but the email didn't go out. Try again.",
+      "ficha_sin_firmar": "The enrolment record is not signed, or the signature is no longer valid because some details changed. Ask the family to sign it from the child's record, then validate."
     }
   },
   "vinculo": {
@@ -3777,7 +3779,8 @@
       "revocar_no_permitido": "You can only revoke pick-up and medication.",
       "archivar_fallo": "Could not archive. Try again.",
       "archivar_no_permitido": "You do not have permission to archive this medication.",
-      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
+      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it.",
+      "imagen_presencial": "A paper image authorisation is not signed here: it would be in your name. It is recorded in the name of the legal guardian who signed it, in the paper enrolment."
     },
     "tipo": {
       "salida": "Outing",
@@ -5006,7 +5009,6 @@
         "ficha_cambiada": "The record has changed since you opened it. Open it again and sign what it says now.",
         "ya_firmada": "The record is already signed and the signature is still valid.",
         "firmar": "We could not save the signature. Please try again.",
-        "sin_firma": "The record is not signed yet: there is nothing to sign again.",
         "refirma": "We could not ask for it to be signed again. Please try again."
       },
       "direccion": {
@@ -5022,7 +5024,20 @@
         "refirma_pedida_ok": "We have asked the family to sign the record again.",
         "pedir_refirma_aviso": "The current signature will stop being valid and the family will have to sign the record again. No details change.",
         "cancelar": "Cancel",
-        "pedir_refirma_confirmar": "Ask for it"
+        "pedir_refirma_confirmar": "Ask for it",
+        "pedir_firma": "Ask for it to be signed",
+        "firma_pedida_ok": "We have asked the family to sign the record.",
+        "pedir_firma_aviso": "The family will be able to sign the record with the current details. It is not required for an enrolment that has already been validated: it is your decision. No details change.",
+        "firma_pendiente": "You have asked for it to be signed: the family still needs to sign it."
+      },
+      "papel": {
+        "intro": "Paper enrolment: open the record, check it against the signed paper and record which guardian signed it. Recording it completes the enrolment.",
+        "aviso": "You are recording the paper signature: it is stored in the name of the guardian who signed it, with the date, and the paper is the proof. Keep it.",
+        "de_quien": "Who signed the paper?",
+        "nombre": "Name as it appears on the paper",
+        "registrar": "Record the paper signature and complete the enrolment",
+        "sin_tutor_con_cuenta": "To record the paper signature, the guardian who signed it must have accepted their invitation: without an account it cannot be stored in their name.",
+        "no_se_pudo_leer": "We couldn't read the child's guardians. Please try again."
       }
     }
   },
@@ -5438,6 +5453,7 @@
       "consentimientos": "Consents",
       "acuses_alta": "Enrolment acknowledgements",
       "firmas_documentos": "Signed centre documents",
+      "firmas_ficha": "Enrolment record signatures",
       "medicacion_administrada": "Medication given",
       "lecturas_ficha_medica": "Medical record consultations"
     },

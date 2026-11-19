@@ -183,12 +183,9 @@ describe('los datos pedagógicos no se guardan sobre lo que no se leyó', () => 
     if (falla) expect(sesion.fallidas).toBeGreaterThan(0) // premisa: el fallo entró
     sesion.fallaTabla = null
     if (!p) throw new Error('la página no montó el asistente')
-    const i = pasosAlta(
-      p.centroTieneCid,
-      p.centroTieneServicios,
-      p.cursoTieneGastos,
-      !p.modoDireccion
-    ).indexOf('menor')
+    const i = pasosAlta(p.centroTieneCid, p.centroTieneServicios, p.cursoTieneGastos).indexOf(
+      'menor'
+    )
     expect(i).toBeGreaterThan(0)
     render(createElement(AltaTutorWizard, { ...p, pasoInicial: i }))
   }

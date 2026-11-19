@@ -23,6 +23,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { dejarListaParaCerrar } from './ficha-para-cerrar'
 
 type Cliente = SupabaseClient<Database>
 
@@ -455,6 +456,8 @@ describe('Los gastos de gestión (fase 9)', () => {
       p_forma: 'efectivo',
     })
     expect(d.error).toBeNull()
+    // 10b-3: el cierre exige también el libro, la ficha firmada y la respuesta de imagen.
+    await dejarListaParaCerrar(c, madre.id)
     expect((await cierra(c)).error).toBeNull()
     expect(await estado(c)).toBe('lista')
 
@@ -466,6 +469,7 @@ describe('Los gastos de gestión (fase 9)', () => {
       p_importe_centimos: 0,
     })
     expect(f.error).toBeNull()
+    await dejarListaParaCerrar(z, madre.id)
     expect((await cierra(z)).error).toBeNull()
     expect(await estado(z)).toBe('lista')
   })

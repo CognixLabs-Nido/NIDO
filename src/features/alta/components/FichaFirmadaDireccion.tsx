@@ -30,7 +30,11 @@ interface Props {
 /**
  * La ficha firmada en la ficha del niño de Dirección (10b-2): si está firmada, cuándo y cómo, si
  * vale, si se pidió volver a firmar, y el botón para pedirlo (`pedir_refirma_ficha`; nada
- * automático, lo pide una persona). La firma en papel llega con la 10b-3.
+ * automático, lo pide una persona).
+ *
+ * Sin ninguna firma (un alta validada antes de la ficha firmada, o cerrada sin ella), Dirección puede
+ * pedir que se firme (10b-3, decisión del 2026-11-19): a la familia no se le obliga, pero que se le
+ * pida es decisión de la directora, no un muro del sistema.
  */
 export function FichaFirmadaDireccion({ ninoId, estado, ultima }: Props) {
   const t = useTranslations('alta.firma.direccion')
@@ -40,10 +44,11 @@ export function FichaFirmadaDireccion({ ninoId, estado, ultima }: Props) {
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
 
+  const sinFirma = estado !== null && (!estado.firmada || !ultima)
   const pedir = () =>
     start(async () => {
       const r = await pedirRefirmaFichaAction(ninoId)
-      if (r.success) toast.success(t('refirma_pedida_ok'))
+      if (r.success) toast.success(t(sinFirma ? 'firma_pedida_ok' : 'refirma_pedida_ok'))
       else toast.error(tRoot(r.error))
       setOpen(false)
       router.refresh()
@@ -65,7 +70,26 @@ export function FichaFirmadaDireccion({ ninoId, estado, ultima }: Props) {
         {estado === null ? (
           <p className="text-muted-foreground">{t('no_se_pudo_leer')}</p>
         ) : !estado.firmada || !ultima ? (
-          <p className="text-muted-foreground">{t('sin_firma')}</p>
+          <>
+            <p className="text-muted-foreground">{t('sin_firma')}</p>
+            {estado.refirmaPedida ? (
+              <p className="text-accent-warm-800" data-testid="firma-pedida">
+                {t('firma_pendiente')}
+              </p>
+            ) : (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpen(true)}
+                  data-testid="pedir-firma"
+                >
+                  {t('pedir_firma')}
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <>
             <p>
@@ -96,8 +120,10 @@ export function FichaFirmadaDireccion({ ninoId, estado, ultima }: Props) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('pedir_refirma')}</DialogTitle>
-            <DialogDescription>{t('pedir_refirma_aviso')}</DialogDescription>
+            <DialogTitle>{t(sinFirma ? 'pedir_firma' : 'pedir_refirma')}</DialogTitle>
+            <DialogDescription>
+              {t(sinFirma ? 'pedir_firma_aviso' : 'pedir_refirma_aviso')}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button

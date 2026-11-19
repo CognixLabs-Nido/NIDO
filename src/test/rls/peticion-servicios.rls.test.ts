@@ -7,6 +7,7 @@ import { centroOfreceServicios } from '@/features/peticion-servicios/queries/lee
 import type { Database } from '@/types/db'
 
 import { comoPostgres } from './documentos-centro-fixture'
+import { dejarListaParaCerrar, firmarFichaDeFixture } from './ficha-para-cerrar'
 import {
   asignarRol,
   clientFor,
@@ -413,6 +414,8 @@ describe('La petición de servicios del alta (8b)', () => {
     expect(r.error?.hint).toBe('servicios_por_contestar')
     expect(await estado(n)).toBe('pendiente')
     await guardar('madre', n, [resp('matinera', 'no', null)])
+    // 10b-3: el cierre exige también el libro, la ficha firmada y la respuesta de imagen.
+    await dejarListaParaCerrar(n, madre.id)
     r = await cierra()
     expect(r.error).toBeNull()
     expect(await estado(n)).toBe('lista')
@@ -433,6 +436,7 @@ describe('La petición de servicios del alta (8b)', () => {
       nino_id: n,
     })
     await serviceClient.from('matriculas').update({ estado: 'pendiente' }).eq('nino_id', n)
+    await dejarListaParaCerrar(n, madre.id)
     const r = await s.madre.rpc('marcar_matricula_lista', { p_nino_id: n })
     expect(r.error).toBeNull()
     expect(await estado(n)).toBe('lista')
@@ -444,6 +448,7 @@ describe('La petición de servicios del alta (8b)', () => {
       resp('comedor', 'mensual', c.comedor3!),
       resp('matinera', 'dias_sueltos', c.matineraDia!),
     ])
+    await dejarListaParaCerrar(n, madre.id)
     expect((await s.madre.rpc('marcar_matricula_lista', { p_nino_id: n })).error).toBeNull()
     // Dirección corrige antes de validar: el de 5 días. Queda a su nombre en la auditoría.
     const corrige = await guardar('admin', n, [resp('comedor', 'mensual', c.comedor5!)])
@@ -461,6 +466,9 @@ describe('La petición de servicios del alta (8b)', () => {
       .eq('registro_id', fila!.id)
       .eq('accion', 'UPDATE')
     expect(audit.data).toEqual([{ accion: 'UPDATE', usuario_id: admin.id }])
+    // Lo que pidió la familia está en la ficha firmada: la corrección de Dirección invalida la firma
+    // (10b, «un cambio entre firmar y validar INVALIDA la firma»), y la familia vuelve a firmar.
+    firmarFichaDeFixture(n, madre.id)
 
     const { data: mat } = await serviceClient
       .from('matriculas')
@@ -536,6 +544,8 @@ describe('La petición de servicios del alta (8b)', () => {
     // Un alta de antes de la 8b: se cierra como postgres, sin pasar por la regla nueva.
     const m = await serviceClient.from('matriculas').update({ estado: 'lista' }).eq('nino_id', n)
     expect(m.error).toBeNull()
+    // 10b-3: validar exige la ficha firmada.
+    firmarFichaDeFixture(n, madre.id)
     const { data: mat } = await serviceClient
       .from('matriculas')
       .select('id')

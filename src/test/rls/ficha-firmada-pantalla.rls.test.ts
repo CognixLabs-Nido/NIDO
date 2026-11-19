@@ -186,9 +186,10 @@ describe('la ficha firmada en la app (fase 10b-2)', () => {
       { ninoId: N, hashVisto, nombreTecleado: 'Legal A Pantalla', firmaImagen: TRAZO },
       SIN_CONTEXTO
     )
-    // Los dos bloques: la base solo frena por la imagen (y solo diría el primero), y el libro de
-    // familia no lo mira: sin el gate, la firma cerraba el alta sin él (medido en la CI, 2026-11-18,
-    // la sonda que quita el gate de `firmarFichaNino`).
+    // Los dos bloques: la base frena por la imagen antes de insertar la firma (y solo diría eso). Hasta
+    // la 10b-3 el libro de familia no lo miraba: sin el gate, la firma cerraba el alta sin él (medido
+    // en la CI, 2026-11-18, la sonda que quita el gate de `firmarFichaNino`). Desde `20270130120000`
+    // `marcar_matricula_lista` lo exige (`libro_familia_por_subir`).
     expect(r).toEqual({
       ok: false,
       error: 'alta.errors.incompleto',
@@ -342,19 +343,21 @@ describe('la ficha firmada en la app (fase 10b-2)', () => {
     ])
   })
 
-  // OJO: el «sin_firma» de abajo es el HUECO medido el 2026-11-18, no el estado bueno: un alta que
-  // se cerró sin ficha firmada (las `activa` de antes y la que se cierre en papel antes de la 10b-3)
-  // no se puede pedir que se firme, y fuera de `lista` sin esa petición no firma nadie. La 10b-3 deja
-  // pedirla sin firma previa: entonces este aserto se pone rojo y se da la vuelta, a propósito
-  // (spec, «Las dos, confirmadas»).
-  it('pedir la refirma: con firma, sí; sin firma, hoy «sin_firma» (el hueco que cierra la 10b-3)', async () => {
+  // Hasta la 10b-3 el caso sin firma afirmaba el HUECO medido el 2026-11-18 («sin_firma»): un alta
+  // cerrada sin ficha firmada no se podía pedir que se firmase. Desde `20270129120000` Dirección pide
+  // la firma de cualquier alta sin ficha firmada (decisión del 2026-11-19), y este aserto se dio la
+  // vuelta, como estaba previsto.
+  it('pedir la firma: con firma, la refirma; sin ninguna firma, también (10b-3)', async () => {
     const r = await pedirRefirmaFicha(s.dir, N)
     expect(r.ok).toBe(true)
     const e = await leerEstadoFirmaFicha(s.dir, N)
     expect(e.ok && e.data.refirmaPedida).toBe(true)
-    expect(await pedirRefirmaFicha(s.dir, sinTutor)).toEqual({
-      ok: false,
-      error: 'alta.firma.errors.sin_firma',
-    })
+    // Premisa: el otro niño no tiene ninguna firma de la ficha.
+    const antes = await leerEstadoFirmaFicha(s.dir, sinTutor)
+    expect(antes.ok && antes.data.firmada).toBe(false)
+    expect(antes.ok && antes.data.refirmaPedida).toBe(false)
+    expect((await pedirRefirmaFicha(s.dir, sinTutor)).ok).toBe(true)
+    const despues = await leerEstadoFirmaFicha(s.dir, sinTutor)
+    expect(despues.ok && despues.data.refirmaPedida).toBe(true)
   })
 })

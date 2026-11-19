@@ -1756,7 +1756,8 @@
           "pendiente_otro": "No apareix en les fotos: falta que l'altre tutor també ho autoritze.",
           "no_autorizada": "No autoritzada: no apareix en les fotos del centre.",
           "denegada_por_mi": "Has dit que no: no apareix en les fotos del centre. Ho pots canviar quan vulgues.",
-          "oposicion": "No apareix en les fotos: un altre tutor legal s'hi ha oposat. Mentre el seu «no» seguisca vigent no hi ha consentiment, encara que tu ho hages autoritzat."
+          "oposicion": "No apareix en les fotos: un altre tutor legal s'hi ha oposat. Mentre el seu «no» seguisca vigent no hi ha consentiment, encara que tu ho hages autoritzat.",
+          "oposicion_sin_respuesta": "No apareix en les fotos: un altre tutor legal s'hi ha oposat. Mentre el seu «no» seguisca vigent no hi ha consentiment. Tu encara no has contestat."
         },
         "revocar": {
           "boton": "Revocar l'autorització",
@@ -2584,7 +2585,8 @@
       "tutor2_ya_no": "No hem trobat el xiquet d'aquesta invitació. Torna a carregar la pàgina.",
       "tutor2_ya_entro": "El segon tutor ja ha entrat: no hi ha res a reenviar.",
       "tutor2_sin_email": "La família no té un segon tutor amb email: no hi ha a qui enviar la invitació.",
-      "tutor2_correo_no_salio": "La invitació està preparada, però el correu no ha eixit. Torna-ho a intentar."
+      "tutor2_correo_no_salio": "La invitació està preparada, però el correu no ha eixit. Torna-ho a intentar.",
+      "ficha_sin_firmar": "La fitxa de l'alta no està firmada, o la firma ja no val perquè ha canviat alguna dada. Demana a la família que la firme des de la fitxa del xiquet i valida després."
     }
   },
   "vinculo": {
@@ -3777,7 +3779,8 @@
       "revocar_no_permitido": "Només pots revocar recollida i medicació.",
       "archivar_fallo": "No s’ha pogut arxivar. Torna-ho a provar.",
       "archivar_no_permitido": "No tens permís per a arxivar esta medicació.",
-      "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer."
+      "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer.",
+      "imagen_presencial": "L'autorització d'imatge en paper no es firma ací: quedaria al teu nom. S'anota a nom del tutor o tutora legal que la va firmar, en l'alta en paper."
     },
     "tipo": {
       "salida": "Eixida",
@@ -5006,7 +5009,6 @@
         "ficha_cambiada": "La fitxa ha canviat des que la vas obrir. Torna a obrir-la i firma-la amb el que hi ha ara.",
         "ya_firmada": "La fitxa ja està firmada i la firma continua valent.",
         "firmar": "No hem pogut guardar la firma. Torna-ho a provar.",
-        "sin_firma": "La fitxa encara no està firmada: no hi ha res que tornar a firmar.",
         "refirma": "No hem pogut demanar que es torne a firmar. Torna-ho a provar."
       },
       "direccion": {
@@ -5022,7 +5024,20 @@
         "refirma_pedida_ok": "Hem demanat a la família que torne a firmar la fitxa.",
         "pedir_refirma_aviso": "La firma actual deixarà de valdre i la família haurà de tornar a firmar la fitxa. No canvia cap dada.",
         "cancelar": "Cancel·lar",
-        "pedir_refirma_confirmar": "Demanar-ho"
+        "pedir_refirma_confirmar": "Demanar-ho",
+        "pedir_firma": "Demanar que es firme",
+        "firma_pedida_ok": "Hem demanat a la família que firme la fitxa.",
+        "pedir_firma_aviso": "La família podrà firmar la fitxa amb les dades d'ara. No és obligatori per a una alta ja validada: ho demanes tu. No canvia cap dada.",
+        "firma_pendiente": "Has demanat que es firme: falta que la família la firme."
+      },
+      "papel": {
+        "intro": "Alta en paper: obri la fitxa, compara-la amb el paper firmat i registra de quin tutor o tutora és la firma. En registrar-la acabes l'alta.",
+        "aviso": "Registres la firma del paper: queda a nom del tutor o tutora que el va firmar, amb la data, i el paper és la prova. Guarda'l.",
+        "de_quien": "Qui va firmar el paper?",
+        "nombre": "Nom tal com apareix en el paper",
+        "registrar": "Registrar la firma en paper i acabar l'alta",
+        "sin_tutor_con_cuenta": "Per a registrar la firma en paper, el tutor o tutora que la va firmar ha d'haver acceptat la seua invitació: sense compte no es pot guardar al seu nom.",
+        "no_se_pudo_leer": "No hem pogut llegir els tutors del xiquet. Torna-ho a intentar."
       }
     }
   },
@@ -5438,6 +5453,7 @@
       "consentimientos": "Consentiments",
       "acuses_alta": "Acusos de l'alta",
       "firmas_documentos": "Signatures dels documents del centre",
+      "firmas_ficha": "Firmes de la fitxa de l'alta",
       "medicacion_administrada": "Medicació administrada",
       "lecturas_ficha_medica": "Consultes de la fitxa mèdica"
     },

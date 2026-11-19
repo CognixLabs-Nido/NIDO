@@ -2627,6 +2627,7 @@ export type Database = {
           nombre_tecleado: string
           plantilla_pdf_version: number
           rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
+          tutor_id: string | null
           user_agent: string | null
         }
         Insert: {
@@ -2643,6 +2644,7 @@ export type Database = {
           nombre_tecleado: string
           plantilla_pdf_version: number
           rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
+          tutor_id?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -2659,6 +2661,7 @@ export type Database = {
           nombre_tecleado?: string
           plantilla_pdf_version?: number
           rol_firmante?: Database["public"]["Enums"]["tipo_vinculo"]
+          tutor_id?: string | null
           user_agent?: string | null
         }
         Relationships: [
@@ -2674,6 +2677,13 @@ export type Database = {
             columns: ["nino_id"]
             isOneToOne: false
             referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_ficha_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -6155,6 +6165,7 @@ export type Database = {
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }[]
       }
+      oposicion_imagen: { Args: { p_nino_id: string }; Returns: boolean }
       otorgar_consentimiento_imagen: {
         Args: {
           p_ip?: unknown
@@ -6373,6 +6384,7 @@ export type Database = {
           p_ip_address?: unknown
           p_nino_id: string
           p_nombre_tecleado: string
+          p_tutor: string
           p_user_agent?: string
         }
         Returns: string

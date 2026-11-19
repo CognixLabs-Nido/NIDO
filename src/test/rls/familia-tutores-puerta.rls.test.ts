@@ -22,6 +22,7 @@ import {
   type TestCentro,
   type TestUser,
 } from './setup'
+import { dejarListaParaCerrar } from './ficha-para-cerrar'
 
 type Cliente = SupabaseClient<Database>
 type Quien = 'titular' | 'segundo' | 'admin' | 'profe' | 'autorizado'
@@ -486,6 +487,8 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
         .from('familia_tutores')
         .update({ direccion_numero: null, estudios: null, empresa: null })
         .eq('familia_id', familia)
+      // 10b-3: el cierre exige también el libro, la ficha firmada y la respuesta de imagen.
+      await dejarListaParaCerrar(mia, u.titular.id)
       const { error } = await cierra()
       expect(error).toBeNull()
       expect(await estado()).toBe('lista')

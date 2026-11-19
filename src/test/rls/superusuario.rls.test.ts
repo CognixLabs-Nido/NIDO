@@ -299,8 +299,11 @@ describe('Superusuario', () => {
 
     it('firma presencial de una autorización (firmas_insert)', async () => {
       // La firma presencial la inserta la app con la sesión de quien firma (firmar-autorizacion.ts).
+      // La de la directora pasa `firmas_insert` y la frena después `firma_imagen_sync` porque es de
+      // imagen y su titular sería ella (22023, 10b-3); la del superusuario no pasa la política (42501).
       const directora = await cAdminA.from('firmas_autorizacion').insert(firmaPresencial(adminA))
-      expect(directora.error).toBeNull()
+      expect(directora.error?.code).toBe('22023')
+      expect(directora.error?.hint).toBe('no_es_tutor_legal')
       const sup = await cSuper.from('firmas_autorizacion').insert(firmaPresencial(superU))
       expect(sup.error?.code).toBe('42501')
     })

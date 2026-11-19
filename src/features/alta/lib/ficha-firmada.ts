@@ -3,11 +3,17 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
+import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { modoFirmaDocumento } from '@/features/documentos-centro/lib/firmar-documentos'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
-import { comprobarAlta, faltanDeHint, type BloqueAlta } from './gate-alta'
+import {
+  comprobarAlta,
+  faltanDeHint,
+  leerTutoresLegalesConCuenta,
+  type BloqueAlta,
+} from './gate-alta'
 
 /**
  * La ficha firmada en la app (fase 10b-2; spec `altas-serie.md`, «10b-2: el diseño»). Las reglas
@@ -15,8 +21,8 @@ import { comprobarAlta, faltanDeHint, type BloqueAlta } from './gate-alta'
  * quién firma (`firmar_ficha`, el tutor legal que puede leer la ficha médica), si la firma vale
  * (`estado_firma_ficha`) y pedir que se vuelva a firmar (`pedir_refirma_ficha`). Aquí, la sesión.
  *
- * La firma en papel de la ficha no está aquí: llega con la 10b-3, con la función que recibe el tutor
- * que firmó el papel (decisión del 2026-11-18).
+ * La firma en papel (10b-3, `20270129120000`): la registra Dirección y dice de qué tutor legal es
+ * (`registrar_firma_ficha_presencial` con el tutor); se mira la respuesta de imagen de ese tutor.
  */
 
 type Client = SupabaseClient<Database>
@@ -148,6 +154,9 @@ function errorDeFirma(error: { code?: string; hint?: string | null }): {
       return { error: `${E}.sin_acceso` }
     case 'alta_no_cerrada':
       return { error: 'alta.errors.finalizar_fallo' }
+    // La firma en papel a nombre de quien no es tutor legal del niño (10b-3).
+    case 'no_es_tutor_legal':
+      return { error: 'alta.errors.tutor_papel' }
   }
   if (error.code === '42501') return { error: `${E}.no_autorizado` }
   logger.warn('ficha firmada: firmar', { code: error.code, hint: error.hint })
@@ -175,19 +184,9 @@ export async function firmarFichaNino(
   const modo = await modoFirmaDocumento(sesion, ninoId, usuarioId)
   if (modo !== 'digital') return { ok: false, error: `${E}.no_autorizado` }
 
-  const { data: matricula, error: mError } = await sesion
-    .from('matriculas')
-    .select('estado')
-    .eq('nino_id', ninoId)
-    .eq('estado', 'pendiente')
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-  if (mError) {
-    logger.warn('ficha firmada: matrícula', { code: mError.code })
-    return { ok: false, error: `${E}.firmar` }
-  }
-  if (matricula) {
+  const pendiente = await altaPendiente(sesion, ninoId)
+  if (pendiente === null) return { ok: false, error: `${E}.firmar` }
+  if (pendiente) {
     const gate = await comprobarAlta(sesion, ninoId, usuarioId, false)
     if (!gate.ok) return { ok: false, error: 'alta.errors.finalizar_fallo' }
     if (gate.faltan.length > 0)
@@ -209,14 +208,92 @@ export async function firmarFichaNino(
   return { ok: true, data: { firmaId: data } }
 }
 
-/** Dirección pide que se vuelva a firmar (`pedir_refirma_ficha`; sin firma, `sin_firma`). */
+/** ¿El alta del niño está pendiente? `null` si no se pudo leer. */
+async function altaPendiente(sesion: Client, ninoId: string): Promise<boolean | null> {
+  const { data, error } = await sesion
+    .from('matriculas')
+    .select('estado')
+    .eq('nino_id', ninoId)
+    .eq('estado', 'pendiente')
+    .is('deleted_at', null)
+    .limit(1)
+    .maybeSingle()
+  if (error) {
+    logger.warn('ficha firmada: matrícula', { code: error.code })
+    return null
+  }
+  return data !== null
+}
+
+export const registrarFirmaPresencialSchema = z.object({
+  ninoId: z.string().uuid(),
+  /** El tutor legal que firmó el papel. La base comprueba que lo es (`no_es_tutor_legal`). */
+  tutorId: z.string().uuid(),
+  hashVisto: z.string().regex(/^[0-9a-f]{64}$/),
+  nombreTecleado: z.string().trim().min(1).max(200),
+})
+
+/**
+ * Dirección registra la firma en papel de la ficha (10b-3). La registra ella, en persona, y es la del
+ * tutor legal que firmó el papel: sin decir de qué tutor es, no se registra (control negativo del
+ * 2026-11-19). Con el alta pendiente, registrar es finalizar, con el mismo gate que «Finalizar».
+ *
+ * El modo lo decide el servidor (`modoFirmaDocumento`): solo Dirección sin vínculo con el niño. El
+ * superusuario no registra nada en nombre de una familia (ADR-0061); la base tampoco le deja.
+ */
+export async function registrarFirmaPresencialFicha(
+  sesion: Client,
+  usuarioId: string,
+  input: unknown,
+  contexto: ContextoPeticion
+): Promise<ResultadoFicha<{ firmaId: string }>> {
+  const parsed = registrarFirmaPresencialSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: `${E}.invalido` }
+  const { ninoId, tutorId, hashVisto, nombreTecleado } = parsed.data
+
+  const modo = await modoFirmaDocumento(sesion, ninoId, usuarioId)
+  if (modo !== 'presencial') return { ok: false, error: `${E}.no_autorizado` }
+  if (await esSuperusuario(sesion)) return { ok: false, error: `${E}.no_autorizado` }
+
+  const tutores = await leerTutoresLegalesConCuenta(sesion, ninoId)
+  if (tutores === null) return { ok: false, error: `${E}.firmar` }
+  if (!tutores.some((t) => t.usuarioId === tutorId))
+    return { ok: false, error: 'alta.errors.tutor_papel' }
+
+  const pendiente = await altaPendiente(sesion, ninoId)
+  if (pendiente === null) return { ok: false, error: `${E}.firmar` }
+  if (pendiente) {
+    const gate = await comprobarAlta(sesion, ninoId, usuarioId, true)
+    if (!gate.ok) return { ok: false, error: 'alta.errors.finalizar_fallo' }
+    if (gate.faltan.length > 0)
+      return { ok: false, error: 'alta.errors.incompleto', faltan: gate.faltan }
+  }
+
+  const { data, error } = await sesion.rpc('registrar_firma_ficha_presencial', {
+    p_nino_id: ninoId,
+    p_tutor: tutorId,
+    p_hash_visto: hashVisto,
+    p_nombre_tecleado: nombreTecleado,
+    p_ip_address: contexto.ip ?? undefined,
+    p_user_agent: contexto.userAgent ?? undefined,
+  })
+  if (error || !data) {
+    const e = error ? errorDeFirma(error) : { error: `${E}.firmar` }
+    return { ok: false, ...e }
+  }
+  return { ok: true, data: { firmaId: data } }
+}
+
+/**
+ * Dirección pide la firma de la ficha: que se vuelva a firmar, o que se firme por primera vez un alta
+ * cerrada sin ella (10b-3, decisión del 2026-11-19: el «no retroactivo» es decisión de la directora).
+ */
 export async function pedirRefirmaFicha(
   sesion: Client,
   ninoId: string
 ): Promise<ResultadoFicha<{ id: string }>> {
   const { data, error } = await sesion.rpc('pedir_refirma_ficha', { p_nino_id: ninoId })
   if (error || !data) {
-    if (error?.hint === 'sin_firma') return { ok: false, error: `${E}.sin_firma` }
     if (error?.code === '42501') return { ok: false, error: `${E}.no_autorizado` }
     logger.warn('ficha firmada: pedir refirma', { code: error?.code })
     return { ok: false, error: `${E}.refirma` }
@@ -230,6 +307,8 @@ export interface UltimaFirmaFicha {
   metodo: 'digital' | 'presencial'
   rolFirmante: string
   firmanteId: string
+  /** En la presencial, el tutor legal que firmó el papel (10b-3); en la digital, `null`. */
+  tutorId: string | null
 }
 
 export async function leerUltimaFirmaFicha(
@@ -238,7 +317,7 @@ export async function leerUltimaFirmaFicha(
 ): Promise<ResultadoFicha<UltimaFirmaFicha | null>> {
   const { data, error } = await sesion
     .from('firmas_ficha')
-    .select('firmado_at, metodo_firma, rol_firmante, firmante_id')
+    .select('firmado_at, metodo_firma, rol_firmante, firmante_id, tutor_id')
     .eq('nino_id', ninoId)
     .order('firmado_at', { ascending: false })
     .order('id', { ascending: false })
@@ -256,6 +335,7 @@ export async function leerUltimaFirmaFicha(
       metodo: data.metodo_firma as UltimaFirmaFicha['metodo'],
       rolFirmante: String(data.rol_firmante),
       firmanteId: data.firmante_id,
+      tutorId: data.tutor_id,
     },
   }
 }
