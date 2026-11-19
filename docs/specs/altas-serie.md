@@ -2879,6 +2879,36 @@ que mediste en la fase 6 era de quién LEE esas columnas; esto es otra cosa: qu�
 aparece más de uno, lo arreglamos todo en este PR, porque lleva cinco días en producción y es el
 mismo defecto.»
 
+**El censo: qué hace la app con el «no» de la fase 6** (2026-11-19, leyendo cada sitio). Primero las
+formas de leer los datos de otro tutor, para no contar con un solo patrón: la función
+`tutores_de_familia` (`ve_personales`), la función `telefonos_familia_de_nino` (el teléfono lo ve
+siempre la familia: no dice «no» por la regla), el bucket `dni-tutores` (`puede_ver_dni_tutor`), por
+su nombre y por la constante `BUCKET_DNI_TUTORES` (la primera búsqueda, por el texto del bucket, se
+dejaba cinco ficheros que usan la constante), y el lector común `leerTutoresDeNino`. Las columnas
+abiertas de `familia_tutores` no dependen de qué tutor lee. **20 ficheros de la app** (sin tests):
+
+- **Se rendía ante el «no» de la regla: 1.** El gate (`comprobarAlta`), por dos entradas:
+  «Finalizar» y, desde la 10b-2, la firma. Arreglado (arriba).
+- **Se quedaba en blanco: 0. Lo contaba como «falta»: 0.** (El gate lo habría contado como «falta»
+  —`tutorCompleto` sobre los campos ocultos— si no se hubiera rendido antes.)
+- **La confusión al revés, un fallo leído como la regla: 1.** El lector `leerTutoresDeNino` ignoraba
+  el error de `tutores_de_familia`: todo `ve_personales` en falso y `leidos: true`. Con el arreglo del
+  gate eso habría pasado a «lo juzga la base». Arreglado: `personalesLeidos`, que miran el gate (sin
+  él, no se cierra) y la pantalla del alta (solo dice «lo gestiona el otro» si la lectura funcionó).
+- **Lo distinguen bien: 3.** La pantalla del alta (`legibles` y `gestionaElOtro`; `PasoTutor` no
+  pinta formulario ni el DNI de quien no se lee), `guardarDatosTutor` (no escribe una fila que no
+  gestiona: correcto) y la subida del DNI (la base y Storage lo rechazan, 403).
+- **No les llega nunca el «no»: 15.** Leen como Dirección (`gestiona_tutor` le da sí siempre: el
+  avance de las altas, la documentación del alta, la cola, el detalle de la familia y su página),
+  con el servicio (las dos invitaciones del tutor 2, el export, la cola al aplicar, las altas sin
+  terminar, el olvido y lo fiscal), solo columnas abiertas (los nombres en la ficha que se firma) o
+  el teléfono (`telefonos-familia`).
+
+Controles negativos, en unit, con las predicciones escritas antes: sin el arreglo del gate, 2 rojos
+de 4 (los predichos); sin el del lector, 2 rojos. La primera vez salió 1 de los 2 predichos: el test
+del gate con la función fallida pasaba igual porque la fila propia ilegible ya frenaba sola; rehecho
+con todas las filas ajenas (como Dirección en papel), da los 2.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
