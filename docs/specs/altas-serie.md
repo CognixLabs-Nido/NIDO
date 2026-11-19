@@ -3100,6 +3100,32 @@ despliegue de la app de la 10b-3.**
 - La segunda se ensaya con la primera aplicada (en serie), con su guarda previa sobre el md5 de lo que
   deja la primera.
 
+**R4 del export por el esquema, no por el nombre** (el responsable, 2026-11-19, en este PR). Las dos
+`firmas_ficha.tutor_id` pusieron rojo el recuento de reglas de `columnas-recolectar.test.ts`
+(`expected 183 to be 181`): la lista escrita a mano que decía qué columna es de persona
+(`autor|firmante|usuario…_id`) no las conocía, y entraban como un id corriente, en verde. Las palabras
+del responsable: «Añadir "tutor" a la lista desbloquea hoy y deja el mismo fallo esperando al
+siguiente nombre». Lo decidido:
+
+- **La clase la decide la base:** una columna es de persona si tiene clave ajena a `usuarios`,
+  `familia_tutores` o `auth.users` (`src/test/rls/columnas-de-persona.ts`), en
+  `export-columnas.rls.test.ts`. Las listas por nombre de los dos tests unit (`columnas-recolectar` y
+  `columnas-export`, que tenía el mismo defecto) se quitan.
+- **La pieza que lo hace correcto** (en palabras del responsable, «la pieza buena es la tercera»):
+  cada uuid sin clave ajena que no sea la clave primaria TIENE QUE ESTAR DECIDIDO, con su porqué, y
+  uno nuevo sin decidir pone el test rojo. «Sin eso, cambiar el nombre por el esquema solo habría
+  movido el punto ciego». Los cinco de hoy, con su motivo escrito **donde se declaran**
+  (`UUID_SIN_CLAVE`), no aquí: «quien añada la sexta leerá eso y no la documentación».
+- **`consultaBase` hereda la condición de `comoPostgres`:** solo `127.0.0.1` o `localhost`, sin
+  variable de entorno que lo desactive. «Negarse sin DB_URL no basta, porque DB_URL puede apuntar a
+  cualquier sitio».
+- **Control negativo:** una tabla nueva, creada y deshecha en una transacción como `postgres`, con una
+  columna de persona de nombre que ninguna lista conoce: la base la reconoce.
+- Medido antes (2026-11-19, producción en solo lectura): en `recolectar`, 25 por el nombre y 26 por
+  la clave ajena (la de más, `usuarios.id`), ninguna perdida; en `export_datos_sujeto`, 39 y 37: las
+  2 de menos son `olvido_solicitudes.tutores_legales` (un `uuid[]`, sin clave ajena posible), que
+  entra decidida. Uuid sin clave ajena fuera de la clave primaria: 5.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
