@@ -53,6 +53,9 @@ import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-da
 import { ExportButton } from '@/features/export/components/ExportButton'
 import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentacionTab'
 import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
+import { AvisoFichaFirmada } from '@/features/alta/components/AvisoFichaFirmada'
+import { FichaFirmadaDireccion } from '@/features/alta/components/FichaFirmadaDireccion'
+import { leerEstadoFirmaFicha, leerUltimaFirmaFicha } from '@/features/alta/lib/ficha-firmada'
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
@@ -186,6 +189,15 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
       ? (await getAltasSinTerminar(supabase, nino.centro_id))?.find((a) => a.ninoId === id)
       : undefined
 
+  // Fase 10b-2: la ficha firmada, a Dirección. Con la matrícula en `lista` y la firma vigente, cambiar un
+  // dato firmado la deja sin valor: se avisa ANTES de los formularios que lo cambian (2026-11-17).
+  const [firmaEstado, firmaUltima] = await Promise.all([
+    leerEstadoFirmaFicha(supabase, id),
+    leerUltimaFirmaFicha(supabase, id),
+  ])
+  const estadoFirma = firmaEstado.ok ? firmaEstado.data : null
+  const avisoFirma = matriculaActiva?.estado === 'lista' && estadoFirma?.vigente === true
+
   // F-3-F: para reincorporar (desarchivar) se elige aula del curso activo. Solo se
   // consulta en la ficha de un archivado (donde aparece el botón). Vacío ⇒ sin curso activo.
   const aulasReincorporar = archivado
@@ -284,6 +296,13 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
 
       {retencion && <EstadoRetencionNino estado={retencion} ninoId={id} />}
 
+      <FichaFirmadaDireccion
+        ninoId={id}
+        estado={estadoFirma}
+        ultima={firmaUltima.ok ? firmaUltima.data : null}
+      />
+
+      {avisoFirma && <AvisoFichaFirmada />}
       {enAlta && matriculaActiva && (
         <AvanceAltaCard
           estado={matriculaActiva.estado as 'pendiente' | 'lista'}
@@ -344,6 +363,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
         </TabsList>
 
         <TabsContent value="personales" className="space-y-3 pt-3">
+          {avisoFirma && <AvisoFichaFirmada />}
           <Card>
             <CardContent className="space-y-2 text-sm">
               <Row k={t('fields.nombre')} v={nino.nombre} />
@@ -427,6 +447,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
         </TabsContent>
 
         <TabsContent value="medica" className="space-y-3 pt-3">
+          {avisoFirma && <AvisoFichaFirmada />}
           <Card>
             <CardContent className="space-y-3 text-sm">
               <p className="text-muted-foreground border-info-300 bg-info-100 text-info-700 border-l-4 px-3 py-2 text-xs">
@@ -455,6 +476,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
         </TabsContent>
 
         <TabsContent value="pedagogico" className="space-y-3 pt-3">
+          {avisoFirma && <AvisoFichaFirmada />}
           {pedNoLeidos ? (
             <p
               className="text-destructive text-sm"

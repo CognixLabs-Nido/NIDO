@@ -982,6 +982,31 @@ Migración `20270128120000_feat_ficha_firmada` (solo añade; antes del despliegu
 - Medido abierto y cerrado en producción el 2026-11-18 (ensayos terminados en RAISE, LF y CRLF).
 - Test: `src/test/rls/ficha-firmada.rls.test.ts`.
 
+### Las pantallas de la ficha firmada (serie de altas, fase 10, 10b-2)
+
+Sin migración: usa las funciones de la 10b-1 con la sesión de quien mira. Spec
+`docs/specs/altas-serie.md`, «10b-2: el diseño» y siguientes.
+
+- **Ver la ficha para firmarla deja su lectura** (`ficha_para_firmar`): por eso la app la pide al
+  pulsar «Ver la ficha», no al entrar en el paso.
+- **Firmar es finalizar:** antes de `firmar_ficha`, el gate de la app (`comprobarAlta`, el mismo que
+  «Finalizar») con la matrícula pendiente; el HINT de la base se traduce al mismo checklist
+  (`faltanDeHint`). El libro de familia **solo lo mira el gate** (medido: sin él, la firma cerraba el
+  alta); la base lo exigirá en la 10b-3.
+- **La respuesta de imagen del alta en papel, a nombre del tutor legal** (`titularRespuestaImagen`):
+  Dirección anota la de uno de los tutores legales del niño con cuenta, nunca la suya. **N2 sigue
+  abierta en la base** (`otorgar_consentimiento_imagen` acepta a Dirección como titular, medido el
+  2026-11-18), y la otra entrada, `firma_imagen_sync` con la firma presencial: las cierra la 10b-3.
+- **El otro tutor con cuenta** (fase 6: sus datos personales no los ve el tutor 1): el gate no lo lee
+  como «no se pudo leer»; lo juzga la base (`tutor_completo`). Si la que no se lee es la fila de quien
+  cierra, o falló `tutores_de_familia` (`personalesLeidos`), no se cierra.
+- **«Pedir que se vuelva a firmar»** (`pedir_refirma_ficha`) no deja pedirlo sin una firma previa
+  (`sin_firma`): un alta cerrada sin ficha firmada no tiene hoy camino para firmarla fuera de `lista`.
+  Lo abre la 10b-3.
+- **`comoPostgres`** (los tests que actúan como `postgres`) solo contra `127.0.0.1` o `localhost`,
+  sin salida de emergencia: la guarda de la suite mira la URL de la API, no `DB_URL`.
+- Test: `src/test/rls/ficha-firmada-pantalla.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.

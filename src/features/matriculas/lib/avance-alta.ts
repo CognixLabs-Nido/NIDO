@@ -1,4 +1,4 @@
-import type { BloqueAlta } from '@/features/alta/actions/finalizar-alta'
+import type { BloqueAlta } from '@/features/alta/lib/gate-alta'
 import {
   frenaElAlta,
   hayObligatorioSubido,
@@ -100,6 +100,8 @@ export const LINEAS_DEL_GATE: Record<BloqueAlta, readonly ItemAvance[] | 'invita
   tutor2: ['tutor2'],
   documentos: ['nino', 'tutor1'],
   medico: ['medico'],
+  // Alta en papel sin ningún tutor legal con cuenta (10b-2): lo cumple que acepte la invitación.
+  tutor_sin_cuenta: 'invitacion',
   imagen: ['imagen'],
   documentos_centro: ['documentos_centro'],
   servicios: ['servicios'],

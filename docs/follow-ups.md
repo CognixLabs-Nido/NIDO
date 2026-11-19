@@ -94,6 +94,31 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## Prioridad: en cuanto acabe la fase 10
 
+- [ ] **PRIMERO DE LA COLA. Seis defensas que los tests dan por probadas y no prueban: un 42501
+      que sale por un `SELECT` que falta** (anotado el 2026-11-18; decisión del responsable del mismo
+      día: «LOS CINCO Y LOS 142 SE ARREGLAN AL TERMINAR LA FASE 10, no ahora: no son puertas
+      abiertas, son defensas sin probar, y la serie de altas se acaba primero»). Viene de la mutación
+      M19 de la 10b-1: B13 de `ficha-firmada.rls.test.ts` daba 42501 porque al `UPDATE … WHERE`
+      le faltaba el `SELECT` de la columna del `WHERE`, no por la defensa que decía medir.
+  - **No hay agujero**, medido el 2026-11-18 en el catálogo de producción (solo lectura, con control
+    positivo: `ninos` y `invitaciones` sí salen abiertas): `authenticated` no tiene `UPDATE`,
+    `DELETE`, `INSERT` ni `TRUNCATE` (ni de columna) en `info_medica_emergencia` ni en
+    `platform_admins`, ni `service_role` en `documentos_centro_versiones`, y ninguna de las tres
+    tiene política de escritura; `anon`, nada en ninguna de las 71 tablas.
+  - **Los cinco, uno a uno, como B13** (primero el catálogo: el rol no tiene ese privilegio; después
+    lo que ya hay), **cada uno con su mutación** en el CI y la predicción escrita antes:
+    `documentos-centro.rls.test.ts:260` (service_role, `UPDATE` de `documentos_centro_versiones`),
+    `info-medica.rls.test.ts:191` y `:208` (`UPDATE` y `DELETE` de `info_medica_emergencia`),
+    `superusuario.rls.test.ts:191` (`DELETE` de `platform_admins`).
+  - **Los 142 de anon NO se arreglan uno a uno.** `privilegios-tabla-anon.rls.test.ts`, los
+    `it.each` de `UPDATE` y `DELETE` (líneas 141–153). Medido (ensayo terminado en RAISE, tabla de
+    usar y tirar): sin privilegios y con solo `UPDATE`/`DELETE` el error es el mismo, código y texto
+    («permission denied for table t»), así que el mensaje no distingue las dos causas y esos asertos
+    no prueban nada; multiplicarlos por 71 tablas tampoco. Literal: «se sustituyen por UNA
+    comprobación de catálogo que afirme que anon no tiene ningún privilegio en ninguna tabla, con su
+    control positivo. Un aserto que mira el catálogo vale más que 142 que miran un mensaje ambiguo.»
+  - Los datos: `~/nido-logs/10/b/repaso-42501/` (`HALLAZGOS.md`, `puertas.txt`, `mensaje/`).
+
 - [ ] **El PDF del mandato SEPA: lo puede sustituir quien lo firmó, y lleva el IBAN en claro**
       (medido el 2026-11-17 en producción y en el código; decisión del responsable del mismo día:
       «Eso se cierra en cuanto acabe la fase 10»). Sin tocar hasta entonces.
@@ -124,6 +149,10 @@ serie de altas (`docs/specs/altas-serie.md`).
       quedan —menú del mes, pase de comidas, los dos de dinero y los dos duplicados— y el SEPA
       silencioso quedan apuntados con fecha para después de las altas. No los toques ahora.» Del censo
       de «una lectura que falla no se lee como "no hay"» (`altas-serie.md`, 454 sitios). _(Ola 1)_
+      **Buscar las DOS formas** (2026-11-19): el fallo leído como AUSENCIA («no hay nadie
+      autorizado») y el fallo leído como REGLA («lo gestiona el otro tutor», `leerTutoresDeNino`,
+      10b-2). La segunda no sale mirando `[]`/`null`: se busca dónde se ignora el `error` de una
+      lectura cuyo valor por defecto coincide con una respuesta legítima (un `false` de permiso).
 - [ ] **El esquema estricto en la agenda, las citas y los eventos** (2026-11-13, 08:13): «Lo del
       esquema estricto en la agenda, las citas y los eventos queda ANOTADO sin medir, para después de
       las altas. No lo toques ahora.» Sin medir. _(Ola 1)_

@@ -1605,6 +1605,11 @@
         "subtitulo": "El alta la pide desde ahora, pero no a los que ya estaban matriculados. A estas familias hay que reclamársela.",
         "no_se_pudo_leer": "No se ha podido leer qué niños tienen la tarjeta. Vuelve a cargar la página.",
         "vacio": "Todos los niños matriculados tienen la tarjeta sanitaria."
+      },
+      "sin_acceso_ficha": {
+        "titulo": "Tutores sin acceso a la ficha médica",
+        "subtitulo": "No pueden firmar la ficha del alta hasta que les des acceso a la ficha médica.",
+        "no_se_pudo_leer": "No hemos podido leer esta lista."
       }
     }
   },
@@ -1748,9 +1753,10 @@
         "titulo": "Autorización de imagen",
         "estado": {
           "concedida": "Concedida: puede aparecer en las fotos del centro.",
-          "pendiente_otro": "No aparece en las fotos: falta la autorización del otro tutor, o el otro tutor no la autoriza.",
+          "pendiente_otro": "No aparece en las fotos: falta que el otro tutor también lo autorice.",
           "no_autorizada": "No autorizada: no aparece en las fotos del centro.",
-          "denegada_por_mi": "Has dicho que no: no aparece en las fotos del centro. Puedes cambiarlo cuando quieras."
+          "denegada_por_mi": "Has dicho que no: no aparece en las fotos del centro. Puedes cambiarlo cuando quieras.",
+          "oposicion": "No aparece en las fotos: otro tutor legal se ha opuesto. Mientras su «no» siga vigente no hay consentimiento, aunque tú lo hayas autorizado."
         },
         "revocar": {
           "boton": "Revocar autorización",
@@ -4726,7 +4732,8 @@
         "emergencia": "Emergencias",
         "sepa": "Domiciliación bancaria",
         "servicios": "Servicios",
-        "gastos": "Gastos de gestión"
+        "gastos": "Gastos de gestión",
+        "firma": "Firma de la ficha"
       }
     },
     "identidad": {
@@ -4769,7 +4776,8 @@
       "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos.",
       "incompleto": "Faltan datos obligatorios por completar.",
       "acuse_fallo": "No se pudo registrar el acuse. Inténtalo de nuevo.",
-      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
+      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo.",
+      "tutor_papel": "Elige qué tutor legal firmó el papel."
     },
     "acuses": {
       "privacidad_titulo": "Privacidad",
@@ -4781,7 +4789,11 @@
       "imagen_libre": "Puedes decir que no: no impide terminar el alta, y puedes cambiarlo cuando quieras.",
       "imagen_boton_si": "Sí, autorizo",
       "imagen_boton_no": "No autorizo",
-      "imagen_denegado": "Has dicho que no autorizas la imagen."
+      "imagen_denegado": "Has dicho que no autorizas la imagen.",
+      "imagen_papel_ayuda": "Anota lo que contestó en el papel cada tutor legal. Queda a su nombre, no al tuyo.",
+      "imagen_papel_no_se_pudo_leer": "No hemos podido leer los tutores legales del niño.",
+      "imagen_papel_sin_cuenta": "Falta que el tutor legal acepte la invitación: hasta que tenga cuenta no se puede anotar su respuesta a las fotos.",
+      "imagen_papel_sin_respuesta": "sin respuesta"
     },
     "menor": {
       "direccion_titulo": "Dirección del menor",
@@ -4950,7 +4962,67 @@
         "documentos_centro": "Documentos del centro por firmar",
         "tutor2": "Datos del tutor 2",
         "servicios": "Servicios (contestar cada uno)",
-        "gastos": "Gastos de gestión (elegir cómo se pagan)"
+        "gastos": "Gastos de gestión (elegir cómo se pagan)",
+        "tutor_sin_cuenta": "Que un tutor legal acepte su invitación (sin cuenta no se puede guardar su respuesta a las fotos)."
+      }
+    },
+    "firma": {
+      "intro_alta": "Último paso: lee la ficha con todo lo que has declarado y fírmala. Al firmar terminas el alta y queda pendiente de que el centro la valide.",
+      "intro_refirma": "Lee la ficha con lo que hay ahora y fírmala de nuevo.",
+      "abrir": "Ver la ficha para firmarla",
+      "aviso": "Al firmar declaras que lo que dice la ficha es cierto. Queda guardada tal como la ves, con la fecha y tu firma. Si después cambias algún dato antes de que el centro valide el alta, tendrás que volver a firmarla.",
+      "nombre": "Tu nombre completo",
+      "trazo": "Tu firma",
+      "firmar_alta": "Firmar y terminar el alta",
+      "firmar": "Firmar la ficha",
+      "firmado_alta": "Ficha firmada: el alta está terminada.",
+      "firmado": "Ficha firmada.",
+      "sin_acceso": "No puedes firmar la ficha porque no tienes acceso a la ficha médica del niño, y la ficha la incluye. Pídele a la Dirección del centro que te dé acceso; después podrás firmarla aquí.",
+      "aviso_editar": "La ficha de este alta ya está firmada. Si cambias algún dato de la ficha antes de que el centro valide el alta, la firma deja de valer y habrá que volver a firmarla.",
+      "confirmar_editar_titulo": "La ficha ya está firmada",
+      "confirmar_editar_no": "Cancelar",
+      "confirmar_editar_si": "Entendido, revisar",
+      "motivo_refirma": {
+        "invalidada": "La firma de la ficha ya no vale porque ha cambiado algún dato. Vuelve a firmarla para que el centro pueda validar el alta.",
+        "sin_firma": "Falta firmar la ficha del alta. Fírmala para que el centro pueda validarla.",
+        "pedida": "El centro te pide que vuelvas a firmar la ficha."
+      },
+      "secciones": {
+        "nino": "El niño o la niña",
+        "tutor": "Tutor o tutora",
+        "pedagogicos": "Datos pedagógicos",
+        "servicios": "Servicios pedidos",
+        "gastos": "Gastos de gestión",
+        "imagen": "Fotos: respuesta de cada tutor",
+        "medico": "Datos médicos"
+      },
+      "errors": {
+        "no_autorizado": "No puedes firmar esta ficha.",
+        "leer": "No hemos podido leer la ficha. Inténtalo de nuevo.",
+        "sin_acceso": "No tienes acceso a la ficha médica del niño. Pídeselo a la Dirección del centro para poder firmar.",
+        "bloqueada": "La ficha médica de este niño está bloqueada y no se puede firmar.",
+        "invalido": "Faltan datos para firmar.",
+        "sin_trazo": "Dibuja tu firma para firmar.",
+        "ficha_cambiada": "La ficha ha cambiado desde que la abriste. Vuelve a abrirla y fírmala con lo que hay ahora.",
+        "ya_firmada": "La ficha ya está firmada y la firma sigue valiendo.",
+        "firmar": "No hemos podido guardar la firma. Inténtalo de nuevo.",
+        "sin_firma": "La ficha todavía no está firmada: no hay nada que volver a firmar.",
+        "refirma": "No hemos podido pedir que se vuelva a firmar. Inténtalo de nuevo."
+      },
+      "direccion": {
+        "titulo": "Ficha firmada",
+        "no_se_pudo_leer": "No hemos podido leer la firma de la ficha.",
+        "sin_firma": "La ficha no está firmada.",
+        "firmada_papel": "Firmada en papel el {fecha}.",
+        "firmada_familia": "Firmada por la familia el {fecha}.",
+        "vigente": "La firma vale: nadie ha cambiado los datos firmados.",
+        "refirma_pendiente": "Has pedido que se vuelva a firmar: falta que la familia la firme.",
+        "sin_valor": "La firma ya no vale: ha cambiado algún dato firmado.",
+        "pedir_refirma": "Pedir que se vuelva a firmar",
+        "refirma_pedida_ok": "Hemos pedido a la familia que vuelva a firmar la ficha.",
+        "pedir_refirma_aviso": "La firma actual dejará de valer y la familia tendrá que volver a firmar la ficha. No cambia ningún dato.",
+        "cancelar": "Cancelar",
+        "pedir_refirma_confirmar": "Pedirlo"
       }
     }
   },

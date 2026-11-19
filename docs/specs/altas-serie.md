@@ -2091,7 +2091,8 @@ redondeo con sus casos, los cinco sitios, la corrección y las funciones cerrada
   cuando quiera, con el mecanismo de `pide_refirma`. Nada automático.
 - **Alta en papel**: Dirección registra la firma presencial, teclea el nombre, sin trazo, y el papel
   es la prueba. Igual que en los documentos.
-- **Las tres altas ya validadas no firman nada hacia atrás.**
+- **Las tres altas ya validadas no firman nada hacia atrás.** _Matizada el 2026-11-19 («Pedir la
+  firma de cualquier alta sin ficha firmada»): no se les obliga, pero Dirección puede pedírselo._
 - **No se vuelve a firmar cada curso**: la renovación quedó fuera de la serie y sigue fuera.
 - **Lo de siempre**: exportación del art. 15, purga con el niño, el autorizado no ve nada de esto, y
   el test de la purga llega a los ficheros del bucket nuevo, no solo a su nombre.
@@ -2164,7 +2165,8 @@ todavía no rige: las funciones del tutor escriben directamente. Ver «Sin decid
 
 **3. Quién firma.** En producción, 4 niños vivos: 2 con dos tutores legales, 2 con uno. Ninguno con
 `requiere_ambos_firmantes`. Basta uno, y se guarda quién (decisión del 16). Matrículas: 3 activas
-(las tres altas validadas, que no firman hacia atrás) y 1 pendiente.
+(las tres altas validadas, que no firman hacia atrás; matizado el 2026-11-19: Dirección puede pedírselo)
+y 1 pendiente.
 
 **4. El cierre hoy** (`marcar_matricula_lista`, md5 normalizado `d8d7de95…`): exige el acuse médico,
 los documentos obligatorios, los datos del niño, los de los tutores, los servicios y los gastos. **No
@@ -2391,7 +2393,8 @@ estaba arriba (16 y 17 de noviembre):
 - «La firma es inmutable. Dirección puede pedir refirma con pide_refirma, nada automático.»
 - «Alta en papel: Dirección registra la firma presencial, teclea el nombre, sin trazo, y el papel
   es la prueba.»
-- «Las tres altas ya validadas no firman hacia atrás.»
+- «Las tres altas ya validadas no firman hacia atrás.» _(Matizada el 2026-11-19: es una regla de
+  no obligar, no un muro; ver «Pedir la firma de cualquier alta sin ficha firmada».)_
 - «Y EL CONSENTIMIENTO DE IMAGEN ENTRA EN marcar_matricula_lista, que es el hueco que hoy solo
   vigila la app: ahora que el «no» existe, la base exige una RESPUESTA, sí o no, no un «sí».»
 - «Export del art. 15, purga con el niño, y el test que afirma que la fila se va y que no queda
@@ -2563,6 +2566,408 @@ evita: el día del estreno alguien abre la pantalla de firmar, no funciona, y na
 hay un permiso esperando. Lo que sí quiero es que el 10b-2 y el 10c vayan pegados, que es lo que de
 verdad cierra esto.»
 
+### 10b-2: el diseño (propuesta, 2026-11-18)
+
+Las pantallas, sin migración, sobre las funciones de la 10b-1. Leído en el código de `main`
+(b6f8bb49). Hasta la 10b-3, «Finalizar» sigue cerrando sin firma por la base; la app deja de
+ofrecerlo.
+
+- **Firmar es el último paso del alta.** Un paso nuevo, `firma`, detrás de todos (también de `sepa`):
+  el que hoy es el último deja de llamar a `finalizarAlta` y pasa a «Siguiente». El paso lee
+  `ficha_para_firmar` (la foto y su sello; deja su fila en `lecturas_ficha_medica`, origen `alta`, y
+  por eso se lee al entrar en el paso, no antes) y la enseña entera, lo médico incluido. Debajo, el
+  nombre tecleado y el trazo (`FirmaPad`, como `DocumentosParaFirmar`), y «Firmar y terminar el
+  alta». Antes de firmar, las comprobaciones de `finalizarAlta` (la misma lista de lo que falta);
+  después, `firmar_ficha` con el sello visto, y sus HINT a la misma lista (`documentos_por_firmar`,
+  `datos_nino_por_completar`…) o a su texto (`ficha_cambiada`: «algo ha cambiado desde que la
+  abriste; vuelve a leerla»; `imagen_sin_respuesta`; `nada_que_firmar`).
+- **El tutor que no puede leer la ficha médica** (`estado_firma_ficha.puede_firmar =
+'sin_acceso_ficha_medica'`): el paso no lee nada y dice, en claro, que no tiene acceso a la ficha
+  médica y que se lo pida a Dirección («Nadie firma lo que no puede leer»).
+- **El alta en papel** (Dirección, `modoDireccion`): el mismo paso, sin trazo, con el aviso de la
+  firma en papel, y `registrar_firma_ficha_presencial`. Y en la ficha del niño de Dirección, una
+  tarjeta «Ficha firmada»: quién firmó, cuándo y cómo, si vale, y la petición de refirma;
+  «Registrar la firma en papel» cuando no hay una que valga, y «Pedir que se vuelva a firmar» cuando
+  hay firma (`pedir_refirma_ficha`).
+- **El aviso, antes de dejar cambiar nada** («la pantalla lo dice antes de dejar cambiar nada, no
+  después»). Con la matrícula en `lista` y la firma vigente, en todos los sitios desde los que se
+  cambia un dato sellado: «Revisar o editar» de `AltaCompletadaScreen` pide confirmar antes de abrir
+  el asistente («si cambias algo, la firma deja de valer y hay que volver a firmar»), y el asistente
+  en `?editar=1` lo repite arriba; la ficha del niño de la familia (lo médico y los gastos) y la de
+  Dirección (servicios, gastos, pedagógicos) lo dicen encima de su formulario. Hoy nada de eso mira
+  `lista`: todo escribe directo.
+- **La firma que dejó de valer**: `AltaCompletadaScreen` y la ficha del niño lo dicen y llevan al
+  paso `firma`; en `lista`, `firmar_ficha` firma de nuevo. Con el alta validada, solo si Dirección
+  pidió la refirma: la ficha del niño de la familia ofrece firmar.
+- **La lista de Dirección** (`/admin/altas`, como «Sin tarjeta sanitaria»): los tutores legales sin
+  `puede_ver_info_medica` cuya alta espera la firma (matrícula `pendiente`, o `lista` sin firma que
+  valga). `null` si una lectura falla, nunca vacía.
+- **Cada tutor legal ve que hay una oposición a las fotos.** La RLS solo le deja leer sus propias
+  respuestas, pero con su «sí» vigente y `existe_consentimiento_imagen` en `false` hay un «no» vigente
+  de otro (leído del cuerpo de la función: «hay un sí vigente Y ningún no vigente de nadie»). Hoy esa
+  pantalla dice «falta la autorización del otro tutor **o** no la autoriza», sin decir cuál; pasa a
+  decir que hay una oposición. **Para el tutor que no ha contestado no se puede deducir**: sin «sí»
+  propio, `false` es tanto «nadie ha dicho que sí» como «alguien ha dicho que no». Ver la pregunta 1.
+
+**Las preguntas** (2026-11-18):
+
+1. **La oposición, al tutor que no ha contestado.** Para él hace falta leer la respuesta del otro, y
+   eso es una función nueva en la base (sí o no: «hay un «no» vigente de otro tutor legal», a los
+   tutores legales y a Dirección, sin decir de quién). ¿Va en la migración de la 10b-3, y la 10b-2
+   enseña ya la del tutor que dijo que sí; o la 10b-2 lleva su propia migración pequeña?
+2. **El alta en papel no puede guardar un «no» a las fotos.** `RespuestaImagenAlta` con `soloSi`
+   (el comentario: «el «no» espera a decidir a qué tutor se atribuye») y `otorgar` con `p_tutor` =
+   la persona de Dirección. Con la firma, el paso `firma` exige la respuesta de quien firma, y en
+   papel la única respuesta que la pantalla deja dar es «sí»: **una familia que en papel no quiere
+   fotos solo puede terminar el alta aceptándolas**, lo que la decisión del 2026-11-17 (art. 7.4)
+   prohíbe. No está anotado en ningún sitio. ¿Se cierra en la 10b-2 (a qué tutor se atribuye el «no»
+   del papel: al titular de la familia, que en el alta en papel puede no tener cuenta) o aparte?
+
+### Las dos de la 10b-2, resueltas (el responsable, 2026-11-18)
+
+1. **La oposición al tutor que no ha contestado va en la 10b-3.** Literal: «LA FUNCIÓN DEL TUTOR QUE
+   NO HA CONTESTADO VA EN EL 10B-3. Ya lleva migración, y no vamos a abrir una tercera por una
+   función. El 10b-2 cubre al que dijo «sí», que es lo que se puede hacer sin base, y el 10b-3
+   completa al que no ha contestado. Van pegados, así que la ventana con el mensaje ambiguo dura lo
+   que tarde el despliegue.»
+2. **El «no» en papel se cierra en esta tanda.** Literal: «EL «NO» EN PAPEL SE CIERRA EN ESTA TANDA,
+   no aparte. Es la misma puerta que cerramos ayer por la vía digital, y dejarla abierta en el papel
+   significa que Dirección tendría que teclear un «sí» que la familia no ha dado para poder cerrar
+   el alta. Eso es poner a la directora a falsificar un consentimiento por culpa de nuestra
+   pantalla.» **A quién se atribuye**: «AL TUTOR LEGAL QUE FIRMÓ EL PAPEL, registrado por Dirección,
+   con el papel como prueba y el mismo rol admin que ya usáis en la firma presencial. No es un «no»
+   de la directora: es el de la familia, anotado por ella.» **El camino, medido, no inventado**:
+   «MIDE CÓMO SE GUARDA HOY EL «SÍ» EN EL ALTA EN PAPEL —a qué tutor se atribuye, y qué pasa si ese
+   tutor todavía no tiene cuenta— y el «no» va por ahí mismo. Si resulta que el «sí» en papel se
+   atribuye a la directora, o que la tabla exige una cuenta que el tutor no tiene, para y dímelo
+   antes de construir: eso cambia la respuesta.» «Si necesita migración, va en el 10b-3 con la otra.
+   Si no, en el 10b-2.» Y el comentario de `RespuestaImagenAlta` («el «no» espera a decidir a qué
+   tutor se atribuye») se borra: «Un comentario que pregunta algo ya contestado manda al siguiente a
+   preguntarlo otra vez.»
+
+**Medido el mismo día: el «sí» en papel se atribuye a Dirección, y la tabla exige una cuenta**
+(código de `main` y producción en solo lectura, `~/nido-logs/10/b2/papel/`). Las dos condiciones de
+parar se cumplen:
+
+- **En el código**: `otorgarConsentimientoImagenAlta` llama a `otorgar_consentimiento_imagen` con
+  `p_tutor` = quien tiene la sesión, y la función lo deja así cuando es Dirección (solo lo cambia por
+  el propio uid cuando **no** lo es). En el alta en papel, el «sí» queda a nombre de la persona de
+  Dirección. Y `firmar_ficha_comun` exige la respuesta de imagen de quien firma: en papel, la de
+  Dirección.
+- **En producción**: de los 2 «sí» de imagen (los dos vigentes, `checkbox`, del 2026-08-13), uno es
+  de un tutor legal del niño; **el otro es de una cuenta que fue la admin del centro (el rol, hoy
+  retirado) y es superusuario de la plataforma, sin vínculo con el niño**, que tiene dos tutores
+  legales vivos. Es el único «sí» de ese niño: su indicador de fotos descansa en él.
+- **La tabla**: `consentimientos.usuario_id` es `NOT NULL` con FK a `usuarios`: un tutor sin cuenta
+  no puede tener una respuesta. Hoy, 0 de 4 tutores vivos sin cuenta.
+
+**Lo que cambia (el responsable, 2026-11-18).** Literal: «el consentimiento en papel se atribuye AL
+TUTOR LEGAL QUE FIRMÓ EL PAPEL, nunca a la persona de Dirección. Eso vale para el «sí» y para el
+«no». Lo que está hoy en producción es un consentimiento sin titular válido.» Esa primera «no admite
+debate». La segunda, el tutor sin cuenta, espera a una medida: «(a) que un consentimiento pueda
+apuntar al tutor de la familia (familia_tutores) y no solo a una cuenta; (b) que el alta en papel no
+se cierre hasta que el tutor tenga cuenta; (c) que Dirección registre la respuesta con la identidad
+del tutor y el papel como prueba, y se vincule cuando acepte la invitación». «MÍDEME EL RADIO DE LA
+(a) … Con el número decido.» **El niño concreto**: «no toques ese consentimiento. Lo que yo haría es
+revocarlo, porque no lo dio quien tenía que darlo, pero el dato es suyo y la decisión también»: se
+pregunta a Jose.
+
+**El radio de la (a), medido** (2026-11-18; cuerpos vivos de producción en solo lectura y código de
+`main`; `~/nido-logs/10/b2/radio/`):
+
+- **En la base, 38 piezas nombran `consentimientos`**: 25 cuerpos de función (23 y las dos de sus
+  triggers), 4 políticas, 4 índices, 5 restricciones y 2 triggers. **20 de los 25 cuerpos se apoyan
+  en `usuario_id`** (filtran, cruzan o escriben por él); 5 solo por el niño o nada
+  (`queda_conservado_nino`, `existe_consentimiento_imagen`, `revocar_consentimiento_imagen`,
+  `consentimiento_imagen_sync`, y `estado_retencion_nino`, que solo la nombra en un comentario).
+  También 3 de las 4 políticas (`bloqueo_retencion`, `consentimientos_self_select`,
+  `consentimientos_insert`; la cuarta, `consentimientos_admin_select`, nombra el `usuario_id` de
+  otra tabla) y el índice único `consentimientos_un_no_imagen_vigente` (`nino_id, usuario_id`).
+- **De las once piezas genéricas, 9 se apoyan en `usuario_id`** (todas salvo `queda_conservado_nino` y
+  `estado_retencion_nino`).
+- **Qué se rompería con `usuario_id` nulo, leído del cuerpo (sin ensayar):** nada da error; todo
+  contesta «nadie». Los ayudantes que reciben el titular (`retenido`, `usuario_olvidado_en`,
+  `usuario_olvidado_desde`, `consentimiento_bloqueado`) comparan `= p_usuario_id`, y con NULL dan
+  «no». Así:
+  - la retención no lo frena (`destruir_firmas_nino` lo destruye con el tutor retenido);
+  - la purga del tutor no lo redacta (`purgar_sujeto_db` borra la IP y el navegador por `usuario_id`);
+  - el bloqueo tras el olvido del tutor no lo ve;
+  - un «no» en papel no se puede retirar (`retirar_no_imagen`, `usuario_id = p_tutor`);
+  - el índice único no impide dos «no» (un NULL no choca con otro), y `denegar` no lo encuentra
+    después;
+  - con «los dos firmantes», el «sí» no cuenta nunca (`tiene_consentimiento_imagen`);
+  - la foto de la ficha no dice de quién es la respuesta (`privado.ficha_canonica`);
+  - el export lo saca sin «otorgado por».
+    Todos fallan en silencio, y casi todos **abiertos contra el tutor**: su olvido, su retención, su
+    bloqueo.
+- **En la app, 27 ficheros nombran `consentimientos`; 7 leen o filtran por su `usuario_id`**: la
+  página del alta, `finalizar-alta`, `respuesta-imagen`, `get-autorizacion-detalle`, `recolectar`
+  (el export), `otorgar-imagen-nino` y `get-alta-documentacion`.
+
+**Lo que dice el dato sobre la (b)** (mismas fuentes):
+
+- **El alta en papel ya crea la cuenta del tutor.** «Completar en Dirección» (`completarEnDireccion`
+  → `crearTutorDirecto`) le crea la cuenta (`createUser`, sin correo ni contraseña) y la vincula. Sin
+  cuenta enlazada queda solo una rama: un email que ya es de una cuenta que ha operado en otro sitio
+  (otro centro, el personal, el superusuario), que se invita y no se enlaza hasta que acepta. Y el
+  segundo tutor, hasta que acepta su invitación.
+- **Hoy, 0 tutores sin cuenta**: 0 de 3 titulares y 0 de 1 segundo tutor.
+- **Invitaciones de tutor legal**: 4, 3 aceptadas, todas en menos de 0,2 horas (la media, 0,1), y 1
+  caducada sin aceptar. **No es representativo**: son las familias de prueba del buzón de Jose.
+
+**Y una consecuencia para la firma, leída en `20270128120000`:** `firmar_ficha_comun` exige la
+respuesta de imagen de `auth.uid()` (línea 527). En la firma en papel esa persona es la de Dirección,
+y la firma no guarda qué tutor firmó el papel. Atribuida la respuesta al tutor, la firma en papel de
+un alta pendiente se para en `imagen_sin_respuesta`. Para que mire la del tutor que firmó, la firma
+presencial tiene que recibir quién es, y eso es la base: la 10b-3.
+
+**La (b), decidida (el responsable, 2026-11-18).** Literal: «La (b). Y tu medida la convierte en la
+única razonable … lo peor no es el tamaño sino la dirección en que falla … Todo eso falla CONTRA el
+tutor y en silencio, que es la combinación que no aceptamos en 10a-2 y tampoco aquí.» «la (b) no es
+una decisión aparte: es la consecuencia de lo que ya decidimos. Firmar exige ser tutor legal con
+acceso a la ficha médica, y eso exige cuenta. Si quien firma necesita cuenta, su respuesta de imagen
+la tiene también. El alta en papel ya crea esa cuenta en la rama normal, así que no estamos añadiendo
+un requisito: estamos escribiendo el que ya existe.» **Las dos ramas raras** (el email de otra
+cuenta y el tutor 2 sin aceptar) no cierran el alta, «y eso ESTÁ BIEN siempre que la pantalla lo
+diga con nombre: «falta que acepte la invitación», no un error. Un alta que no se cierra con un
+motivo legible es un trámite; un alta que se cierra con un consentimiento de la directora es un
+documento inválido.» **La 10b-3**: «la firma presencial tiene que saber a qué tutor se atribuye. Hoy
+comprueba la respuesta de quien la teclea, que es Dirección, y eso es la raíz de todo esto. Va en el
+10b-3 y con su control negativo: una firma presencial sin decir de qué tutor es no debe poder
+registrarse.» **Antes de construir**: «que en la rama normal el «sí» y el «no» en papel puedan ir a
+la cuenta del tutor con las funciones de hoy. Si resulta que no, dímelo antes.»
+
+**Medido: sí se puede** (2026-11-18, producción, ensayo terminado en RAISE sobre el alta pendiente
+real, predicciones escritas antes; `~/nido-logs/10/b2/papel-ensayo/`). Con la sesión de una persona
+de Dirección del centro (no superusuario), y el tutor legal con cuenta y vínculo (la rama normal):
+
+|     | Llamada                                                                    | Resultado                                                                             |
+| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| P1  | `otorgar_consentimiento_imagen(niño, p_tutor = el tutor, …, 'presencial')` | pasa; el «sí» vigente es del tutor (`presencial`); la respuesta de Dirección, ninguna |
+| P2  | `denegar_consentimiento_imagen(niño, p_tutor = el tutor, …, 'presencial')` | pasa; el «sí» del tutor se retira y queda su «no»                                     |
+| P3  | `retirar_denegacion_imagen(niño, el tutor)`                                | pasa, y deja su fila `imagen_no_retirado` en `audit_log`                              |
+| N1  | `denegar` con `p_tutor` = la propia Dirección                              | 22023, HINT `no_es_tutor_legal`                                                       |
+| N2  | `otorgar` con `p_tutor` = la propia Dirección                              | **pasa**: el «sí» queda a nombre de Dirección                                         |
+| N3  | el tutor con su sesión, `otorgar` con `p_tutor` = Dirección                | pasa, y la fila es del tutor (la función le pone su uid)                              |
+
+Producción, igual después (2 filas de imagen, 0 rastros nuevos). **N2 es la raíz en la base**:
+`otorgar` no mira que `p_tutor` sea tutor legal del niño (`denegar` sí). La 10b-2 deja de pasarle a
+Dirección; **la 10b-3 lo cierra en la base**, con N2 como control negativo, junto a la firma
+presencial con el tutor.
+
+**N2 es una puerta, no un detalle de atribución** (el responsable, 2026-11-18). Literal: «cualquiera
+con rol de Dirección puede autorizar la imagen de un niño del que no es nada, y ese «sí» basta para
+que el niño salga en las fotos. No es solo un dato mal atribuido, es una puerta. Que se cierre en el
+10b-3 me vale porque va pegado, pero que en el cuerpo del PR quede escrito así, como puerta y no como
+detalle de atribución.» Y el patrón: «el «no» comprueba que el titular sea tutor legal y el «sí» no.
+Una mitad sabía hacerlo bien, como /export/me frente a /export/nino, o como la rama de Dirección que
+no comprobaba el centro. Cuando encuentres una comprobación en un lado, mira siempre el otro.»
+
+**La firma en papel de la ficha va con la 10b-3** (decisión de diseño, 2026-11-18, por la medida de
+arriba). Hasta la 10b-3, `registrar_firma_ficha_presencial` mira la respuesta de imagen de quien la
+teclea, y desde la 10b-2 esa persona ya no tiene ninguna: con la pantalla en la 10b-2, ninguna alta
+en papel pendiente se podría firmar. Así que la 10b-2 no ofrece la firma en papel de la ficha: el
+alta en papel termina con «Finalizar», como hoy (la base aún no exige la firma), con la respuesta de
+imagen ya a nombre del tutor que firmó el papel. La pantalla de la firma en papel (el paso del alta y
+«Registrar la firma en papel» en la ficha de Dirección) llega con la 10b-3, con la función que
+recibe el tutor. «Pedir que se vuelva a firmar», en la 10b-2.
+
+**La otra cara de N2, leída al construir la 10b-2** (2026-11-18, «cuando encuentres una comprobación
+en un lado, mira siempre el otro»): `firma_imagen_sync`, el trigger que convierte la firma de una
+autorización de imagen en el «sí», deja pasar a quien firma **en persona y es Dirección del centro**
+(`metodo_firma = 'presencial'` y rol `admin`/`directora`), y el «sí» queda a nombre del firmante: de
+Dirección, como el de N2. Leído del cuerpo de `20270127120000`, sin ensayar. Es base: va a la 10b-3
+con N2, medido abierto antes.
+
+**Las dos, confirmadas** (respuesta del responsable, 2026-11-18). Literal:
+
+1. «La firma en papel al 10b-3, de acuerdo: no tiene sentido construir una pantalla que la base va a
+   rechazar. Dos condiciones: que el 10b-3 vaya pegado, y que si en ese hueco Dirección cerrara un
+   alta en papel sin firma, quede cubierta por «pedir que se vuelva a firmar», porque las altas ya
+   validadas no firman hacia atrás y un alta cerrada en esa ventana se quedaría sin ficha firmada
+   para siempre. Compruébalo y dilo en el PR.»
+2. «firma_imagen_sync al 10b-3 con N2, y mídelo allí: lo tienes leído del cuerpo, no ensayado. Es
+   la misma puerta por otra entrada, y conviene que las dos caigan con su control negativo en el
+   mismo PR, para que quede claro que no era un caso suelto sino un patrón.»
+
+**Comprobado: hoy NO queda cubierta** (ensayo en producción terminado en RAISE, 2026-11-18, guarda
+de md5 sobre `pedir_refirma_ficha`, `firmar_ficha_comun`, `puerta_firma_tutor` y `firma_ficha`;
+predicciones escritas antes; `~/nido-logs/10/b2/refirma-sin-firma/`). Sobre un niño con la matrícula
+`activa` y 0 firmas, copiado del log:
+
+```
+N1 | tutor firma sin refirma | P0001 no hay nada que firmar HINT=nada_que_firmar
+R1 | dir pide refirma | P0001 la ficha no estÃ¡ firmada HINT=sin_firma
+C+ | cuentas tras meter la refirma | firmas=0 refirmas=1
+C+ | tutor firma con refirma | PASA true
+C+ | cuentas | firmas=1 refirmas=1
+```
+
+El lado de firmar ya contempla la ficha que nunca se firmó (con 0 firmas le basta cualquier
+refirma); el de pedir no la deja pedir (`pedir_refirma_ficha` exige una firma previa, `sin_firma`).
+Una mitad bien y la otra no. Mientras el alta está en `lista` el tutor aún puede firmar (la base lo
+deja sin refirma); en cuanto pasa a `activa`, nadie. **No es solo la ventana**: en producción hay hoy
+3 matrículas `activa`, las 3 sin ficha firmada, y 0 refirmas (lectura del mismo día): esas tres
+están ya en ese caso. **Va en la 10b-3**: `pedir_refirma_ficha` acepta la ficha sin firma, con R1 de
+control negativo (hoy `sin_firma`, después pasa) y C+ por la función (sin meter la fila a mano). Y la
+tarjeta de Dirección ofrece «Pedir que se firme» también cuando no hay firma; en la 10b-2 no lo
+ofrece, porque la base lo rechazaría.
+
+**La 10b-3 cierra el punto 3 entero** (decisión del responsable, 2026-11-18, al ver el libro de
+familia). Literal: «Lo del libro de familia es el hallazgo de esta vuelta y encaja donde ya íbamos:
+el 10b-3 no exige solo la firma y la respuesta de imagen, exige en la BASE todo lo que la app exige
+para cerrar el alta. Es el punto 3 que quedó pendiente desde el 12 de noviembre, y estamos tocando
+esa función de todas formas. Lista: la firma válida, la respuesta de imagen, el libro de familia y
+los DNI de los tutores. Mide CADA UNO abierto antes de cerrarlo, uno por uno, y dime cuáles resultan
+estar ya exigidos: tú mismo me dijiste que «los documentos sí los exige la base (4b-2)», y el libro de
+familia resulta que no, así que no me fío de la generalización ni para los DNI. El número que quiero
+es cuántos de los cuatro están abiertos de verdad. Con eso el cierre del alta deja de depender de que
+nadie llame a la API por fuera, que es lo que llevamos toda la serie cerrando.»
+
+De dónde salió (CI, 2026-11-18, la sonda que quita el gate de `firmarFichaNino`): con el libro de
+familia sin subir, la firma cerró el alta (`lista`). «Los documentos» del 4b-2 eran los **del centro**
+(`documentos_centro`, las normas), no los del alta (libro de familia y DNI): la frase generalizaba un
+nombre. La medida, una por una:
+
+**Medido: 3 de los 4 están abiertos** (2026-11-18; producción, ensayo terminado en RAISE, guarda de
+md5 sobre `marcar_matricula_lista` y `privado.tutor_completo`, predicciones escritas antes, las
+siete acertadas; `~/nido-logs/10/b2/punto3/`). Sobre el único alta `pendiente`, completada dentro de
+la transacción (niño, titular, acuse médico, servicios, respuesta de imagen, libro); cada caso quita
+UNA cosa en su subtransacción y el tutor llama a `marcar_matricula_lista`. Copiado del log:
+
+```
+C0 | sin completar | 42501 falta el acuse de confidencialidad de datos medicos HINT= | estado=pendiente
+C+ | todo puesto, 0 firmas (A1: la firma) | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A2 | sin la respuesta de imagen | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A3 | sin libro de familia | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A4a | sin el PDF del DNI del titular | P0001 faltan datos de los tutores por completar HINT=datos_tutor_por_completar | estado=pendiente
+A4b | sin el nÃºmero del DNI del titular | P0001 faltan datos de los tutores por completar HINT=datos_tutor_por_completar | estado=pendiente
+A5+ | segundo tutor completo, con DNI | PASA 75a531aa-8486-446e-85ca-66aaa583747b | estado=lista
+A5 | segundo tutor sin el PDF del DNI | P0001 faltan datos de los tutores por completar HINT=datos_tutor_por_completar | estado=pendiente
+```
+
+- **Abiertos de verdad: la firma, la respuesta de imagen y el libro de familia.** La 10b-3 los
+  cierra en `marcar_matricula_lista`, cada uno con su caso de este ensayo como control negativo.
+- **Ya exigido: el DNI de los tutores**, número y PDF, del titular y del segundo si lo hay
+  (`privado.tutor_completo`, fase 6). La 10b-3 no lo toca; su control se queda como está.
+- Una primera pasada leyó `estado` en la misma expresión que la llamada y salió `pendiente` donde
+  había pasado (Postgres evaluó la subconsulta antes); repetido con las dos lecturas en sentencias
+  separadas, lo de arriba. La primera, en `ensayo-1-estado-leido-antes.log`.
+
+**El estado transitorio entre la 10b-2 y la 10b-3, escrito a propósito** (confirmado por el
+responsable el 2026-11-19). Literal: «entre este PR y el 10b-3 la base todavía no exige la firma, así
+que un alta puede cerrarse sin ficha firmada por la API. Es el estado transitorio que ya decidimos,
+pero quiero que esté escrito, porque es exactamente la clase de hueco que dentro de un mes alguien
+encuentra y no sabe si era a propósito.» Lo que dice el ensayo de arriba: el tutor llama a
+`marcar_matricula_lista` con todo puesto y 0 firmas, y el alta pasa a `lista` (caso `C+`). La app no
+lo ofrece (la 10b-2 cambia «Finalizar» por firmar), pero una llamada directa a la API cierra el alta
+sin ficha firmada, y lo mismo sin la respuesta de imagen o sin el libro de familia. **Es a propósito
+y dura hasta la 10b-3**, que lo cierra en `marcar_matricula_lista` con esos casos como control
+negativo. Mientras tanto, a un alta cerrada así no se le puede pedir que vuelva a firmar
+(`pedir_refirma_ficha` → `sin_firma`); también lo abre la 10b-3.
+
+**Pedir la firma de cualquier alta sin ficha firmada** (decisión del responsable, 2026-11-19; corrige
+el alcance de «Las tres altas ya validadas no firman hacia atrás», del 2026-11-17). Literal: «EN EL
+10B-3: Dirección puede pedir la firma de CUALQUIER alta que no tenga ficha firmada, no solo refirmar
+una que ya la tenía. Hoy la refirma exige una firma previa y eso deja fuera dos casos que importan:
+las altas cerradas en esta ventana; las tres altas ya validadas. Y fíjate en lo que eso cambia de lo
+que decidí el 17: «las ya validadas no firman hacia atrás» seguía siendo correcto como regla —no se
+les obliga—, pero no tenía que significar que Dirección no PUEDA pedírselo si quiere. Con esto, el
+«no retroactivo» pasa a ser una decisión de la directora en vez de un muro del sistema, que es como
+debería haber estado desde el principio. Déjalo escrito así, con la corrección fechada. Mídelo
+abierto antes, como todo: hoy pedir firma a un alta sin firma da sin_firma, y eso es el control
+negativo del arreglo.»
+
+- **La regla, corregida el 2026-11-19:** ninguna alta validada está obligada a firmar la ficha hacia
+  atrás (eso sigue igual), y **Dirección puede pedir la firma de cualquier alta sin ficha firmada**,
+  cuando quiera. El «no retroactivo» es una decisión de la directora, no un muro del sistema.
+- **Por qué importa:** sin esto, el estado transitorio no es transitorio para el alta que cae dentro:
+  cerrada sin firma, se queda sin ficha firmada para siempre. Y las 3 `activa` de hoy están ya ahí.
+- **Medido abierto** (2026-11-18, `~/nido-logs/10/b2/refirma-sin-firma/`, el bloque de «Las dos,
+  confirmadas»): `R1 | dir pide refirma | P0001 la ficha no está firmada HINT=sin_firma`. Ese R1 es el
+  control negativo del arreglo: la 10b-3 lo repite en su ensayo antes de la migración (`sin_firma`) y
+  después (pasa), y el tutor firma por la función, sin meter la fila a mano.
+- **En la 10b-3:** `pedir_refirma_ficha` acepta el alta sin firma previa; la tarjeta de Dirección
+  ofrece «Pedir que se firme» también sin firma; el test que hoy afirma `sin_firma` (nombrado como el
+  hueco) se pone rojo y se reescribe al estado bueno.
+
+**Los dos tutores con cuenta no podían cerrar el alta desde la app** (hallazgo del 2026-11-18 al
+construir el test de la 10b-2; existe en `main` desde la fase 6, #526, 2026-11-13). El gate de la
+app daba «no se pudo leer» (`{ ok: false }` → `alta.errors.finalizar_fallo`) si no veía los datos
+personales de algún tutor. Pero la regla de la fase 6 oculta los del otro tutor en cuanto tiene
+cuenta («en cuanto tiene cuenta, el tutor 1 deja de ver sus datos personales»): no es un fallo de
+lectura, es la regla. Así que en toda familia con los dos tutores con cuenta, «Finalizar» fallaba, y
+desde la 10b-2 también la firma. Medido en producción (solo lectura, `~/nido-logs/10/b2/dos-cuentas/`):
+el alta `pendiente` de hoy no tiene segundo tutor (no la afecta); 2 de las 3 `activa` tienen dos
+tutores con cuenta: la próxima así no habría podido cerrar.
+**Arreglo en la 10b-2 (decisión de diseño mía, 2026-11-18, a revisar por el responsable):** el tutor
+con cuenta PROPIA que no es quien cierra no lo juzga la app; lo juzga la base (`tutor_completo`,
+SECURITY DEFINER, medido arriba: A4a, A4b y A5 frenan), que frena con `datos_tutor_por_completar` y la
+pantalla lo nombra (`faltanDeHint` → `tutor1`, `tutor2`). La regla del 2026-11-12 («Una lectura que
+falla no se lee como «no hay»») sigue: si la que no se lee es la fila de quien cierra, no se cierra.
+
+**Aprobado, y censo** (responsable, 2026-11-18). Literal: «El arreglo es el correcto: dejar al otro
+tutor a la base, que lo ve con permisos de dueño y ya lo comprueba con tutor_completo, y seguir sin
+cerrar cuando la fila ilegible es la del que cierra. Apruébalo como está. PERO ESTO NO ES UN BUG
+SUELTO, ES UNA CONSECUENCIA DE MI DECISIÓN DE LA FASE 6, y lo que me preocupa es lo que no hemos
+visto. La regla única cerró los datos del otro tutor, y al menos un sitio de la app leyó ese «no tengo
+permiso» como «no se pudo leer» y se rindió. Eso es el patrón de los 454 por la puerta de atrás: no un
+fallo de red, sino un permiso que ahora dice no. CÉNSALO, acotado: todos los sitios de la app que leen
+datos de OTRO tutor, y qué hacen cuando la lectura no devuelve lo que esperaban. Dime el número y
+cuántos de ellos se rinden, se quedan en blanco o lo cuentan como «falta». El radio de 17 ficheros
+que mediste en la fase 6 era de quién LEE esas columnas; esto es otra cosa: qué hacen con el no. Si
+aparece más de uno, lo arreglamos todo en este PR, porque lleva cinco días en producción y es el
+mismo defecto.»
+
+**El censo: qué hace la app con el «no» de la fase 6** (2026-11-19, leyendo cada sitio). Primero las
+formas de leer los datos de otro tutor, para no contar con un solo patrón: la función
+`tutores_de_familia` (`ve_personales`), la función `telefonos_familia_de_nino` (el teléfono lo ve
+siempre la familia: no dice «no» por la regla), el bucket `dni-tutores` (`puede_ver_dni_tutor`), por
+su nombre y por la constante `BUCKET_DNI_TUTORES` (la primera búsqueda, por el texto del bucket, se
+dejaba cinco ficheros que usan la constante), y el lector común `leerTutoresDeNino`. Las columnas
+abiertas de `familia_tutores` no dependen de qué tutor lee. **20 ficheros de la app** (sin tests):
+
+- **Se rendía ante el «no» de la regla: 1.** El gate (`comprobarAlta`), por dos entradas:
+  «Finalizar» y, desde la 10b-2, la firma. Arreglado (arriba).
+- **Se quedaba en blanco: 0. Lo contaba como «falta»: 0.** (El gate lo habría contado como «falta»
+  —`tutorCompleto` sobre los campos ocultos— si no se hubiera rendido antes.)
+- **La confusión al revés, un fallo leído como la regla: 1.** El lector `leerTutoresDeNino` ignoraba
+  el error de `tutores_de_familia`: todo `ve_personales` en falso y `leidos: true`. Con el arreglo del
+  gate eso habría pasado a «lo juzga la base». Arreglado: `personalesLeidos`, que miran el gate (sin
+  él, no se cierra) y la pantalla del alta (solo dice «lo gestiona el otro» si la lectura funcionó).
+- **Lo distinguen bien: 3.** La pantalla del alta (`legibles` y `gestionaElOtro`; `PasoTutor` no
+  pinta formulario ni el DNI de quien no se lee), `guardarDatosTutor` (no escribe una fila que no
+  gestiona: correcto) y la subida del DNI (la base y Storage lo rechazan, 403).
+- **No les llega nunca el «no»: 15.** Leen como Dirección (`gestiona_tutor` le da sí siempre: el
+  avance de las altas, la documentación del alta, la cola, el detalle de la familia y su página),
+  con el servicio (las dos invitaciones del tutor 2, el export, la cola al aplicar, las altas sin
+  terminar, el olvido y lo fiscal), solo columnas abiertas (los nombres en la ficha que se firma) o
+  el teléfono (`telefonos-familia`).
+
+Controles negativos, en unit, con las predicciones escritas antes: sin el arreglo del gate, 2 rojos
+de 4 (los predichos); sin el del lector, 2 rojos. La primera vez salió 1 de los 2 predichos: el test
+del gate con la función fallida pasaba igual porque la fila propia ilegible ya frenaba sola; rehecho
+con todas las filas ajenas (como Dirección en papel), da los 2.
+
+**La variante nueva, y una mutación que repetir** (responsable, 2026-11-19). Literal: «PERO EL SEGUNDO
+ES UNA VARIANTE QUE NO TENÍAMOS ESCRITA, y es más peligrosa que la original. Un fallo leído como
+AUSENCIA deja un hueco visible: «no hay nadie autorizado», «sin libro de familia». Un fallo leído como
+REGLA —«lo gestiona el otro tutor»— no deja hueco: deja una explicación plausible que nadie va a
+cuestionar. Si yo veo «sin libro de familia» sospecho; si veo «lo gestiona el otro tutor» me lo creo.
+Apúntalo como variante del patrón de los 454, con este caso, y que quede claro para cuando ataquemos
+el censo: hay que buscar las dos formas, y la segunda no se encuentra mirando valores vacíos. Y REPITE
+UNA MUTACIÓN, no las doce: la que cubre el lector común, porque personalesLeidos cambió DESPUÉS de la
+ronda 3.» Y, sobre el test: «que corra solo contra la base efímera del CI. Si ese test pudiera
+ejecutarse alguna vez apuntando a producción, un runner que muera entre el revoke y el finally deja la
+función sin permisos en producción. Compruébalo antes de subirlo».
+
+**Comprobado: no lo impedía la construcción.** La guarda de la suite (`comprobarBdLocal`) mira la URL
+de la API (`NEXT_PUBLIC_SUPABASE_URL`), no `DB_URL`, que es con lo que `comoPostgres` entra como
+`postgres`; y se salta a mano con `RLS_ALLOW_REMOTE=1`. Hoy ningún `.env.local` define `DB_URL` (en
+la CI sale de `supabase status`), pero eso es una circunstancia, no una garantía. Cerrado en
+`comoPostgres`: solo `127.0.0.1` o `localhost`, sin salida de emergencia. Vale para todo lo que los
+tests hacen como `postgres`, no solo para este REVOKE.
+
 ### Fase 10, por PRs
 
 1. **10a-1**: el valor `imagen_denegada` en `consentimiento_tipo`, solo.
@@ -2583,12 +2988,26 @@ verdad cierra esto.»
      exporta), los tipos, los tests y la documentación. Se aplica antes de mergear. La nota del
      export dice que la copia firmada existe y de qué fecha es, sin «pídesela» («Los dos huecos»).
    - **10b-2**: las pantallas: firmar en el último paso del alta, el aviso antes de cambiar un dato
-     firmado, la firma en papel, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la
-     lista de Dirección y que cada tutor legal vea que el otro se ha opuesto a la imagen.
+     firmado, pedir refirma, el aviso al tutor sin acceso a la ficha médica, la lista de Dirección y
+     que el tutor legal que dijo «sí» vea que otro se ha opuesto a la imagen. Y la respuesta de
+     imagen del alta en papel, a nombre del tutor legal que firmó el papel (2026-11-18). _La firma en
+     papel de la ficha pasa a la 10b-3_ («La firma en papel de la ficha va con la 10b-3»).
    - **10b-3**: la segunda migración, después del despliegue de la 10b-2: `marcar_matricula_lista`
      exige la firma que vale y la respuesta de imagen de quien cierra, y `validar_alta`, la firma.
      Y `firmas_ficha` en la vista de datos bloqueados (`privado.contenido_bloqueado` y lo que la
-     acompaña), como las demás firmas («Los dos huecos», 2026-11-18).
+     acompaña), como las demás firmas («Los dos huecos», 2026-11-18). Y lo del 2026-11-18: la firma
+     presencial dice de qué tutor legal es y mira su respuesta de imagen (control negativo: sin
+     tutor, no se registra), con su pantalla; `otorgar_consentimiento_imagen` exige que el titular
+     sea tutor legal del niño (la puerta de N2, con N2 de control negativo) y lo mismo
+     `firma_imagen_sync` con la firma presencial; y la función que le dice al tutor que no ha
+     contestado que hay una oposición («Las dos de la 10b-2, resueltas», 1) Y `pedir_refirma_ficha` sin firma previa: Dirección pide la firma de **cualquier** alta sin ficha
+     firmada (las 3 `activa` de hoy y la que se cierre antes de la 10b-3), con R1 de control
+     negativo («Las dos, confirmadas», 2026-11-18; «Pedir la firma de cualquier alta sin ficha
+     firmada», 2026-11-19). `firma_imagen_sync` se mide abierto **en la
+     10b-3** y cae con N2 en el mismo PR, cada una con su control negativo. La 10b-3 va pegada.
+     Y **el punto 3 entero** en `marcar_matricula_lista`: todo lo que exige el gate de la app, en la
+     base (la firma que vale, la respuesta de imagen, el libro de familia y los DNI de los tutores),
+     cada uno medido abierto antes («La 10b-3 cierra el punto 3 entero», 2026-11-18).
 4. **10c** (pegada a la 10b-2, decisión del 2026-11-18): leer la ficha firmada (tutor legal y Dirección, con su fila en `lecturas_ficha_medica` y
    el bloqueo tras la baja) y el PDF que compone el servidor. Y en el mismo PR, el «cómo
    obtenerla» de la nota del export («Los dos huecos», 2026-11-18).

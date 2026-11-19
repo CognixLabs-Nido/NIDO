@@ -31,6 +31,9 @@ import { getRecorridoNinoFamilia } from '@/features/ninos/queries/get-recorrido-
 import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
+import { AvisoFichaFirmada, RefirmaFicha } from '@/features/alta/components/AvisoFichaFirmada'
+import { leerEstadoFirmaFicha } from '@/features/alta/lib/ficha-firmada'
+import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { ImagenAutorizacionTutor } from '@/features/ninos/components/ImagenAutorizacionTutor'
 import { getEstadoImagenNino } from '@/features/ninos/queries/get-estado-imagen-nino'
 import { BorrarInfoMedica } from '@/features/ninos/components/BorrarInfoMedica'
@@ -130,6 +133,31 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
       vinculo?.tipo_vinculo === 'tutor_legal_principal' ||
       vinculo?.tipo_vinculo === 'tutor_legal_secundario'
   }
+
+  // Fase 10b-2: la ficha firmada, al tutor legal. Con la matrícula en `lista` y la firma vigente, cambiar
+  // un dato firmado la deja sin valor: se avisa ANTES (decisión del 2026-11-17). Con la refirma pedida
+  // por Dirección y la firma sin valor, se ofrece firmar aquí. Si no se lee, ni aviso ni firma.
+  const firmaFicha = esTutorLegal ? await leerEstadoFirmaFicha(supabase, id) : null
+  const estadoFirma = firmaFicha?.ok ? firmaFicha.data : null
+  const { data: matriculasNino } = esTutorLegal
+    ? await supabase
+        .from('matriculas')
+        .select('estado')
+        .eq('nino_id', id)
+        .is('fecha_baja', null)
+        .is('deleted_at', null)
+    : { data: null }
+  const enLista = estadoMatriculaVigente(matriculasNino ?? []) === 'lista'
+  const avisoFirma = enLista && estadoFirma?.vigente === true
+  const refirmaPedida =
+    estadoFirma !== null &&
+    estadoFirma.refirmaPedida &&
+    !estadoFirma.vigente &&
+    (estadoFirma.puedeFirmar === 'si' || estadoFirma.puedeFirmar === 'sin_acceso_ficha_medica')
+  const { data: perfilUsuario } =
+    refirmaPedida && userId
+      ? await supabase.from('usuarios').select('nombre_completo').eq('id', userId).maybeSingle()
+      : { data: null }
 
   // Autorización de imagen: solo la gestiona el tutor legal (revocar / volver a autorizar).
   const estadoImagen =
@@ -283,6 +311,20 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         />
       )}
 
+      {refirmaPedida && estadoFirma && (
+        <Card>
+          <CardContent>
+            <RefirmaFicha
+              ninoId={id}
+              puedeLeerFichaMedica={estadoFirma.puedeFirmar === 'si'}
+              nombreInicial={perfilUsuario?.nombre_completo ?? ''}
+              motivo="pedida"
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {avisoFirma && gastos?.ok && gastos.gastos.length > 0 && <AvisoFichaFirmada />}
       {gastos && (!gastos.ok || gastos.gastos.length > 0) && (
         <GastosGestionFamilia
           locale={locale}
@@ -404,6 +446,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           ) : (
             <p className="text-muted-foreground text-sm">{t('sin_info_medica')}</p>
           )}
+          {esTutorLegal && medica.leida && avisoFirma && <AvisoFichaFirmada />}
           {esTutorLegal && medica.leida && (
             <div className="flex justify-end gap-2">
               <EditarInfoMedica ninoId={id} inicial={infoMedica} />

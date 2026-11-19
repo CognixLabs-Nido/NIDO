@@ -21,6 +21,12 @@ const BUCKET = 'documentos-centro'
 export function comoPostgres(sql: string): string {
   const url = process.env.DB_URL
   if (!url) throw new Error('DB_URL: este test solo corre contra la BD efímera del CI')
+  // Como `postgres` se quitan permisos y triggers (p. ej. el REVOKE de `tutores_de_familia` en
+  // `ficha-firmada-pantalla`): un runner que muera entre medias los deja quitados. Por eso SOLO la
+  // base local del CI, y sin `RLS_ALLOW_REMOTE` (la guarda de la suite mira la URL de la API, no esta).
+  const host = new URL(url).hostname
+  if (host !== '127.0.0.1' && host !== 'localhost')
+    throw new Error(`comoPostgres: DB_URL no es local (${host}); como postgres, solo la BD efímera`)
   return execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
     input: sql,
     encoding: 'utf8',

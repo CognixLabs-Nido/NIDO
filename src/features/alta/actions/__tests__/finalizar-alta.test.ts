@@ -32,6 +32,11 @@ interface Estado {
   consentimientos: Fila[]
   mandatos_sepa: Fila[]
   /**
+   * 10b-2: el vínculo de quien cierra con el niño, que decide el modo (`modoFirmaDocumento`): con
+   * vínculo, la familia; sin él, el alta en papel. Por defecto, la familia.
+   */
+  vinculos_familiares: Fila[]
+  /**
    * Fase 10 (10a-2): la respuesta a la imagen de quien cierra («sí», «no» o ninguna), que el falso
    * sirve a la consulta de `consentimientos` filtrada por los dos tipos de imagen; `'falla'` = la
    * lectura da error.
@@ -105,6 +110,7 @@ function altaCompleta(): Estado {
     ],
     consentimientos: [{ id: '66666666-6666-4666-8666-666666666666' }],
     mandatos_sepa: [],
+    vinculos_familiares: [{ id: '77777777-7777-4777-8777-777777777777' }],
     respuestaImagen: 'si',
     // Las normas, firmadas: el alta completa.
     documentosCentro: [doc('Normas', true, 'firmado')],
@@ -180,10 +186,11 @@ function makeFake(estado: Estado) {
       // Fase 6: los cinco datos nuevos, por su función, con la regla (aquí el propio tutor: los lee).
       if (fn === 'tutores_de_familia')
         return Promise.resolve({
+          // Cada fila puede traer su `ve_personales` (la regla de la fase 6); si no, el propio tutor.
           data: estado.familia_tutores.map((t) => ({
-            ...t,
             ve_personales: true,
             ve_telefono: true,
+            ...t,
           })),
           error: null,
         })
@@ -353,6 +360,96 @@ describe('finalizarAlta · la imagen pide respuesta, no un «sí» (fase 10, 10a
       error: 'alta.errors.finalizar_fallo',
     })
     expect(rpcSpy).not.toHaveBeenCalledWith('marcar_matricula_lista', expect.anything())
+  })
+})
+
+const OTRO = '99999999-9999-4999-8999-999999999999'
+const OTRO_TITULAR = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+/** El segundo tutor CON CUENTA PROPIA, visto por el titular: la fase 6 le oculta sus personales. */
+const segundoConCuenta = {
+  id: '88888888-8888-4888-8888-888888888888',
+  rol_familia: 'segundo_tutor',
+  usuario_id: OTRO,
+  email: 'segundo.demo@example.test',
+  nombre_completo: 'Segundo Demo',
+  direccion_calle: 'Calle Demo',
+  direccion_numero: null,
+  direccion_cp: '46001',
+  direccion_ciudad: 'Ciudad Demo',
+  dni_documento_path: `${CENTRO}/${NINO}/dni-segundo.pdf`,
+  telefono: null,
+  fecha_nacimiento: null,
+  dni_numero: null,
+  estudios: null,
+  empresa: null,
+  ve_personales: false,
+}
+
+describe('finalizarAlta · el otro tutor con cuenta propia (fase 6, destapado en la 10b-2)', () => {
+  // Desde la fase 6 (#526), si los dos tutores tenían cuenta, el gate daba «no se pudo leer» y la
+  // familia no podía cerrar: confundía «no lo veo por la regla» con «la lectura falló». Lo juzga la
+  // base (`tutor_completo`), y su HINT llega a la pantalla.
+  it('premisa: el falso deja al titular sin ver los personales del segundo con cuenta', async () => {
+    const estado = altaCompleta()
+    estado.familia_tutores.push(segundoConCuenta)
+    const { fake } = makeFake(estado)
+    const { data } = await (fake.rpc('tutores_de_familia', {
+      p_familia_id: FAMILIA,
+    }) as unknown as Promise<{
+      data: Array<{ usuario_id: string; ve_personales: boolean }>
+    }>)
+    expect(data.map((t) => [t.usuario_id, t.ve_personales])).toEqual([
+      [USER, true],
+      [OTRO, false],
+    ])
+  })
+
+  it('el titular cierra: no ver al segundo por la regla no es «no se pudo leer»', async () => {
+    const estado = altaCompleta()
+    estado.familia_tutores.push(segundoConCuenta)
+    const { r, cerro } = await cierra(estado)
+    expect(r).toEqual({ success: true, data: { id: NINO } })
+    expect(cerro).toBe(true)
+  })
+
+  it('si al segundo le falta algo, lo dice la base, y la pantalla lo nombra', async () => {
+    const estado = altaCompleta()
+    estado.familia_tutores.push(segundoConCuenta)
+    estado.errorMarcar = { code: 'P0001', message: 'x', hint: 'datos_tutor_por_completar' }
+    const { r } = await cierra(estado)
+    expect(r).toEqual({
+      success: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['tutor1', 'tutor2'],
+    })
+  })
+
+  it('si falla la función de los personales, un tutor ajeno NO pasa por «lo juzga la base»: no se cierra', async () => {
+    // Todas las filas ajenas a quien cierra (como Dirección en el alta en papel): sin esto, la fila
+    // propia ilegible ya frenaba sola y el test pasaba por otra razón (control negativo, 2026-11-19).
+    const estado = altaCompleta()
+    estado.familia_tutores[0] = { ...estado.familia_tutores[0], usuario_id: OTRO_TITULAR }
+    estado.familia_tutores.push(segundoConCuenta)
+    const { fake, rpcSpy } = makeFake(estado)
+    const rpc = fake.rpc
+    fake.rpc = (fn: string, args: Record<string, unknown>) =>
+      fn === 'tutores_de_familia'
+        ? Promise.resolve({ data: null, error: { code: 'XX000', message: 'fallo' } })
+        : rpc(fn, args)
+    createClientMock.mockReturnValue(fake)
+    expect(await finalizarAlta(NINO)).toEqual({
+      success: false,
+      error: 'alta.errors.finalizar_fallo',
+    })
+    expect(rpcSpy).not.toHaveBeenCalledWith('marcar_matricula_lista', expect.anything())
+  })
+
+  it('la fila de QUIEN CIERRA sin leer sí es un fallo: no se cierra', async () => {
+    const estado = altaCompleta()
+    estado.familia_tutores[0] = { ...estado.familia_tutores[0], ve_personales: false }
+    const { r, cerro } = await cierra(estado)
+    expect(r).toEqual({ success: false, error: 'alta.errors.finalizar_fallo' })
+    expect(cerro).toBe(false)
   })
 })
 
