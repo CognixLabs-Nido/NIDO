@@ -302,6 +302,24 @@ Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza
 > (2026-11-05)»). Lo aplica el 4b-2 (`20270109120000`): el cierre ya no los acepta y las filas se
 > quedan como histórico.
 
+### Después de validar, nada cambia sin validación (2026-11-20)
+
+Regla general de Jose, literal: **«una vez que la directora valide los documentos en el alta, una
+familia no debe poder cambiar nada sin validación (ni sepa, ni dni, ni firmas realizadas, ni
+nada)»**.
+
+- Manda sobre el encargo del PDF del mandato SEPA: ese PDF es **un caso** de la regla, no el
+  encargo.
+- **La respuesta no es prohibir:** un cambio hecho después de validar queda **pendiente de que la
+  directora lo apruebe**, por la cola de cambios, que es el mecanismo de la casa (ya la usan los
+  datos del niño desde el 2026-11-08 y los del tutor desde la fase 6). Hoy los **ficheros y las
+  firmas** no pasan por ella.
+- **Primero se mide, con sesión de tutor y el alta validada:** qué puede cambiar, borrar o
+  sustituir una familia sin pasar por la cola, y por qué vía (política de Storage, política de
+  tabla o función). Con ese número se decide el troceo.
+- **El troceo va por gravedad:** primero lo que es prueba de algo (el mandato, los DNI, las firmas)
+  y después lo que solo es un dato.
+
 ## Pendiente de decisión del responsable
 
 P-1 a P-5 se contestaron el 2026-10-31 y están arriba, en SEPA. Quedan:
