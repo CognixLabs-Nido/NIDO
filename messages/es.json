@@ -4699,7 +4699,8 @@
         "transferencia": "Transferencia",
         "efectivo": "Efectivo"
       },
-      "copia_ficha_firmada": "Existe una copia firmada de la ficha del alta por cada firma de esta lista, con los datos tal como estaban el día en que se firmó y sellada con el valor que ves en cada una. No va en este archivo: sus datos, los de salud incluidos, son los de la ficha, que sale en este mismo export tal como está hoy y puede haber cambiado desde entonces. Fecha de cada copia:"
+      "copia_ficha_firmada": "Existe una copia firmada de la ficha del alta por cada firma de esta lista, con los datos tal como estaban el día en que se firmó y sellada con el valor que ves en cada una. No va en este archivo: sus datos, los de salud incluidos, son los de la ficha, que sale en este mismo export tal como está hoy y puede haber cambiado desde entonces. Fecha de cada copia:",
+      "copia_ficha_firmada_como": "Pídesela a la Dirección del centro: te la dará en PDF, con los datos tal como estaban el día de la firma."
     },
     "descargar_mis_datos": "Descargar mis datos",
     "exportar_nino": "Exportar datos del niño",
@@ -5038,6 +5039,11 @@
         "registrar": "Registrar la firma en papel y terminar el alta",
         "sin_tutor_con_cuenta": "Para registrar la firma en papel, el tutor o tutora que la firmó tiene que haber aceptado su invitación: sin cuenta no se puede guardar a su nombre.",
         "no_se_pudo_leer": "No hemos podido leer los tutores del niño. Vuelve a intentarlo."
+      },
+      "copia": {
+        "titulo": "Copia firmada",
+        "descargar": "Descargar la copia firmada (PDF)",
+        "ayuda": "Los datos tal como estaban el día de la firma, con la plantilla con la que se firmó."
       }
     }
   },
@@ -5386,7 +5392,9 @@
     "origen": {
       "ficha": "desde la ficha del niño",
       "alta": "desde el formulario de alta",
-      "export": "en una exportación de datos"
+      "export": "en una exportación de datos",
+      "datos_bloqueados": "al consultar Dirección los datos bloqueados",
+      "ficha_firmada": "al descargar la copia firmada de la ficha"
     },
     "campo": {
       "alergias_graves": "alergias graves",

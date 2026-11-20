@@ -303,6 +303,8 @@ export async function pedirRefirmaFicha(
 
 /** La última firma del niño (quién, cuándo, cómo), con las columnas que la sesión lee. */
 export interface UltimaFirmaFicha {
+  /** El id de la firma: con él se descarga su copia (10c, `/ficha-firmada/[firmaId]`). */
+  id: string
   firmadoAt: string
   metodo: 'digital' | 'presencial'
   rolFirmante: string
@@ -317,7 +319,7 @@ export async function leerUltimaFirmaFicha(
 ): Promise<ResultadoFicha<UltimaFirmaFicha | null>> {
   const { data, error } = await sesion
     .from('firmas_ficha')
-    .select('firmado_at, metodo_firma, rol_firmante, firmante_id, tutor_id')
+    .select('id, firmado_at, metodo_firma, rol_firmante, firmante_id, tutor_id')
     .eq('nino_id', ninoId)
     .order('firmado_at', { ascending: false })
     .order('id', { ascending: false })
@@ -331,6 +333,7 @@ export async function leerUltimaFirmaFicha(
   return {
     ok: true,
     data: {
+      id: data.id,
       firmadoAt: data.firmado_at,
       metodo: data.metodo_firma as UltimaFirmaFicha['metodo'],
       rolFirmante: String(data.rol_firmante),

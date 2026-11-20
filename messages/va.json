@@ -4699,7 +4699,8 @@
         "transferencia": "Transferència",
         "efectivo": "Efectiu"
       },
-      "copia_ficha_firmada": "Hi ha una còpia signada de la fitxa de l'alta per cada signatura d'aquesta llista, amb les dades tal com estaven el dia que es va signar i segellada amb el valor que veus en cada una. No va en aquest arxiu: les seues dades, les de salut incloses, són les de la fitxa, que ix en aquesta mateixa exportació tal com està hui i pot haver canviat des de llavors. Data de cada còpia:"
+      "copia_ficha_firmada": "Hi ha una còpia signada de la fitxa de l'alta per cada signatura d'aquesta llista, amb les dades tal com estaven el dia que es va signar i segellada amb el valor que veus en cada una. No va en aquest arxiu: les seues dades, les de salut incloses, són les de la fitxa, que ix en aquesta mateixa exportació tal com està hui i pot haver canviat des de llavors. Data de cada còpia:",
+      "copia_ficha_firmada_como": "Demana-la a la Direcció del centre: te la donarà en PDF, amb les dades tal com estaven el dia de la signatura."
     },
     "descargar_mis_datos": "Descarregar les meues dades",
     "exportar_nino": "Exportar dades del xiquet",
@@ -5038,6 +5039,11 @@
         "registrar": "Registrar la firma en paper i acabar l'alta",
         "sin_tutor_con_cuenta": "Per a registrar la firma en paper, el tutor o tutora que la va firmar ha d'haver acceptat la seua invitació: sense compte no es pot guardar al seu nom.",
         "no_se_pudo_leer": "No hem pogut llegir els tutors del xiquet. Torna-ho a intentar."
+      },
+      "copia": {
+        "titulo": "Còpia signada",
+        "descargar": "Descarregar la còpia signada (PDF)",
+        "ayuda": "Les dades tal com estaven el dia de la signatura, amb la plantilla amb què es va signar."
       }
     }
   },
@@ -5386,7 +5392,9 @@
     "origen": {
       "ficha": "des de la fitxa del xiquet",
       "alta": "des del formulari d'alta",
-      "export": "en una exportació de dades"
+      "export": "en una exportació de dades",
+      "datos_bloqueados": "en consultar la Direcció les dades bloquejades",
+      "ficha_firmada": "en descarregar la còpia signada de la fitxa"
     },
     "campo": {
       "alergias_graves": "al·lèrgies greus",
