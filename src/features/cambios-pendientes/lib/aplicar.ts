@@ -21,6 +21,7 @@ import {
   payloadDatosTutorSchema,
   payloadDocumentoSchema,
   payloadGastosGestionSchema,
+  payloadMandatoSepaSchema,
   payloadNinosFamiliaSchema,
   payloadNinosIdentidadSchema,
   payloadPeticionServiciosSchema,
@@ -213,7 +214,33 @@ export async function aplicarCambioPendiente(
     return
   }
 
+  if (entidad === 'mandato_sepa') {
+    // 2026-11-20: el mandato propuesto pasa a activo y el que había, a revocado (se conserva), por
+    // `decidir_mandato_propuesto` con la sesión de la directora. Nada se borra en Storage: los PDF son
+    // el histórico de lo firmado.
+    const { mandato_id } = payloadMandatoSepaSchema.parse(row.payload)
+    await decidirMandato(db, mandato_id, true)
+    return
+  }
+
   throw new Error(`entidad_desconocida:${row.entidad}`)
+}
+
+/**
+ * 2026-11-20: Dirección decide un mandato propuesto. Lanza si la base no lo deja (no es de su centro, o
+ * ya no está esperando): la acción revierte la entrada de la cola a pendiente.
+ */
+export async function decidirMandato(
+  db: Client,
+  mandatoId: string,
+  aprobar: boolean
+): Promise<void> {
+  const { data, error } = await db.rpc('decidir_mandato_propuesto', {
+    p_mandato_id: mandatoId,
+    p_aprobar: aprobar,
+  })
+  if (error) throw new Error(`mandato_sepa: ${error.hint ?? error.code ?? ''}`)
+  if (!data) throw new Error('mandato_sepa: sin_decidir')
 }
 
 /**

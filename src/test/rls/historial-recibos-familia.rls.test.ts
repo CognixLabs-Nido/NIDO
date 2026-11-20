@@ -11,6 +11,7 @@ import {
   crearFamiliaTutor,
   deleteTestCentro,
   deleteTestUser,
+  antesDeValidar,
   matricular,
   serviceClient,
   type TestUser,
@@ -146,23 +147,28 @@ describe('F-6 — histórico de recibos de la familia', () => {
     await asignarRol(tutora.id, centro.id, 'tutor_legal')
     await crearFamiliaTutor(familia, tutora.id)
     const cTutora = await clientFor(tutora)
-    await ok(
-      cTutora.rpc('registrar_mandato_sepa', {
-        p_familia_id: familia,
-        p_nino_id: nino.id,
-        p_iban: 'ES7620770024003102575766',
-        p_titular: 'Tutora Historial F6',
-        p_identificador_mandato: 'NIDO-F6-1',
-        p_documento_path: '',
-        p_firma_imagen: '',
-        p_nombre_tecleado: 'Tutora Historial F6',
-        p_texto_hash: 'c'.repeat(64),
-        ...datosMandatoV2(centro),
-        p_ip_address: null,
-        p_user_agent: 'test',
-        p_fecha_firma: '2026-01-01T10:00:00Z',
-      } as never),
-      'mandato'
+    // 2026-11-20: el mandato del alta se firma antes de validar (con la familia validada, va a la cola).
+    await antesDeValidar(
+      familia,
+      async () =>
+        await ok(
+          cTutora.rpc('registrar_mandato_sepa', {
+            p_familia_id: familia,
+            p_nino_id: nino.id,
+            p_iban: 'ES7620770024003102575766',
+            p_titular: 'Tutora Historial F6',
+            p_identificador_mandato: 'NIDO-F6-1',
+            p_documento_path: '',
+            p_firma_imagen: '',
+            p_nombre_tecleado: 'Tutora Historial F6',
+            p_texto_hash: 'c'.repeat(64),
+            ...datosMandatoV2(centro),
+            p_ip_address: null,
+            p_user_agent: 'test',
+            p_fecha_firma: '2026-01-01T10:00:00Z',
+          } as never),
+          'mandato'
+        )
     )
 
     directora = await createTestUser({ nombre: 'Directora Historial F6' })

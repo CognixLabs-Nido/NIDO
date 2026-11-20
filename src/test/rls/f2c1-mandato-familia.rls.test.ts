@@ -110,6 +110,14 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     ninoA1 = await insertarNino(familiaA, 'Nino A1 F2C1')
     ninoA2 = await insertarNino(familiaA, 'Nino A2 F2C1')
     await matricular(ninoA1.id, aulaA.id, cursoA.id)
+    // 2026-11-20 (`20270201120000`): este fichero mide el mandato de la familia EN SU ALTA (registrar,
+    // el reintento, sustituir). Con la familia validada eso va a la cola (`prueba-tras-validar`): aquí
+    // la matrícula sigue en su alta.
+    const enAlta = await serviceClient
+      .from('matriculas')
+      .update({ estado: 'pendiente' })
+      .eq('nino_id', ninoA1.id)
+    if (enAlta.error) throw new Error(`en alta: ${enAlta.error.message}`)
 
     adminA = await createTestUser({ nombre: 'Admin A F2C1' })
     profeA = await createTestUser({ nombre: 'Profe A F2C1' })

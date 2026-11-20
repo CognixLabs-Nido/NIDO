@@ -1,5 +1,7 @@
 import 'server-only'
 
+import type { Database } from '@/types/db'
+
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { createClient } from '@/lib/supabase/server'
 import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
@@ -11,6 +13,8 @@ import {
   firmarRutasBucket,
 } from '@/shared/lib/adjuntos/storage'
 
+/** El estado del mandato, del enum de la base (2026-11-20: ganó 'propuesto' y 'rechazado'). */
+type EstadoMandato = Database['public']['Enums']['estado_mandato_sepa']
 export interface TutorAltaItem {
   id: string
   tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario'
@@ -25,7 +29,7 @@ export interface TutorAltaItem {
 }
 
 export interface MandatoAltaItem {
-  estado: 'activo' | 'revocado'
+  estado: EstadoMandato
   titular: string | null
   identificador_mandato: string
   fecha_firma: string | null
@@ -78,7 +82,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
     : null
 
   let mandatoRow: {
-    estado: 'activo' | 'revocado'
+    estado: EstadoMandato
     titular: string
     identificador_mandato: string
     fecha_firma: string | null

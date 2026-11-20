@@ -67,3 +67,27 @@ export async function registrarCambioPendiente(
   }
   return { ok: true }
 }
+
+/**
+ * 2026-11-20 — ¿la FAMILIA tiene algún alta validada? Misma definición que
+ * `privado.familia_alta_validada`, que es la frontera que aplica la base al mandato (es de la familia).
+ * Las rutas del mandato lo miran ANTES de subir el PDF: con la familia validada, el PDF va a una ruta
+ * nueva (sin sobrescribir el validado) y el mandato a la cola. Si esta lectura se equivoca, la base
+ * contesta igual (`cola_validacion`).
+ */
+export async function familiaAltaValidada(
+  supabase: Client,
+  centroId: string,
+  familiaId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('matriculas')
+    .select('id, nino:ninos!inner(familia_id, centro_id)')
+    .eq('nino.centro_id', centroId)
+    .eq('nino.familia_id', familiaId)
+    .eq('estado', 'activa')
+    .is('fecha_baja', null)
+    .is('deleted_at', null)
+    .limit(1)
+  return (data?.length ?? 0) > 0
+}

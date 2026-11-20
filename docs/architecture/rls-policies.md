@@ -2957,3 +2957,34 @@ Esa línea es la correcta: no es un hueco por cerrar. Cualquier cambio en la vis
 - Qué hacer con las fotos de una familia que se va (borrarlas o entregarlas fuera de la app) lo decide la directora fuera de NIDO.
 
 Esto corrige el «aunque cause baja» del histórico de fotos de ADR-0046, que dejó de ser cierto con `archivar_nino` (F-3-C, ADR-0051). Las dos ADR llevan una nota de 2026-10-15 que dice qué prevalece.
+
+## Después de validar, lo que es prueba no cambia sin Dirección (`20270201120000`)
+
+Regla de Jose del 2026-11-20, opción A (spec `altas-serie.md`, «Después de validar, nada cambia sin
+validación»): vale para lo que es prueba de algo, la documentación y las firmas. Medido abierto en
+producción el 2026-11-20: con el alta validada, la tutora sobrescribía en su misma ruta el DNI, el libro
+de familia, el PDF del mandato, la tarjeta sanitaria y el justificante de gastos, sin cambiar ninguna fila
+ni dejar rastro.
+
+- **Storage.** Las seis políticas de UPDATE (`dni_tutores_update`, `libro_familia_update`,
+  `mandato_sepa_update`, `mandato_sepa_update_familia`, `sip_ninos_update`,
+  `justificantes_gestion_update`) mantienen la rama de Dirección, y la del tutor añade
+  `NOT privado.alta_validada_de_ruta(bucket_id, name)`: del niño de la ruta para el libro, la tarjeta y el
+  justificante, y de la familia para el DNI y el mandato. El INSERT no cambia: subir a una ruta nueva es
+  como se propone el cambio a la cola. En `mandato_sepa_update` la rama del tutor va dentro de un CASE
+  que mira que el segundo segmento sea un uuid: en ese bucket conviven las rutas del niño y las de
+  familia, y un OR no fija el orden de evaluación (sin el CASE, 22P02 al convertir `familia`; medido en
+  el ensayo).
+- **El mandato.** `registrar_mandato_sepa` y `sustituir_mandato_sepa`: un tutor con la familia validada
+  recibe 42501 `cola_validacion`. Propone con `proponer_mandato_sepa` (tutor de la familia validada; una
+  propuesta a la vez, `mandato_pendiente`) y decide Dirección con `decidir_mandato_propuesto` (`es_admin`
+  sin el superusuario).
+- **La ficha que deja de valer (el 14).** `fichas_firmadas_sin_validez(centro)`, solo Dirección: las altas
+  validadas cuya última firma ya no coincide con la ficha (`firma_ficha_vigente` NULL), con la refirma ya
+  pedida marcada. La información médica y los datos pedagógicos siguen libres (decisión del 2026-11-20).
+- **`usuarios`.** `authenticated` solo puede escribir `foto_url` e `idioma_preferido` (permiso por
+  columna). La app escribe esa tabla siempre con service role (medido: cuatro escrituras). `deleted_at`,
+  el nombre y las versiones de consentimiento, solo las funciones: antes la tutora se marcaba como
+  borrada sin ningún olvido y declaraba versiones de privacidad que no existían.
+- Tests: `src/test/rls/prueba-tras-validar.rls.test.ts` (los ficheros, subidos de verdad por la API de
+  Storage en la base efímera del CI).

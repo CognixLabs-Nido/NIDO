@@ -1221,7 +1221,9 @@
         "servicio_comedor": "Menjador",
         "servicio_matinera": "Matinera",
         "servicio_vespertina": "Vesprada",
-        "gastos_forma": "Com paga les despeses de gestió"
+        "gastos_forma": "Com paga les despeses de gestió",
+        "mandato_titular": "Titular del compte",
+        "mandato_iban": "Compte (IBAN)"
       },
       "entidad": {
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
@@ -1231,7 +1233,8 @@
         "ninos_identidad": "Identitat de l'infant",
         "ninos_sip_documento": "Imatge de la targeta sanitària",
         "peticion_servicios": "Serveis",
-        "gastos_gestion": "Despeses de gestió"
+        "gastos_gestion": "Despeses de gestió",
+        "mandato_sepa": "Mandat SEPA (domiciliació)"
       },
       "errors": {
         "registro": "No s'ha pogut registrar el canvi. Torna a provar-ho.",
@@ -1610,6 +1613,14 @@
         "titulo": "Tutors sense accés a la fitxa mèdica",
         "subtitulo": "No poden firmar la fitxa de l'alta fins que els dones accés a la fitxa mèdica.",
         "no_se_pudo_leer": "No hem pogut llegir esta llista."
+      },
+      "ficha_sin_validez": {
+        "titulo": "Fitxes signades que ja no valen",
+        "subtitulo": "La família va canviar alguna cosa de la fitxa després de signar-la (la informació mèdica o les dades pedagògiques). La signatura ja no coincideix amb el que hi ha: demana que la tornen a signar.",
+        "no_se_pudo_leer": "No s’ha pogut comprovar quines fitxes signades continuen valent.",
+        "vacio": "Totes les fitxes signades de les altes validades continuen valent.",
+        "firmada_el": "Signada el {fecha}",
+        "refirma_pedida": "ja has demanat que la tornen a signar"
       }
     }
   },
@@ -4931,12 +4942,15 @@
         "documento": "Revisa el NIF o document d'identitat: si és un DNI, NIE o CIF, la lletra o el dígit de control no quadra.",
         "direccion": "Escriu l'adreça del titular.",
         "centro_sin_cid": "El centre encara no té el seu identificador de creditor, així que no es pot domiciliar. Pregunta al centre.",
-        "acreedor_cambio": "Les dades bancàries del centre han canviat mentre signaves. Torna a obrir la pantalla i signa una altra vegada."
+        "acreedor_cambio": "Les dades bancàries del centre han canviat mentre signaves. Torna a obrir la pantalla i signa una altra vegada.",
+        "mandato_pendiente": "Ja hi ha un canvi de la domiciliació esperant Direcció. Quan el resolga en podràs enviar un altre.",
+        "cola_validacion": "L’alta ja està validada: el mandat ha de passar per Direcció. Torna a enviar-lo."
       },
       "documento_label": "NIF o document d'identitat",
       "documento_ayuda": "Del titular del compte. Si és un document estranger, escriu-lo tal qual.",
       "direccion_label": "Adreça del titular",
-      "acreedor_cid_label": "Identificador de creditor"
+      "acreedor_cid_label": "Identificador de creditor",
+      "pendiente": "Enviat a Direcció: el canvi de la domiciliació s’aplicarà quan el valide."
     },
     "validacion": {
       "enviado": "Canvi enviat a validació de direcció.",

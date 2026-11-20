@@ -29,7 +29,14 @@ const { bd } = vi.hoisted(() => ({
     llamadas: [] as string[],
     rpcArgs: null as Record<string, unknown> | null,
     rpcError: null as { message: string; hint?: string } | null,
+    // 2026-11-20: ¿la familia tiene un alta validada? (entonces el mandato del tutor va a la cola)
+    validada: false,
+    subidas: [] as { path: string; upsert: boolean }[],
   },
+}))
+
+vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
+  familiaAltaValidada: async () => bd.validada,
 }))
 
 vi.mock('@/shared/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
@@ -61,7 +68,8 @@ vi.mock('@/lib/supabase/server', () => ({
     },
     storage: {
       from: () => ({
-        upload: async () => {
+        upload: async (path: string, _f: unknown, o: { upsert: boolean }) => {
+          bd.subidas.push({ path, upsert: o.upsert })
           bd.llamadas.push('sube')
           return { error: null }
         },
@@ -102,6 +110,8 @@ beforeEach(() => {
   bd.llamadas = []
   bd.rpcArgs = null
   bd.rpcError = null
+  bd.validada = false
+  bd.subidas = []
 })
 
 describe('POST /alta/[ninoId]/mandato-sepa (0c-2)', () => {
@@ -174,6 +184,36 @@ describe('POST /alta/[ninoId]/mandato-sepa (0c-2)', () => {
       bd.rpcError = { message: 'x', hint }
       const r = await enviar()
       expect.soft(r, hint).toEqual({ status: 409, json: { success: false, error } })
+    }
+  })
+
+  it('2026-11-20 · familia sin validar: sobrescribe su mandato.pdf y registra directo', async () => {
+    const r = await enviar()
+    expect(r.json).toMatchObject({ success: true, pendiente: false })
+    expect(bd.subidas).toEqual([{ path: `${CENTRO}/${NINO}/mandato.pdf`, upsert: true }])
+    expect(bd.llamadas).toEqual(['sube', 'registrar_mandato_sepa'])
+  })
+
+  it('2026-11-20 · familia validada: PDF a una ruta nueva sin sobrescribir, y el mandato propuesto', async () => {
+    bd.validada = true
+    const r = await enviar()
+    expect(r.json).toMatchObject({ success: true, pendiente: true })
+    expect(bd.subidas).toHaveLength(1)
+    expect(bd.subidas[0].upsert).toBe(false)
+    expect(bd.subidas[0].path).toMatch(new RegExp(`^${CENTRO}/${NINO}/mandato-\\d+\\.pdf$`))
+    expect(bd.llamadas).toEqual(['sube', 'proponer_mandato_sepa'])
+  })
+
+  it('2026-11-20 · lo que contesta la base de la cola se dice con su clave', async () => {
+    bd.validada = true
+    for (const [hint, clave] of [
+      ['mandato_pendiente', 'alta.sepa.errors.mandato_pendiente'],
+      ['cola_validacion', 'alta.sepa.errors.cola_validacion'],
+    ]) {
+      bd.rpcError = { message: 'x', hint }
+      expect
+        .soft(await enviar(), hint)
+        .toEqual({ status: 409, json: { success: false, error: clave } })
     }
   })
 })

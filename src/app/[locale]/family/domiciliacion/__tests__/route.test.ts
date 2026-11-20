@@ -25,7 +25,13 @@ const { bd } = vi.hoisted(() => ({
     centro: null as { nombre: string; identificador_acreedor: string | null } | null,
     llamadas: [] as string[],
     rpcArgs: null as Record<string, unknown> | null,
+    // 2026-11-20: ¿la familia tiene un alta validada? (entonces el mandato del tutor va a la cola)
+    validada: false,
   },
+}))
+
+vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
+  familiaAltaValidada: async () => bd.validada,
 }))
 
 vi.mock('@/shared/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
@@ -91,6 +97,7 @@ beforeEach(() => {
   bd.centro = { nombre: 'Centro Demo', identificador_acreedor: 'ES81ZZZB00000000' }
   bd.llamadas = []
   bd.rpcArgs = null
+  bd.validada = false
 })
 
 describe('POST /family/domiciliacion (0c-2)', () => {
@@ -144,5 +151,12 @@ describe('POST /family/domiciliacion (0c-2)', () => {
       })
       expect.soft(bd.llamadas).toEqual([])
     }
+  })
+
+  it('2026-11-20 · familia validada: el mandato del tutor se propone, no se registra', async () => {
+    bd.validada = true
+    const r = await enviar()
+    expect(r.json).toMatchObject({ success: true, pendiente: true })
+    expect(bd.llamadas).toEqual(['sube', 'proponer_mandato_sepa'])
   })
 })

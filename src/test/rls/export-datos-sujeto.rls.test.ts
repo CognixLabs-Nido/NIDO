@@ -23,6 +23,7 @@ import {
   type TestNino,
   type TestUser,
   datosMandatoV2,
+  antesDeValidar,
 } from './setup'
 
 import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
@@ -179,21 +180,24 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
 
     // Mandato SEPA firmado por el tutor (el IBAN se cifra; solo salen los 4 últimos).
     const cTutor = await clientFor(tutor)
-    const { error: mErr } = await cTutor.rpc('registrar_mandato_sepa', {
-      p_familia_id: nino.familia_id,
-      p_nino_id: null,
-      p_iban: 'ES76 2077 0024 0031 0257 5766',
-      p_titular: 'Titular Art15',
-      p_identificador_mandato: 'NIDO-ART15-1',
-      p_documento_path: '',
-      p_firma_imagen: '',
-      p_nombre_tecleado: 'Titular Art15',
-      p_texto_hash: 'a'.repeat(64),
-      ...datosMandatoV2(centro),
-      p_ip_address: null,
-      p_user_agent: 'test',
-      p_fecha_firma: '2026-02-01T10:00:00Z',
-    } as never)
+    // 2026-11-20: el mandato del alta, antes de validar (con la familia validada, va a la cola).
+    const { error: mErr } = await antesDeValidar(nino.familia_id, () =>
+      cTutor.rpc('registrar_mandato_sepa', {
+        p_familia_id: nino.familia_id,
+        p_nino_id: null,
+        p_iban: 'ES76 2077 0024 0031 0257 5766',
+        p_titular: 'Titular Art15',
+        p_identificador_mandato: 'NIDO-ART15-1',
+        p_documento_path: '',
+        p_firma_imagen: '',
+        p_nombre_tecleado: 'Titular Art15',
+        p_texto_hash: 'a'.repeat(64),
+        ...datosMandatoV2(centro),
+        p_ip_address: null,
+        p_user_agent: 'test',
+        p_fecha_firma: '2026-02-01T10:00:00Z',
+      } as never)
+    )
     if (mErr) throw new Error(`mandato: ${mErr.message}`)
 
     // Telemetría del tutor: preferencia, dispositivo y lectura de su conversación.

@@ -1221,7 +1221,9 @@
         "servicio_comedor": "Comedor",
         "servicio_matinera": "Matinera",
         "servicio_vespertina": "Tarde",
-        "gastos_forma": "Cómo paga los gastos de gestión"
+        "gastos_forma": "Cómo paga los gastos de gestión",
+        "mandato_titular": "Titular de la cuenta",
+        "mandato_iban": "Cuenta (IBAN)"
       },
       "entidad": {
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
@@ -1231,7 +1233,8 @@
         "ninos_identidad": "Identidad del niño",
         "ninos_sip_documento": "Imagen de la tarjeta sanitaria",
         "peticion_servicios": "Servicios",
-        "gastos_gestion": "Gastos de gestión"
+        "gastos_gestion": "Gastos de gestión",
+        "mandato_sepa": "Mandato SEPA (domiciliación)"
       },
       "errors": {
         "registro": "No se pudo registrar el cambio. Inténtalo de nuevo.",
@@ -1610,6 +1613,14 @@
         "titulo": "Tutores sin acceso a la ficha médica",
         "subtitulo": "No pueden firmar la ficha del alta hasta que les des acceso a la ficha médica.",
         "no_se_pudo_leer": "No hemos podido leer esta lista."
+      },
+      "ficha_sin_validez": {
+        "titulo": "Fichas firmadas que ya no valen",
+        "subtitulo": "La familia cambió algo de la ficha después de firmarla (la información médica o los datos pedagógicos). La firma ya no coincide con lo que hay: pide que la vuelvan a firmar.",
+        "no_se_pudo_leer": "No se ha podido comprobar qué fichas firmadas siguen valiendo.",
+        "vacio": "Todas las fichas firmadas de las altas validadas siguen valiendo.",
+        "firmada_el": "Firmada el {fecha}",
+        "refirma_pedida": "ya has pedido que la vuelvan a firmar"
       }
     }
   },
@@ -4931,12 +4942,15 @@
         "documento": "Revisa el NIF o documento de identidad: si es un DNI, NIE o CIF, la letra o el dígito de control no cuadra.",
         "direccion": "Escribe la dirección del titular.",
         "centro_sin_cid": "El centro todavía no tiene su identificador de acreedor, así que no se puede domiciliar. Pregunta en el centro.",
-        "acreedor_cambio": "Los datos bancarios del centro han cambiado mientras firmabas. Vuelve a abrir la pantalla y firma otra vez."
+        "acreedor_cambio": "Los datos bancarios del centro han cambiado mientras firmabas. Vuelve a abrir la pantalla y firma otra vez.",
+        "mandato_pendiente": "Ya hay un cambio de la domiciliación esperando a Dirección. Cuando lo resuelva podrás enviar otro.",
+        "cola_validacion": "El alta ya está validada: el mandato tiene que pasar por Dirección. Vuelve a enviarlo."
       },
       "documento_label": "NIF o documento de identidad",
       "documento_ayuda": "Del titular de la cuenta. Si es un documento extranjero, escríbelo tal cual.",
       "direccion_label": "Dirección del titular",
-      "acreedor_cid_label": "Identificador de acreedor"
+      "acreedor_cid_label": "Identificador de acreedor",
+      "pendiente": "Enviado a Dirección: el cambio de la domiciliación se aplicará cuando lo valide."
     },
     "validacion": {
       "enviado": "Cambio enviado a validación de dirección.",

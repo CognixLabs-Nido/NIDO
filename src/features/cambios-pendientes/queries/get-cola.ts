@@ -8,6 +8,7 @@ import { logger } from '@/shared/lib/logger'
 
 import {
   payloadGastosGestionSchema,
+  payloadMandatoSepaSchema,
   payloadPeticionServiciosSchema,
   type EntidadCambio,
 } from '../schemas'
@@ -166,6 +167,13 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
     filas.filter((r) => r.entidad === 'gastos_gestion')
   )
 
+  // 2026-11-20: los mandatos propuestos y el activo de cada familia (Dirección los lee por
+  // `mandatos_sepa_select`). El IBAN sale enmascarado: solo sus cuatro últimas cifras.
+  const mandatos = await leerMandatosDeLaCola(
+    supabase,
+    filas.filter((r) => r.entidad === 'mandato_sepa')
+  )
+
   return filas.map((r) => {
     const entidad = r.entidad as EntidadCambio
     const payload = (r.payload && typeof r.payload === 'object' ? r.payload : {}) as Fila
@@ -179,6 +187,8 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       lineas = servicios ? lineasDeServicios(payload, r.nino_id, servicios) : null
     } else if (entidad === 'gastos_gestion') {
       lineas = gastos ? lineasDeGastos(payload, r.nino_id, gastos) : null
+    } else if (entidad === 'mandato_sepa') {
+      lineas = mandatos ? lineasDeMandato(payload, mandatos) : null
     } else if (entidad === 'ninos_libro_familia') {
       lineas = [{ campo: 'documento', antes: texto(nino.libro_familia_path), despues: 'nuevo' }]
     } else if (entidad === 'ninos_sip_documento') {
@@ -205,6 +215,80 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       lineas,
     }
   })
+}
+
+interface MandatoLeido {
+  id: string
+  familia_id: string | null
+  estado: string
+  titular: string
+  iban_ultimos4: string | null
+  documento_path: string | null
+}
+interface MandatosDeLaCola {
+  porId: Map<string, MandatoLeido>
+  activoDeFamilia: Map<string, MandatoLeido>
+}
+
+/** Los propuestos de la cola y el activo de sus familias; `null` si la lectura falla. */
+async function leerMandatosDeLaCola(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filas: { payload: unknown }[]
+): Promise<MandatosDeLaCola | null> {
+  const vacio: MandatosDeLaCola = { porId: new Map(), activoDeFamilia: new Map() }
+  const ids = filas.flatMap((r) => {
+    const ok = payloadMandatoSepaSchema.safeParse(r.payload)
+    return ok.success ? [ok.data.mandato_id] : []
+  })
+  if (ids.length === 0) return vacio
+  const COLUMNAS = 'id, familia_id, estado, titular, iban_ultimos4, documento_path'
+  const p = await supabase.from('mandatos_sepa').select(COLUMNAS).in('id', ids)
+  if (p.error) {
+    logger.warn('listarCambiosPendientes: los mandatos propuestos', p.error.code ?? 'sin_codigo')
+    return null
+  }
+  for (const m of p.data ?? []) vacio.porId.set(m.id, m)
+  const familias = [
+    ...new Set((p.data ?? []).map((m) => m.familia_id).filter((f): f is string => f !== null)),
+  ]
+  if (familias.length > 0) {
+    const a = await supabase
+      .from('mandatos_sepa')
+      .select(COLUMNAS)
+      .in('familia_id', familias)
+      .eq('estado', 'activo')
+      .is('deleted_at', null)
+    if (a.error) {
+      logger.warn('listarCambiosPendientes: los mandatos activos', a.error.code ?? 'sin_codigo')
+      return null
+    }
+    for (const m of a.data ?? []) if (m.familia_id) vacio.activoDeFamilia.set(m.familia_id, m)
+  }
+  return vacio
+}
+
+const enmascarado = (ultimos4: string | null | undefined) => (ultimos4 ? `••••${ultimos4}` : null)
+
+/**
+ * El mandato que se propone frente al activo: el titular, la cuenta (enmascarada) y el documento,
+ * siempre (un mandato nuevo es otra firma aunque la cuenta no cambie). `null` si la propuesta no se
+ * ha podido leer o ya no está esperando: la pantalla dice que no lo sabe.
+ */
+function lineasDeMandato(payload: Fila, m: MandatosDeLaCola): LineaCambio[] | null {
+  const ok = payloadMandatoSepaSchema.safeParse(payload)
+  if (!ok.success) return null
+  const propuesto = m.porId.get(ok.data.mandato_id)
+  if (!propuesto || propuesto.estado !== 'propuesto') return null
+  const activo = propuesto.familia_id ? m.activoDeFamilia.get(propuesto.familia_id) : undefined
+  return [
+    { campo: 'mandato_titular', antes: activo?.titular ?? null, despues: propuesto.titular },
+    {
+      campo: 'mandato_iban',
+      antes: enmascarado(activo?.iban_ultimos4),
+      despues: enmascarado(propuesto.iban_ultimos4),
+    },
+    { campo: 'documento', antes: texto(activo?.documento_path ?? null), despues: 'nuevo' },
+  ]
 }
 
 type GastosDeLaCola = Map<string, { forma: string | null; justificante_path: string | null }>

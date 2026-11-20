@@ -12,6 +12,8 @@ import {
   motivoRechazoV2,
 } from '@/features/alta/lib/mandato-v2-servidor'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
+import { familiaAltaValidada } from '@/features/cambios-pendientes/lib/gate'
+import { motivoCola, proponerMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -21,6 +23,8 @@ const MAX_FIRMA_CHARS = 500000
 
 interface RespuestaOk {
   success: true
+  /** 2026-11-20: con la familia ya validada, el mandato del tutor espera a Dirección en la cola. */
+  pendiente: boolean
   mandato: { identificador: string; documento: { path: string; url: string | null } }
 }
 interface RespuestaError {
@@ -127,8 +131,15 @@ export async function POST(
   const firmaParaRpc = esPresencial ? '' : (firmaImagen as string)
 
   const iban = normalizarIban(ibanRaw)
-  // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos.
-  const path = `${nino.centro_id}/${nino.id}/mandato.pdf`
+  // 2026-11-20 (regla de Jose, opción A): con el alta de la familia validada, el mandato del tutor es
+  // prueba y va a la cola. Su PDF va a una ruta NUEVA: el validado no se sobrescribe (la base tampoco
+  // lo deja). Dirección, presencial, sigue registrando directo.
+  const enCola =
+    !esPresencial && (await familiaAltaValidada(supabase, nino.centro_id, nino.familia_id))
+  // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos. En la cola, otra.
+  const path = enCola
+    ? `${nino.centro_id}/${nino.id}/mandato-${Date.now()}.pdf`
+    : `${nino.centro_id}/${nino.id}/mandato.pdf`
 
   // Acreedor = centro, con su CID. Lo lee el cliente de usuario (RLS `centros`:
   // pertenece_a_centro → el tutor lo ve). Sin CID no se firma ningún mandato (0c, 2026-11-04): el
@@ -153,7 +164,7 @@ export async function POST(
   //    sobrescribir en re-firma sin necesitar DELETE (que es admin-only en este bucket).
   const subida = await supabase.storage
     .from(BUCKET_MANDATO_SEPA)
-    .upload(path, file, { contentType: 'application/pdf', upsert: true })
+    .upload(path, file, { contentType: 'application/pdf', upsert: !enCola })
   if (subida.error) {
     const msg = subida.error.message
     if (/row-level security|unauthorized|403/i.test(msg))
@@ -167,7 +178,7 @@ export async function POST(
   const ipAddress = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
-  const { error: rpcErr } = await supabase.rpc('registrar_mandato_sepa', {
+  const args = {
     p_familia_id: nino.familia_id,
     p_nino_id: nino.id,
     p_iban: iban,
@@ -180,10 +191,15 @@ export async function POST(
     p_ip_address: ipAddress,
     p_user_agent: userAgent ?? '',
     p_fecha_firma: fechaFirmaIso,
-    p_metodo: esPresencial ? 'presencial' : 'digital',
+    p_metodo: esPresencial ? ('presencial' as const) : ('digital' as const),
     ...v2.rpc,
-  })
+  }
+  const { error: rpcErr } = enCola
+    ? await proponerMandatoSepa(supabase, args)
+    : await supabase.rpc('registrar_mandato_sepa', args)
   if (rpcErr) {
+    const cola = motivoCola(rpcErr.hint)
+    if (cola) return err(cola, 409)
     // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
     const motivo = motivoRechazoV2(rpcErr.hint)
@@ -200,6 +216,7 @@ export async function POST(
   const url = await firmarRuta(supabase, BUCKET_MANDATO_SEPA, path)
   return Response.json({
     success: true,
+    pendiente: enCola,
     mandato: { identificador, documento: { path, url } },
   } satisfies RespuestaOk)
 }

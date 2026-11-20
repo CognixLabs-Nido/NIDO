@@ -302,6 +302,81 @@ Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza
 > (2026-11-05)»). Lo aplica el 4b-2 (`20270109120000`): el cierre ya no los acepta y las filas se
 > quedan como histórico.
 
+### Después de validar, nada cambia sin validación (2026-11-20)
+
+Regla general de Jose, literal: **«una vez que la directora valide los documentos en el alta, una
+familia no debe poder cambiar nada sin validación (ni sepa, ni dni, ni firmas realizadas, ni
+nada)»**.
+
+- Manda sobre el encargo del PDF del mandato SEPA: ese PDF es **un caso** de la regla, no el
+  encargo.
+- **La respuesta no es prohibir:** un cambio hecho después de validar queda **pendiente de que la
+  directora lo apruebe**, por la cola de cambios, que es el mecanismo de la casa (ya la usan los
+  datos del niño desde el 2026-11-08 y los del tutor desde la fase 6). Hoy los **ficheros y las
+  firmas** no pasan por ella.
+- **Primero se mide, con sesión de tutor y el alta validada:** qué puede cambiar, borrar o
+  sustituir una familia sin pasar por la cola, y por qué vía (política de Storage, política de
+  tabla o función). Con ese número se decide el troceo.
+- **El troceo va por gravedad:** primero lo que es prueba de algo (el mandato, los DNI, las firmas)
+  y después lo que solo es un dato.
+
+**Las dos decisiones, juntas (2026-11-20, opción A de Jose).** La frase que las reconcilia: **la regla
+del 2026-11-20 vale para lo que es PRUEBA DE ALGO, la documentación y las firmas.** Así no se
+contradicen:
+
+- 2026-11-07 (Fase 5, «Decisiones (2026-11-07 y 2026-11-08)»): los ocho campos que identifican al
+  niño van a la cola; **las observaciones, los hermanos y «cómo nos conoció» siguen directos**.
+- 2026-11-20: con el alta validada, nada que sea prueba cambia sin que Dirección lo apruebe.
+
+Los 14 de la medición abierta del 2026-11-20 (`~/nido-logs/11/abierto/medida/RESUMEN.md`), con ese
+criterio:
+
+- **A la cola, porque son prueba:** 1 a 5, los cinco ficheros (DNI de los tutores, libro de familia,
+  PDF del mandato, tarjeta sanitaria, justificante de gastos), y 8, el mandato SEPA, «con su PDF, su
+  titular y su firma».
+- **Libres, porque no son prueba:**
+  - 6, la foto del niño; 9, los datos pedagógicos; 11, observaciones y hermanos.
+  - 12, firmar un documento del centro: «firmar no es cambiar nada validado, es un acto nuevo del
+    tutor».
+  - 10, la información médica, «Y ESTA ES LA MÁS IMPORTANTE DE LAS LIBRES: una alergia nueva tiene
+    que entrar en el momento. Si la metes en la cola, el día que una madre añada «alérgico a los
+    frutos secos» el dato se queda esperando a que la directora lo apruebe, y eso es peor que
+    cualquier agujero que estemos cerrando. No la toques.»
+  - 13, los consentimientos: «fuera de la regla por el art. 7.3 del RGPD, retirar tiene que ser tan
+    fácil como dar. Ni retirar ni dar pasan por validación.»
+- **14, la firma de la ficha que deja de valer:** «cuando un cambio libre haga que la firma de la
+  ficha deje de valer, DIRECCIÓN TIENE QUE ENTERARSE. Hoy se invalida en silencio, y una ficha que ya
+  no vale y nadie sabe es peor que una sin firmar. Que aparezca en su lista, como los que están sin
+  SIP.»
+- **7, la firma de una autorización de recogida con personas y fotos nuevas: SEGUNDA TANDA, sin
+  tocar.** «Es lo más delicado de todo esto —quién puede sacar a un niño del centro— y tiene un coste
+  operativo» que hay que preguntar a Jose antes de decidirlo.
+
+**El PR de ahora es 1 a 5, el 8 y el 14:** «con el alta validada, el tutor no sobrescribe ningún
+fichero, y subir uno nuevo crea una propuesta en la cola. El mandato igual.» Y los ficheros se miden
+**de verdad, subiendo un fichero por la API de Storage**, antes de cerrarlo: «Leer una política no es
+medir lo que deja hacer, y esto es el agujero principal de todo el encargo: que la ruta validada se
+quede igual y el contenido cambie sin dejar rastro.»
+
+**Decisiones del 2026-11-20 (tarde), Jose, sobre el PR de ahora:**
+
+- **La prueba de Storage, en la base efímera del CI.** «Retiro lo de «súbelo»: te estaba pidiendo
+  sobrescribir el DNI real de una familia en producción, que es justo lo que no se hace, y encima
+  Storage no es transaccional, así que ni siquiera cabía en un ensayo que acaba en RAISE.» El test
+  «entra con la sesión de la tutora, valida el alta, sube un fichero encima del validado y hoy se pone
+  rojo. Nada de prueba en producción, ni por parte de Jose.»
+- **La autobaja entra en este PR.** «Es la misma familia que todo lo demás —escribir lo que no te
+  toca—»: una cuenta puede quedar marcada como borrada sin que haya existido ningún olvido, y puede
+  declarar que aceptó una versión de privacidad que no existe, que luego sale en su propia
+  exportación: «un documento que le damos al interesado afirmando algo que él nunca hizo».
+  - Se mide antes **qué columnas de `usuarios` escribe la app de verdad**, de dónde, y se dejan solo
+    esas; `deleted_at` y las de consentimiento, únicamente para las funciones. Control negativo:
+    escribir `deleted_at` con la sesión del tutor tiene que fallar.
+  - Lo que quedó sin medir (ya marcada, pide su olvido, Dirección lo confirma y lo deshace) se mide si
+    se pueden montar los bloqueos; si no, se dice así en el PR y no se afirma.
+- **El PR queda:** los cinco ficheros, el mandato, el aviso a Dirección cuando la firma de la ficha
+  deja de valer, y la autobaja. **El 7 sigue fuera**, esperando a Jose.
+
 ## Pendiente de decisión del responsable
 
 P-1 a P-5 se contestaron el 2026-10-31 y están arriba, en SEPA. Quedan:
@@ -1330,6 +1405,9 @@ construye encima de una puerta que se va a cerrar.
   lugar), observaciones y cómo nos conoció. Corregir el número de hermanos no necesita a Dirección;
   cambiar el nombre o el DNI, sí. Meter los catorce haría de la cola un trámite que se aprueba sin
   mirar, y una cola que se aprueba sin mirar no protege nada.
+  > El 2026-11-20 Jose confirmó esta decisión junto a su regla general («nada cambia sin validación»):
+  > la regla vale para lo que es **prueba de algo**, la documentación y las firmas; estos campos no lo
+  > son y siguen directos. Las dos, juntas, en «Después de validar, nada cambia sin validación».
 - **Solo se encola lo que cambia** respecto a lo guardado, también en el domicilio y en los datos del
   tutor. Hasta ahora, con el alta validada, guardar el paso del menor encolaba un cambio de domicilio
   cada vez, aunque no se hubiera tocado nada (en producción, el 2026-11-08, la cola tenía 0 entradas:

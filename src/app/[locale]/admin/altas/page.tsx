@@ -17,6 +17,10 @@ import {
   type NinoSinTarjeta,
 } from '@/features/ninos/queries/get-ninos-sin-tarjeta'
 import {
+  getFichasSinValidez,
+  type FichaSinValidez,
+} from '@/features/alta/queries/get-fichas-sin-validez'
+import {
   getTutoresSinAccesoFicha,
   type TutorSinAccesoFicha,
 } from '@/features/alta/queries/get-tutores-sin-acceso-ficha'
@@ -57,10 +61,11 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
   const { centroId } = await requireContextoCentro(locale)
 
   const supabase = await createClient()
-  const [altas, sinTarjeta, sinAccesoFicha] = await Promise.all([
+  const [altas, sinTarjeta, sinAccesoFicha, fichasSinValidez] = await Promise.all([
     getAltasEnProceso(supabase, centroId),
     getNinosSinTarjeta(supabase, centroId),
     getTutoresSinAccesoFicha(supabase, centroId),
+    getFichasSinValidez(supabase, centroId),
   ])
   const tValores = await getTranslations('export.doc.valores')
 
@@ -109,6 +114,8 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
 
       <SinAccesoFicha tutores={sinAccesoFicha} locale={locale} t={t} rol={(v) => tValores(v)} />
 
+      <FichasSinValidez fichas={fichasSinValidez} locale={locale} t={t} fecha={fecha} />
+
       <SinTarjeta ninos={sinTarjeta} locale={locale} t={t} />
     </div>
   )
@@ -147,6 +154,63 @@ function SinAccesoFicha({
               >
                 <span>
                   {n.nombre} {n.apellidos ?? ''} · {rol(n.tipoVinculo)}
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/**
+ * 2026-11-20 (el 14): las fichas firmadas de altas validadas que ya no valen, porque un cambio libre (la
+ * información médica, los datos pedagógicos) movió la ficha. «Una ficha que ya no vale y nadie sabe es
+ * peor que una sin firmar.» Como la de sin tarjeta: siempre a la vista, con su «todas valen».
+ */
+function FichasSinValidez({
+  fichas,
+  locale,
+  t,
+  fecha,
+}: {
+  fichas: FichaSinValidez[] | null
+  locale: string
+  t: T
+  fecha: (iso: string) => string
+}) {
+  return (
+    <section className="space-y-2" data-testid="fichas-sin-validez">
+      <h2 className="text-h3 text-foreground">{t('ficha_sin_validez.titulo')}</h2>
+      <p className="text-muted-foreground text-sm">{t('ficha_sin_validez.subtitulo')}</p>
+      {fichas === null ? (
+        <p className="text-sm">{t('ficha_sin_validez.no_se_pudo_leer')}</p>
+      ) : fichas.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{t('ficha_sin_validez.vacio')}</p>
+      ) : (
+        <ul className="divide-border divide-y rounded-xl border">
+          {fichas.map((f) => (
+            <li key={f.ninoId}>
+              <Link
+                href={`/${locale}/admin/ninos/${f.ninoId}`}
+                className="hover:bg-muted flex items-center justify-between gap-3 px-4 py-3 text-sm"
+              >
+                <span className="space-y-0.5">
+                  <span className="block">
+                    {f.nombre} {f.apellidos ?? ''}
+                  </span>
+                  <span className="text-muted-foreground block text-xs">
+                    {[
+                      f.firmadoAt
+                        ? t('ficha_sin_validez.firmada_el', { fecha: fecha(f.firmadoAt) })
+                        : null,
+                      f.refirmaPedida ? t('ficha_sin_validez.refirma_pedida') : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
                 </span>
                 <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
               </Link>

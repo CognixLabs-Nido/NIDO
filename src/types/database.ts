@@ -5652,6 +5652,10 @@ export type Database = {
         Returns: undefined
       }
       datos_anular_alta: { Args: { p_nino_id: string }; Returns: Json }
+      decidir_mandato_propuesto: {
+        Args: { p_aprobar: boolean; p_mandato_id: string }
+        Returns: string
+      }
       declarar_gastos_gestion: {
         Args: {
           p_curso_academico_id: string
@@ -5831,6 +5835,16 @@ export type Database = {
         }[]
       }
       ficha_para_firmar: { Args: { p_nino_id: string }; Returns: Json }
+      fichas_firmadas_sin_validez: {
+        Args: { p_centro_id: string }
+        Returns: {
+          apellidos: string
+          firmado_at: string
+          nino_id: string
+          nombre: string
+          refirma_pedida: boolean
+        }[]
+      }
       fichero_remesa_vigente: {
         Args: { p_remesa_id: string }
         Returns: {
@@ -6270,6 +6284,28 @@ export type Database = {
         Returns: undefined
       }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
+      proponer_mandato_sepa: {
+        Args: {
+          p_acreedor_cid?: string
+          p_acreedor_nombre?: string
+          p_documento_path: string
+          p_familia_id: string
+          p_fecha_firma: string
+          p_firma_imagen: string
+          p_iban: string
+          p_identificador_mandato: string
+          p_ip_address: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_texto_hash: string
+          p_titular: string
+          p_titular_direccion?: string
+          p_titular_documento?: string
+          p_user_agent: string
+        }
+        Returns: string
+      }
       publicacion_etiqueta_hijo_de: {
         Args: { p_publicacion_id: string }
         Returns: boolean
@@ -6768,7 +6804,7 @@ export type Database = {
       estado_general_agenda: "bien" | "regular" | "mal" | "mixto"
       estado_informe: "borrador" | "publicado"
       estado_lista_espera: "en_espera" | "invitado" | "descartado"
-      estado_mandato_sepa: "activo" | "revocado"
+      estado_mandato_sepa: "activo" | "revocado" | "propuesto" | "rechazado"
       estado_plantilla_informe: "activa" | "archivada"
       estado_plantilla_menu: "borrador" | "publicada" | "archivada"
       estado_recibo:
@@ -7055,7 +7091,7 @@ export const Constants = {
       estado_general_agenda: ["bien", "regular", "mal", "mixto"],
       estado_informe: ["borrador", "publicado"],
       estado_lista_espera: ["en_espera", "invitado", "descartado"],
-      estado_mandato_sepa: ["activo", "revocado"],
+      estado_mandato_sepa: ["activo", "revocado", "propuesto", "rechazado"],
       estado_plantilla_informe: ["activa", "archivada"],
       estado_plantilla_menu: ["borrador", "publicada", "archivada"],
       estado_recibo: [
