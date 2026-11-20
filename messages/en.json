@@ -1221,7 +1221,9 @@
         "servicio_comedor": "Lunch",
         "servicio_matinera": "Early morning",
         "servicio_vespertina": "Afternoon",
-        "gastos_forma": "How the admin fees are paid"
+        "gastos_forma": "How the admin fees are paid",
+        "mandato_titular": "Account holder",
+        "mandato_iban": "Account (IBAN)"
       },
       "entidad": {
         "ninos_familia": "Child data (address / family situation)",
@@ -1231,7 +1233,8 @@
         "ninos_identidad": "Child's identity",
         "ninos_sip_documento": "Health card image",
         "peticion_servicios": "Services",
-        "gastos_gestion": "Admin fees"
+        "gastos_gestion": "Admin fees",
+        "mandato_sepa": "SEPA mandate (direct debit)"
       },
       "errors": {
         "registro": "The change could not be registered. Please try again.",
@@ -1610,6 +1613,14 @@
         "titulo": "Guardians without access to the medical record",
         "subtitulo": "They cannot sign the enrolment record until you give them access to the medical record.",
         "no_se_pudo_leer": "We could not read this list."
+      },
+      "ficha_sin_validez": {
+        "titulo": "Signed forms that are no longer valid",
+        "subtitulo": "The family changed something on the form after signing it (the medical information or the educational details). The signature no longer matches: ask them to sign it again.",
+        "no_se_pudo_leer": "Could not check which signed forms are still valid.",
+        "vacio": "All signed forms of approved enrolments are still valid.",
+        "firmada_el": "Signed on {fecha}",
+        "refirma_pedida": "you have already asked them to sign it again"
       }
     }
   },
@@ -4931,12 +4942,15 @@
         "documento": "Check the NIF or identity document: if it is a DNI, NIE or CIF, its check letter or digit doesn't match.",
         "direccion": "Enter the account holder's address.",
         "centro_sin_cid": "The centre doesn't have its creditor identifier yet, so direct debit isn't possible. Ask the centre.",
-        "acreedor_cambio": "The centre's bank details changed while you were signing. Open the screen again and sign again."
+        "acreedor_cambio": "The centre's bank details changed while you were signing. Open the screen again and sign again.",
+        "mandato_pendiente": "A direct debit change is already waiting for the school management. You can send another once it is resolved.",
+        "cola_validacion": "The enrolment is already approved: the mandate has to go through the school management. Please send it again."
       },
       "documento_label": "NIF or identity document",
       "documento_ayuda": "Of the account holder. If it is a foreign document, type it exactly as it is.",
       "direccion_label": "Account holder's address",
-      "acreedor_cid_label": "Creditor identifier"
+      "acreedor_cid_label": "Creditor identifier",
+      "pendiente": "Sent to the school management: the direct debit change will apply once they approve it."
     },
     "validacion": {
       "enviado": "Change sent to management for validation.",

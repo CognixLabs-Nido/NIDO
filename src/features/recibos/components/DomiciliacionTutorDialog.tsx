@@ -36,6 +36,8 @@ import { localeIntl } from '@/shared/lib/locale-intl'
 interface RespuestaMandato {
   success: boolean
   error?: string
+  /** 2026-11-20: con la familia ya validada, el mandato espera a Dirección en la cola. */
+  pendiente?: boolean
   mandato?: { identificador: string; documento: { path: string; url: string | null } }
 }
 
@@ -168,7 +170,7 @@ export function DomiciliacionTutorDialog({
         )
         return
       }
-      toast.success(t('guardado'))
+      toast.success(json.pendiente ? tSepa('pendiente') : t('guardado'))
       setOpen(false)
       setFirma(null)
       setNombreTecleado('')

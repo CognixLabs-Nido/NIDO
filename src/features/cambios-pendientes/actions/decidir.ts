@@ -10,9 +10,11 @@ import { logger } from '@/shared/lib/logger'
 import { fail, ok, type ActionResult } from '../../centros/types'
 import {
   aplicarCambioPendiente,
+  decidirMandato,
   descartarCambioPendiente,
   RutaDocumentoInvalidaError,
 } from '../lib/aplicar'
+import { payloadMandatoSepaSchema } from '../schemas'
 import {
   invitarTutor2SiCambioElEmail,
   leerEmailTutor2Antes,
@@ -134,6 +136,23 @@ export async function rechazarCambio(cambioId: string): Promise<ActionResult<{ i
     return fail('admin.pendientes.errors.decidir')
   }
   if (!fila) return fail('admin.pendientes.errors.no_pendiente')
+
+  // 2026-11-20: el mandato propuesto no es un fichero que se descarta, es una fila que la base marca
+  // 'rechazado' (con la sesión de la directora). Si no sale, la entrada vuelve a pendiente: una
+  // entrada rechazada con su mandato aún 'propuesto' bloquearía la siguiente propuesta de la familia.
+  if (fila.entidad === 'mandato_sepa') {
+    try {
+      const { mandato_id } = payloadMandatoSepaSchema.parse(fila.payload)
+      await decidirMandato(supabase, mandato_id, false)
+    } catch (e) {
+      await supabase
+        .from('cambios_pendientes')
+        .update({ estado: 'pendiente', revisado_por: null, decided_at: null })
+        .eq('id', fila.id)
+      logger.warn('rechazarCambio: mandato', e instanceof Error ? e.message : 'desconocido')
+      return fail('admin.pendientes.errors.decidir')
+    }
+  }
 
   const service = createServiceRoleClient()
   await descartarCambioPendiente(service, fila).catch(() => undefined)

@@ -19,6 +19,7 @@ import {
   type TestUser,
   datosMandatoV2,
   type TestCentro,
+  antesDeValidar,
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -107,21 +108,24 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
   // ─── mandatos_sepa ──────────────────────────────────────────────────────────
   describe('mandatos_sepa', () => {
     it('el tutor registra el mandato por RPC; el IBAN queda CIFRADO (nunca en claro)', async () => {
-      const { error } = await cTutorA.rpc('registrar_mandato_sepa', {
-        p_familia_id: ninoA.familia_id,
-        p_nino_id: ninoA.id,
-        p_iban: IBAN_TEST,
-        p_titular: 'Madre Test',
-        p_identificador_mandato: `NIDO-G4-${ninoA.id.slice(0, 8)}`,
-        p_documento_path: `${centroA.id}/${ninoA.id}/mandato.pdf`,
-        p_firma_imagen: null,
-        p_nombre_tecleado: 'Madre Test',
-        p_texto_hash: 'a'.repeat(64),
-        ...datosMandatoV2(centroA),
-        p_ip_address: null,
-        p_user_agent: null,
-        p_fecha_firma: null,
-      } as never)
+      // 2026-11-20: el mandato del alta, antes de validar (con la familia validada, va a la cola).
+      const { error } = await antesDeValidar(ninoA.familia_id, () =>
+        cTutorA.rpc('registrar_mandato_sepa', {
+          p_familia_id: ninoA.familia_id,
+          p_nino_id: ninoA.id,
+          p_iban: IBAN_TEST,
+          p_titular: 'Madre Test',
+          p_identificador_mandato: `NIDO-G4-${ninoA.id.slice(0, 8)}`,
+          p_documento_path: `${centroA.id}/${ninoA.id}/mandato.pdf`,
+          p_firma_imagen: null,
+          p_nombre_tecleado: 'Madre Test',
+          p_texto_hash: 'a'.repeat(64),
+          ...datosMandatoV2(centroA),
+          p_ip_address: null,
+          p_user_agent: null,
+          p_fecha_firma: null,
+        } as never)
+      )
       expect(error).toBeNull()
 
       // El tutor ve su mandato, pero el IBAN viaja como bytea cifrado (no el texto claro).

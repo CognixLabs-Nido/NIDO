@@ -47,6 +47,8 @@ export const FUNCIONES_RETURNS_TABLE = [
   'expedientes_vencidos',
   'familias_fiscal_vencidas',
   'ficha_gestion_ninos',
+  // 2026-11-20 (el 14): las fichas firmadas de altas validadas que ya no valen, para Dirección.
+  'fichas_firmadas_sin_validez',
   'fichero_remesa_vigente',
   'ficheros_remesa_huerfanos',
   'ficheros_remesa_vencidos',
@@ -129,6 +131,8 @@ export const NO_NULAS = {
   familias_fiscal_vencidas: ['familia_id', 'centro_id', 'mandatos', 'dnis'],
   /** `ninos.id`. Las demás, no: `dni` NULL en los 4 niños de producción (2026-11-12). */
   ficha_gestion_ninos: ['nino_id'],
+  /** `ninos.id` y `ninos.nombre` (NOT NULL, por FROM); `refirma_pedida`, EXISTS. */
+  fichas_firmadas_sin_validez: ['nino_id', 'nombre', 'refirma_pedida'],
   /** NOT NULL de `remesa_ficheros`. */
   fichero_remesa_vigente: ['fichero_id', 'msg_id', 'generado_at', 'sha256', 'ruta'],
   /** NOT NULL de `remesa_ficheros`. */

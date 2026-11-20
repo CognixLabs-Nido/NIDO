@@ -166,12 +166,20 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
     expect(await avisoAdmin()).toEqual([])
   })
 
-  it('la familia ya dada de alta firma su mandato: Dirección recibe el aviso', async () => {
-    const { error } = await cTutor.rpc(
-      'registrar_mandato_sepa',
+  // 2026-11-20 (`20270201120000`): con la familia ya validada, su mandato pasa por Dirección. Mientras
+  // espera en la cola no avisa (ya lo avisa la cola); aprobado, pasa a activo y avisa como antes.
+  it('la familia ya dada de alta propone su mandato: sin aviso hasta que Dirección lo aprueba', async () => {
+    const p = await cTutor.rpc(
+      'proponer_mandato_sepa',
       mandato(familia, IBAN, 'AVISO-1', 'digital')
     )
-    expect(error).toBeNull()
+    expect(p.error).toBeNull()
+    expect(await avisoAdmin()).toEqual([])
+    const d = await cAdmin.rpc('decidir_mandato_propuesto', {
+      p_mandato_id: p.data as string,
+      p_aprobar: true,
+    })
+    expect(d.error).toBeNull()
     expect(await avisoAdmin()).toEqual([familia])
   })
 
@@ -199,16 +207,22 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
     expect((await getAvisosInicio('profe', centro.id)).familiasDomiciliacionNueva).toEqual([])
   })
 
-  it('abrir la ficha apaga el aviso, y el cambio de cuenta posterior vuelve a avisar', async () => {
+  it('abrir la ficha apaga el aviso, y el cambio de cuenta posterior, aprobado, vuelve a avisar', async () => {
     sesion.actual = cAdmin
     expect(await marcarDomiciliacionVista(familia)).toEqual({ success: true, data: undefined })
     expect(await avisoAdmin()).toEqual([])
 
-    const { error } = await cTutor.rpc(
-      'sustituir_mandato_sepa',
+    // El cambio de cuenta de una familia validada también pasa por Dirección (2026-11-20).
+    const p = await cTutor.rpc(
+      'proponer_mandato_sepa',
       mandato(familia, IBAN_OTRO, 'AVISO-2', 'digital')
     )
-    expect(error).toBeNull()
+    expect(p.error).toBeNull()
+    const d = await cAdmin.rpc('decidir_mandato_propuesto', {
+      p_mandato_id: p.data as string,
+      p_aprobar: true,
+    })
+    expect(d.error).toBeNull()
     expect(await avisoAdmin()).toEqual([familia])
   })
 })

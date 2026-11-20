@@ -358,6 +358,25 @@ fichero, y subir uno nuevo crea una propuesta en la cola. El mandato igual.» Y 
 medir lo que deja hacer, y esto es el agujero principal de todo el encargo: que la ruta validada se
 quede igual y el contenido cambie sin dejar rastro.»
 
+**Decisiones del 2026-11-20 (tarde), Jose, sobre el PR de ahora:**
+
+- **La prueba de Storage, en la base efímera del CI.** «Retiro lo de «súbelo»: te estaba pidiendo
+  sobrescribir el DNI real de una familia en producción, que es justo lo que no se hace, y encima
+  Storage no es transaccional, así que ni siquiera cabía en un ensayo que acaba en RAISE.» El test
+  «entra con la sesión de la tutora, valida el alta, sube un fichero encima del validado y hoy se pone
+  rojo. Nada de prueba en producción, ni por parte de Jose.»
+- **La autobaja entra en este PR.** «Es la misma familia que todo lo demás —escribir lo que no te
+  toca—»: una cuenta puede quedar marcada como borrada sin que haya existido ningún olvido, y puede
+  declarar que aceptó una versión de privacidad que no existe, que luego sale en su propia
+  exportación: «un documento que le damos al interesado afirmando algo que él nunca hizo».
+  - Se mide antes **qué columnas de `usuarios` escribe la app de verdad**, de dónde, y se dejan solo
+    esas; `deleted_at` y las de consentimiento, únicamente para las funciones. Control negativo:
+    escribir `deleted_at` con la sesión del tutor tiene que fallar.
+  - Lo que quedó sin medir (ya marcada, pide su olvido, Dirección lo confirma y lo deshace) se mide si
+    se pueden montar los bloqueos; si no, se dice así en el PR y no se afirma.
+- **El PR queda:** los cinco ficheros, el mandato, el aviso a Dirección cuando la firma de la ficha
+  deja de valer, y la autobaja. **El 7 sigue fuera**, esperando a Jose.
+
 ## Pendiente de decisión del responsable
 
 P-1 a P-5 se contestaron el 2026-10-31 y están arriba, en SEPA. Quedan:

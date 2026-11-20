@@ -54,6 +54,9 @@ async function getFamiliasDomiciliacionNueva(
     .select('familia_id, created_at')
     .eq('centro_id', centroId)
     .eq('metodo_firma', 'digital')
+    // 2026-11-20: solo los activos. Una propuesta del tutor con la familia validada espera en la cola
+    // de Dirección, que ya la avisa; si se aprueba, pasa a activo y sale aquí.
+    .eq('estado', 'activo')
     .neq('usuario_id', userId)
     .is('deleted_at', null)
     .gte('created_at', cutoffNovedades())

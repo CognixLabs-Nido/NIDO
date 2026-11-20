@@ -39,6 +39,8 @@ export interface MandatoSepaInicial {
 interface RespuestaMandato {
   success: boolean
   error?: string
+  /** 2026-11-20: con la familia ya validada, el mandato espera a Dirección en la cola. */
+  pendiente?: boolean
   mandato?: { identificador: string; documento: { path: string; url: string | null } }
 }
 
@@ -132,6 +134,7 @@ export function PasoSepa({
   const tSepa = useTranslations('alta.sepa')
   const tErrors = useTranslations()
   const [subido, setSubido] = useState<boolean>(Boolean(inicial))
+  const [enCola, setEnCola] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(inicial?.documentoUrl ?? null)
   const [pending, startTransition] = useTransition()
 
@@ -229,8 +232,9 @@ export function PasoSepa({
         return
       }
       setSubido(true)
+      setEnCola(json.pendiente === true)
       setPreviewUrl(json.mandato?.documento.url ?? null)
-      toast.success(tSepa('guardado'))
+      toast.success(json.pendiente ? tSepa('pendiente') : tSepa('guardado'))
       onFinalizar()
     })
   }
@@ -280,7 +284,7 @@ export function PasoSepa({
         {subido && (
           <p className="text-success-700 flex items-center gap-2 text-sm font-medium">
             <CheckCircle2Icon className="size-4" strokeWidth={2} aria-hidden />
-            {tSepa('guardado')}
+            {enCola ? tSepa('pendiente') : tSepa('guardado')}
             {previewUrl && (
               <a
                 href={previewUrl}

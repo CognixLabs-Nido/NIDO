@@ -44,3 +44,22 @@ export async function registrarOSustituirMandatoSepa(
     ? await supabase.rpc('sustituir_mandato_sepa', generated)
     : await supabase.rpc('registrar_mandato_sepa', generated)
 }
+
+/**
+ * 2026-11-20 — el tutor con el alta de la familia validada no registra ni sustituye: propone. La base
+ * guarda el mandato 'propuesto' (con el IBAN cifrado) y abre su entrada en la cola de Dirección. Misma
+ * firma que `registrar_mandato_sepa`; el mismo único cast, aislado aquí.
+ */
+export async function proponerMandatoSepa(
+  supabase: SupabaseClient<Database>,
+  args: MandatoSepaRpcArgs
+) {
+  return await supabase.rpc('proponer_mandato_sepa', args as GenArgs)
+}
+
+/** Lo que la base contesta cuando el mandato no se puede proponer o ya va por la cola. */
+export function motivoCola(hint: string | undefined): string | null {
+  if (hint === 'mandato_pendiente') return 'alta.sepa.errors.mandato_pendiente'
+  if (hint === 'cola_validacion') return 'alta.sepa.errors.cola_validacion'
+  return null
+}

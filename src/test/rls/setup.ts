@@ -581,3 +581,39 @@ export async function crearVinculo(
   if (error || !data) throw new Error(`crearVinculo falló: ${error?.message}`)
   return data.id
 }
+
+/**
+ * 2026-11-20 (`20270201120000`): con el alta de la familia validada, el mandato que firma un tutor va a
+ * la cola de Dirección (`cola_validacion`). El mandato «del alta» se firma ANTES de validar: esto pone
+ * en `pendiente` las matrículas activas de la familia, ejecuta `fn` y las devuelve a `activa`, también
+ * si `fn` lanza. `activada_at` no se toca: el método de pago (PR-7) se decide igual que antes.
+ */
+export async function antesDeValidar<T>(familia_id: string, fn: () => PromiseLike<T>): Promise<T> {
+  const { data: ninos, error: eN } = await serviceClient
+    .from('ninos')
+    .select('id')
+    .eq('familia_id', familia_id)
+  if (eN) throw new Error(`antesDeValidar (niños): ${eN.message}`)
+  const { data: mats, error: eM } = await serviceClient
+    .from('matriculas')
+    .update({ estado: 'pendiente' })
+    .in(
+      'nino_id',
+      (ninos ?? []).map((n) => n.id)
+    )
+    .eq('estado', 'activa')
+    .select('id')
+  if (eM) throw new Error(`antesDeValidar (pendiente): ${eM.message}`)
+  try {
+    return await fn()
+  } finally {
+    const ids = (mats ?? []).map((m) => m.id)
+    if (ids.length > 0) {
+      const { error } = await serviceClient
+        .from('matriculas')
+        .update({ estado: 'activa' })
+        .in('id', ids)
+      if (error) throw new Error(`antesDeValidar (activa): ${error.message}`)
+    }
+  }
+}

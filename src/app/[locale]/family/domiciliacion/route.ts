@@ -10,7 +10,12 @@ import {
   mandatoV2,
   motivoRechazoV2,
 } from '@/features/alta/lib/mandato-v2-servidor'
-import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
+import {
+  motivoCola,
+  proponerMandatoSepa,
+  registrarOSustituirMandatoSepa,
+} from '@/features/alta/lib/registrar-mandato-sepa'
+import { familiaAltaValidada } from '@/features/cambios-pendientes/lib/gate'
 import { familiaDelUsuarioEn } from '@/features/centros/contexto/ambito-familiar'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
@@ -23,6 +28,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface RespuestaOk {
   success: true
+  /** 2026-11-20: con la familia ya validada, el mandato del tutor espera a Dirección en la cola. */
+  pendiente: boolean
   mandato: { identificador: string; documento: { path: string; url: string | null } }
 }
 interface RespuestaError {
@@ -153,7 +160,10 @@ export async function POST(request: Request): Promise<Response> {
   const ipAddress = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
-  const { error: rpcErr } = await registrarOSustituirMandatoSepa(supabase, Boolean(activo), {
+  // 2026-11-20 (regla de Jose, opción A): con el alta de la familia validada, el mandato es prueba y
+  // va a la cola; Dirección lo aprueba (pasa a activo y el anterior a revocado) o lo rechaza.
+  const enCola = await familiaAltaValidada(supabase, familia.familiaId)
+  const args = {
     p_familia_id: familia.familiaId,
     p_nino_id: null,
     p_iban: iban,
@@ -166,10 +176,15 @@ export async function POST(request: Request): Promise<Response> {
     p_ip_address: ipAddress,
     p_user_agent: userAgent ?? '',
     p_fecha_firma: fechaFirmaIso,
-    p_metodo: 'digital',
+    p_metodo: 'digital' as const,
     ...v2.rpc,
-  })
+  }
+  const { error: rpcErr } = enCola
+    ? await proponerMandatoSepa(supabase, args)
+    : await registrarOSustituirMandatoSepa(supabase, Boolean(activo), args)
   if (rpcErr) {
+    const cola = motivoCola(rpcErr.hint)
+    if (cola) return err(cola, 409)
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
     const motivo = motivoRechazoV2(rpcErr.hint)
     if (motivo) return err(`alta.sepa.errors.${motivo}`, 409)
@@ -183,6 +198,7 @@ export async function POST(request: Request): Promise<Response> {
   const url = await firmarRuta(supabase, BUCKET_MANDATO_SEPA, path)
   return Response.json({
     success: true,
+    pendiente: enCola,
     mandato: { identificador, documento: { path, url } },
   } satisfies RespuestaOk)
 }

@@ -14,8 +14,9 @@ import { respuestasServicioSchema } from '@/features/peticion-servicios/schemas'
  * lugar de nacimiento, sexo, nacionalidad y DNI. Hasta entonces la identidad del niño se aplicaba
  * directa con el alta validada; decisión J la dejaba fuera de la cola, y se cierra aquí. Siguen
  * directos el idioma, los hermanos, las observaciones y cómo nos conoció (decidido el
- * 2026-11-07), y los pedagógicos, el médico cifrado, la autorización de imagen y el mandato SEPA,
- * que se gobiernan por sus propios mecanismos.
+ * 2026-11-07), y los pedagógicos, el médico cifrado y la autorización de imagen, que se gobiernan
+ * por sus propios mecanismos. El mandato SEPA entra en la cola el 2026-11-20 (regla de Jose, opción
+ * A: lo que es prueba no cambia sin Dirección): `mandato_sepa`.
  *
  * Solo se encola lo que CAMBIA respecto a lo guardado (`lib/diff.ts`): una entrada que no cambia
  * nada enseña a aprobar sin mirar.
@@ -37,6 +38,9 @@ export const entidadCambioEnum = z.enum([
   // Fase 9: los gastos de gestión después del alta (la forma, y el justificante ya subido a
   // `justificantes-gestion`); al aprobar, `declarar_gastos_gestion` con la sesión de Dirección.
   'gastos_gestion',
+  // 2026-11-20: el mandato SEPA que firma un tutor con el alta de la familia validada. La fila del
+  // mandato ya existe ('propuesto', con el IBAN cifrado por la base); la entrada solo apunta a ella.
+  'mandato_sepa',
 ])
 export type EntidadCambio = z.infer<typeof entidadCambioEnum>
 
@@ -112,6 +116,12 @@ export const payloadGastosGestionSchema = z
     message: 'justificante_de_transferencia',
   })
 
+/**
+ * 2026-11-20: el mandato propuesto. Solo su id: el IBAN no viaja nunca en el payload, se queda cifrado en
+ * `mandatos_sepa`. Al aprobar o rechazar decide `decidir_mandato_propuesto` con la sesión de Dirección.
+ */
+export const payloadMandatoSepaSchema = z.object({ mandato_id: z.string().uuid() }).strict()
+
 /** El perfil de un tutor (identidad, dirección y los cinco de la fase 6), con su vínculo. */
 export const payloadDatosTutorSchema = z.object({
   tipo_vinculo: tipoVinculoLegalEnum,
@@ -163,4 +173,5 @@ export const ETIQUETA_ENTIDAD: Record<EntidadCambio, string> = {
   ninos_sip_documento: 'admin.pendientes.entidad.ninos_sip_documento',
   peticion_servicios: 'admin.pendientes.entidad.peticion_servicios',
   gastos_gestion: 'admin.pendientes.entidad.gastos_gestion',
+  mandato_sepa: 'admin.pendientes.entidad.mandato_sepa',
 }

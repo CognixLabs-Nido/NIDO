@@ -225,13 +225,17 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     return (data ?? []).length
   }
 
-  it('una familia ya dada de alta que firma su mandato no cambia de método: lo pregunta la app', async () => {
+  // 2026-11-20 (`20270201120000`): con la familia ya validada, su mandato pasa por Dirección; aprobado,
+  // tampoco cambia el método (`decidir_mandato_propuesto` no lo toca).
+  it('una familia ya dada de alta: su mandato pasa por Dirección y, aprobado, no cambia de método', async () => {
     // Premisa: el niño de esta familia tiene la matrícula activada.
     expect(await activadas(familia)).toBe(1)
-    const { error } = await cTutor.rpc(
-      'registrar_mandato_sepa',
-      mandato(familia, IBAN, 'PR7-1', 'digital')
-    )
+    const p = await cTutor.rpc('proponer_mandato_sepa', mandato(familia, IBAN, 'PR7-1', 'digital'))
+    expect(p.error).toBeNull()
+    const { error } = await cAdmin.rpc('decidir_mandato_propuesto', {
+      p_mandato_id: p.data as string,
+      p_aprobar: true,
+    })
     expect(error).toBeNull()
     expect(await metodoFicha()).toBe('efectivo')
     expect(await generarYMetodo(2)).toBe('efectivo')
@@ -263,13 +267,13 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     expect(await generarYMetodo(5)).toBe('cheque_guarderia')
   })
 
-  it('el reintento del alta y el cambio de cuenta no tocan lo que eligió la directora', async () => {
+  it('con la familia validada el reintento del tutor va a la cola, y el cambio de cuenta de Dirección no toca lo que eligió la directora', async () => {
     expect(await metodoFicha()).toBe('cheque_guarderia')
     const reintento = await cTutor.rpc(
       'registrar_mandato_sepa',
       mandato(familia, IBAN, 'PR7-1', 'digital')
     )
-    expect(reintento.error).toBeNull()
+    expect(reintento.error?.hint).toBe('cola_validacion')
     expect(await metodoFicha()).toBe('cheque_guarderia')
     const sustituir = await cAdmin.rpc(
       'sustituir_mandato_sepa',
