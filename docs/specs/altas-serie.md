@@ -351,6 +351,17 @@ criterio:
 - **7, la firma de una autorización de recogida con personas y fotos nuevas: SEGUNDA TANDA, sin
   tocar.** «Es lo más delicado de todo esto —quién puede sacar a un niño del centro— y tiene un coste
   operativo» que hay que preguntar a Jose antes de decidirlo.
+- **7, DECIDIDO por Jose el 2026-11-20: opción B, y queda como está.** Una autorización de recogida
+  nueva vale desde que la familia la firma, sin pasar por validación: «No construyas cola para eso».
+  Con dos cosas más, literales de Jose: «debe llegar el aviso a la profesora y a la directora. Ambos
+  deben ver el DNI para confirmar que todo es correcto y ver la foto de quien recoge». Es decir:
+  - **aviso a la profe del aula del niño y a Dirección** cuando se firma una autorización de recogida
+    nueva o se añade una persona, por el mecanismo de aviso que ya tenga la casa (medido antes; no
+    uno nuevo);
+  - **la profe del aula y Dirección ven la foto del DNI** de las personas autorizadas a recoger: ver
+    «El autorizado: lo que ve y lo que no», la decisión del 2026-11-12 sobre las fotos del DNI de
+    recogida, **corregida el 2026-11-20**.
+    Va en un PR propio, detrás del #541.
 
 **El PR de ahora es 1 a 5, el 8 y el 14:** «con el alta validada, el tutor no sobrescribe ningún
 fichero, y subir uno nuevo crea una propuesta en la cola. El mandato igual.» Y los ficheros se miden
@@ -1555,6 +1566,13 @@ entran en la exportación del niño: van en la del usuario. La causa: las polít
 - **Medicación administrada**: con `puede_ver_info_medica`, como la ficha médica (y la Dirección y la
   profe, como antes). Un dato de salud con permiso y otro sin ninguno era incoherente.
 - **Fotos del DNI de recogida**: el tutor legal, o quien subió el fichero (`owner_id`).
+  _(**CORREGIDA el 2026-11-20** por el responsable, regla 12: «en el PR del autorizado cerré las
+  fotos de DNI de recogida al tutor legal y a quien la subió, y dejé fuera a la profe. Estaba mal: es
+  ella la que entrega al niño en la puerta y tiene que poder comprobar que quien se lo lleva es quien
+  dice ser.» Alcance justo: **la profe del aula del niño y Dirección ven la foto del DNI de las
+  personas autorizadas a recoger a los niños de su aula. «Ni cualquier profe del centro, ni el
+  autorizado, ni el otro tutor más de lo que ya ve.»** Antes de abrirlo se mide qué ve hoy la profe de
+  verdad. Va con la decisión del 7, opción B, en «Después de validar, nada cambia sin validación».)_
 - **La exportación del niño** (art. 15): la Dirección, la profe del niño (sin lo de gestión) y el
   tutor legal (`puede_exportar_nino`). El autorizado recibe 404.
 - **El alta** (`/alta/[ninoId]`): el autorizado va a su inicio. El alta es del tutor legal.
