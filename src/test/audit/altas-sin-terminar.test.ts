@@ -177,15 +177,11 @@ describe('El alta sin terminar: la confirma Dirección', () => {
         })
       ).error
     ).toBeNull()
-    // Lo que la tutora escribe con su sesión la nombra en audit_log.
+    // Lo que la tutora escribe con su sesión la nombra en audit_log. Su idioma: desde `20270201120000`
+    // la sesión solo escribe `foto_url` e `idioma_preferido` de su fila (el nombre, no).
     const ct = await clientFor(tutora)
     expect(
-      (
-        await ct
-          .from('usuarios')
-          .update({ nombre_completo: 'Tutora Altas Bis' })
-          .eq('id', tutora.id)
-      ).error
+      (await ct.from('usuarios').update({ idioma_preferido: 'va' }).eq('id', tutora.id)).error
     ).toBeNull()
 
     // Ona: hermana de Nil (con matrícula activada) en la misma familia, alta a medias de hace 40 días.

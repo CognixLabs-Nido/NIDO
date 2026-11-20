@@ -6284,6 +6284,28 @@ export type Database = {
         Returns: undefined
       }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
+      proponer_mandato_sepa: {
+        Args: {
+          p_acreedor_cid?: string
+          p_acreedor_nombre?: string
+          p_documento_path: string
+          p_familia_id: string
+          p_fecha_firma: string
+          p_firma_imagen: string
+          p_iban: string
+          p_identificador_mandato: string
+          p_ip_address: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_texto_hash: string
+          p_titular: string
+          p_titular_direccion?: string
+          p_titular_documento?: string
+          p_user_agent: string
+        }
+        Returns: string
+      }
       publicacion_etiqueta_hijo_de: {
         Args: { p_publicacion_id: string }
         Returns: boolean
@@ -6401,28 +6423,6 @@ export type Database = {
           p_nombre_tecleado: string
           p_tutor: string
           p_user_agent?: string
-        }
-        Returns: string
-      }
-      proponer_mandato_sepa: {
-        Args: {
-          p_acreedor_cid?: string
-          p_acreedor_nombre?: string
-          p_documento_path: string
-          p_familia_id: string
-          p_fecha_firma: string
-          p_firma_imagen: string
-          p_iban: string
-          p_identificador_mandato: string
-          p_ip_address: unknown
-          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
-          p_nino_id: string
-          p_nombre_tecleado: string
-          p_texto_hash: string
-          p_titular: string
-          p_titular_direccion?: string
-          p_titular_documento?: string
-          p_user_agent: string
         }
         Returns: string
       }

@@ -134,7 +134,8 @@ export async function POST(
   // 2026-11-20 (regla de Jose, opción A): con el alta de la familia validada, el mandato del tutor es
   // prueba y va a la cola. Su PDF va a una ruta NUEVA: el validado no se sobrescribe (la base tampoco
   // lo deja). Dirección, presencial, sigue registrando directo.
-  const enCola = !esPresencial && (await familiaAltaValidada(supabase, nino.familia_id))
+  const enCola =
+    !esPresencial && (await familiaAltaValidada(supabase, nino.centro_id, nino.familia_id))
   // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos. En la cola, otra.
   const path = enCola
     ? `${nino.centro_id}/${nino.id}/mandato-${Date.now()}.pdf`

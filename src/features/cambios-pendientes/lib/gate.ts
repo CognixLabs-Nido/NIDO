@@ -75,10 +75,15 @@ export async function registrarCambioPendiente(
  * nueva (sin sobrescribir el validado) y el mandato a la cola. Si esta lectura se equivoca, la base
  * contesta igual (`cola_validacion`).
  */
-export async function familiaAltaValidada(supabase: Client, familiaId: string): Promise<boolean> {
+export async function familiaAltaValidada(
+  supabase: Client,
+  centroId: string,
+  familiaId: string
+): Promise<boolean> {
   const { data } = await supabase
     .from('matriculas')
-    .select('id, nino:ninos!inner(familia_id)')
+    .select('id, nino:ninos!inner(familia_id, centro_id)')
+    .eq('nino.centro_id', centroId)
     .eq('nino.familia_id', familiaId)
     .eq('estado', 'activa')
     .is('fecha_baja', null)

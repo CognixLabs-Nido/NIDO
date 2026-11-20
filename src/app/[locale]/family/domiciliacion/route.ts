@@ -162,7 +162,7 @@ export async function POST(request: Request): Promise<Response> {
 
   // 2026-11-20 (regla de Jose, opción A): con el alta de la familia validada, el mandato es prueba y
   // va a la cola; Dirección lo aprueba (pasa a activo y el anterior a revocado) o lo rechaza.
-  const enCola = await familiaAltaValidada(supabase, familia.familiaId)
+  const enCola = await familiaAltaValidada(supabase, familia.centroId, familia.familiaId)
   const args = {
     p_familia_id: familia.familiaId,
     p_nino_id: null,
