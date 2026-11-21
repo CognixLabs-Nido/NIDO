@@ -107,6 +107,15 @@ describe('Recogida: quién sube la foto del DNI, quién la ve y a quién avisa (
   const ficheros: string[] = []
   let cTutora: SupabaseClient<Database>
   let plantillaRecogidaId: string
+  /** El detalle con la sesión de `u`; si lanza, el error dice de quién era la sesión. */
+  async function detalleComo(u: TestUser, id: string) {
+    h.sesion = await clientFor(u)
+    try {
+      return await getAutorizacionDetalle(id)
+    } catch (e) {
+      throw new Error(`${rol(u)}: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
   /** El rol de cada usuario, para que un rojo diga QUIÉN falló. */
   const rol = (u: TestUser) =>
     new Map<string, string>([
@@ -316,8 +325,7 @@ describe('Recogida: quién sube la foto del DNI, quién la ve y a quién avisa (
         .eq('id', nino.id)
         .single()
       for (const u of [profeAula, profeOtra, profeSinAula, admin]) {
-        h.sesion = await clientFor(u)
-        const d = await getAutorizacionDetalle(autorizacionId)
+        const d = await detalleComo(u, autorizacionId)
         expect(d?.id ?? 'NO LA VE', rol(u)).toBe(autorizacionId)
         expect(d?.estado_firma_nino, rol(u)).toBe('firmado')
         expect(
@@ -353,7 +361,9 @@ describe('Recogida: quién sube la foto del DNI, quién la ve y a quién avisa (
           rol(u)
         ).toContain(autorizacionId)
         h.sesion = c
-        const nombres = await getNombresDeRecogidas([autorizacionId])
+        const nombres = await getNombresDeRecogidas([autorizacionId]).catch((e: unknown) => {
+          throw new Error(`${rol(u)}: ${e instanceof Error ? e.message : String(e)}`)
+        })
         expect(nombres.get(autorizacionId)?.nombre ?? 'SIN NOMBRE', rol(u)).toMatch(/^NinoTest-/)
         expect(nombres.get(autorizacionId)?.deMiAula, rol(u)).toBe(suya)
       }
@@ -483,8 +493,7 @@ describe('Recogida: quién sube la foto del DNI, quién la ve y a quién avisa (
 
     it('revocada, la profe de otra aula la ve REVOCADA y sin lista (no «sin firmar», no vigente)', async () => {
       for (const u of [profeAula, profeOtra, profeSinAula]) {
-        h.sesion = await clientFor(u)
-        const d = await getAutorizacionDetalle(autorizacionId)
+        const d = await detalleComo(u, autorizacionId)
         expect(d?.estado_firma_nino ?? 'NO LA VE', rol(u)).toBe('revocado')
         expect(d?.personas_vigentes, rol(u)).toEqual([])
       }
