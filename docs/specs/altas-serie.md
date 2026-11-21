@@ -379,6 +379,27 @@ criterio:
     (`20270202120000`) a quien puede firmar la recogida de ese niño (`puede_firmar_autorizaciones`,
     el permiso de `firmas_insert`). Dirección también queda fuera: no tiene pantalla que lo haga, y
     ADR-0046 ya lo había decidido («La dirección NO sube DNIs»).
+    **Confirmado por Jose el 2026-11-21:** «la autorización de recogida la sube siempre la familia
+    desde la app, nunca llega en papel». Dirección no sube fotos del DNI de recogida y ADR-0046
+    sigue vigente. No se reabre.
+  - **La lista, con el mismo alcance que la foto (decidido el 2026-11-21, consecuencia de lo de
+    Jose del 2026-11-20).** «Si cualquier profe puede estar en la puerta entregando niños, y por eso
+    le dejamos ver la foto del DNI, entonces también tiene que ver LA LISTA y el DNI escrito. Una
+    foto sin la lista no sirve para nada: la profe vería una cara y un documento sin saber si esa
+    persona está autorizada a llevarse a ese niño, que es justo lo que tiene que comprobar.» Se abre
+    a **cualquier profe del centro, nadie más**, la autorización de recogida y su lista (personas y
+    DNI escrito), con el mismo motivo escrito en la spec, en `rls-policies.md` y en el `COMMENT` de
+    cada política o función, y un test que la fija. Solo la recogida: la medicación no.
+    **Diseño aprobado el 2026-11-21**, con su condición medida antes (en el pase de servicios, una
+    profe sin aula y una de otra aula ya ven el nombre de todos los niños con matrícula activa):
+    el nombre y los apellidos del niño llegan SOLO a través de su recogida, «sin abrir la ficha ni
+    los vínculos. Que la función no sirva para listar niños por otro camino»; el listado de la
+    profe lleva el nombre en cada fila, primero los de su aula y después el resto del centro; y no
+    se abre quién firmó. «Todo con su COMMENT, el motivo de Jose, la comprobación en la migración y
+    el test que se pone rojo si alguien lo estrecha.»
+  - **El aviso no se amplía** (2026-11-21): a la profe del aula y a Dirección, «que es lo que pidió
+    Jose. No lo amplíes a todo el claustro, que serían notificaciones de todos los niños del centro
+    para todas; lo que necesita quien esté en la puerta es poder CONSULTAR».
     Va en un PR propio, detrás del #541.
 
 **El PR de ahora es 1 a 5, el 8 y el 14:** «con el alta validada, el tutor no sobrescribe ningún

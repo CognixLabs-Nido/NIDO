@@ -213,4 +213,10 @@ export interface AutorizacionDetalle {
    * de dejar el hueco en blanco.
    */
   estado_firma_nino?: EstadoFirmaNino
+  /**
+   * Recogida: el niño, cuando quien mira no lo ve en el roster (la profe de otra aula, 2026-11-21:
+   * cualquier profe del centro consulta la recogida en la puerta). Sale de `nombres_de_recogidas`,
+   * solo a través de su recogida. `null` si la base no lo da (el niño sin matrícula activa).
+   */
+  nino_recogida?: { nombre: string; apellidos: string | null } | null
 }

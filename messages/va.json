@@ -3717,7 +3717,8 @@
       "roster": "Estat de signatures",
       "tu_firma": "La teua signatura",
       "es_plantilla": "Format del catàleg: no es signa; s'envia a una audiència (o l'inicia la família).",
-      "ambito_label": "Destinataris: {ambito}"
+      "ambito_label": "Destinataris: {ambito}",
+      "nino_de_recogida": "Xiquet o xiqueta: {nombre}"
     },
     "validation": {
       "titulo_vacio": "El títol és obligatori.",
@@ -3923,11 +3924,12 @@
     "teacher": {
       "intro": "Recollides i medicacions dels xiquets de la teua aula. Des del detall registres i confirmes l’administració de medicació.",
       "recogidas_titulo": "Recollides",
-      "recogidas_desc": "Qui pot recollir cada xiquet de la teua aula (firmat per la família).",
-      "recogidas_vacio": "No hi ha recollides a la teua aula de moment.",
+      "recogidas_desc": "Qui pot recollir cada xiquet, signat per la família: primer els de la teua aula i després els de la resta del centre, per si estàs a la porta.",
+      "recogidas_vacio": "No hi ha recollides en el centre per ara.",
       "medicacion_titulo": "Medicació",
       "medicacion_desc": "Pautes firmades. Obri’n una per a registrar o confirmar una administració.",
-      "medicacion_vacio": "No hi ha medicacions a la teua aula de moment."
+      "medicacion_vacio": "No hi ha medicacions a la teua aula de moment.",
+      "recogidas_centro": "De la resta del centre"
     },
     "seguimiento": {
       "pendientes_titulo": "Pendents de firma",

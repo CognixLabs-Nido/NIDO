@@ -67,6 +67,7 @@ export const FUNCIONES_RETURNS_TABLE = [
   'listado_pase_servicios',
   'listar_esqueletos_huerfanos_stub',
   'mis_peticiones_olvido',
+  'nombres_de_recogidas',
   'olvido_destinatarios',
   'olvido_pendientes',
   'opciones_olvido',
@@ -174,6 +175,8 @@ export const NO_NULAS = {
     'inmediato',
     'por_plazo',
   ],
+  /** NOT NULL de `autorizaciones` y `ninos`, por JOIN; `apellidos` no (como el pase). */
+  nombres_de_recogidas: ['autorizacion_id', 'nino_id', 'nombre'],
   /** Filtrado con `x.u IS NOT NULL`. */
   olvido_destinatarios: ['usuario_id'],
   /** NOT NULL de `olvido_solicitudes`. */

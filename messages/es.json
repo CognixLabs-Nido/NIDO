@@ -3717,7 +3717,8 @@
       "roster": "Estado de firmas",
       "tu_firma": "Tu firma",
       "es_plantilla": "Formato del catálogo: no se firma; se envía a una audiencia (o lo inicia la familia).",
-      "ambito_label": "Destinatarios: {ambito}"
+      "ambito_label": "Destinatarios: {ambito}",
+      "nino_de_recogida": "Niño o niña: {nombre}"
     },
     "validation": {
       "titulo_vacio": "El título es obligatorio.",
@@ -3923,11 +3924,12 @@
     "teacher": {
       "intro": "Recogidas y medicaciones de los niños de tu aula. Desde el detalle registras y confirmas la administración de medicación.",
       "recogidas_titulo": "Recogidas",
-      "recogidas_desc": "Quién puede recoger a cada niño de tu aula (firmado por la familia).",
-      "recogidas_vacio": "No hay recogidas en tu aula por ahora.",
+      "recogidas_desc": "Quién puede recoger a cada niño, firmado por la familia: primero los de tu aula y después los del resto del centro, por si estás en la puerta.",
+      "recogidas_vacio": "No hay recogidas en el centro por ahora.",
       "medicacion_titulo": "Medicación",
       "medicacion_desc": "Pautas firmadas. Abre una para registrar o confirmar una administración.",
-      "medicacion_vacio": "No hay medicaciones en tu aula por ahora."
+      "medicacion_vacio": "No hay medicaciones en tu aula por ahora.",
+      "recogidas_centro": "Del resto del centro"
     },
     "seguimiento": {
       "pendientes_titulo": "Pendientes de firma",

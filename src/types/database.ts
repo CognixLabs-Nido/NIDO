@@ -6146,6 +6146,16 @@ export type Database = {
       }
       nino_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
+      nombres_de_recogidas: {
+        Args: { p_autorizacion_ids: string[] }
+        Returns: {
+          apellidos: string
+          autorizacion_id: string
+          de_mi_aula: boolean
+          nino_id: string
+          nombre: string
+        }[]
+      }
       nota_peticion_olvido: {
         Args: { p_nota: string; p_solicitud_id: string }
         Returns: undefined

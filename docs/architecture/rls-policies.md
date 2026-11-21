@@ -774,7 +774,33 @@ desde que la familia la firma, sin cola (opción B).
   (añadir una persona) manda un push a las profes del aula del niño y a Dirección
   (`avisarRecogidaFirmada`, con `enviarPushPorIdioma`, el motor de los mensajes y los eventos), con un
   texto sin datos y el enlace a la autorización en su panel. Revocar no. El aviso de dentro de la app
-  («Ha llegado una firma nueva») se queda.
+  («Ha llegado una firma nueva») se queda. **No se amplía** a todo el claustro (2026-11-21): quien
+  está en la puerta necesita CONSULTAR, no una notificación de cada niño del centro.
+- **La lista, con el mismo alcance que la foto, A PROPÓSITO (2026-11-21).** Consecuencia de la
+  decisión de Jose: «Una foto sin la lista no sirve para nada: la profe vería una cara y un
+  documento sin saber si esa persona está autorizada a llevarse a ese niño». Medido antes (ensayo
+  en producción terminado en RAISE): la profe de otra aula veía la foto y no la autorización, ni sus
+  firmas, ni la lista, ni de qué niño era. Cualquier profe del centro consulta ahora la recogida (no
+  la plantilla, no la medicación):
+  - `autorizaciones_select` suma `tipo = 'recogida' AND NOT es_plantilla AND es_profe_en_centro`;
+  - `firmas_select` suma `privado.recogida_para_profe_del_centro(autorizacion_id)`: la fila de la
+    firma, con ids y no nombres;
+  - `contenido_firmas` le da, de una firma de recogida, solo `datos` (personas, DNI escrito y la
+    referencia a la foto); el trazo, el nombre tecleado, la IP, el navegador y el comentario le llegan
+    NULL. Quién firmó no se abre;
+  - `nombres_de_recogidas(autorizaciones)`: el nombre y los apellidos del niño SOLO a través de su
+    recogida, a la profe del centro y a Dirección, si el niño tiene matrícula activa del curso activo
+    y no está bloqueado (los mismos niños cuyo nombre ya ve cualquier profe del centro en
+    `listado_pase_servicios`, medido con sesión). No abre la ficha ni los vínculos, y no sirve para
+    listar niños por otro camino: entra una lista de recogidas y sale el niño de cada una.
+  - El estado de la recogida (firmada, revocada) se calcula en el servidor con el servicio TRAS
+    autorizar, porque esa profe no ve los vínculos del niño; de ese cálculo solo sale el estado. Sin
+    él, una recogida revocada se le enseñaría «sin firmar».
+  - El listado de la profe (`/teacher/autorizaciones`) pone el nombre en cada fila: primero las de
+    sus aulas y después las del centro.
+    Cada política y función lleva el motivo en su `COMMENT`, la guarda posterior lo comprueba, y el
+    test se pone rojo si se estrecha. Quien mida y vea que una profe de otra aula lee la lista de
+    recogida de cualquier niño del centro está viendo esta decisión, no un agujero.
 - Medido cerrado en producción (ensayo terminado en RAISE, LF y CRLF iguales; la migración aplicada
   dos veces salta en la guarda previa).
 - Test: `src/test/rls/recogida-subida-y-aviso.rls.test.ts`.
