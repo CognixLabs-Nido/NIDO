@@ -357,10 +357,28 @@ criterio:
   deben ver el DNI para confirmar que todo es correcto y ver la foto de quien recoge». Es decir:
   - **aviso a la profe del aula del niño y a Dirección** cuando se firma una autorización de recogida
     nueva o se añade una persona, por el mecanismo de aviso que ya tenga la casa (medido antes; no
-    uno nuevo);
-  - **la profe del aula y Dirección ven la foto del DNI** de las personas autorizadas a recoger: ver
-    «El autorizado: lo que ve y lo que no», la decisión del 2026-11-12 sobre las fotos del DNI de
-    recogida, **corregida el 2026-11-20**.
+    uno nuevo). **Decidido el 2026-11-20 (opción B): al móvil**, con el push que ya usan los mensajes
+    y los eventos, «No inventes otro»; el aviso de dentro de la app («Ha llegado una firma nueva», en
+    el inicio de `/teacher` y `/admin`) se mantiene, «que no estorba», y el del móvil lleva a la
+    autorización, donde están la lista y la foto. Con su test: firmar una recogida nueva y añadir una
+    persona avisan a la profe del aula y a Dirección;
+  - **la profe y Dirección ven la foto del DNI** de las personas autorizadas a recoger: ver «El
+    autorizado: lo que ve y lo que no», las fotos del DNI de recogida (decisión del 2026-11-12,
+    corregida y después retirada el 2026-11-20: **la lectura de cualquier profe del centro es a
+    propósito**, con el motivo de Jose escrito allí).
+  - **La subida** a `recogida-adjuntos` se mide con sesión (quién sube de verdad y para qué) y se
+    cierra a quien la necesita: «Ver la foto de quien recoge es el trabajo de la profe; subir
+    ficheros a la carpeta de cualquier niño no lo es.» Si una profe tiene un motivo real para
+    subirlas, se dice y se queda.
+    **Medido el 2026-11-20** (código y ensayo en producción con sesión, terminado en RAISE,
+    `~/nido-logs/12/medida/ve/`): en la app solo sube la familia, al firmar la recogida
+    (`/recogida/dni`, desde `/family/autorizaciones`); ninguna pantalla de profe ni de Dirección sube
+    esas fotos, y en producción no hay ninguna todavía. Por la API de Storage subían la profe del
+    aula, la de otra aula, una profe sin aula, Dirección y un autorizado sin permiso de firmar.
+    **Ninguna profe tiene un motivo real**: no hay pantalla que lo use. Se cierra
+    (`20270202120000`) a quien puede firmar la recogida de ese niño (`puede_firmar_autorizaciones`,
+    el permiso de `firmas_insert`). Dirección también queda fuera: no tiene pantalla que lo haga, y
+    ADR-0046 ya lo había decidido («La dirección NO sube DNIs»).
     Va en un PR propio, detrás del #541.
 
 **El PR de ahora es 1 a 5, el 8 y el 14:** «con el alta validada, el tutor no sobrescribe ningún
@@ -1573,6 +1591,17 @@ entran en la exportación del niño: van en la del usuario. La causa: las polít
   personas autorizadas a recoger a los niños de su aula. «Ni cualquier profe del centro, ni el
   autorizado, ni el otro tutor más de lo que ya ve.»** Antes de abrirlo se mide qué ve hoy la profe de
   verdad. Va con la decisión del 7, opción B, en «Después de validar, nada cambia sin validación».)_
+  _(**RETIRADA el mismo 2026-11-20: decisión de Jose. CUALQUIER PROFE DEL CENTRO VE LA FOTO DEL DNI
+  DE QUIEN RECOGE, A PROPÓSITO.** Su frase: «puede que la profe titular no sea la que entrega a los
+  niños». El motivo: en una escuela infantil la salida la hace quien está en ese momento, así que
+  cualquier profe del centro necesita poder ver la foto del DNI de quien recoge, no solo la del aula
+  del niño. Medido ese día (ensayo en producción terminado en RAISE,
+  `~/nido-logs/12/medida/ve/`): la política de staff `recogida_adjuntos_select`
+  (`es_admin` o `es_profe_en_centro` de la carpeta del centro) ya deja leer y listar las fotos a
+  toda profe del centro, también a una sin aula; el cierre del 2026-11-12 solo tocó la del lado del
+  tutor. **No es un agujero: no se estrecha.** Quien mida y vea «cualquier profe del centro lee las
+  fotos de DNI de recogida de todos los niños» está viendo esta decisión; cerrarla rompe la salida
+  del centro. La política lleva un `COMMENT ON POLICY` que dice lo mismo.)_
 - **La exportación del niño** (art. 15): la Dirección, la profe del niño (sin lo de gestión) y el
   tutor legal (`puede_exportar_nino`). El autorizado recibe 404.
 - **El alta** (`/alta/[ninoId]`): el autorizado va a su inicio. El alta es del tutor legal.

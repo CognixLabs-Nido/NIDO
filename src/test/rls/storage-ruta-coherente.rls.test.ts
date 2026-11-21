@@ -94,7 +94,10 @@ beforeAll(async () => {
   await asignarRol(tutorB.id, centroB.id, 'tutor_legal')
   ninoB = await createTestNino(centroB.id)
   await matricular(ninoB.id, aulaB.id, cursoB.id)
-  await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal')
+  // 2026-11-20 (`20270202120000`): sube la foto del DNI de recogida quien puede firmar la recogida.
+  await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {
+    puede_firmar_autorizaciones: true,
+  })
   await crearFamiliaTutor(ninoB.familia_id, tutorB.id, 'titular')
   const { error: errImagen } = await serviceClient.rpc('otorgar_consentimiento_imagen', {
     p_nino_id: ninoB.id,
@@ -198,10 +201,13 @@ describe('PR 3 — las rutas de Storage no cruzan de centro', () => {
     expect((await leer(directoraB, 'ninos-fotos', propia)).error).toBeNull()
   })
 
-  it('recogida-adjuntos: la profe de A no sube a A/niñoB/ y el tutor de B no lee lo que haya', async () => {
+  // Desde `20270202120000` (2026-11-20) ninguna profe sube a este bucket, así que su «no» ya no diría
+  // nada de la ruta. Sube el tutor de B, que tiene el permiso de firmar sobre niñoB: lo frena solo
+  // que la carpeta del centro no es la del niño.
+  it('recogida-adjuntos: el tutor de B no sube a A/niñoB/ ni lee lo que haya', async () => {
     const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.jpg`
     expect(
-      (await subir(profeA, 'recogida-adjuntos', cruzada, JPG, 'image/jpeg')).error
+      (await subir(tutorB, 'recogida-adjuntos', cruzada, JPG, 'image/jpeg')).error
     ).not.toBeNull()
     await sembrar('recogida-adjuntos', cruzada, JPG, 'image/jpeg')
     expect((await leer(tutorB, 'recogida-adjuntos', cruzada)).error).not.toBeNull()

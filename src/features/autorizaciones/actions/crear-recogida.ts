@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
+import { avisarRecogidaFirmada } from '../lib/avisar-recogida'
 import { adjuntosDelNino, datosRecogida } from '../lib/datos-firma'
 import { hashFirma } from '../lib/hash'
 import { getRequestContext } from '../lib/request-context'
@@ -186,5 +187,13 @@ export async function crearRecogida(
   }
 
   revalidarAutorizaciones()
+  // Aviso al móvil de la profe del aula y de Dirección (opción B, 2026-11-20). Best-effort: se
+  // espera para que la lambda no termine antes del envío, pero no cambia el resultado.
+  await avisarRecogidaFirmada({
+    autorizacionId: instancia.id,
+    ninoId: d.nino_id,
+    centroId: nino.centro_id,
+    autorId: user.id,
+  })
   return ok({ autorizacion_id: instancia.id, firma_id: firma.id })
 }

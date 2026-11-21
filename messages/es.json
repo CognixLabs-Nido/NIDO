@@ -3304,7 +3304,8 @@
       "anuncio_cuerpo": "Tienes un anuncio nuevo",
       "mensaje_cuerpo": "Tienes un mensaje nuevo",
       "olvido_titulo": "Petición de borrado de datos",
-      "olvido_cuerpo": "Tienes una petición nueva por revisar"
+      "olvido_cuerpo": "Tienes una petición nueva por revisar",
+      "recogida_cuerpo": "Una familia ha firmado una autorización de recogida"
     },
     "errors": {
       "permiso_denegado": "Has rechazado las notificaciones. Para activarlas, ajústalo en tu navegador.",

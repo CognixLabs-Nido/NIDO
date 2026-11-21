@@ -219,12 +219,24 @@ describe('el autorizado lee solo lo suyo', () => {
     if (am.error) throw new Error(`administración: ${am.error.message}`)
 
     // La foto del DNI que sube el propio autorizado, con su sesión: queda a su nombre (`owner_id`).
+    // Desde `20270202120000` (2026-11-20) sube solo quien puede firmar la recogida: el permiso se le
+    // da para la subida y se le quita después, así el resto del fichero mide al autorizado sin él.
+    const permiso = (v: Record<string, boolean>) =>
+      serviceClient
+        .from('vinculos_familiares')
+        .update({ permisos: v })
+        .eq('nino_id', nino.id)
+        .eq('usuario_id', autorizado.id)
+    const conPermiso = await permiso({ puede_firmar_autorizaciones: true })
+    if (conPermiso.error) throw new Error(`permiso del autorizado: ${conPermiso.error.message}`)
     dniPropio = `${centro.id}/${nino.id}/${randomUUID()}.jpg`
     const c = await clientFor(autorizado)
     const up = await c.storage
       .from('recogida-adjuntos')
       .upload(dniPropio, JPG, { contentType: 'image/jpeg' })
     if (up.error) throw new Error(`subida del autorizado: ${up.error.message}`)
+    const sinPermiso = await permiso({})
+    if (sinPermiso.error) throw new Error(`permiso del autorizado: ${sinPermiso.error.message}`)
     ;(ficheros['recogida-adjuntos'] ??= []).push(dniPropio)
   })
 

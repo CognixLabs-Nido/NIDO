@@ -3304,7 +3304,8 @@
       "anuncio_cuerpo": "You have a new announcement",
       "mensaje_cuerpo": "You have a new message",
       "olvido_titulo": "Data deletion request",
-      "olvido_cuerpo": "You have a new request to review"
+      "olvido_cuerpo": "You have a new request to review",
+      "recogida_cuerpo": "A family has signed a pick-up authorisation"
     },
     "errors": {
       "permiso_denegado": "You've refused notifications. To enable them, change it in your browser.",

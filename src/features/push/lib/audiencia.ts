@@ -32,10 +32,9 @@ export async function destinatariosDeNino(
   const supabase = createServiceRoleClient()
 
   // Profes (vía matriculas → profes_aulas) y vínculos familiares son
-  // independientes entre sí: lanzamos ambas queries en paralelo. `profes_aulas`
-  // sí depende de los `aula_id` que devuelve `matriculas`, así que va después.
-  const [matriculasRes, vinculosRes] = await Promise.all([
-    aplicarMatriculaActiva(supabase.from('matriculas').select('aula_id').eq('nino_id', ninoId)),
+  // independientes entre sí: lanzamos ambas queries en paralelo.
+  const [profes, vinculosRes] = await Promise.all([
+    profesDelAulaDelNino(ninoId),
     supabase
       .from('vinculos_familiares')
       .select('usuario_id, permisos')
@@ -43,18 +42,7 @@ export async function destinatariosDeNino(
       .is('deleted_at', null),
   ])
 
-  const destinatarios = new Set<string>()
-
-  const aulaIds = (matriculasRes.data ?? []).map((m) => m.aula_id)
-  if (aulaIds.length > 0) {
-    const { data: profes } = await supabase
-      .from('profes_aulas')
-      .select('profe_id')
-      .in('aula_id', aulaIds)
-      .is('fecha_fin', null)
-      .is('deleted_at', null)
-    for (const p of profes ?? []) destinatarios.add(p.profe_id)
-  }
+  const destinatarios = new Set<string>(profes)
 
   // Tutores con flag `puede_recibir_mensajes`. Filtramos en JS porque
   // `permisos` es JSONB y el filtro `->` de PostgREST con `eq` no siempre
@@ -68,6 +56,29 @@ export async function destinatariosDeNino(
 
   destinatarios.delete(excluyendoUserId)
   return Array.from(destinatarios)
+}
+
+/**
+ * Las profes del aula del niño: las que tienen una asignación viva (`profes_aulas`, sin
+ * `fecha_fin`) en el aula de su matrícula activa. Con el cliente de servicio: quien avisa
+ * (normalmente un tutor) no lee `profes_aulas`. La usan los mensajes y el aviso de una recogida
+ * firmada. Un fallo de lectura sale como lista vacía: el push es best-effort.
+ */
+export async function profesDelAulaDelNino(ninoId: string): Promise<string[]> {
+  const supabase = createServiceRoleClient()
+  // `profes_aulas` depende de los `aula_id` que devuelve `matriculas`, así que va después.
+  const matriculasRes = await aplicarMatriculaActiva(
+    supabase.from('matriculas').select('aula_id').eq('nino_id', ninoId)
+  )
+  const aulaIds = (matriculasRes.data ?? []).map((m) => m.aula_id)
+  if (aulaIds.length === 0) return []
+  const { data: profes } = await supabase
+    .from('profes_aulas')
+    .select('profe_id')
+    .in('aula_id', aulaIds)
+    .is('fecha_fin', null)
+    .is('deleted_at', null)
+  return [...new Set((profes ?? []).map((p) => p.profe_id))]
 }
 
 /**

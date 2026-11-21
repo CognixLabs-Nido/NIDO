@@ -3304,7 +3304,8 @@
       "anuncio_cuerpo": "Tens un anunci nou",
       "mensaje_cuerpo": "Tens un missatge nou",
       "olvido_titulo": "Petició d'esborrat de dades",
-      "olvido_cuerpo": "Tens una petició nova per revisar"
+      "olvido_cuerpo": "Tens una petició nova per revisar",
+      "recogida_cuerpo": "Una família ha signat una autorització de recollida"
     },
     "errors": {
       "permiso_denegado": "Has rebutjat les notificacions. Per activar-les, ajusta-ho en el teu navegador.",
