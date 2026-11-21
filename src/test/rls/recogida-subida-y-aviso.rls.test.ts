@@ -327,7 +327,7 @@ describe('Recogida: quién sube la foto del DNI, quién la ve y a quién avisa (
       for (const u of [profeAula, profeOtra, profeSinAula, admin]) {
         const d = await detalleComo(u, autorizacionId)
         expect(d?.id ?? 'NO LA VE', rol(u)).toBe(autorizacionId)
-        expect(d?.estado_firma_nino, rol(u)).toBe('firmado')
+        expect(d?.estado_firma_nino ?? 'SIN ESTADO', rol(u)).toBe('firmado')
         expect(
           (d?.personas_vigentes ?? []).map((p) => `${p.nombre}|${p.dni}`),
           rol(u)
@@ -494,7 +494,8 @@ describe('Recogida: quién sube la foto del DNI, quién la ve y a quién avisa (
     it('revocada, la profe de otra aula la ve REVOCADA y sin lista (no «sin firmar», no vigente)', async () => {
       for (const u of [profeAula, profeOtra, profeSinAula]) {
         const d = await detalleComo(u, autorizacionId)
-        expect(d?.estado_firma_nino ?? 'NO LA VE', rol(u)).toBe('revocado')
+        expect(d?.id ?? 'NO LA VE', rol(u)).toBe(autorizacionId)
+        expect(d?.estado_firma_nino ?? 'SIN ESTADO', rol(u)).toBe('revocado')
         expect(d?.personas_vigentes, rol(u)).toEqual([])
       }
     })
