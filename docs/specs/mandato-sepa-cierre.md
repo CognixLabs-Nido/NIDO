@@ -61,3 +61,78 @@ tutor está bien, así que lo que hay que corregir es el texto.»
 
 **Método:** «Mide cada una abierta antes de cerrarla, con la plantilla, una sonda una defensa, y el
 md5 cuando ensayes. Y dime el orden de aplicación.»
+
+## Medido abierto (2026-11-22, ensayo en producción terminado en RAISE)
+
+`~/nido-logs/13/sepa/abierto/` (predicciones antes; LF y CRLF iguales salvo los uuid de cada pasada):
+
+- **1:** Dirección actualiza, mueve y borra el PDF de un mandato activo (1, 1, 1); `service_role`,
+  actualiza y borra (1, 1); el tutor, con el alta validada, no (0), y antes de validar, sí (1). El
+  tutor no borra (0). Control: el tutor de otra familia, 0.
+- **2 y 7:** el tutor propone un mandato con un sello inventado y la ruta de un fichero que no
+  existe, y la base lo guarda («propuesto, objeto existe: false»).
+- **3:** con un v2 activo, registrar el mismo IBAN deja las mismas filas y el mismo id, y cambia el
+  identificador: la firma anterior desaparece.
+- **4:** no hay tabla de lecturas del mandato, y leer el PDF no deja ninguna fila en `audit_log`.
+
+## El diseño (propuesto el 2026-11-22, pendiente de aprobar)
+
+### Migración 1, antes del despliegue (solo añade y no rompe la app de hoy)
+
+- **El sello v3** (decisión 2): `mandatos_sepa` gana `documento_sha256` y `documento_idioma`.
+  El texto canónico v3 es el v2 más el sha256 del PDF, el idioma y la versión de la plantilla del
+  PDF. Las tres funciones que crean un mandato (`registrar`, `sustituir`, `proponer`) aceptan esos
+  datos como parámetros nuevos con DEFAULT, y con ellos la **base recalcula el sello** con el IBAN
+  en claro que recibe y rechaza el que no cuadra (principio de la casa: lo que la base puede
+  derivar no lo acepta del cliente). También comprueba que la ruta es la que sale del sello y que
+  el objeto existe en el bucket, como `registrar_version_documento`.
+- **Volver a firmar crea un mandato nuevo** (decisión 3): `registrar_mandato_sepa` con el mismo
+  IBAN ya no reescribe la fila activa. Revoca la activa y crea otra, como `sustituir`.
+- **Quién abre el PDF** (decisión 4): tabla `lecturas_mandato_sepa`, con el mecanismo de
+  `lecturas_ficha_medica`. La escribe `abrir_documento_mandato(mandato, origen)` en la misma
+  transacción en la que autoriza: Dirección del centro o un tutor de la familia (decisión 5). Sin
+  políticas ni privilegios para las sesiones. La leen Dirección y los tutores de la familia, y
+  sale en el export.
+
+### La app (con la migración 1 aplicada)
+
+- **El PDF lo genera el servidor** (decisión 2): el móvil manda los datos y el trazo; el servidor
+  genera el identificador, compone el PDF de forma determinista (fecha de creación = la fecha de
+  firma, identificador del fichero sacado del sello) y calcula su sha256. Con los mismos datos
+  sellados sale el mismo fichero, byte a byte, así que el PDF se puede rehacer y comparar.
+- **El fichero se nombra por el sello** (decisión 7): `{centro}/familia/{familia}/mandato-{sello}.pdf`,
+  sin `upsert`. Primero se sube y después se registra; si el registro falla, el servidor borra
+  ese fichero, que ninguna fila nombra. Si no lo consigue, queda como huérfano y no cuenta, porque
+  la fila solo nombra el suyo.
+- **El enlace** (decisión 4): ninguna página firma el enlace al pintarse. Un botón lleva a
+  `/{locale}/mandato-sepa/{mandato}`, que llama a `abrir_documento_mandato` (deja la lectura) y
+  redirige a un enlace firmado de 30 segundos. El export enlaza a esa misma ruta, en vez de dar
+  un enlace de 24 horas.
+- **Los v1** (decisión 6): Dirección ve en «Altas en proceso», como ve quién está sin tarjeta
+  sanitaria, las familias cuyo mandato activo es v1 («pendiente de volver a firmar»). Sus datos no
+  se tocan.
+- **El export** (decisión 8): el texto dice que el PDF adjunto lleva el IBAN completo.
+
+### Migración 2, después del despliegue (cierra)
+
+- **Nadie sobrescribe ni borra la prueba** (decisión 1):
+  - fuera las políticas de UPDATE y DELETE del bucket `mandato-sepa` y la de INSERT por la ruta
+    del niño (los mandatos nuevos van por la de la familia);
+  - un trigger en `storage.objects`, como `documentos_centro_objeto_defensa`, impide cambiar
+    cualquier objeto del bucket, también a `service_role`;
+  - borrar un objeto que nombra una fila solo lo puede `service_role`: lo usan la destrucción a
+    los 6 años y la anulación del alta sin terminar, que borran el fichero antes que la fila.
+- **Una firma no cambia** (decisión 3, el criterio de la fase 3): un trigger en `mandatos_sepa`
+  solo deja cambiar el estado, por sus transiciones. Borrar una fila solo se puede con el
+  marcador de los borrados por plazo.
+- **Un mandato digital nuevo tiene que ser v3**: sin el sha del PDF, las tres funciones lo
+  rechazan. El presencial sigue siendo v2: no tiene PDF, la prueba es el papel.
+
+### El orden de aplicación
+
+1. Migración 1, con la app de hoy en producción.
+2. Merge y despliegue de la app.
+3. Migración 2.
+
+**Por qué en este orden:** al revés, la app de hoy deja de poder volver a firmar (su `upsert` choca
+con el trigger) y manda mandatos v2 que la migración 2 rechaza.
