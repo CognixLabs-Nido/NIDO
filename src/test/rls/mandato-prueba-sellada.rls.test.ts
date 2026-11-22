@@ -422,8 +422,15 @@ describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
       // Un alta sin terminar de una familia nueva, con su mandato firmado (el curso activo del centro:
       // solo hay uno por centro).
       const n2 = await createTestNino(centro.id)
-      await matricular(n2.id, aula.id, curso.id)
-      await serviceClient.from('matriculas').update({ estado: 'pendiente' }).eq('nino_id', n2.id)
+      // Nace 'pendiente': `matricular` la crea 'activa' y el trigger le sella `activada_at`, y una
+      // matrícula que se activó alguna vez ya no es un alta sin terminar (falló así en la CI).
+      const { error: errMat } = await serviceClient.from('matriculas').insert({
+        nino_id: n2.id,
+        aula_id: aula.id,
+        curso_academico_id: curso.id,
+        estado: 'pendiente',
+      })
+      expect(errMat?.message ?? null).toBeNull()
       const t2 = await createTestUser({ nombre: 'Tutora Anulada' })
       usuarios.push(t2)
       await asignarRol(t2.id, centro.id, 'tutor_legal')
@@ -450,6 +457,9 @@ describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
         via: 'registrar',
       })
       expect(firmado.error?.message ?? null).toBeNull()
+      // La premisa: la base la ve como un alta sin terminar que se borra.
+      const { data: premisa } = await serviceClient.rpc('datos_anular_alta', { p_nino_id: n2.id })
+      expect((premisa as { accion?: string } | null)?.accion).toBe('borrar')
 
       const r = await anularAltaCore(serviceClient, n2.id, admin.id)
       expect(r.resultado).toBe('borrada')
