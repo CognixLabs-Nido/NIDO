@@ -21,6 +21,7 @@ const CLAVES: ReadonlyArray<string> = [
   'push.notificaciones.anuncio_aula_titulo',
   'push.notificaciones.anuncio_cuerpo',
   'push.notificaciones.mensaje_cuerpo',
+  'push.notificaciones.recogida_cuerpo',
   'eventos.push.actualizado',
   'eventos.push.cancelado',
   'admin.admisiones.anadirHijo.push_titulo',
@@ -51,8 +52,10 @@ describe('i18n — textos de las notificaciones push', () => {
 
   // F11-B, punto 8: la notificación se ve en la pantalla bloqueada. El aviso de un mensaje, de
   // un anuncio y del alta de un hermano no lleva ningún dato: ni el texto ni el nombre del niño.
+  // La recogida firmada tampoco (2026-11-20): ni el niño ni quién lo recoge.
   it.each([
     'push.notificaciones.mensaje_cuerpo',
+    'push.notificaciones.recogida_cuerpo',
     'push.notificaciones.anuncio_cuerpo',
     'admin.admisiones.anadirHijo.push_titulo',
     'admin.admisiones.anadirHijo.push_cuerpo',

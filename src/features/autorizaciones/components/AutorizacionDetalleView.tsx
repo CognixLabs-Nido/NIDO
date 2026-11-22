@@ -137,7 +137,17 @@ export async function AutorizacionDetalleView({
       {/* Recogida: lista de personas autorizadas vigente (lectura para profes del
           aula + dirección) + flag de integridad del hash. */}
       {!aut.es_plantilla && aut.tipo === 'recogida' && (
-        <section>
+        <section className="space-y-2">
+          {/* La profe de otra aula no tiene al niño en el roster: su nombre sale de su recogida. */}
+          {aut.nino_recogida && (
+            <p className="text-foreground font-medium" data-testid="recogida-nino">
+              {t('detalle.nino_de_recogida', {
+                nombre: [aut.nino_recogida.nombre, aut.nino_recogida.apellidos]
+                  .filter(Boolean)
+                  .join(' '),
+              })}
+            </p>
+          )}
           <RecogidaLista
             personas={aut.personas_vigentes ?? []}
             integridadOk={aut.integridad_ok}

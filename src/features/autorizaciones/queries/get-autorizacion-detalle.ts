@@ -88,8 +88,33 @@ export async function getAutorizacionDetalle(
   let medicacion_vigente: MedicacionDatos | null | undefined
   let integridad_ok: boolean | null | undefined
   let estado_firma_nino: EstadoFirmaNino | undefined
+  let nino_recogida: AutorizacionDetalle['nino_recogida']
   if (!aut.es_plantilla && (aut.tipo === 'recogida' || aut.tipo === 'medicacion')) {
     estado_firma_nino = roster.find((r) => r.nino_id === aut.nino_id)?.estado
+    // La profe de otra aula (2026-11-21) ve la recogida pero no los vínculos del niño, así que el
+    // roster no la trae. Sin su estado, una recogida revocada saldría «sin firmar», y con dos firmas
+    // exigidas se enseñaría como vigente la lista de un tutor que el otro revocó. Se calcula con el
+    // servicio TRAS autorizar (la base ya le ha dejado ver la autorización; el patrón de la imagen),
+    // y de ese cálculo solo se usa el estado: ni nombres de tutores ni vínculos llegan a la pantalla.
+    if (estado_firma_nino === undefined && aut.tipo === 'recogida' && aut.nino_id) {
+      const rosterServicio = await construirRoster(
+        createServiceRoleClient(),
+        aut.id,
+        aut.tipo,
+        aut.firmantes_requeridos,
+        [aut.nino_id]
+      )
+      estado_firma_nino = rosterServicio.find((r) => r.nino_id === aut.nino_id)?.estado
+      if (estado_firma_nino === undefined)
+        throw new Error('getAutorizacionDetalle: estado de la recogida sin roster')
+      const { data: nombres, error: errNombres } = await supabase.rpc('nombres_de_recogidas', {
+        p_autorizacion_ids: [aut.id],
+      })
+      if (errNombres)
+        throw new Error(`getAutorizacionDetalle: nombre (${errNombres.code ?? 'sin_codigo'})`)
+      const n = (nombres ?? [])[0]
+      nino_recogida = n ? { nombre: n.nombre, apellidos: n.apellidos } : null
+    }
     // `datos` sale por `contenido_firmas` (`20270115120000`): a quien firmó, al tutor legal, a la profe
     // y a la Dirección. Al autorizado, de las firmas de otros no le llega, y no ve lo que firmó otro.
     // Si una de las dos lecturas falla, no hay detalle: una lista vacía diría «nadie puede recogerlo»
@@ -168,6 +193,7 @@ export async function getAutorizacionDetalle(
     medicacion_vigente,
     integridad_ok,
     estado_firma_nino,
+    ...(nino_recogida !== undefined ? { nino_recogida } : {}),
   }
 }
 

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
+import { avisarRecogidaFirmada } from '../lib/avisar-recogida'
 import { adjuntosDelNino, datosRecogida } from '../lib/datos-firma'
 import { hashFirma } from '../lib/hash'
 import { getRequestContext } from '../lib/request-context'
@@ -74,7 +75,7 @@ async function registrarDecision(
   const { data: aut, error: autErr } = await supabase
     .from('autorizaciones')
     .select(
-      'id, tipo, texto, texto_version, estado, texto_definitivo, vigencia_desde, vigencia_hasta'
+      'id, centro_id, tipo, texto, texto_version, estado, texto_definitivo, vigencia_desde, vigencia_hasta'
     )
     .eq('id', d.autorizacion_id)
     .maybeSingle()
@@ -187,6 +188,17 @@ async function registrarDecision(
   }
 
   revalidarAutorizaciones()
+  // Una recogida firmada (nueva, o con una persona más: volver a firmar la lista es una firma
+  // nueva) avisa al móvil a la profe del aula y a Dirección (opción B, 2026-11-20). Rechazar o
+  // revocar no: el aviso de dentro de la app ya cuenta las revocaciones.
+  if (aut.tipo === 'recogida' && d.decision === 'firmado') {
+    await avisarRecogidaFirmada({
+      autorizacionId: aut.id,
+      ninoId: d.nino_id,
+      centroId: aut.centro_id,
+      autorId: userId,
+    })
+  }
   return ok({ firma_id: firma.id })
 }
 

@@ -65,7 +65,7 @@ Varios buckets privados (fotos de niños) + uno público (logo); las políticas 
 
 - `aula-fotos`: **SELECT** = `usuario_ve_publicacion_row(centro, aula, publicacion)` (staff del aula + familia con `puede_ver_fotos`, P2); **INSERT** = `es_admin` o `es_redactor_de_aula` (P5); **DELETE** = autor de la publicación o admin.
 - `ninos-fotos`: SELECT = staff del niño + tutores; escribir/borrar = admin (ficha).
-- `recogida-adjuntos`: **baseline** staff del centro lee/sube (el alcance fino atado a la firma se refina cuando aterrice la UI de adjuntos de F8). Sensible → RAT/retención en F11.
+- `recogida-adjuntos`: **baseline** staff del centro lee/sube (el alcance fino atado a la firma se refina cuando aterrice la UI de adjuntos de F8). Sensible → RAT/retención en F11. _(Sustituido el 2026-11-20, `20270202120000`: el personal ya no sube; sube quien puede firmar la recogida. La lectura de cualquier profe del centro se queda, por decisión de Jose: ver `docs/architecture/rls-policies.md`, «La recogida firmada».)_
 - `centro-assets`: lectura **pública**; escribir/borrar = admin del centro.
 
 ### Modelo del blog (3 tablas)

@@ -3304,7 +3304,8 @@
       "anuncio_cuerpo": "You have a new announcement",
       "mensaje_cuerpo": "You have a new message",
       "olvido_titulo": "Data deletion request",
-      "olvido_cuerpo": "You have a new request to review"
+      "olvido_cuerpo": "You have a new request to review",
+      "recogida_cuerpo": "A family has signed a pick-up authorisation"
     },
     "errors": {
       "permiso_denegado": "You've refused notifications. To enable them, change it in your browser.",
@@ -3716,7 +3717,8 @@
       "roster": "Signature status",
       "tu_firma": "Your signature",
       "es_plantilla": "Catalog format: it is not signed; it is sent to an audience (or started by the family).",
-      "ambito_label": "Recipients: {ambito}"
+      "ambito_label": "Recipients: {ambito}",
+      "nino_de_recogida": "Child: {nombre}"
     },
     "validation": {
       "titulo_vacio": "Title is required.",
@@ -3922,11 +3924,12 @@
     "teacher": {
       "intro": "Pick-ups and medication for the children in your classroom. Open one to record and confirm a medication administration.",
       "recogidas_titulo": "Pick-ups",
-      "recogidas_desc": "Who may collect each child in your classroom (signed by the family).",
-      "recogidas_vacio": "No pick-ups in your classroom yet.",
+      "recogidas_desc": "Who can pick up each child, signed by the family: first your class, then the rest of the centre, in case you are at the door.",
+      "recogidas_vacio": "There are no pick-up authorisations in the centre yet.",
       "medicacion_titulo": "Medication",
       "medicacion_desc": "Signed schedules. Open one to record or confirm an administration.",
-      "medicacion_vacio": "No medication in your classroom yet."
+      "medicacion_vacio": "No medication in your classroom yet.",
+      "recogidas_centro": "Rest of the centre"
     },
     "seguimiento": {
       "pendientes_titulo": "Pending signature",

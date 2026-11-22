@@ -10,6 +10,10 @@ import {
 } from '@/features/autorizaciones/components/EstadoFirmaBadge'
 import { SeccionMedicacion } from '@/features/autorizaciones/components/SeccionMedicacion'
 import { getAutorizacionesAdmin } from '@/features/autorizaciones/queries/get-autorizaciones-admin'
+import {
+  getNombresDeRecogidas,
+  ordenarRecogidasParaLaPuerta,
+} from '@/features/autorizaciones/queries/get-nombres-recogidas'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 
 interface PageProps {
@@ -20,7 +24,9 @@ interface PageProps {
 const BASE = '/teacher/autorizaciones'
 
 /**
- * Autorizaciones de la profe: recogidas y medicación de los niños de SU aula (RLS).
+ * Autorizaciones de la profe: la medicación de los niños de SU aula (RLS) y las recogidas de TODO el
+ * centro, con el nombre del niño: primero las de su aula. Decisión de Jose (2026-11-20 y 21): la salida
+ * la hace quien está en la puerta, así que cualquier profe del centro consulta cualquier recogida.
  * La medicación muestra su actividad en la lista (dosis dadas/pendientes) y permite
  * archivar las terminadas + consultar el histórico. No gestiona catálogo ni envíos.
  */
@@ -55,6 +61,31 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
 
   const instancias = await getAutorizacionesAdmin(centroId)
   const recogidas = instancias.filter((a) => a.tipo === 'recogida')
+  const nombres = await getNombresDeRecogidas(recogidas.map((a) => a.id))
+  const { mias, centro } = ordenarRecogidasParaLaPuerta(recogidas, nombres)
+  const fila = (a: (typeof recogidas)[number]) => {
+    const n = nombres.get(a.id)
+    return (
+      <li key={a.id}>
+        <Link
+          href={`/${locale}${BASE}/${a.id}`}
+          className="hover:bg-muted/50 flex items-center justify-between gap-3 px-4 py-3"
+          data-testid="recogida-fila"
+        >
+          <span className="flex items-center gap-2">
+            <span className="font-medium">
+              {n ? [n.nombre, n.apellidos].filter(Boolean).join(' ') : a.titulo}
+            </span>
+            <TipoAutorizacionBadge tipo={a.tipo} />
+          </span>
+          <span className="flex items-center gap-2">
+            <EstadoDocBadge estado={a.estado} />
+            {a.estado_firma && <EstadoFirmaBadge estado={a.estado_firma} />}
+          </span>
+        </Link>
+      </li>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -77,25 +108,19 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
         {recogidas.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('teacher.recogidas_vacio')}</p>
         ) : (
-          <ul className="divide-border divide-y rounded-lg border">
-            {recogidas.map((a) => (
-              <li key={a.id}>
-                <Link
-                  href={`/${locale}${BASE}/${a.id}`}
-                  className="hover:bg-muted/50 flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="font-medium">{a.titulo}</span>
-                    <TipoAutorizacionBadge tipo={a.tipo} />
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <EstadoDocBadge estado={a.estado} />
-                    {a.estado_firma && <EstadoFirmaBadge estado={a.estado_firma} />}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4">
+            {mias.length > 0 && (
+              <ul className="divide-border divide-y rounded-lg border">{mias.map(fila)}</ul>
+            )}
+            {centro.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-muted-foreground text-sm font-medium">
+                  {t('teacher.recogidas_centro')}
+                </h3>
+                <ul className="divide-border divide-y rounded-lg border">{centro.map(fila)}</ul>
+              </div>
+            )}
+          </div>
         )}
       </section>
 

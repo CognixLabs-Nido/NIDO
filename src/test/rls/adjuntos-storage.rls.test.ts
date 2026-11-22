@@ -62,8 +62,14 @@ describe('RLS Storage — F10-3 (adjuntos: tutor vs ajeno)', () => {
     ninoB = await createTestNino(centro.id)
     await matricular(ninoA.id, aula.id, curso.id)
     await matricular(ninoB.id, aula.id, curso.id)
-    await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal')
-    await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal')
+    // 2026-11-20 (`20270202120000`): sube la foto del DNI de recogida quien puede firmar la
+    // recogida (`puede_firmar_autorizaciones`), como en producción todo tutor legal.
+    await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
+    await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
     // IU-3: la escritura en `ninos-fotos` exige consent de imagen del niño ([2]=ninoId).
     // Los casos POSITIVOS de abajo (tutor sube SU foto, dirección sube cualquiera) ya no
     // pasan sin consent → se otorga a ambos. El gate por-niño tiene su propio bloque.

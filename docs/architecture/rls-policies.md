@@ -734,7 +734,10 @@ un autorizado simulado; la exportación, en la base efímera con el `GET` real d
 - **`adm_med_select`**: la Dirección, la profe del niño y quien tiene `puede_ver_info_medica`, como la
   ficha médica. Antes, cualquier vínculo.
 - **`recogida_adjuntos_select_tutor`** (Storage): el tutor legal, o quien subió el fichero
-  (`owner_id`) si tiene vínculo con el niño. Antes, cualquier vínculo.
+  (`owner_id`) si tiene vínculo con el niño. Antes, cualquier vínculo. _(El lado del personal,
+  `recogida_adjuntos_select`, no se tocó: cualquier profe del centro ve la foto, y desde el
+  2026-11-20 eso es una decisión de Jose escrita, no un hueco. Ver «La recogida firmada:
+  la subida, la lectura y el aviso».)_
 - **`puede_exportar_nino(niño)`**: la puerta de la exportación del niño (`recolectarNino`): la
   Dirección, la profe del niño y el tutor legal. La ruta no mira el rol y el servicio firma después
   el libro de familia; por eso la puerta va antes, y lo de gestión llega por su función.
@@ -748,6 +751,59 @@ un autorizado simulado; la exportación, en la base efímera con el `GET` real d
   medidas que juntas.
 - Tests: `src/test/rls/lecturas-por-funcion.rls.test.ts` (la primera) y
   `src/test/rls/autorizado-lee-solo-lo-suyo.rls.test.ts`.
+
+### La recogida firmada: la subida, la lectura y el aviso (2026-11-20)
+
+Migración `20270202120000_fix_recogida_subida`; spec `docs/specs/altas-serie.md`, «7, DECIDIDO por
+Jose el 2026-11-20» y «El autorizado: lo que ve y lo que no». La autorización de recogida nueva vale
+desde que la familia la firma, sin cola (opción B).
+
+- **La lectura de la foto del DNI de recogida es de cualquier profe del centro, A PROPÓSITO.**
+  `recogida_adjuntos_select` (`es_admin` o `es_profe_en_centro` de la carpeta del centro) no se
+  estrecha: «puede que la profe titular no sea la que entrega a los niños» (Jose). La salida la hace
+  quien está en ese momento. Quien mida y vea que cualquier profe lee las fotos de DNI de recogida de
+  todos los niños está viendo esta decisión; la política lo lleva en su `COMMENT`, y la guarda
+  posterior lo comprueba.
+- **La subida, solo quien firma la recogida.** Medido con sesión el 2026-11-20 (ensayo en producción
+  terminado en RAISE): subían la profe del aula, la de otra aula, una profe sin aula, Dirección y el
+  autorizado sin permiso de firmar. En la app solo sube la familia, al firmar (`/recogida/dni`). Se
+  borra `recogida_adjuntos_insert` (la del personal: ninguna pantalla suya sube, y ADR-0046 ya decía
+  «La dirección NO sube DNIs») y `recogida_adjuntos_insert_tutor` pasa de `es_tutor_de` a
+  `tiene_permiso_sobre(niño, 'puede_firmar_autorizaciones')`, el permiso que pide `firmas_insert`.
+- **El aviso al móvil** (sin migración): firmar una recogida nueva o volver a firmar la lista
+  (añadir una persona) manda un push a las profes del aula del niño y a Dirección
+  (`avisarRecogidaFirmada`, con `enviarPushPorIdioma`, el motor de los mensajes y los eventos), con un
+  texto sin datos y el enlace a la autorización en su panel. Revocar no. El aviso de dentro de la app
+  («Ha llegado una firma nueva») se queda. **No se amplía** a todo el claustro (2026-11-21): quien
+  está en la puerta necesita CONSULTAR, no una notificación de cada niño del centro.
+- **La lista, con el mismo alcance que la foto, A PROPÓSITO (2026-11-21).** Consecuencia de la
+  decisión de Jose: «Una foto sin la lista no sirve para nada: la profe vería una cara y un
+  documento sin saber si esa persona está autorizada a llevarse a ese niño». Medido antes (ensayo
+  en producción terminado en RAISE): la profe de otra aula veía la foto y no la autorización, ni sus
+  firmas, ni la lista, ni de qué niño era. Cualquier profe del centro consulta ahora la recogida (no
+  la plantilla, no la medicación):
+  - `autorizaciones_select` suma `tipo = 'recogida' AND NOT es_plantilla AND es_profe_en_centro`;
+  - `firmas_select` suma `privado.recogida_para_profe_del_centro(autorizacion_id)`: la fila de la
+    firma, con ids y no nombres;
+  - `contenido_firmas` le da, de una firma de recogida, solo `datos` (personas, DNI escrito y la
+    referencia a la foto); el trazo, el nombre tecleado, la IP, el navegador y el comentario le llegan
+    NULL. Quién firmó no se abre;
+  - `nombres_de_recogidas(autorizaciones)`: el nombre y los apellidos del niño SOLO a través de su
+    recogida, a la profe del centro y a Dirección, si el niño tiene matrícula activa del curso activo
+    y no está bloqueado (los mismos niños cuyo nombre ya ve cualquier profe del centro en
+    `listado_pase_servicios`, medido con sesión). No abre la ficha ni los vínculos, y no sirve para
+    listar niños por otro camino: entra una lista de recogidas y sale el niño de cada una.
+  - El estado de la recogida (firmada, revocada) se calcula en el servidor con el servicio TRAS
+    autorizar, porque esa profe no ve los vínculos del niño; de ese cálculo solo sale el estado. Sin
+    él, una recogida revocada se le enseñaría «sin firmar».
+  - El listado de la profe (`/teacher/autorizaciones`) pone el nombre en cada fila: primero las de
+    sus aulas y después las del centro.
+    Cada política y función lleva el motivo en su `COMMENT`, la guarda posterior lo comprueba, y el
+    test se pone rojo si se estrecha. Quien mida y vea que una profe de otra aula lee la lista de
+    recogida de cualquier niño del centro está viendo esta decisión, no un agujero.
+- Medido cerrado en producción (ensayo terminado en RAISE, LF y CRLF iguales; la migración aplicada
+  dos veces salta en la guarda previa).
+- Test: `src/test/rls/recogida-subida-y-aviso.rls.test.ts`.
 
 ### La tarjeta sanitaria del niño (serie de altas, fase 7)
 
@@ -1511,13 +1567,13 @@ Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId`
 
 - **`aula-fotos`** (blog): SELECT = `usuario_ve_publicacion_row(centroId, aulaId, publicacionId)`; INSERT = `es_admin(centroId) OR es_redactor_de_aula(aulaId)` (P5); DELETE = `es_admin(centroId) OR autor_de_publicacion(publicacionId)=auth.uid()`.
 - **`ninos-fotos`** (foto de la ficha, `ninos.foto_url`). Ruta `{centroId}/{ninoId}/…`. SELECT = `es_admin(centroId) OR es_profe_de_nino(ninoId) OR es_tutor_de(ninoId)`. Escribir/borrar = `es_admin(centroId)` (F10-0) **OR `es_tutor_de(ninoId)`** (F10-3, `[2]=ninoId`): el tutor sube/sustituye la foto de **su** hijo, dirección la de cualquiera. El `UPDATE` de `ninos.foto_url` (que el tutor no puede por la RLS de `ninos`) lo hace el server con **service role tras autorizar**.
-- **`recogida-adjuntos`** (foto DNI de F8, `firmas.datos.adjuntos`). Ruta `{centroId}/{ninoId}/…` (el `{firmaId}` no existe al subir-antes-de-firmar). SELECT/INSERT **baseline** staff del centro (`es_admin OR es_profe_en_centro`, `[1]=centroId`) **+ F10-3** `es_tutor_de(ninoId)` (`[2]=ninoId`): el tutor sube/relee el DNI de **su** recogida (la lectura, desde `20270115130000`, el tutor legal o quien subió el fichero); DELETE = `es_admin`. La referencia se ata a la firma por el hash (`datos.adjuntos`). Sensible (DNIs de terceros) → RAT/retención en F11.
+- **`recogida-adjuntos`** (foto DNI de F8, `firmas.datos.adjuntos`). Ruta `{centroId}/{ninoId}/…` (el `{firmaId}` no existe al subir-antes-de-firmar). SELECT/INSERT **baseline** staff del centro (`es_admin OR es_profe_en_centro`, `[1]=centroId`) **+ F10-3** `es_tutor_de(ninoId)` (`[2]=ninoId`): el tutor sube/relee el DNI de **su** recogida (la lectura, desde `20270115130000`, el tutor legal o quien subió el fichero); DELETE = `es_admin`. _(Sustituido el 2026-11-20, `20270202120000`: el INSERT del personal ya no existe y el del tutor exige `puede_firmar_autorizaciones`; la lectura del personal sigue igual, a propósito. Ver «La recogida firmada: la subida, la lectura y el aviso».)_ La referencia se ata a la firma por el hash (`datos.adjuntos`). Sensible (DNIs de terceros) → RAT/retención en F11.
 - **`centro-assets`** (logo, **público** — ADR-0010): SELECT público; escribir/actualizar/borrar = `es_admin(centroId)` (F10-0; el tutor NO escribe — verificado por test). En F10-3 dirección sube el logo aquí y repunta `centros.logo_url`.
 - **Desde `20261027120000`** (PR 3 de la Fase 4), las policies de los buckets con niño, familia o aula en la ruta exigen además `ruta_coherente(bucket_id, name)`, y las de escritura de `centro-assets`, que la ruta tenga carpeta. Ver «Storage: las rutas no cruzan de centro».
 
 ### Políticas de Storage del tutor (F10-3)
 
-Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)` (la de lectura, desde `20270115130000`, `es_tutor_legal_de` o el dueño del fichero: ver «El autorizado lee solo lo suyo»). **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts`: un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
+Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)` (la de lectura, desde `20270115130000`, `es_tutor_legal_de` o el dueño del fichero: ver «El autorizado lee solo lo suyo»; la de subida de recogida, desde `20270202120000`, `tiene_permiso_sobre(…, 'puede_firmar_autorizaciones')`). **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts`: un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
 
 ## Postura de seguridad (octubre de 2026)
 

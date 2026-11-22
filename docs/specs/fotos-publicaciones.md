@@ -50,7 +50,7 @@ F10 es además el momento de **construir bien Storage una vez** (buckets, polít
 - **US-04:** Como **familia**, quiero **descargar** las fotos para guardarlas.
 - **US-05:** Como **dirección**, quiero **fijar por niño si puede aparecer en fotos** (según el consentimiento en papel) para que la profe solo pueda etiquetar a los autorizados.
 - **US-06:** Como **dirección**, quiero **subir el logo real del centro** a Storage para que sustituya la URL hardcodeada (ADR-0010).
-- **US-07:** Como **dirección/profe**, quiero **adjuntar la foto del DNI** en una recogida (F8) y la **foto del niño** en su ficha, reutilizando el Storage de F10.
+- **US-07:** Como **dirección/profe**, quiero **adjuntar la foto del DNI** en una recogida (F8) y la **foto del niño** en su ficha, reutilizando el Storage de F10. _(La foto del DNI, sustituida: desde F10-3 la sube la familia al firmar, y desde el 2026-11-20 (`20270202120000`) solo quien puede firmar la recogida; ni la dirección ni la profe. La profe y Dirección la **ven**. Ver `docs/specs/altas-serie.md`, «7, DECIDIDO por Jose el 2026-11-20».)_
 - **US-08:** Como **cualquier usuario**, quiero que las fotos de niños viajen por **enlaces firmados que caducan** y **sin metadatos de geolocalización**, para proteger la privacidad de los menores.
 
 ## Alcance
