@@ -467,6 +467,26 @@ CREATE TABLE public.lecturas_mandato_sepa (
   leida_en    timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX lecturas_mandato_sepa_mandato_idx ON public.lecturas_mandato_sepa (mandato_id, leida_en);
+-- La lectura es del centro de su mandato (la regla de `zz_centro_coherente`, `20270108120000`).
+CREATE FUNCTION privado.lecturas_mandato_sepa_centro_coherente()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+BEGIN
+  IF NEW.mandato_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.mandatos_sepa r
+     WHERE r.id = NEW.mandato_id AND r.centro_id IS DISTINCT FROM NEW.centro_id) THEN
+    RAISE EXCEPTION 'public.lecturas_mandato_sepa.mandato_id no es del centro de la fila'
+      USING ERRCODE = '23514', HINT = 'centro_ajeno';
+  END IF;
+  RETURN NEW;
+END
+$function$;
+REVOKE ALL ON FUNCTION privado.lecturas_mandato_sepa_centro_coherente() FROM PUBLIC, anon, authenticated, service_role;
+CREATE TRIGGER zz_centro_coherente
+  BEFORE INSERT OR UPDATE OF centro_id, mandato_id ON public.lecturas_mandato_sepa
+  FOR EACH ROW EXECUTE FUNCTION privado.lecturas_mandato_sepa_centro_coherente();
 ALTER TABLE public.lecturas_mandato_sepa ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.lecturas_mandato_sepa FROM PUBLIC, anon, authenticated;
 COMMENT ON TABLE public.lecturas_mandato_sepa IS 'Quién ha abierto el PDF de un mandato SEPA (decisión del 2026-11-22, el mecanismo de lecturas_ficha_medica). La escribe abrir_documento_mandato en la misma transacción en la que autoriza, antes de que la ruta sirva los bytes. Sin políticas ni privilegios para las sesiones; se va con su mandato.';
@@ -785,6 +805,10 @@ BEGIN
      OR has_table_privilege('anon', 'public.lecturas_mandato_sepa', 'SELECT')
      OR EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'lecturas_mandato_sepa') THEN
     RAISE EXCEPTION 'mandato: lecturas_mandato_sepa se lee con sesión';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'zz_centro_coherente'
+                  AND tgrelid = 'public.lecturas_mandato_sepa'::regclass) THEN
+    RAISE EXCEPTION 'mandato: lecturas_mandato_sepa sin su zz_centro_coherente';
   END IF;
   IF has_function_privilege('authenticated', 'public.mandatos_sepa_huerfanos()', 'EXECUTE')
      OR has_function_privilege('anon', 'public.abrir_documento_mandato(uuid, text)', 'EXECUTE') THEN

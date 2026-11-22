@@ -64,6 +64,8 @@ const sha256 = (b: Uint8Array | string) => createHash('sha256').update(b).digest
 
 describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
   let centro: { id: string; nombre: string }
+  let curso: { id: string }
+  let aula: { id: string }
   let familia: string
   let nino: { id: string }
   let admin: TestUser
@@ -194,8 +196,8 @@ describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
 
   beforeAll(async () => {
     centro = await createTestCentro('Mandato prueba')
-    const curso = await createTestCurso(centro.id)
-    const aula = await createTestAula(centro.id, curso.id)
+    curso = await createTestCurso(centro.id)
+    aula = await createTestAula(centro.id, curso.id)
     nino = await createTestNino(centro.id)
     await matricular(nino.id, aula.id, curso.id)
     // En su alta: el mandato se registra directo (con el alta validada iría a la cola).
@@ -417,9 +419,8 @@ describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
 
   describe('el alta anulada: el mandato se va, y queda constancia', () => {
     it('el evento del final dice qué mandato se destruyó, cuándo y quién anuló', async () => {
-      // Un alta sin terminar de una familia nueva, con su mandato firmado.
-      const curso = await createTestCurso(centro.id)
-      const aula = await createTestAula(centro.id, curso.id)
+      // Un alta sin terminar de una familia nueva, con su mandato firmado (el curso activo del centro:
+      // solo hay uno por centro).
       const n2 = await createTestNino(centro.id)
       await matricular(n2.id, aula.id, curso.id)
       await serviceClient.from('matriculas').update({ estado: 'pendiente' }).eq('nino_id', n2.id)

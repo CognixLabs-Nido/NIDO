@@ -41,7 +41,8 @@ export async function GET(
   // Uno que no existe y uno ajeno contestan lo mismo (42501): no se dice cuál es.
   if (error) return noDisponible(error.code === '42501' ? 404 : 500)
   const fila = data?.[0]
-  if (!fila) return noDisponible(404)
+  // La función no devuelve un mandato sin documento (42501); el tipo no lo sabe.
+  if (!fila?.documento_path) return noDisponible(404)
 
   const { data: blob, error: errBytes } = await supabase.storage
     .from(BUCKET_MANDATO_SEPA)
@@ -55,7 +56,7 @@ export async function GET(
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="mandato-sepa-${fila.identificador_mandato}.pdf"`,
+      'Content-Disposition': `attachment; filename="mandato-sepa-${fila.identificador_mandato ?? mandatoId}.pdf"`,
       'Cache-Control': 'private, no-store',
     },
   })

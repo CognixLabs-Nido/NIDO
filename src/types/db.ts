@@ -102,8 +102,6 @@ type FuncionTabla = (typeof FUNCIONES_RETURNS_TABLE)[number]
  * Los comentarios dicen por qué regla entra cada una; lo que manda es el test.
  */
 export const NO_NULAS = {
-  /** La función rechaza un mandato sin documento; el identificador es NOT NULL. */
-  abrir_documento_mandato: ['documento_path', 'identificador_mandato'],
   /** NOT NULL de `accesos_datos_bloqueados`; `lector_nombre` viene de un LEFT JOIN. */
   accesos_datos_bloqueados_centro: [
     'leido_en',
@@ -166,7 +164,6 @@ export const NO_NULAS = {
   lecturas_mandato_sepa: [
     'mandato_id',
     'identificador_mandato',
-    'nombre_oculto',
     'rol_lector',
     'origen',
     'leida_en',

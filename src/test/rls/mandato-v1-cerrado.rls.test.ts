@@ -264,7 +264,9 @@ describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () =>
     ])
   })
 
-  it('el reintento del alta sobre un v1 existente lo vuelve a firmar en su sitio como v2, no como v1', async () => {
+  it('el reintento del alta sobre un v1 existente crea un v2 nuevo y deja el v1 como estaba, revocado', async () => {
+    // 2026-11-22 (decisión 3 del cierre del mandato, «Una firma no se borra»: SUSTITUYE a «lo vuelve
+    // a firmar en su sitio como v2»). El v1 no se toca: solo pasa a revocado.
     const { fam, cTutor } = await familiaConTutor()
     const v1 = v1Existente(fam, IBAN_1)
     // Como v1, no.
@@ -273,21 +275,30 @@ describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () =>
     expect(await mandatosDe(fam)).toEqual([
       expect.objectContaining({ id: v1, version_canonico: 1, texto_hash: HASH }),
     ])
-    // Como v2, sí: el mismo IBAN es el reintento (la misma fila), y ya es un v2.
+    // Como v2, sí: el mismo IBAN crea un mandato nuevo, y el v1 se queda con su hash, revocado.
     const comoV2 = await cTutor.rpc(
       'registrar_mandato_sepa',
       args(fam, IBAN_1, { ...datosMandatoV2(centro), p_texto_hash: 'c'.repeat(64) })
     )
     expect(comoV2.error).toBeNull()
-    expect(await mandatosDe(fam)).toEqual([
-      expect.objectContaining({
-        id: v1,
-        estado: 'activo',
-        version_canonico: 2,
-        texto_hash: 'c'.repeat(64),
-        titular_documento: 'X1234567L',
-        acreedor_cid: CID_PRUEBA,
-      }),
-    ])
+    const filas = await mandatosDe(fam)
+    expect(filas).toHaveLength(2)
+    expect(filas).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: v1,
+          estado: 'revocado',
+          version_canonico: 1,
+          texto_hash: HASH,
+        }),
+        expect.objectContaining({
+          estado: 'activo',
+          version_canonico: 2,
+          texto_hash: 'c'.repeat(64),
+          titular_documento: 'X1234567L',
+          acreedor_cid: CID_PRUEBA,
+        }),
+      ])
+    )
   })
 })

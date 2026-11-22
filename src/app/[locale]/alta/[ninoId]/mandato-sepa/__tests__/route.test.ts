@@ -189,9 +189,12 @@ describe('POST /alta/[ninoId]/mandato-sepa (2026-11-22: el PDF del servidor, sel
     expect(a.p_documento_path).toBe(path)
   })
 
-  it('el PDF se rehace desde lo que recibe la base: el mismo sha256', async () => {
+  it('el PDF se rehace desde lo que recibe la base, otro día: el mismo sha256', async () => {
     await enviar()
     const a = bd.rpcArgs!
+    // Otro día: si el PDF llevara la hora en que se compone (jsPDF la pone por defecto), el rehecho
+    // daría otro sha256. Sin mover el reloj, rehacerlo en el mismo segundo saldría verde por azar.
+    vi.useFakeTimers({ now: Date.now() + 24 * 3600 * 1000 })
     const rehecho = generarMandatoPdf({
       identificadorMandato: a.p_identificador_mandato as string,
       iban: a.p_iban as string,
@@ -206,6 +209,7 @@ describe('POST /alta/[ninoId]/mandato-sepa (2026-11-22: el PDF del servidor, sel
       idioma: 'va',
       plantillaVersion: 1,
     })
+    vi.useRealTimers()
     expect(sha256(rehecho)).toBe(a.p_documento_sha256)
   })
 
