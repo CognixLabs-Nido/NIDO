@@ -62,6 +62,28 @@ tutor está bien, así que lo que hay que corregir es el texto.»
 **Método:** «Mide cada una abierta antes de cerrarla, con la plantilla, una sonda una defensa, y el
 md5 cuando ensayes. Y dime el orden de aplicación.»
 
+## Las dos del diseño y el huérfano (decididas el 2026-11-22)
+
+**El mandato se va con el alta anulada, y queda constancia.** «Un alta que nunca se activó no generó
+ningún recibo, así que ese mandato no cobró nada y es un número de cuenta de una familia que no llegó
+a matricularse: guardarlo sería conservar datos bancarios sin ninguna finalidad. Se borra, y el
+borrado solo para service_role, como propones. Pero con una condición: QUE QUEDE CONSTANCIA de que
+existió y se borró, con la fecha y quién anuló el alta. Si la familia vuelve dentro de un año, o
+reclama, tiene que poder saberse que hubo un mandato y que se destruyó al anular, no que nunca
+existió.»
+
+**Sin enlace, como la 10c.** «Si la ruta entrega los bytes, no queda ninguna URL que alguien pueda
+reenviar, y además es el precedente de la casa de hace tres días. Copia ese mecanismo entero,
+incluida la fila de lectura antes de servir. Y que el export use esa misma ruta: así el mandato y la
+ficha firmada se comportan igual y nadie tiene que recordar dos reglas.» Sustituye al «enlace de 30
+segundos» del diseño de abajo.
+
+**El huérfano no queda suelto.** «Mete ese bucket en el barrido de huérfanos que ya existe —el que
+usamos para los 60 ficheros que limpiamos en la fase de retención— y que el barrido los cuente. Un
+huérfano con un IBAN dentro que nadie busca es justo lo que no queremos.»
+
+**El resto del diseño, aprobado**, con el orden: la migración 1 antes del despliegue y la 2 después.
+
 ## Medido abierto (2026-11-22, ensayo en producción terminado en RAISE)
 
 `~/nido-logs/13/sepa/abierto/` (predicciones antes; LF y CRLF iguales salvo los uuid de cada pasada):
