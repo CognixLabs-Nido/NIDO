@@ -77,7 +77,8 @@ END $guarda$;
 ALTER TABLE public.mandatos_sepa
   ADD COLUMN documento_sha256 text,
   ADD COLUMN documento_idioma text,
-  ADD COLUMN plantilla_pdf_version smallint;
+  ADD COLUMN plantilla_pdf_version smallint,
+  ADD COLUMN acreedor_direccion text;
 ALTER TABLE public.mandatos_sepa DROP CONSTRAINT mandatos_sepa_version_canonico;
 ALTER TABLE public.mandatos_sepa ADD CONSTRAINT mandatos_sepa_version_canonico
   CHECK (version_canonico = ANY (ARRAY[1, 2, 3]));
@@ -85,8 +86,10 @@ ALTER TABLE public.mandatos_sepa ADD CONSTRAINT mandatos_sepa_documento_v3
   CHECK (CASE WHEN version_canonico = 3
               THEN documento_sha256 ~ '^[0-9a-f]{64}$' AND documento_idioma IN ('es', 'en', 'va')
                    AND plantilla_pdf_version >= 1 AND documento_path IS NOT NULL
+                   AND acreedor_direccion IS NOT NULL
                    AND texto_hash ~ '^[0-9a-f]{64}$'
               ELSE documento_sha256 IS NULL AND documento_idioma IS NULL AND plantilla_pdf_version IS NULL
+                   AND acreedor_direccion IS NULL
          END);
 -- El v3 lleva todo lo del v2: el CHECK de los datos lo mira igual.
 ALTER TABLE public.mandatos_sepa DROP CONSTRAINT mandatos_sepa_datos_por_version;
@@ -105,7 +108,8 @@ COMMENT ON COLUMN public.mandatos_sepa.documento_sha256 IS 'v3 (2026-11-22): el 
 CREATE FUNCTION privado.texto_canonico_mandato_v3(
   p_identificador text, p_iban text, p_titular text, p_titular_documento text,
   p_titular_direccion text, p_acreedor_nombre text, p_acreedor_cid text, p_fecha_firma timestamptz,
-  p_documento_sha256 text, p_documento_idioma text, p_plantilla_pdf_version smallint)
+  p_documento_sha256 text, p_documento_idioma text, p_plantilla_pdf_version smallint,
+  p_acreedor_direccion text)
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
@@ -120,13 +124,14 @@ AS $function$
     'titular_direccion=' || btrim(p_titular_direccion),
     'acreedor=' || btrim(p_acreedor_nombre),
     'acreedor_cid=' || btrim(p_acreedor_cid),
+    'acreedor_direccion=' || btrim(p_acreedor_direccion),
     'tipo=recurrente',
     'fecha=' || to_char(p_fecha_firma AT TIME ZONE 'UTC', 'YYYY-MM-DD'),
     'documento_sha256=' || p_documento_sha256,
     'idioma=' || p_documento_idioma,
     'plantilla_pdf=' || p_plantilla_pdf_version::text);
 $function$;
-REVOKE ALL ON FUNCTION privado.texto_canonico_mandato_v3(text, text, text, text, text, text, text, timestamptz, text, text, smallint) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION privado.texto_canonico_mandato_v3(text, text, text, text, text, text, text, timestamptz, text, text, smallint, text) FROM PUBLIC, anon, authenticated;
 
 -- La versión de lo que se firma y, si es v3, su sello: lo que la base puede derivar no lo acepta del
 -- cliente. Devuelve 2 (sin documento del servidor: la app de hoy, y el presencial) o 3.
@@ -134,7 +139,7 @@ CREATE FUNCTION privado.version_y_sello_mandato(
   p_familia_id uuid, p_iban text, p_titular text, p_identificador text, p_documento_path text,
   p_texto_hash text, p_fecha_firma timestamptz, p_metodo firma_metodo, p_titular_documento text,
   p_titular_direccion text, p_acreedor_cid text, p_acreedor_nombre text, p_documento_sha256 text,
-  p_documento_idioma text, p_plantilla_pdf_version smallint)
+  p_documento_idioma text, p_plantilla_pdf_version smallint, p_acreedor_direccion text)
 RETURNS smallint
 LANGUAGE plpgsql
 STABLE SECURITY DEFINER
@@ -146,7 +151,8 @@ DECLARE
   v_sello   text;
 BEGIN
   IF p_documento_sha256 IS NULL THEN
-    IF p_documento_idioma IS NOT NULL OR p_plantilla_pdf_version IS NOT NULL THEN
+    IF p_documento_idioma IS NOT NULL OR p_plantilla_pdf_version IS NOT NULL
+       OR p_acreedor_direccion IS NOT NULL THEN
       RAISE EXCEPTION 'un mandato con idioma o plantilla de PDF lleva el sha256 de su PDF'
         USING ERRCODE = 'P0001', HINT = 'v3_incompleto';
     END IF;
@@ -162,10 +168,17 @@ BEGIN
     RAISE EXCEPTION 'el v3 lleva el sha256 del PDF, su idioma y la versión de su plantilla'
       USING ERRCODE = 'P0001', HINT = 'v3_incompleto';
   END IF;
+  -- La dirección del acreedor va en el PDF: es la del centro, como el CID y el nombre.
+  IF p_acreedor_direccion IS NULL OR btrim(p_acreedor_direccion) IS DISTINCT FROM
+       (SELECT coalesce(btrim(c.direccion), '') FROM public.centros c
+         WHERE c.id = privado.centro_de_familia(p_familia_id)) THEN
+    RAISE EXCEPTION 'la dirección del acreedor no es la del centro'
+      USING ERRCODE = 'P0001', HINT = 'acreedor_distinto';
+  END IF;
   v_sello := encode(digest(convert_to(privado.texto_canonico_mandato_v3(
                p_identificador, p_iban, p_titular, p_titular_documento, p_titular_direccion,
                p_acreedor_nombre, p_acreedor_cid, p_fecha_firma, p_documento_sha256,
-               p_documento_idioma, p_plantilla_pdf_version), 'UTF8'), 'sha256'), 'hex');
+               p_documento_idioma, p_plantilla_pdf_version, p_acreedor_direccion), 'UTF8'), 'sha256'), 'hex');
   IF p_texto_hash IS DISTINCT FROM v_sello THEN
     RAISE EXCEPTION 'el sello no es el de lo que se firma'
       USING ERRCODE = 'P0001', HINT = 'sello_distinto';
@@ -183,7 +196,7 @@ BEGIN
   END IF;
   RETURN 3;
 END $function$;
-REVOKE ALL ON FUNCTION privado.version_y_sello_mandato(uuid, text, text, text, text, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION privado.version_y_sello_mandato(uuid, text, text, text, text, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) FROM PUBLIC, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------------------------
 -- 3 · Las tres funciones que crean un mandato, con los tres parámetros del v3 (DEFAULT NULL: la app
@@ -192,7 +205,7 @@ DROP FUNCTION public.registrar_mandato_sepa(uuid, uuid, text, text, text, text, 
 DROP FUNCTION public.sustituir_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text);
 DROP FUNCTION public.proponer_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text);
 
-CREATE FUNCTION public.registrar_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo, p_titular_documento text DEFAULT NULL::text, p_titular_direccion text DEFAULT NULL::text, p_acreedor_cid text DEFAULT NULL::text, p_acreedor_nombre text DEFAULT NULL::text, p_documento_sha256 text DEFAULT NULL::text, p_documento_idioma text DEFAULT NULL::text, p_plantilla_pdf_version smallint DEFAULT NULL::smallint)
+CREATE FUNCTION public.registrar_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo, p_titular_documento text DEFAULT NULL::text, p_titular_direccion text DEFAULT NULL::text, p_acreedor_cid text DEFAULT NULL::text, p_acreedor_nombre text DEFAULT NULL::text, p_documento_sha256 text DEFAULT NULL::text, p_documento_idioma text DEFAULT NULL::text, p_plantilla_pdf_version smallint DEFAULT NULL::smallint, p_acreedor_direccion text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -230,7 +243,7 @@ BEGIN
   v_version := privado.version_y_sello_mandato(p_familia_id, p_iban, p_titular,
     p_identificador_mandato, p_documento_path, p_texto_hash, p_fecha_firma, p_metodo,
     p_titular_documento, p_titular_direccion, p_acreedor_cid, p_acreedor_nombre,
-    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version);
+    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version, p_acreedor_direccion);
 
   -- Mandato ACTIVO de la familia (no por nino+usuario). Se descifra su IBAN para
   -- decidir: mismo IBAN = reintento del alta (UPDATE in-place, sin ensuciar histórico);
@@ -261,14 +274,15 @@ BEGIN
       identificador_mandato, documento_path, estado, firma_imagen,
       nombre_tecleado, texto_hash, ip_address, user_agent, fecha_firma, metodo_firma,
       version_canonico, titular_documento, titular_direccion, acreedor_cid, acreedor_nombre,
-      documento_sha256, documento_idioma, plantilla_pdf_version
+      documento_sha256, documento_idioma, plantilla_pdf_version, acreedor_direccion
     ) VALUES (
       privado.centro_de_familia(p_familia_id), p_familia_id, p_nino_id, v_uid,
       pgp_sym_encrypt(p_iban, v_clave), right(regexp_replace(p_iban, '\s', '', 'g'), 4), p_titular,
       p_identificador_mandato, p_documento_path, 'activo', p_firma_imagen,
       p_nombre_tecleado, p_texto_hash, p_ip_address, p_user_agent, p_fecha_firma, p_metodo,
       v_version, p_titular_documento, p_titular_direccion, p_acreedor_cid, p_acreedor_nombre,
-      p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version
+      p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version,
+      CASE WHEN p_documento_sha256 IS NULL THEN NULL ELSE p_acreedor_direccion END
     )
     RETURNING id INTO v_id;
     -- PR-7: el PRIMER mandato que la familia firma EN SU ALTA (firma digital del tutor, sin ningún
@@ -290,7 +304,7 @@ END;
 $function$
 ;
 
-CREATE FUNCTION public.sustituir_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo, p_titular_documento text DEFAULT NULL::text, p_titular_direccion text DEFAULT NULL::text, p_acreedor_cid text DEFAULT NULL::text, p_acreedor_nombre text DEFAULT NULL::text, p_documento_sha256 text DEFAULT NULL::text, p_documento_idioma text DEFAULT NULL::text, p_plantilla_pdf_version smallint DEFAULT NULL::smallint)
+CREATE FUNCTION public.sustituir_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo, p_titular_documento text DEFAULT NULL::text, p_titular_direccion text DEFAULT NULL::text, p_acreedor_cid text DEFAULT NULL::text, p_acreedor_nombre text DEFAULT NULL::text, p_documento_sha256 text DEFAULT NULL::text, p_documento_idioma text DEFAULT NULL::text, p_plantilla_pdf_version smallint DEFAULT NULL::smallint, p_acreedor_direccion text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -326,7 +340,7 @@ BEGIN
   v_version := privado.version_y_sello_mandato(p_familia_id, p_iban, p_titular,
     p_identificador_mandato, p_documento_path, p_texto_hash, p_fecha_firma, p_metodo,
     p_titular_documento, p_titular_direccion, p_acreedor_cid, p_acreedor_nombre,
-    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version);
+    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version, p_acreedor_direccion);
 
   -- Revoca el activo actual de la familia (se conserva la fila: estado='revocado',
   -- deleted_at NULL, con SU iban_ultimos4 intacto). Libera el índice único ANTES
@@ -340,14 +354,15 @@ BEGIN
     identificador_mandato, documento_path, estado, firma_imagen,
     nombre_tecleado, texto_hash, ip_address, user_agent, fecha_firma, metodo_firma,
     version_canonico, titular_documento, titular_direccion, acreedor_cid, acreedor_nombre,
-    documento_sha256, documento_idioma, plantilla_pdf_version
+    documento_sha256, documento_idioma, plantilla_pdf_version, acreedor_direccion
   ) VALUES (
     privado.centro_de_familia(p_familia_id), p_familia_id, p_nino_id, v_uid,
     pgp_sym_encrypt(p_iban, v_clave), right(regexp_replace(p_iban, '\s', '', 'g'), 4), p_titular,
     p_identificador_mandato, p_documento_path, 'activo', p_firma_imagen,
     p_nombre_tecleado, p_texto_hash, p_ip_address, p_user_agent, p_fecha_firma, p_metodo,
     v_version, p_titular_documento, p_titular_direccion, p_acreedor_cid, p_acreedor_nombre,
-    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version
+    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version,
+    CASE WHEN p_documento_sha256 IS NULL THEN NULL ELSE p_acreedor_direccion END
   )
   RETURNING id INTO v_id;
 
@@ -356,7 +371,7 @@ END;
 $function$
 ;
 
-CREATE FUNCTION public.proponer_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo, p_titular_documento text DEFAULT NULL::text, p_titular_direccion text DEFAULT NULL::text, p_acreedor_cid text DEFAULT NULL::text, p_acreedor_nombre text DEFAULT NULL::text, p_documento_sha256 text DEFAULT NULL::text, p_documento_idioma text DEFAULT NULL::text, p_plantilla_pdf_version smallint DEFAULT NULL::smallint)
+CREATE FUNCTION public.proponer_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo, p_titular_documento text DEFAULT NULL::text, p_titular_direccion text DEFAULT NULL::text, p_acreedor_cid text DEFAULT NULL::text, p_acreedor_nombre text DEFAULT NULL::text, p_documento_sha256 text DEFAULT NULL::text, p_documento_idioma text DEFAULT NULL::text, p_plantilla_pdf_version smallint DEFAULT NULL::smallint, p_acreedor_direccion text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -386,7 +401,7 @@ BEGIN
   v_version := privado.version_y_sello_mandato(p_familia_id, p_iban, p_titular,
     p_identificador_mandato, p_documento_path, p_texto_hash, p_fecha_firma, p_metodo,
     p_titular_documento, p_titular_direccion, p_acreedor_cid, p_acreedor_nombre,
-    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version);
+    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version, p_acreedor_direccion);
 
   PERFORM pg_advisory_xact_lock(hashtext('mandato_propuesto:' || p_familia_id::text));
   IF EXISTS (SELECT 1 FROM public.mandatos_sepa
@@ -410,14 +425,15 @@ BEGIN
     identificador_mandato, documento_path, estado, firma_imagen,
     nombre_tecleado, texto_hash, ip_address, user_agent, fecha_firma, metodo_firma,
     version_canonico, titular_documento, titular_direccion, acreedor_cid, acreedor_nombre,
-    documento_sha256, documento_idioma, plantilla_pdf_version
+    documento_sha256, documento_idioma, plantilla_pdf_version, acreedor_direccion
   ) VALUES (
     privado.centro_de_familia(p_familia_id), p_familia_id, p_nino_id, v_uid,
     pgp_sym_encrypt(p_iban, v_clave), right(regexp_replace(p_iban, '\s', '', 'g'), 4), p_titular,
     p_identificador_mandato, p_documento_path, 'propuesto', p_firma_imagen,
     p_nombre_tecleado, p_texto_hash, p_ip_address, p_user_agent, p_fecha_firma, p_metodo,
     v_version, p_titular_documento, p_titular_direccion, p_acreedor_cid, p_acreedor_nombre,
-    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version
+    p_documento_sha256, p_documento_idioma, p_plantilla_pdf_version,
+    CASE WHEN p_documento_sha256 IS NULL THEN NULL ELSE p_acreedor_direccion END
   )
   RETURNING id INTO v_id;
 
@@ -429,12 +445,12 @@ END
 $function$
 ;
 
-REVOKE ALL ON FUNCTION public.registrar_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.sustituir_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.proponer_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.registrar_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.sustituir_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.proponer_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.registrar_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.sustituir_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.proponer_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.registrar_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.sustituir_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.proponer_mandato_sepa(uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamptz, firma_metodo, text, text, text, text, text, text, smallint, text) TO authenticated, service_role;
 
 -- ---------------------------------------------------------------------------------------------
 -- 4 · Quién abre el PDF (decisión 4, con el mecanismo de `lecturas_ficha_medica`).
@@ -743,7 +759,7 @@ ALTER TABLE public.retencion_pasadas ADD CONSTRAINT retencion_pasadas_recuentos_
 -- ---------------------------------------------------------------------------------------------
 DO $posterior$
 DECLARE
-  v_firma text := 'uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamp with time zone, firma_metodo, text, text, text, text, text, text, smallint';
+  v_firma text := 'uuid, uuid, text, text, text, text, text, text, text, inet, text, timestamp with time zone, firma_metodo, text, text, text, text, text, text, smallint, text';
   f text;
 BEGIN
   FOREACH f IN ARRAY ARRAY['registrar_mandato_sepa', 'sustituir_mandato_sepa', 'proponer_mandato_sepa'] LOOP
