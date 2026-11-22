@@ -120,6 +120,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
   - Los datos: `~/nido-logs/10/b/repaso-42501/` (`HALLAZGOS.md`, `puertas.txt`, `mensaje/`).
 
 - [ ] **El PDF del mandato SEPA: lo puede sustituir quien lo firmó, y lleva el IBAN en claro**
+      **Decidido el 2026-11-22, en `docs/specs/mandato-sepa-cierre.md`** (las seis decisiones y dos más).
       (medido el 2026-11-17 en producción y en el código; decisión del responsable del mismo día:
       «Eso se cierra en cuanto acabe la fase 10»). Sin tocar hasta entonces.
   - **El firmante puede cambiarlo sin firmar otra vez.** La política `mandato_sepa_update` de
