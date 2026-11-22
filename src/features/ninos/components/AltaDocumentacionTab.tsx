@@ -101,8 +101,11 @@ export async function AltaDocumentacionTab({
               <Row
                 k={t('alta_doc.sepa_documento')}
                 v={
-                  mandato.pdf_url ? (
-                    <DocLink href={mandato.pdf_url} label={t('alta_doc.ver_documento')} />
+                  mandato.mandato_id ? (
+                    <DocLink
+                      href={`/${locale}/mandato-sepa/${mandato.mandato_id}?origen=ficha`}
+                      label={t('alta_doc.ver_documento')}
+                    />
                   ) : (
                     '—'
                   )

@@ -8,7 +8,6 @@ import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
-  BUCKET_MANDATO_SEPA,
   firmarRuta,
   firmarRutasBucket,
 } from '@/shared/lib/adjuntos/storage'
@@ -34,7 +33,8 @@ export interface MandatoAltaItem {
   identificador_mandato: string
   fecha_firma: string | null
   /** URL firmada (~1 h) del PDF del mandato, o null si no hay documento. */
-  pdf_url: string | null
+  /** El mandato con PDF: se abre por `/{locale}/mandato-sepa/{id}` (sin enlace, 2026-11-22). */
+  mandato_id: string | null
   // ⚠️ Sin IBAN: nunca se selecciona `iban_cifrado` ni se descifra para la UI
   // (patrón de seguridad/RGPD; el IBAN vive solo cifrado, el PDF ya lo contiene).
 }
@@ -87,11 +87,12 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
     identificador_mandato: string
     fecha_firma: string | null
     documento_path: string | null
+    id: string
   } | null = null
   if (ninoRow?.familia_id) {
     const { data } = await supabase
       .from('mandatos_sepa')
-      .select('estado, titular, identificador_mandato, fecha_firma, documento_path')
+      .select('id, estado, titular, identificador_mandato, fecha_firma, documento_path')
       .eq('familia_id', ninoRow.familia_id)
       .eq('estado', 'activo')
       .is('deleted_at', null)
@@ -129,10 +130,9 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   const dniPaths = (tutoresRows ?? [])
     .map((t) => t.dni_documento_path)
     .filter((p): p is string => typeof p === 'string' && p.length > 0)
-  const [dniUrls, libroFamiliaUrl, mandatoPdfUrl] = await Promise.all([
+  const [dniUrls, libroFamiliaUrl] = await Promise.all([
     firmarRutasBucket(supabase, BUCKET_DNI_TUTORES, dniPaths),
     firmarRuta(supabase, BUCKET_LIBRO_FAMILIA, ninoRow?.libro_familia_path ?? null),
-    firmarRuta(supabase, BUCKET_MANDATO_SEPA, mandatoRow?.documento_path ?? null),
   ])
 
   const tutores: TutorAltaItem[] = (tutoresRows ?? []).map((t) => ({
@@ -153,7 +153,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
         titular: mandatoRow.titular,
         identificador_mandato: mandatoRow.identificador_mandato,
         fecha_firma: mandatoRow.fecha_firma,
-        pdf_url: mandatoPdfUrl,
+        mandato_id: mandatoRow.documento_path ? mandatoRow.id : null,
       }
     : null
 

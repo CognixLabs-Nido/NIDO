@@ -23,6 +23,8 @@ export interface AcreedorMandato {
   nombre: string
   /** El CID del centro, o null si no tiene: sin él no se firma ningún mandato. */
   cid: string | null
+  /** La dirección del centro, tal cual: va en el PDF y en el sello v3 (la base la compara). */
+  direccion: string
 }
 
 /** El acreedor (el centro) con la sesión de quien firma: la RLS de `centros` se lo deja leer. */
@@ -32,12 +34,16 @@ export async function acreedorDelCentro(
 ): Promise<AcreedorMandato | null> {
   const { data } = await supabase
     .from('centros')
-    .select('nombre, identificador_acreedor')
+    .select('nombre, identificador_acreedor, direccion')
     .eq('id', centroId)
     .maybeSingle()
   if (!data) return null
   const cid = data.identificador_acreedor?.trim() ?? ''
-  return { nombre: data.nombre, cid: cid === '' ? null : cid }
+  return {
+    nombre: data.nombre,
+    cid: cid === '' ? null : cid,
+    direccion: data.direccion?.trim() ?? '',
+  }
 }
 
 export function direccionValida(raw: string): boolean {

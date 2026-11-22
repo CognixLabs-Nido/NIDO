@@ -17,7 +17,8 @@
 --     Jose, «es su cuenta»), ANTES de que la ruta sirva los bytes. La lee `lecturas_mandato_sepa`.
 --   · El alta anulada (decisión del 2026-11-22): el mandato se va con ella, pero el evento del final
 --     de `anular_alta` deja constancia de cada mandato destruido (identificador, cuatro últimos
---     dígitos, estado, método, fecha de firma) con la familia, la fecha y quién anuló.
+--     dígitos, estado, método, fecha de firma), la fecha y quién anuló; nada de la familia, porque
+--     en audit_log no entra lo que la purga no sabe redactar.
 --   · El huérfano (decisión del 2026-11-22): `mandatos_sepa_huerfanos()` lista los ficheros del bucket
 --     que ninguna fila nombra, de más de un día; el cron de retención los cuenta y los borra, como los
 --     de las remesas. `retencion_pasadas` pasa de trece claves a catorce (`mandatosHuerfanos`).
@@ -559,7 +560,6 @@ DECLARE
   v_n        integer;
   r          jsonb := '{}'::jsonb;
   v_mandatos jsonb := '[]'::jsonb;
-  v_etiqueta text;
 BEGIN
   IF p_accion IS NULL OR p_accion NOT IN ('cancelar', 'borrar') THEN
     RAISE EXCEPTION 'acción no válida' USING ERRCODE = 'invalid_parameter_value';
@@ -633,13 +633,14 @@ BEGIN
     GET DIAGNOSTICS v_n = ROW_COUNT;
     r := r || jsonb_build_object('recibos', v_n);
     -- 2026-11-22: el mandato se va con el alta anulada (no cobró nada), pero queda constancia de
-    -- que existió y se destruyó, con la fecha y quién anuló: en el evento del final, sin el IBAN.
+    -- que existió y se destruyó, con la fecha y quién anuló: en el evento del final, sin el IBAN ni
+    -- nada de la familia (en audit_log no entra lo que la purga no sabe redactar): se reconoce por
+    -- los cuatro últimos dígitos y la fecha de firma.
     SELECT coalesce(jsonb_agg(jsonb_build_object(
              'identificador_mandato', m.identificador_mandato, 'iban_ultimos4', m.iban_ultimos4,
              'estado', m.estado, 'metodo_firma', m.metodo_firma, 'fecha_firma', m.fecha_firma,
              'con_documento', m.documento_path IS NOT NULL) ORDER BY m.created_at), '[]'::jsonb)
       INTO v_mandatos FROM public.mandatos_sepa m WHERE m.familia_id = v_fam;
-    SELECT f.etiqueta INTO v_etiqueta FROM public.familias f WHERE f.id = v_fam;
     DELETE FROM public.mandatos_sepa WHERE familia_id = v_fam;
   ELSE
     -- La familia se queda: del alta, solo las líneas del niño en sus borradores, y el niño fuera
@@ -721,7 +722,7 @@ BEGIN
   VALUES ('alta_sin_terminar', v_centro, 'DELETE', p_actor, v_centro,
           jsonb_build_object('accion', 'borrada')
           || CASE WHEN jsonb_array_length(v_mandatos) > 0
-                  THEN jsonb_build_object('mandatos_destruidos', v_mandatos, 'familia', v_etiqueta)
+                  THEN jsonb_build_object('mandatos_destruidos', v_mandatos)
                   ELSE '{}'::jsonb END);
   PERFORM set_config('app.audit_actor', '', true);
   RETURN r || jsonb_build_object('accion', 'borrada', 'familia_nueva', a.familia_nueva,

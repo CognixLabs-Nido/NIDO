@@ -72,6 +72,12 @@ existió y se borró, con la fecha y quién anuló el alta. Si la familia vuelve
 reclama, tiene que poder saberse que hubo un mandato y que se destruyó al anular, no que nunca
 existió.»
 
+_Cómo se cumple (2026-11-22):_ el evento del final de `anular_alta` en `audit_log` lleva de cada
+mandato destruido el identificador, los cuatro últimos dígitos del IBAN, el estado, el método y la
+fecha de firma, con quién anuló y cuándo. **Sin el apellido de la familia ni el titular:** en
+`audit_log` no entra lo que la purga no sabe redactar, y esa familia ya no existe para redactarla. Si
+la familia vuelve, se reconoce por los cuatro últimos dígitos y la fecha.
+
 **Sin enlace, como la 10c.** «Si la ruta entrega los bytes, no queda ninguna URL que alguien pueda
 reenviar, y además es el precedente de la casa de hace tres días. Copia ese mecanismo entero,
 incluida la fila de lectura antes de servir. Y que el export use esa misma ruta: así el mandato y la

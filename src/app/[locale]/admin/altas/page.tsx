@@ -21,6 +21,10 @@ import {
   type FichaSinValidez,
 } from '@/features/alta/queries/get-fichas-sin-validez'
 import {
+  getMandatosPorRefirmar,
+  type MandatoPorRefirmar,
+} from '@/features/alta/queries/get-mandatos-por-refirmar'
+import {
   getTutoresSinAccesoFicha,
   type TutorSinAccesoFicha,
 } from '@/features/alta/queries/get-tutores-sin-acceso-ficha'
@@ -61,11 +65,12 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
   const { centroId } = await requireContextoCentro(locale)
 
   const supabase = await createClient()
-  const [altas, sinTarjeta, sinAccesoFicha, fichasSinValidez] = await Promise.all([
+  const [altas, sinTarjeta, sinAccesoFicha, fichasSinValidez, porRefirmar] = await Promise.all([
     getAltasEnProceso(supabase, centroId),
     getNinosSinTarjeta(supabase, centroId),
     getTutoresSinAccesoFicha(supabase, centroId),
     getFichasSinValidez(supabase, centroId),
+    getMandatosPorRefirmar(supabase, centroId),
   ])
   const tValores = await getTranslations('export.doc.valores')
 
@@ -117,6 +122,7 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
       <FichasSinValidez fichas={fichasSinValidez} locale={locale} t={t} fecha={fecha} />
 
       <SinTarjeta ninos={sinTarjeta} locale={locale} t={t} />
+      <MandatosPorRefirmar mandatos={porRefirmar} locale={locale} fecha={fecha} t={t} />
     </div>
   )
 }
@@ -253,6 +259,57 @@ function SinTarjeta({
               >
                 <span>
                   {n.nombre} {n.apellidos ?? ''}
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/**
+ * 2026-11-22, decisión 6 del cierre del mandato: los mandatos activos v1 (sin el CID del centro ni el
+ * documento y la dirección del titular), marcados como pendientes de volver a firmar, como los niños
+ * sin tarjeta sanitaria. Sus datos no se tocan.
+ */
+function MandatosPorRefirmar({
+  mandatos,
+  locale,
+  fecha,
+  t,
+}: {
+  mandatos: MandatoPorRefirmar[] | null
+  locale: string
+  fecha: (iso: string) => string
+  t: T
+}) {
+  return (
+    <section className="space-y-2" data-testid="mandatos-por-refirmar">
+      <h2 className="text-h3 text-foreground">{t('mandatos_por_refirmar.titulo')}</h2>
+      <p className="text-muted-foreground text-sm">{t('mandatos_por_refirmar.subtitulo')}</p>
+      {mandatos === null ? (
+        <p className="text-sm">{t('mandatos_por_refirmar.no_se_pudo_leer')}</p>
+      ) : mandatos.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{t('mandatos_por_refirmar.vacio')}</p>
+      ) : (
+        <ul className="divide-border divide-y rounded-xl border">
+          {mandatos.map((m) => (
+            <li key={m.familiaId}>
+              <Link
+                href={`/${locale}/admin/familias/${m.familiaId}`}
+                className="hover:bg-muted flex items-center justify-between gap-3 px-4 py-3 text-sm"
+              >
+                <span>
+                  {m.etiqueta}
+                  {m.fechaFirma ? (
+                    <span className="text-muted-foreground">
+                      {' · '}
+                      {t('mandatos_por_refirmar.firmado', { fecha: fecha(m.fechaFirma) })}
+                    </span>
+                  ) : null}
                 </span>
                 <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
               </Link>

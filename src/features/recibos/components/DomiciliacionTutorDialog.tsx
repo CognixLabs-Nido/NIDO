@@ -27,29 +27,24 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FirmaPad } from '@/features/autorizaciones/components/FirmaPad'
-import { generarMandatoPdf } from '@/features/alta/lib/mandato-pdf'
-import { generarIdentificadorMandato } from '@/features/alta/lib/mandato-sepa'
 import { sepaMandatoFormSchema, type SepaMandatoFormInput } from '@/features/alta/schemas/sepa'
 import { safeTranslateError } from '@/shared/lib/safe-translate'
-import { localeIntl } from '@/shared/lib/locale-intl'
 
 interface RespuestaMandato {
   success: boolean
   error?: string
   /** 2026-11-20: con la familia ya validada, el mandato espera a Dirección en la cola. */
   pendiente?: boolean
-  mandato?: { identificador: string; documento: { path: string; url: string | null } }
+  mandato?: { identificador: string; id: string | null }
 }
 
 /**
  * F-2c-4 — diálogo del TUTOR (en `/family/recibos`) para REGISTRAR (1er mandato) o SUSTITUIR su
  * domiciliación SEPA con firma DIGITAL completa: IBAN + titular (con su documento y su dirección,
  * 0c-2) + nombre tecleado + trazo
- * (`FirmaPad`). Reutiliza la maquinaria del paso 8 del alta: genera el PDF con `generarMandatoPdf`
- * (jsPDF) con la firma embebida y un identificador `NIDO-…`, y lo envía en FormData al route
- * `/family/domiciliacion`, que resuelve la familia server-side, sube el PDF familia-scoped, calcula
- * el `texto_hash` y decide registrar vs sustituir. La i18n del PDF (rótulos + texto legal) se reusa
- * de `alta.sepa`; la del diálogo, de `family.domiciliacion`.
+ * (`FirmaPad`). Manda los datos y el trazo a `/family/domiciliacion`; desde el 2026-11-22 el PDF lo
+ * compone el SERVIDOR, que lo sella y decide registrar, sustituir o proponer (cierre del mandato,
+ * `docs/specs/mandato-sepa-cierre.md`).
  */
 export function DomiciliacionTutorDialog({
   locale,
@@ -57,7 +52,6 @@ export function DomiciliacionTutorDialog({
   centroNombre,
   centroDireccion,
   centroCid,
-  currentUserId,
   titularInicial,
   trigger,
 }: {
@@ -67,8 +61,6 @@ export function DomiciliacionTutorDialog({
   centroDireccion: string
   /** El CID del centro (0c-2): sin él la página no ofrece este diálogo. */
   centroCid: string
-  /** Tutor logueado (firmante) — para el identificador del mandato. */
-  currentUserId: string
   /** Prefill del titular (el actual, al sustituir); vacío al registrar el 1º. */
   titularInicial?: string | null
   trigger: ReactElement
@@ -103,55 +95,13 @@ export function DomiciliacionTutorDialog({
     }
 
     startTransition(async () => {
-      const identificador = generarIdentificadorMandato(centroId, currentUserId, Date.now())
-      const fechaLegible = new Intl.DateTimeFormat(localeIntl(locale), {
-        dateStyle: 'long',
-      }).format(new Date())
-
-      let pdf: Blob
-      try {
-        pdf = generarMandatoPdf({
-          identificadorMandato: identificador,
-          iban: values.iban,
-          titular: values.titular,
-          titularDocumento: values.titular_documento,
-          titularDireccion: values.titular_direccion,
-          acreedorNombre: centroNombre,
-          acreedorDireccion: centroDireccion,
-          acreedorCid: centroCid,
-          firmaDataUrl: firma,
-          fechaLegible,
-          textoLegal: tSepa('texto_legal'),
-          labels: {
-            titulo: tSepa('pdf.titulo'),
-            acreedorTitulo: tSepa('acreedor_titulo'),
-            deudorTitulo: tSepa('deudor_titulo'),
-            referencia: tSepa('referencia'),
-            tipo: tSepa('tipo'),
-            tipoRecurrente: tSepa('tipo_recurrente'),
-            iban: tSepa('iban_label'),
-            titular: tSepa('titular_label'),
-            titularDocumento: tSepa('documento_label'),
-            titularDireccion: tSepa('direccion_label'),
-            acreedorCid: tSepa('acreedor_cid_label'),
-            firma: tSepa('firma_titulo'),
-            fecha: tSepa('fecha'),
-          },
-        })
-      } catch {
-        toast.error(t('errors.guardado'))
-        return
-      }
-
       const body = new FormData()
       // El centro de la página: la ruta busca la familia del tutor EN ese centro.
       body.append('centro_id', centroId)
-      body.append('file', new File([pdf], 'mandato-sepa.pdf', { type: 'application/pdf' }))
       body.append('iban', values.iban)
       body.append('titular', values.titular)
       body.append('titular_documento', values.titular_documento)
       body.append('titular_direccion', values.titular_direccion)
-      body.append('identificador_mandato', identificador)
       body.append('nombre_tecleado', nombreTecleado.trim())
       body.append('firma_imagen', firma)
 

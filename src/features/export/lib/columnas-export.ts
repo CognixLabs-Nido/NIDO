@@ -113,7 +113,12 @@ const NS_IP_OTROS = {
 
 const NS_IBAN = {
   noSale:
-    'Decisión del responsable del 2026-10-14: del IBAN solo salen los 4 últimos dígitos (`iban_ultimos4`). El cifrado no lo lee nadie sin la clave del centro, y en un fichero que se descarga y se reenvía solo añade riesgo.',
+    'Decisión del responsable del 2026-10-14: en los datos del export, del IBAN salen solo los 4 últimos dígitos (`iban_ultimos4`); el cifrado no lo lee nadie sin la clave del centro. El IBAN COMPLETO sí va en el PDF del mandato firmado, que el export enlaza (2026-11-22, cierre del mandato: el texto dice la verdad de lo que se entrega, y con la decisión de Jose el IBAN completo al tutor está bien, «es su cuenta»).',
+} as const
+
+const NS_SELLO_V3 = {
+  noSale:
+    '2026-11-22 (cierre del mandato): datos del sello v3, no de la persona. El sha256 del PDF, su idioma, la versión de su plantilla y la dirección del centro acreedor atan el PDF a la firma; el PDF, que el export enlaza, lleva todo lo que dice el mandato.',
 } as const
 
 const SUSTITUYE_467 =
@@ -353,6 +358,10 @@ export const SECCIONES_EXPORT = {
     titular_direccion: { sale: 'titular_direccion' },
     acreedor_cid: { sale: 'acreedor_cid' },
     acreedor_nombre: { sale: 'acreedor_nombre' },
+    documento_sha256: NS_SELLO_V3,
+    documento_idioma: NS_SELLO_V3,
+    plantilla_pdf_version: NS_SELLO_V3,
+    acreedor_direccion: NS_SELLO_V3,
   }),
   'usuario.cobros_familia.recibos.lineas': seccion('lineas_recibo', {
     id: NS_ID,

@@ -1,64 +1,55 @@
+import { createHash } from 'node:crypto'
+
 import { jsPDF } from 'jspdf'
 
 import { formatearIban } from './iban'
+import {
+  fechaDelMandato,
+  PLANTILLAS_PDF_MANDATO,
+  type IdiomaMandato,
+} from './mandato-pdf-plantillas'
 
 /**
- * F11-G-2 — generación CLIENTE del PDF del mandato SEPA Core (reusa jsPDF, como el pipeline
- * imagen→PDF de G-1). Compone un documento A4 con el bloque de acreedor (centro), el bloque
- * de deudor (titular, su documento, su dirección e IBAN; el CID del acreedor desde el 0c-2), la referencia única del mandato, el tipo (recurrente), el texto
- * legal y la firma dibujada (PNG data URL) embebida. Los rótulos llegan ya traducidos desde
- * el componente (`labels`/`textoLegal`) para no acoplar la i18n a esta utilidad.
+ * El PDF del mandato SEPA, compuesto por el SERVIDOR (2026-11-22, decisión 2 del cierre,
+ * `docs/specs/mandato-sepa-cierre.md`: «Que lo fabrique el móvil y nadie mire lo que pone es lo que
+ * permite que el fichero diga algo distinto de lo registrado»). Hasta entonces lo componía el
+ * navegador y el servidor solo miraba que fuera un PDF.
  *
- * Usa APIs de navegador (jsPDF + el data URL del canvas) → solo se importa desde cliente.
+ * DETERMINISTA: con los mismos datos sellados, la misma versión de plantilla y el mismo idioma sale
+ * el mismo fichero, byte a byte. La fecha de creación del PDF es la de la firma y su identificador
+ * interno sale del identificador del mandato; los textos son los congelados de la plantilla. Así el
+ * PDF se puede rehacer desde la fila y comparar su sha256 con el sellado (`documento_sha256`).
+ *
+ * Sin el bloque «firmado en papel»: el presencial no tiene PDF, su prueba es el papel.
  */
-
-export interface EtiquetasMandatoPdf {
-  titulo: string
-  acreedorTitulo: string
-  deudorTitulo: string
-  referencia: string
-  tipo: string
-  tipoRecurrente: string
-  iban: string
-  titular: string
-  /** «NIF o documento de identidad» (0c-2). */
-  titularDocumento: string
-  titularDireccion: string
-  /** «Identificador de acreedor» (CID, 0c-2). */
-  acreedorCid: string
-  firma: string
-  fecha: string
-}
-
 export interface DatosMandatoPdf {
   identificadorMandato: string
   iban: string
   titular: string
-  acreedorNombre: string
-  acreedorDireccion: string
-  /** El CID del centro: va en el PDF y en el texto canónico v2 (0c-2). */
-  acreedorCid: string
   titularDocumento: string
   titularDireccion: string
-  /**
-   * Firma dibujada en PNG data URL (`FirmaPad`). `null` en modo Dirección PRESENCIAL
-   * (PR-3b-2 · B2): la familia firmó en papel → el PDF muestra `firmaPresencialNota` en
-   * lugar del trazo embebido.
-   */
-  firmaDataUrl: string | null
-  /** Nota que sustituye al trazo cuando `firmaDataUrl` es null (respaldo en papel). */
-  firmaPresencialNota?: string
-  /** Fecha de firma legible ya formateada por el componente. */
-  fechaLegible: string
-  textoLegal: string
-  labels: EtiquetasMandatoPdf
+  acreedorNombre: string
+  acreedorDireccion: string
+  acreedorCid: string
+  /** El trazo, PNG en data URL. */
+  firmaDataUrl: string
+  fechaFirmaIso: string
+  idioma: IdiomaMandato
+  plantillaVersion: number
 }
 
-export function generarMandatoPdf(d: DatosMandatoPdf): Blob {
+export function generarMandatoPdf(d: DatosMandatoPdf): Uint8Array {
+  const textos = PLANTILLAS_PDF_MANDATO[d.plantillaVersion]?.[d.idioma]
+  if (!textos)
+    throw new Error(`plantilla del mandato desconocida: ${d.plantillaVersion}/${d.idioma}`)
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
-  const pageW = doc.internal.pageSize.getWidth()
+  doc.setCreationDate(new Date(d.fechaFirmaIso))
+  doc.setFileId(
+    createHash('sha256').update(d.identificadorMandato).digest('hex').slice(0, 32).toUpperCase()
+  )
   const margen = 48
-  const maxW = pageW - margen * 2
+  const maxW = doc.internal.pageSize.getWidth() - margen * 2
   let y = margen
 
   const linea = (texto: string, size: number, bold: boolean, gap = 16) => {
@@ -70,44 +61,32 @@ export function generarMandatoPdf(d: DatosMandatoPdf): Blob {
     }
   }
 
-  linea(d.labels.titulo, 15, true, 22)
+  linea(textos.titulo, 15, true, 22)
   y += 6
-
-  linea(d.labels.referencia, 9, true, 13)
+  linea(textos.referencia, 9, true, 13)
   linea(d.identificadorMandato, 11, false, 20)
 
-  linea(d.labels.acreedorTitulo, 11, true, 16)
+  linea(textos.acreedorTitulo, 11, true, 16)
   linea(d.acreedorNombre, 10, false, 14)
   if (d.acreedorDireccion) linea(d.acreedorDireccion, 10, false, 14)
-  linea(`${d.labels.acreedorCid}: ${d.acreedorCid}`, 10, false, 14)
+  linea(`${textos.acreedorCid}: ${d.acreedorCid}`, 10, false, 14)
   y += 6
 
-  linea(d.labels.deudorTitulo, 11, true, 16)
-  linea(`${d.labels.titular}: ${d.titular}`, 10, false, 14)
-  linea(`${d.labels.titularDocumento}: ${d.titularDocumento}`, 10, false, 14)
-  linea(`${d.labels.titularDireccion}: ${d.titularDireccion}`, 10, false, 14)
-  linea(`${d.labels.iban}: ${formatearIban(d.iban)}`, 10, false, 14)
+  linea(textos.deudorTitulo, 11, true, 16)
+  linea(`${textos.titular}: ${d.titular}`, 10, false, 14)
+  linea(`${textos.titularDocumento}: ${d.titularDocumento}`, 10, false, 14)
+  linea(`${textos.titularDireccion}: ${d.titularDireccion}`, 10, false, 14)
+  linea(`${textos.iban}: ${formatearIban(d.iban)}`, 10, false, 14)
   y += 6
 
-  linea(`${d.labels.tipo}: ${d.labels.tipoRecurrente}`, 10, false, 18)
-
-  linea(d.textoLegal, 9, false, 13)
+  linea(`${textos.tipo}: ${textos.tipoRecurrente}`, 10, false, 18)
+  linea(textos.textoLegal, 9, false, 13)
   y += 10
 
-  linea(`${d.labels.fecha}: ${d.fechaLegible}`, 10, false, 18)
+  linea(`${textos.fecha}: ${fechaDelMandato(textos, d.fechaFirmaIso)}`, 10, false, 18)
+  linea(textos.firma, 10, true, 14)
+  // Un trazo que no es una imagen válida no se sella: el servidor no compone un mandato sin firma.
+  doc.addImage(d.firmaDataUrl, 'PNG', margen, y, 200, 80)
 
-  // Firma bajo su rótulo: trazo dibujado (digital) o nota "firmado en papel" (presencial).
-  linea(d.labels.firma, 10, true, 14)
-  if (d.firmaDataUrl) {
-    try {
-      doc.addImage(d.firmaDataUrl, 'PNG', margen, y, 200, 80)
-      y += 88
-    } catch {
-      // Si la firma no es una imagen válida, el resto del documento se mantiene.
-    }
-  } else if (d.firmaPresencialNota) {
-    linea(d.firmaPresencialNota, 10, false, 16)
-  }
-
-  return doc.output('blob')
+  return new Uint8Array(doc.output('arraybuffer'))
 }

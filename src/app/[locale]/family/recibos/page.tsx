@@ -120,7 +120,6 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
                       centroNombre={dom.centroNombre}
                       centroDireccion={dom.centroDireccion}
                       centroCid={dom.centroCid}
-                      currentUserId={dom.userId}
                       titularInicial={dom.mandato.titular}
                       trigger={
                         <Button variant="outline" size="sm">
@@ -143,7 +142,6 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
                       centroNombre={dom.centroNombre}
                       centroDireccion={dom.centroDireccion}
                       centroCid={dom.centroCid}
-                      currentUserId={dom.userId}
                       trigger={
                         <Button variant="outline" size="sm">
                           <LandmarkIcon className="size-4" />

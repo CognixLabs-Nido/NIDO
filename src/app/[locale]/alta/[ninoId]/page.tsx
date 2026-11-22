@@ -12,12 +12,7 @@ import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
-import {
-  BUCKET_DNI_TUTORES,
-  BUCKET_LIBRO_FAMILIA,
-  BUCKET_MANDATO_SEPA,
-  firmarRuta,
-} from '@/shared/lib/adjuntos/storage'
+import { BUCKET_DNI_TUTORES, BUCKET_LIBRO_FAMILIA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 import { AvisoFichaFirmada } from '@/features/alta/components/AvisoFichaFirmada'
 import { leerEstadoFirmaFicha } from '@/features/alta/lib/ficha-firmada'
@@ -388,7 +383,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // El IBAN va cifrado (G-2bis) y no se pre-rellena: solo titular/identificador/PDF para el preview.
   const { data: mandatoRow } = await supabase
     .from('mandatos_sepa')
-    .select('titular, identificador_mandato, documento_path')
+    .select('id, titular, identificador_mandato, documento_path')
     .eq('nino_id', ninoId)
     .eq('usuario_id', user.id)
     .eq('estado', 'activo')
@@ -398,7 +393,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     ? {
         titular: mandatoRow.titular,
         identificador: mandatoRow.identificador_mandato,
-        documentoUrl: await firmarRuta(supabase, BUCKET_MANDATO_SEPA, mandatoRow.documento_path),
+        // Sin enlace (2026-11-22): el PDF se abre por la ruta, que deja la lectura antes de servirlo.
+        documentoUrl: mandatoRow.documento_path
+          ? `/${locale}/mandato-sepa/${mandatoRow.id}?origen=alta`
+          : null,
       }
     : null
 
@@ -500,7 +498,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         familiaEstadoCivil={familiaEstadoCivil}
         datosTutor1={datosTutor1}
         datosTutor2={datosTutor2}
-        centroId={nino.centro_id}
         centroNombre={centro?.nombre ?? ''}
         centroDireccion={centro?.direccion ?? ''}
         // Sin CID no se firma ningún mandato: el wizard no monta el paso SEPA (0c, 2026-11-04).

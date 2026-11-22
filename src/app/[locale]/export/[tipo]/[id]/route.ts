@@ -32,7 +32,7 @@ export const runtime = 'nodejs'
  * `matriculas.motivo_baja` (y solo si quien exporta es admin del centro).
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ locale: string; tipo: string; id: string }> }
 ): Promise<Response> {
   const { locale, tipo, id } = await params
@@ -54,7 +54,10 @@ export async function GET(
       ? await recolectarNino(supabase, service, id, { incluirMotivoBaja: true })
       : sujetoTipo === 'tutor'
         ? await recolectarTutor(supabase, service, id)
-        : await recolectarUsuario(supabase, service, id)
+        : await recolectarUsuario(supabase, service, id, {
+            enlaceMandato: (m) =>
+              new URL(`/${locale}/mandato-sepa/${m}?origen=export`, request.url).toString(),
+          })
   if (!rec) return new Response('Sin datos o no autorizado', { status: 404 })
 
   const doc: DocumentoExport = {

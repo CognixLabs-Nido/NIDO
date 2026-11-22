@@ -194,7 +194,6 @@ function AltaInvitacionFlow({
         familiaEstadoCivil={null}
         datosTutor1={null}
         datosTutor2={null}
-        centroId=""
         centroNombre=""
         centroDireccion=""
         // Pre-login el CID no viaja al cliente: solo si el centro lo tiene, para contar los pasos.

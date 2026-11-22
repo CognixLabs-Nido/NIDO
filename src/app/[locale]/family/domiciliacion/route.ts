@@ -1,28 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
-import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
-import { MAX_LARGO_IDENTIFICADOR } from '@/features/alta/lib/mandato-sepa'
+import { ibanValido } from '@/features/alta/lib/iban'
+import { acreedorDelCentro, errorDatosTitular } from '@/features/alta/lib/mandato-v2-servidor'
 import {
-  acreedorDelCentro,
-  errorDatosTitular,
-  mandatoV2,
-  motivoRechazoV2,
-} from '@/features/alta/lib/mandato-v2-servidor'
-import {
-  motivoCola,
-  proponerMandatoSepa,
-  registrarOSustituirMandatoSepa,
-} from '@/features/alta/lib/registrar-mandato-sepa'
+  errorDeFirmaMandato,
+  firmarMandatoDigital,
+  idiomaDelMandato,
+} from '@/features/alta/lib/mandato-v3-servidor'
 import { familiaAltaValidada } from '@/features/cambios-pendientes/lib/gate'
 import { familiaDelUsuarioEn } from '@/features/centros/contexto/ambito-familiar'
-import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const MAX_PDF_BYTES = 10 * 1024 * 1024
 const MAX_FIRMA_CHARS = 500000
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -30,7 +21,8 @@ interface RespuestaOk {
   success: true
   /** 2026-11-20: con la familia ya validada, el mandato del tutor espera a Dirección en la cola. */
   pendiente: boolean
-  mandato: { identificador: string; documento: { path: string; url: string | null } }
+  /** El mandato registrado; su PDF se abre por `/{locale}/mandato-sepa/{id}`, nunca por un enlace. */
+  mandato: { identificador: string; id: string | null }
 }
 interface RespuestaError {
   success: false
@@ -42,23 +34,18 @@ function err(error: string, status = 400): Response {
 }
 
 /**
- * F-2c-4 — gestión de la domiciliación SEPA por el TUTOR desde `/family/recibos`, con firma
- * DIGITAL completa (mismo rigor que el paso 8 del alta): el cliente dibuja el trazo, genera el
- * PDF (jsPDF) y lo envía aquí con el IBAN, el titular, el identificador único y el trazo. Todo
- * con el **cliente del USUARIO**:
- *  - la FAMILIA se resuelve SERVER-SIDE desde `auth.uid()` en el centro de la página (el
- *    `centro_id` del formulario solo elige centro: la familia tiene que ser suya en él),
- *  - el PDF se sube al bucket `mandato-sepa` en una ruta FAMILIA-scoped
- *    `{centroId}/familia/{familiaId}/mandato-{timestamp}.pdf` (RLS de storage F-2c-4 autoriza al
- *    tutor de la familia; el timestamp conserva el histórico de PDFs, no pisa el del alta),
- *  - la fila se persiste vía RPC (SECURITY DEFINER) que autoriza `es_tutor_de_familia` y CIFRA
- *    el IBAN. Se decide `registrar` (1er mandato) vs `sustituir` (revoca+inserta) según la
- *    familia tenga ya un mandato activo — espejo de la action presencial de Dirección (F-2c-3).
- * El `texto_hash` (texto canónico v2, con el CID del centro y el documento y la dirección del
- * titular; 0c-2) se calcula aquí sobre el IBAN **en claro del formulario** (ancla el contenido
- * firmado, independiente del cifrado en reposo). El IBAN nunca se almacena en claro.
+ * La domiciliación SEPA del tutor desde `/family/recibos`, con firma digital. La familia se resuelve
+ * en el servidor desde la sesión en el centro de la página (el `centro_id` del formulario solo elige
+ * centro). Desde el 2026-11-22 (cierre del mandato, `docs/specs/mandato-sepa-cierre.md`) el móvil
+ * manda los datos y el trazo, y el PDF lo compone el SERVIDOR (`firmarMandatoDigital`): sello v3,
+ * fichero con el nombre del sello y sin `upsert`. Con el alta validada va a la cola (`proponer`); si
+ * no, `registrar` o `sustituir`, según la familia tenga ya un mandato activo.
  */
-export async function POST(request: Request): Promise<Response> {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ locale: string }> }
+): Promise<Response> {
+  const { locale } = await params
   const supabase = await createClient()
   const {
     data: { user },
@@ -69,30 +56,21 @@ export async function POST(request: Request): Promise<Response> {
   try {
     form = await request.formData()
   } catch {
-    return err('alta.documentos.errors.subida')
+    return err('alta.sepa.errors.guardado')
   }
 
-  // Multicentro · Fase 2: una familia por adulto y centro. El centro llega de la página (como
-  // las acciones con centro explícito de la Fase 1); la familia se busca SERVER-SIDE con
-  // `auth.uid()` en ese centro, así que un centro ajeno da «sin familia», no la de otro.
   const centroId = form.get('centro_id')
   if (typeof centroId !== 'string' || !UUID.test(centroId))
     return err('alta.errors.no_autorizado', 403)
   const familia = await familiaDelUsuarioEn(centroId)
   if (!familia) return err('alta.errors.no_autorizado', 403)
 
-  const file = form.get('file')
   const ibanRaw = form.get('iban')
   const titular = form.get('titular')
-  const identificador = form.get('identificador_mandato')
   const nombreTecleado = form.get('nombre_tecleado')
   const firmaImagen = form.get('firma_imagen')
   const titularDocumento = form.get('titular_documento')
   const titularDireccion = form.get('titular_direccion')
-
-  if (!(file instanceof Blob)) return err('alta.documentos.errors.subida')
-  if (file.type !== 'application/pdf') return err('alta.documentos.errors.tipo_pdf')
-  if (file.size > MAX_PDF_BYTES) return err('alta.documentos.errors.tamano')
 
   if (typeof ibanRaw !== 'string' || !ibanValido(ibanRaw)) return err('alta.sepa.errors.iban')
   if (typeof titular !== 'string' || titular.trim().length < 2 || titular.length > 140)
@@ -100,105 +78,55 @@ export async function POST(request: Request): Promise<Response> {
   const errorTitular = errorDatosTitular(titularDocumento, titularDireccion)
   if (errorTitular) return err(`alta.sepa.errors.${errorTitular}`)
   if (
-    typeof identificador !== 'string' ||
-    identificador.length < 1 ||
-    identificador.length > MAX_LARGO_IDENTIFICADOR
-  )
-    return err('alta.sepa.errors.guardado')
-  if (
     typeof nombreTecleado !== 'string' ||
     nombreTecleado.trim().length < 2 ||
     nombreTecleado.length > 140
   )
     return err('alta.sepa.errors.nombre')
-  // Digital SIEMPRE: el trazo es obligatorio (no hay modo presencial en el camino del tutor).
   if (
     typeof firmaImagen !== 'string' ||
-    !firmaImagen.startsWith('data:image/') ||
+    !firmaImagen.startsWith('data:image/png') ||
     firmaImagen.length > MAX_FIRMA_CHARS
   )
     return err('alta.sepa.errors.firma')
 
-  const iban = normalizarIban(ibanRaw)
-  // Ruta FAMILIA-scoped con timestamp (conserva histórico; no pisa el PDF nino-scoped del alta).
-  const path = `${familia.centroId}/familia/${familia.familiaId}/mandato-${Date.now()}.pdf`
-
-  // Acreedor = centro, con su CID (RLS `centros`: pertenece_a_centro → el tutor lo lee con su
-  // cliente). Sin CID no se firma ningún mandato (0c, 2026-11-04): antes de subir nada.
   const acreedor = await acreedorDelCentro(supabase, familia.centroId)
   if (!acreedor) return err('alta.errors.no_autorizado', 403)
   if (!acreedor.cid) return err('alta.sepa.errors.centro_sin_cid', 409)
 
-  const fechaFirmaIso = new Date().toISOString()
-  // El texto canónico v2: con el CID y el documento y la dirección del titular.
-  const v2 = mandatoV2({
-    identificadorMandato: identificador,
-    iban,
+  const [enCola, activo] = await Promise.all([
+    familiaAltaValidada(supabase, familia.centroId, familia.familiaId),
+    familiaTieneMandatoActivo(familia.familiaId),
+  ])
+  const r = await firmarMandatoDigital(supabase, {
+    familiaId: familia.familiaId,
+    centroId: familia.centroId,
+    ninoId: null,
+    usuarioId: user.id,
+    acreedor: { ...acreedor, cid: acreedor.cid },
+    iban: ibanRaw,
     titular,
     titularDocumento: titularDocumento as string,
     titularDireccion: titularDireccion as string,
-    acreedor: { nombre: acreedor.nombre, cid: acreedor.cid },
-    fechaFirmaIso,
+    nombreTecleado,
+    firmaImagen,
+    idioma: idiomaDelMandato(locale),
+    ipAddress: (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null,
+    userAgent: request.headers.get('user-agent')?.slice(0, 500) ?? null,
+    via: enCola ? 'proponer' : activo ? 'sustituir' : 'registrar',
   })
-
-  // 1. Subida del PDF (cliente de usuario; RLS de storage F-2c-4 autoriza al tutor de la familia).
-  const subida = await supabase.storage
-    .from(BUCKET_MANDATO_SEPA)
-    .upload(path, file, { contentType: 'application/pdf', upsert: true })
-  if (subida.error) {
-    const msg = subida.error.message
-    if (/row-level security|unauthorized|403/i.test(msg))
-      return err('alta.errors.no_autorizado', 403)
-    logger.warn('domiciliacion-tutor: upload', msg)
-    return err('alta.documentos.errors.subida', 500)
+  if (r.error) {
+    const e = errorDeFirmaMandato(r.error, {
+      noAutorizado: 'alta.errors.no_autorizado',
+      otroIban: 'alta.sepa.errors.mandato_activo_otro_iban',
+      guardado: 'alta.sepa.errors.guardado',
+      subida: 'alta.documentos.errors.subida',
+    })
+    return err(e.clave, e.status)
   }
-
-  // 2. Decide registrar (sin activo) vs sustituir (con activo) — espejo de la action presencial.
-  // El helper llama a cada RPC con su nombre literal (params tipados; sin `as never`).
-  const activo = await familiaTieneMandatoActivo(familia.familiaId)
-
-  const ipAddress = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
-  const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
-
-  // 2026-11-20 (regla de Jose, opción A): con el alta de la familia validada, el mandato es prueba y
-  // va a la cola; Dirección lo aprueba (pasa a activo y el anterior a revocado) o lo rechaza.
-  const enCola = await familiaAltaValidada(supabase, familia.centroId, familia.familiaId)
-  const args = {
-    p_familia_id: familia.familiaId,
-    p_nino_id: null,
-    p_iban: iban,
-    p_titular: titular.trim(),
-    p_identificador_mandato: identificador,
-    p_documento_path: path,
-    p_firma_imagen: firmaImagen,
-    p_nombre_tecleado: nombreTecleado.trim(),
-    p_texto_hash: v2.textoHash,
-    p_ip_address: ipAddress,
-    p_user_agent: userAgent ?? '',
-    p_fecha_firma: fechaFirmaIso,
-    p_metodo: 'digital' as const,
-    ...v2.rpc,
-  }
-  const { error: rpcErr } = enCola
-    ? await proponerMandatoSepa(supabase, args)
-    : await registrarOSustituirMandatoSepa(supabase, Boolean(activo), args)
-  if (rpcErr) {
-    const cola = motivoCola(rpcErr.hint)
-    if (cola) return err(cola, 409)
-    if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
-    const motivo = motivoRechazoV2(rpcErr.hint)
-    if (motivo) return err(`alta.sepa.errors.${motivo}`, 409)
-    // No debería darse (solo llamamos registrar cuando NO hay activo), pero se propaga legible.
-    if (/mandato_activo_otro_iban/i.test(rpcErr.message))
-      return err('alta.sepa.errors.mandato_activo_otro_iban', 409)
-    logger.warn('domiciliacion-tutor: rpc', rpcErr.message)
-    return err('alta.sepa.errors.guardado', 500)
-  }
-
-  const url = await firmarRuta(supabase, BUCKET_MANDATO_SEPA, path)
   return Response.json({
     success: true,
     pendiente: enCola,
-    mandato: { identificador, documento: { path, url } },
+    mandato: { identificador: r.identificador, id: r.mandatoId },
   } satisfies RespuestaOk)
 }

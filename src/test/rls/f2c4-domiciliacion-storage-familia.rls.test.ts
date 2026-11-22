@@ -29,7 +29,9 @@ import { borrarMandatos } from './mandatos-como-postgres'
  *     `20260727120000_phase_f2c4_mandato_storage_familia`): el tutor sube/lee bajo
  *     `{centro}/familia/{suFamilia}/…`, NO bajo la de otra familia; y las políticas nino-scoped
  *     de F11-G-0 (`{centro}/{ninoSuyo}/mandato.pdf`) siguen funcionando (no regresión: se AÑADEN
- *     políticas, no se reemplazan).
+ *     políticas, no se reemplazan). Desde el 2026-11-22 la app ya no sube por la ruta del niño
+ *     (el fichero se llama por el sello, en la de la familia); la política se cierra en la
+ *     migración 2 del cierre del mandato, y entonces este caso cambia.
  *
  *  B) Las RPCs por familia con params DIGITALES tal como las llama el route del tutor:
  *     `registrar` (familia sin mandato) → activo, metodo='digital', documento_path del path
@@ -135,7 +137,7 @@ describe('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', 
     expect(ajeno.data?.signedUrl).toBeFalsy()
   })
 
-  it('NO regresión: el alta sigue subiendo nino-scoped {centro}/{ninoSuyo}/mandato.pdf', async () => {
+  it('NO regresión: la política del niño sigue dejando subir {centro}/{ninoSuyo}/mandato.pdf (hasta la migración 2)', async () => {
     const res = await subir(tutorA, `${centro.id}/${ninoA.id}/mandato.pdf`)
     expect(res.error).toBeNull()
   })
