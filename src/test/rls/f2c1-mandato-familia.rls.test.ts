@@ -32,8 +32,10 @@ import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
  * familia_id). Verifica:
  *  1) `registrar_mandato_sepa(p_familia_id, …)` crea 1 fila activa con familia_id set;
  *     el centro_id se DERIVA de familia_id (no de nino_id, que es informativo/opcional).
- *  2) Un 2º `registrar` en la misma familia es UPSERT-in-place (idempotente): sigue
- *     habiendo 1 solo activo; un INSERT crudo de un 2º activo viola el índice único.
+ *  2) Un 2º `registrar` en la misma familia con el mismo IBAN crea un mandato nuevo y deja el
+ *     anterior revocado (2026-11-22, decisión 3 del cierre del mandato; SUSTITUYE al UPSERT en su
+ *     sitio de F-2c-1); sigue habiendo 1 solo activo; un INSERT crudo de un 2º activo viola el
+ *     índice único.
  *  3) `sustituir_mandato_sepa`: el activo pasa a 'revocado' (conservado, deleted_at NULL)
  *     y el nuevo queda 'activo'; solo 1 activo tras sustituir.
  *  4) `get_mandatos_remesa` resuelve el IBAN del deudor por la FAMILIA del niño del recibo.
@@ -173,9 +175,10 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     expect(data![0].centro_id).toBe(centroA.id)
   })
 
-  it('registrar con el MISMO IBAN (reintento del alta) es UPDATE in-place: 1 activo, sin fila revocada', async () => {
-    // Mismo IBAN_1 pero con espacios y otro identificador → normaliza y ACTUALIZA en su sitio
-    // (no ensucia histórico). Prueba también la normalización (quita espacios, upper).
+  it('registrar con el MISMO IBAN (reintento del alta) crea un mandato nuevo y conserva el anterior, revocado', async () => {
+    // 2026-11-22 (decisión 3 del cierre del mandato, «Una firma no se borra»: SUSTITUYE a la regla de
+    // F-2c-1, que lo actualizaba en su sitio). Mismo IBAN_1 con espacios y otro identificador:
+    // normaliza (quita espacios, mayúsculas), revoca el activo y crea otro.
     const { error } = await cTutorA.rpc(
       'registrar_mandato_sepa',
       argsMandato(familiaA, ninoA1.id, 'ES76 2077 0024 0031 0257 5766', 'NIDO-F2C1-1B')
@@ -189,15 +192,15 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
       .eq('estado', 'activo')
       .is('deleted_at', null)
     expect(activos).toHaveLength(1)
-    expect(activos![0].identificador_mandato).toBe('NIDO-F2C1-1B') // actualizado en su sitio
+    expect(activos![0].identificador_mandato).toBe('NIDO-F2C1-1B')
 
-    // No se generó histórico (ninguna fila 'revocado') por un reintento con el mismo IBAN.
+    // La firma anterior sigue: revocada, con su identificador.
     const { data: revocados } = await serviceClient
       .from('mandatos_sepa')
-      .select('id')
+      .select('identificador_mandato')
       .eq('familia_id', familiaA)
       .eq('estado', 'revocado')
-    expect(revocados ?? []).toHaveLength(0)
+    expect((revocados ?? []).map((r) => r.identificador_mandato)).toEqual(['NIDO-F2C1-1'])
   })
 
   it('registrar con un IBAN DISTINTO estando la familia con mandato activo → RAISE, no pisa', async () => {
@@ -208,7 +211,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     expect(error).not.toBeNull()
     expect(error?.message).toMatch(/mandato_activo_otro_iban/)
 
-    // El mandato activo NO cambió (sigue el reintento in-place NIDO-F2C1-1B) y no hay filas nuevas.
+    // El mandato activo NO cambió (sigue el del reintento, NIDO-F2C1-1B) y no hay filas nuevas: el
+    // único revocado es el que dejó el reintento.
     const { data: activos } = await serviceClient
       .from('mandatos_sepa')
       .select('id, identificador_mandato')
@@ -219,10 +223,10 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     expect(activos![0].identificador_mandato).toBe('NIDO-F2C1-1B')
     const { data: revocados } = await serviceClient
       .from('mandatos_sepa')
-      .select('id')
+      .select('identificador_mandato')
       .eq('familia_id', familiaA)
       .eq('estado', 'revocado')
-    expect(revocados ?? []).toHaveLength(0)
+    expect((revocados ?? []).map((r) => r.identificador_mandato)).toEqual(['NIDO-F2C1-1'])
   })
 
   it('el índice único rechaza un 2º mandato ACTIVO insertado a mano en la familia', async () => {

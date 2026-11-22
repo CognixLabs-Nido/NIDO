@@ -65,6 +65,11 @@ const MANDATOS_AUDITADAS: Readonly<Record<string, string>> = {
   fecha_firma: 'fecha del mandato; prueba legal que se conserva',
   acreedor_cid: 'el CID del centro: dato de la empresa, no de una persona',
   acreedor_nombre: 'el nombre del centro: dato de la empresa, no de una persona',
+  // v3 (2026-11-22, cierre del mandato): lo que ata el PDF a la firma.
+  acreedor_direccion: 'la dirección del centro: dato de la empresa, no de una persona',
+  documento_sha256: 'huella del PDF firmado, no lo contiene',
+  documento_idioma: 'categórico (es, en, va)',
+  plantilla_pdf_version: 'número de versión de la plantilla del PDF',
   created_at: 'fecha técnica de la fila',
   updated_at: 'fecha técnica de la fila',
   deleted_at: 'la baja de la fila',

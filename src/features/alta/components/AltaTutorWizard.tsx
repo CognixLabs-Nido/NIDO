@@ -74,7 +74,6 @@ interface Props {
   datosTutor1: DatosTutorInicial | null
   datosTutor2: DatosTutorInicial | null
   /** Datos del centro (acreedor) y mandato SEPA previo para el paso 8 (G-2). */
-  centroId: string
   centroNombre: string
   centroDireccion: string
   /**
@@ -167,7 +166,6 @@ export function AltaTutorWizard({
   familiaEstadoCivil,
   datosTutor1,
   datosTutor2,
-  centroId,
   centroNombre,
   centroDireccion,
   centroCid,
@@ -471,11 +469,9 @@ export function AltaTutorWizard({
           <PasoSepa
             locale={locale}
             ninoId={ninoId}
-            centroId={centroId}
             centroNombre={centroNombre}
             centroDireccion={centroDireccion}
             centroCid={cidDelAlta}
-            currentUserId={currentUserId}
             inicial={mandatoSepaInicial}
             mandatoFamilia={mandatoFamilia}
             firma={sepaFirma}

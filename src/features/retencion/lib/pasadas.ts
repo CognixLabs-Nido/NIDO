@@ -17,6 +17,7 @@ import type { ResultadoFirmas } from './firmas'
 import type { ResultadoFiscal } from './fiscal'
 import type { ResultadoLecturas } from './lecturas-ficha-medica'
 import type { ResultadoListaEspera } from './lista-espera'
+import type { ResultadoMandatosHuerfanos } from './mandatos-huerfanos'
 import type { ResultadoOperativa } from './operativa'
 import type { ActionResult, ResultadoBarrido } from '../types'
 
@@ -46,6 +47,8 @@ export interface RecuentosPasada {
   fiscal: ResultadoFiscal
   cuentasOlvidadas: ResultadoCuentasOlvidadas
   ficherosRemesa: ResultadoFicherosRemesa
+  /** La decimocuarta, desde 20270203120000: los ficheros del mandato que ninguna fila nombra. */
+  mandatosHuerfanos: ResultadoMandatosHuerfanos
 }
 
 // Un recuento no lleva texto: un id, un nombre o un mensaje de error llegarían a la base y a los

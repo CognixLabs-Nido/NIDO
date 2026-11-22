@@ -9,6 +9,7 @@ import { borrarCuentasOlvidadas, purgarCuentas } from '@/features/retencion/lib/
 import { purgarExpedientes } from '@/features/retencion/lib/expediente'
 import { purgarExportLog } from '@/features/retencion/lib/export-log'
 import { destruirFicherosRemesa } from '@/features/retencion/lib/ficheros-remesa'
+import { barrerMandatosHuerfanos } from '@/features/retencion/lib/mandatos-huerfanos'
 import { destruirFirmas } from '@/features/retencion/lib/firmas'
 import { destruirFiscal } from '@/features/retencion/lib/fiscal'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
@@ -46,6 +47,9 @@ export const runtime = 'nodejs'
  *  11a. `destruirFicherosRemesa()` — el fichero de cada versión de una remesa, a los años fiscales
  *      de su marca, y los objetos del bucket sin registro (20261220120000). Antes del 11: lo fiscal
  *      de la familia espera a que no quede ningún fichero vivo con un recibo suyo.
+ *  11b. `barrerMandatosHuerfanos()` — los ficheros del bucket del mandato que ninguna fila nombra
+ *      (una firma cuyo registro no entró), de más de un día: se cuentan y se borran
+ *      (20270203120000).
  *  11. `destruirFiscal()` — lo fiscal de las familias a los años de su último recibo pagado (o del
  *      final del curso de la baja, si no pagaron ninguno): recibos, remesas, mandatos y su
  *      documento, becas, tutores, la familia y las fichas anónimas de sus niños, sin copia en
@@ -90,6 +94,7 @@ export async function GET(request: Request): Promise<Response> {
   const firmas = await destruirFirmas({ dryRun })
   const cuentas = await purgarCuentas({ dryRun })
   const ficherosRemesa = await destruirFicherosRemesa({ dryRun })
+  const mandatosHuerfanos = await barrerMandatosHuerfanos({ dryRun })
   const fiscal = await destruirFiscal({ dryRun })
   const cuentasOlvidadas = await borrarCuentasOlvidadas({ dryRun })
 
@@ -107,6 +112,7 @@ export async function GET(request: Request): Promise<Response> {
     fiscal,
     cuentasOlvidadas,
     ficherosRemesa,
+    mandatosHuerfanos,
   })
 
   return NextResponse.json(
@@ -126,6 +132,7 @@ export async function GET(request: Request): Promise<Response> {
       fiscal,
       cuentasOlvidadas,
       ficherosRemesa,
+      mandatosHuerfanos,
     },
     { status: registrada ? 200 : 500 }
   )

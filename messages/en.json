@@ -1609,6 +1609,13 @@
         "no_se_pudo_leer": "We couldn’t read which children have the card. Reload the page.",
         "vacio": "Every enrolled child has a health card."
       },
+      "mandatos_por_refirmar": {
+        "titulo": "SEPA mandates to be signed again",
+        "subtitulo": "They were signed before the mandate included the centre's creditor identifier and the account holder's document and address. They are still active and are not changed: the family has to sign the direct debit again.",
+        "no_se_pudo_leer": "We could not read which mandates are still to be signed again. Reload the page.",
+        "vacio": "No active mandate is waiting to be signed again.",
+        "firmado": "Signed on {fecha}"
+      },
       "sin_acceso_ficha": {
         "titulo": "Guardians without access to the medical record",
         "subtitulo": "They cannot sign the enrolment record until you give them access to the medical record.",

@@ -175,7 +175,7 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
     expect((await exportDe(tutorA)).some((a) => a.path === mandatoB)).toBe(false)
   })
 
-  it('control: su propio DNI y su propio mandato se guardan y su export los firma', async () => {
+  it('control: su propio DNI y su propio mandato se guardan; el DNI se firma y el mandato se enlaza a su ruta', async () => {
     const c = await clientFor(tutorA)
     const dni = await c.rpc('fijar_dni_tutor', {
       p_familia_id: familiaA,
@@ -187,9 +187,17 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
     expect(man.error).toBeNull()
 
     const adjuntos = await exportDe(tutorA)
-    for (const path of [dniA, mandatoA]) {
-      const adjunto = adjuntos.find((a) => a.path === path)
-      expect(await descarga(adjunto?.url_firmada ?? null)).toBe(200)
-    }
+    const adjDni = adjuntos.find((a) => a.path === dniA)
+    expect(await descarga(adjDni?.url_firmada ?? null)).toBe(200)
+    // 2026-11-22 (cierre del mandato, «sin enlace, como la 10c»): el PDF del mandato no se firma; se
+    // enlaza a su ruta, que pide sesión y deja la lectura. Sin caducidad: no hay enlace que caduque.
+    const { data: fila } = await serviceClient
+      .from('mandatos_sepa')
+      .select('id')
+      .eq('documento_path', mandatoA)
+      .single()
+    const enlace = adjuntos.find((a) => a.path === mandatoA)
+    expect(enlace?.url_firmada).toBe(`/es/mandato-sepa/${fila?.id}?origen=export`)
+    expect(enlace?.caduca_en).toBeNull()
   })
 })

@@ -2658,7 +2658,8 @@ Migración `20261225120000_fix_mandatos_solo_por_funciones`; decisión del respo
   INSERT, UPDATE, DELETE, TRUNCATE ni MAINTAIN, y no hay políticas de INSERT ni de UPDATE. La
   lectura no cambia (`mandatos_sepa_select`).
 - **Escriben solo sus funciones**, SECURITY DEFINER de `postgres`: `registrar_mandato_sepa` y
-  `sustituir_mandato_sepa` (con sesión), `anular_alta` y `destruir_fiscal_familia` (el servidor).
+  `sustituir_mandato_sepa` (con sesión; desde `20270201120000` también `proponer_mandato_sepa` y
+  `decidir_mandato_propuesto`), `anular_alta` y `destruir_fiscal_familia` (el servidor).
   La guarda de la migración exige que no haya otra. **Una escritura nueva de un mandato va por
   función, nunca por política ni por `service_role`.**
 - Los tests que necesitan un mandato a mano lo escriben como `postgres` por psql
@@ -2689,7 +2690,8 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
 - **Fuera de `audit_log`:** `titular_documento` y `titular_direccion`, como `titular`. El CID y el
   nombre del acreedor sí entran. **En el export:** los cinco.
 - **Nada recalcula hoy el hash de un mandato.** La versión es lo que permite hacerlo con el texto
-  con el que se firmó.
+  con el que se firmó. _(Sustituido el 2026-11-22: el v3 lo recalcula la base al firmar. Ver «El
+  mandato SEPA como prueba».)_
 - **En la app (#488):** los tres caminos (el alta, `/family/domiciliacion` y el presencial de
   Dirección, que hasta aquí iba sin hash) leen el CID y el nombre del centro con la sesión, piden
   «NIF o documento de identidad» y dirección del titular, calculan el hash del texto v2
@@ -2715,6 +2717,47 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
   `setup.ts`) salvo que se pida `sinCid`. En la app: `mandato-sepa/__tests__/route.test.ts`,
   `gestionar-domiciliacion-familia.test.ts`, `documento-identidad.test.ts`, `mandato-sepa.test.ts`
   y `estado-alta.test.ts`.
+
+### El mandato SEPA como prueba (2026-11-22, migración 1)
+
+Migración `20270203120000_feat_mandato_prueba_sellada` (antes del despliegue: solo añade); spec
+`docs/specs/mandato-sepa-cierre.md`, con las decisiones del 2026-11-22 literales. Medido abierto y
+cerrado en producción (ensayos terminados en RAISE, LF y CRLF; `~/nido-logs/13/sepa/`).
+
+- **El sello v3 ata el PDF a la firma.** El PDF lo compone el SERVIDOR, determinista (fecha de
+  creación = la de firma, identificador interno sacado del identificador del mandato, textos
+  congelados por versión en `mandato-pdf-plantillas.ts`): con los datos sellados sale el mismo
+  fichero, byte a byte. El texto canónico v3 es el v2 más la dirección del acreedor, el sha256 del
+  PDF, su idioma y la versión de su plantilla (`documento_sha256`, `documento_idioma`,
+  `plantilla_pdf_version`, `acreedor_direccion`; CHECK `mandatos_sepa_documento_v3`).
+  `privado.version_y_sello_mandato` RECALCULA el sello con lo que recibe (el IBAN en claro
+  incluido; `privado.texto_canonico_mandato_v3`, el mismo texto que `textoCanonicoMandatoV3`) y
+  rechaza `sello_distinto`; la ruta tiene que ser la del sello (`ruta_distinta`) y el fichero tiene
+  que estar en el bucket (`sin_documento`); la dirección del acreedor, la del centro
+  (`acreedor_distinto`). Sin el sha del PDF, las tres funciones siguen firmando el v2 de la app de
+  antes; el presencial no tiene PDF (`v3_presencial`).
+- **El fichero se llama por el sello**, `{centro}/familia/{familia}/mandato-{sello}.pdf`, y se sube
+  sin `upsert`. Si el registro falla, el servidor lo borra; si no puede, solo cuenta el que la fila
+  nombra.
+- **Volver a firmar crea un mandato nuevo**: `registrar_mandato_sepa` con el mismo IBAN revoca el
+  activo y crea otro (antes lo reescribía en su sitio y la firma anterior desaparecía).
+- **Quién abre el PDF** (sin enlace, como la ficha firmada de la 10c): `abrir_documento_mandato`
+  autoriza (Dirección del centro o un tutor de la familia: decisión de Jose, «es su cuenta», que vale
+  mientras la cuenta sea común) y deja la fila en `lecturas_mandato_sepa` antes de que la ruta
+  `/{locale}/mandato-sepa/{id}` lea un byte; los bytes salen con la misma sesión, sin caché. La
+  tabla no tiene políticas ni privilegios para las sesiones; la leen Dirección y los tutores de la
+  familia por `lecturas_mandato_sepa(familia)` (a un tutor, del personal solo el rol). El export
+  enlaza a esa ruta.
+- **El alta anulada**: el evento del final de `anular_alta` lleva `mandatos_destruidos`
+  (identificador, cuatro últimos dígitos, estado, método, fecha de firma), con quién anuló y
+  cuándo; nada de la familia, porque en `audit_log` no entra lo que la purga no sabe redactar.
+- **El huérfano**: `mandatos_sepa_huerfanos()` (solo `service_role`) lista los ficheros del bucket
+  que ninguna fila nombra, de más de un día; el cron los cuenta y los borra
+  (`barrerMandatosHuerfanos`, clave `mandatosHuerfanos` de `retencion_pasadas`).
+- **Lo que cierra la migración 2**, después del despliegue: las políticas de UPDATE y DELETE del
+  bucket, el trigger que impide cambiar un objeto del bucket a todos, el que deja cambiar de una fila
+  solo el estado, y que un mandato digital nuevo sea v3.
+- Test: `mandato-prueba-sellada.rls.test.ts`.
 
 ### La red del export art. 15: cada columna, decidida
 

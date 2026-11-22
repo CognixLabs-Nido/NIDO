@@ -10,7 +10,8 @@ export interface AdjuntoExport {
   bucket: string
   path: string
   url_firmada: string | null
-  caduca_en: string
+  /** NULL en lo que no tiene enlace que caduque: el PDF del mandato se abre por la ruta (2026-11-22). */
+  caduca_en: string | null
 }
 
 /** Documento de export del sujeto (se serializa a datos.json + se renderiza a HTML). */

@@ -120,6 +120,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
   - Los datos: `~/nido-logs/10/b/repaso-42501/` (`HALLAZGOS.md`, `puertas.txt`, `mensaje/`).
 
 - [ ] **El PDF del mandato SEPA: lo puede sustituir quien lo firmó, y lleva el IBAN en claro**
+      **Decidido el 2026-11-22, en `docs/specs/mandato-sepa-cierre.md`** (las seis decisiones y dos más).
       (medido el 2026-11-17 en producción y en el código; decisión del responsable del mismo día:
       «Eso se cierra en cuanto acabe la fase 10»). Sin tocar hasta entonces.
   - **El firmante puede cambiarlo sin firmar otra vez.** La política `mandato_sepa_update` de
@@ -138,6 +139,18 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
     tecleado, el documento y la dirección del titular); política `mandatos_sepa_select`:
     `es_admin(centro_id) OR es_tutor_de_familia(familia_id)`.
   - El enlace firmado dura una hora (`SIGNED_URL_TTL_SEGUNDOS`).
+  - **Se cierra entero, primero entendido (2026-11-22).** Jose: «llevamos muchos meses con esta
+    mierda y todavía no has aprendido que no dejamos cosas a medias, por lo que es importante cerrar
+    A y C. Pero debes entender cómo funciona cada cosa para hacerlo». El responsable: antes de diseñar
+    nada, el flujo medido paso a paso (datos, PDF, firma, guardado, y quién lo necesita después), y
+    de ahí sale el PR; «A se cierra: no se queda a medias». C (los 454 del censo) va después, con su
+    propio troceo; no se toca mientras se mide A.
+  - **Corrección a lo de arriba (medido el 2026-11-22):** uno de los 3 mandatos SÍ se firmó dos
+    veces. El objeto y la fila nacen a las 11:29:48-49 y los dos se reescriben 12 segundos después
+    (11:30:01): misma ruta, mismo IBAN, la fila actualizada en su sitio (`registrar_mandato_sepa`
+    hace UPDATE del activo con el mismo IBAN: identificador, trazo, hash y fecha nuevos). La primera
+    firma no queda en ninguna parte; fue antes de la auditoría de la tabla (#334). Que `updated_at`
+    no pase de `fecha_firma` no lo veía, porque la fecha también se reescribe.
 
 ## Después de la serie de altas — Ola 1
 

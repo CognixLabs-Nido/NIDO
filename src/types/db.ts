@@ -32,6 +32,8 @@ type FG = PG['Functions']
 
 /** Las funciones de `public` que devuelven `RETURNS TABLE`, leídas del catálogo de producción. */
 export const FUNCIONES_RETURNS_TABLE = [
+  // 2026-11-22, el mandato como prueba: el PDF sin enlace, quién lo abre y los huérfanos del bucket.
+  'abrir_documento_mandato',
   'accesos_datos_bloqueados_centro',
   'alertas_medicas',
   'altas_sin_terminar',
@@ -64,8 +66,10 @@ export const FUNCIONES_RETURNS_TABLE = [
   'get_motivos_baja_matriculas',
   'get_recorrido_nino_familia',
   'lecturas_ficha_medica',
+  'lecturas_mandato_sepa',
   'listado_pase_servicios',
   'listar_esqueletos_huerfanos_stub',
+  'mandatos_sepa_huerfanos',
   'mis_peticiones_olvido',
   'nombres_de_recogidas',
   'olvido_destinatarios',
@@ -156,6 +160,14 @@ export const NO_NULAS = {
   ],
   /** NOT NULL de `lecturas_ficha_medica`; el nombre viene de un LEFT JOIN y de un CASE sin ELSE. */
   lecturas_ficha_medica: ['leida_en', 'rol_lector', 'origen', 'campos'],
+  /** NOT NULL de `lecturas_mandato_sepa` y de `mandatos_sepa`; el nombre viene de un LEFT JOIN y de un CASE. */
+  lecturas_mandato_sepa: [
+    'mandato_id',
+    'identificador_mandato',
+    'rol_lector',
+    'origen',
+    'leida_en',
+  ],
   /**
    * NOT NULL de `ninos` y `aulas`, por JOIN; `apellidos` no. Fase 8b: `mensuales` es un `ARRAY(…)`
    * (sin filas, `{}`) y `pedidos` un `COALESCE(…, '{}')`.

@@ -3154,6 +3154,58 @@ export type Database = {
           },
         ]
       }
+      lecturas_mandato_sepa: {
+        Row: {
+          centro_id: string
+          id: string
+          lector_id: string | null
+          leida_en: string
+          mandato_id: string
+          origen: string
+          rol_lector: string
+        }
+        Insert: {
+          centro_id: string
+          id?: string
+          lector_id?: string | null
+          leida_en?: string
+          mandato_id: string
+          origen: string
+          rol_lector: string
+        }
+        Update: {
+          centro_id?: string
+          id?: string
+          lector_id?: string | null
+          leida_en?: string
+          mandato_id?: string
+          origen?: string
+          rol_lector?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecturas_mandato_sepa_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lecturas_mandato_sepa_lector_id_fkey"
+            columns: ["lector_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lecturas_mandato_sepa_mandato_id_fkey"
+            columns: ["mandato_id"]
+            isOneToOne: false
+            referencedRelation: "mandatos_sepa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lineas_recibo: {
         Row: {
           arrastre_de_recibo_id: string | null
@@ -3350,11 +3402,14 @@ export type Database = {
       mandatos_sepa: {
         Row: {
           acreedor_cid: string | null
+          acreedor_direccion: string | null
           acreedor_nombre: string | null
           centro_id: string
           created_at: string
           deleted_at: string | null
+          documento_idioma: string | null
           documento_path: string | null
+          documento_sha256: string | null
           estado: Database["public"]["Enums"]["estado_mandato_sepa"]
           familia_id: string | null
           fecha_firma: string | null
@@ -3367,6 +3422,7 @@ export type Database = {
           metodo_firma: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string | null
           nombre_tecleado: string | null
+          plantilla_pdf_version: number | null
           texto_hash: string | null
           titular: string
           titular_direccion: string | null
@@ -3378,11 +3434,14 @@ export type Database = {
         }
         Insert: {
           acreedor_cid?: string | null
+          acreedor_direccion?: string | null
           acreedor_nombre?: string | null
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          documento_idioma?: string | null
           documento_path?: string | null
+          documento_sha256?: string | null
           estado?: Database["public"]["Enums"]["estado_mandato_sepa"]
           familia_id?: string | null
           fecha_firma?: string | null
@@ -3395,6 +3454,7 @@ export type Database = {
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id?: string | null
           nombre_tecleado?: string | null
+          plantilla_pdf_version?: number | null
           texto_hash?: string | null
           titular: string
           titular_direccion?: string | null
@@ -3406,11 +3466,14 @@ export type Database = {
         }
         Update: {
           acreedor_cid?: string | null
+          acreedor_direccion?: string | null
           acreedor_nombre?: string | null
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          documento_idioma?: string | null
           documento_path?: string | null
+          documento_sha256?: string | null
           estado?: Database["public"]["Enums"]["estado_mandato_sepa"]
           familia_id?: string | null
           fecha_firma?: string | null
@@ -3423,6 +3486,7 @@ export type Database = {
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id?: string | null
           nombre_tecleado?: string | null
+          plantilla_pdf_version?: number | null
           texto_hash?: string | null
           titular?: string
           titular_direccion?: string | null
@@ -5362,6 +5426,14 @@ export type Database = {
       }
       _redactar_auditoria_ninos_borrados: { Args: never; Returns: number }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
+      abrir_documento_mandato: {
+        Args: { p_mandato_id: string; p_origen: string }
+        Returns: {
+          documento_path: string
+          fecha_firma: string
+          identificador_mandato: string
+        }[]
+      }
       abrir_purga_cuenta: {
         Args: { p_anios: number; p_centro_id: string; p_usuario_id: string }
         Returns: string
@@ -6041,6 +6113,18 @@ export type Database = {
           rol_lector: string
         }[]
       }
+      lecturas_mandato_sepa: {
+        Args: { p_familia_id: string }
+        Returns: {
+          identificador_mandato: string
+          lector_nombre: string
+          leida_en: string
+          mandato_id: string
+          nombre_oculto: boolean
+          origen: string
+          rol_lector: string
+        }[]
+      }
       leer_ficha_firmada: { Args: { p_firma_id: string }; Returns: Json }
       listado_pase_servicios: {
         Args: { p_centro_id: string; p_fecha?: string }
@@ -6059,6 +6143,12 @@ export type Database = {
         Returns: {
           centro_id: string
           usuario_id: string
+        }[]
+      }
+      mandatos_sepa_huerfanos: {
+        Args: never
+        Returns: {
+          ruta: string
         }[]
       }
       marcar_cobrado_manual: {
@@ -6297,8 +6387,11 @@ export type Database = {
       proponer_mandato_sepa: {
         Args: {
           p_acreedor_cid?: string
+          p_acreedor_direccion?: string
           p_acreedor_nombre?: string
+          p_documento_idioma?: string
           p_documento_path: string
+          p_documento_sha256?: string
           p_familia_id: string
           p_fecha_firma: string
           p_firma_imagen: string
@@ -6308,6 +6401,7 @@ export type Database = {
           p_metodo?: Database["public"]["Enums"]["firma_metodo"]
           p_nino_id: string
           p_nombre_tecleado: string
+          p_plantilla_pdf_version?: number
           p_texto_hash: string
           p_titular: string
           p_titular_direccion?: string
@@ -6439,8 +6533,11 @@ export type Database = {
       registrar_mandato_sepa: {
         Args: {
           p_acreedor_cid?: string
+          p_acreedor_direccion?: string
           p_acreedor_nombre?: string
+          p_documento_idioma?: string
           p_documento_path: string
+          p_documento_sha256?: string
           p_familia_id: string
           p_fecha_firma: string
           p_firma_imagen: string
@@ -6450,6 +6547,7 @@ export type Database = {
           p_metodo?: Database["public"]["Enums"]["firma_metodo"]
           p_nino_id: string
           p_nombre_tecleado: string
+          p_plantilla_pdf_version?: number
           p_texto_hash: string
           p_titular: string
           p_titular_direccion?: string
@@ -6620,8 +6718,11 @@ export type Database = {
       sustituir_mandato_sepa: {
         Args: {
           p_acreedor_cid?: string
+          p_acreedor_direccion?: string
           p_acreedor_nombre?: string
+          p_documento_idioma?: string
           p_documento_path: string
+          p_documento_sha256?: string
           p_familia_id: string
           p_fecha_firma: string
           p_firma_imagen: string
@@ -6631,6 +6732,7 @@ export type Database = {
           p_metodo?: Database["public"]["Enums"]["firma_metodo"]
           p_nino_id: string
           p_nombre_tecleado: string
+          p_plantilla_pdf_version?: number
           p_texto_hash: string
           p_titular: string
           p_titular_direccion?: string

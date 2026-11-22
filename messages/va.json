@@ -1609,6 +1609,13 @@
         "no_se_pudo_leer": "No s’ha pogut llegir quins xiquets tenen la targeta. Torna a carregar la pàgina.",
         "vacio": "Tots els xiquets matriculats tenen la targeta sanitària."
       },
+      "mandatos_por_refirmar": {
+        "titulo": "Mandats SEPA pendents de tornar a firmar",
+        "subtitulo": "Es van firmar abans que el mandat portara l'identificador de creditor del centre i el document i l'adreça del titular. Continuen actius i no es toquen: la família ha de tornar a firmar la domiciliació.",
+        "no_se_pudo_leer": "No s'ha pogut llegir quins mandats falten per tornar a firmar. Torna a carregar la pàgina.",
+        "vacio": "Cap mandat actiu està pendent de tornar a firmar.",
+        "firmado": "Firmat el {fecha}"
+      },
       "sin_acceso_ficha": {
         "titulo": "Tutors sense accés a la fitxa mèdica",
         "subtitulo": "No poden firmar la fitxa de l'alta fins que els dones accés a la fitxa mèdica.",

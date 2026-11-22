@@ -100,3 +100,38 @@ export function textoCanonicoMandatoV2(d: DatosCanonicoMandatoV2): string {
     `fecha=${d.fechaFirmaIso.slice(0, 10)}`,
   ].join('|')
 }
+
+export interface DatosCanonicoMandatoV3 extends DatosCanonicoMandatoV2 {
+  /** La dirección del acreedor (la del centro): va en el PDF, así que se sella. */
+  acreedorDireccion: string
+  /** sha256 en hexadecimal de los bytes del PDF que compuso el servidor. */
+  documentoSha256: string
+  idioma: string
+  plantillaPdfVersion: number
+}
+
+/**
+ * Texto canónico **v3** (2026-11-22, `mandatos_sepa.version_canonico = 3`, decisión 2 del cierre del
+ * mandato): el v2 más la dirección del acreedor, el sha256 del PDF, su idioma y la versión de su
+ * plantilla. Con él, el PDF queda atado a la firma. La base calcula el MISMO texto
+ * (`privado.texto_canonico_mandato_v3`) y rechaza un sello que no cuadre; un test de la CI compara
+ * los dos. Mismo orden y mismas claves que allí: no se cambia uno sin el otro.
+ */
+export function textoCanonicoMandatoV3(d: DatosCanonicoMandatoV3): string {
+  return [
+    'SEPA-CORE-MANDATE-V3',
+    `id=${d.identificadorMandato}`,
+    `iban=${normalizarIban(d.iban)}`,
+    `titular=${d.titular.trim()}`,
+    `titular_documento=${d.titularDocumento.trim()}`,
+    `titular_direccion=${d.titularDireccion.trim()}`,
+    `acreedor=${d.acreedorNombre.trim()}`,
+    `acreedor_cid=${d.acreedorCid.trim()}`,
+    `acreedor_direccion=${d.acreedorDireccion.trim()}`,
+    'tipo=recurrente',
+    `fecha=${d.fechaFirmaIso.slice(0, 10)}`,
+    `documento_sha256=${d.documentoSha256}`,
+    `idioma=${d.idioma}`,
+    `plantilla_pdf=${d.plantillaPdfVersion}`,
+  ].join('|')
+}

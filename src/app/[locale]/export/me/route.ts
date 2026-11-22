@@ -19,7 +19,7 @@ export const runtime = 'nodejs'
  * sale lo suyo. Acceso art. 15 + portabilidad art. 20.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ locale: string }> }
 ): Promise<Response> {
   const { locale } = await params
@@ -32,7 +32,10 @@ export async function GET(
   const service = createServiceRoleClient()
 
   // Sin `incluirMotivoBaja`: el motivo de baja es de Dirección, nunca sale en /export/me.
-  const usuarioRec = await recolectarUsuario(supabase, service, user.id)
+  const usuarioRec = await recolectarUsuario(supabase, service, user.id, {
+    enlaceMandato: (id) =>
+      new URL(`/${locale}/mandato-sepa/${id}?origen=export`, request.url).toString(),
+  })
   if (!usuarioRec) return new Response('Sin datos', { status: 404 })
 
   // Hijos de los que es tutor legal (no 'autorizado').

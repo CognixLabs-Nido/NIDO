@@ -377,7 +377,14 @@ export async function recolectarTutor(
 export async function recolectarUsuario(
   client: Client,
   service: Client,
-  usuarioId: string
+  usuarioId: string,
+  opts: {
+    /**
+     * El enlace al PDF de un mandato (2026-11-22, «sin enlace, como la 10c»): la ruta de la app, que
+     * pide sesión y deja la lectura, nunca un enlace firmado. Absoluto, porque el export se descarga.
+     */
+    enlaceMandato?: (mandatoId: string) => string
+  } = {}
 ): Promise<Recolectado | null> {
   const usuario = filaDe(
     'usuario.ficha',
@@ -585,11 +592,29 @@ export async function recolectarUsuario(
       adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, p.dni_documento_path, 'DNI'))
     }
   }
-  for (const m of filas(extra?.mandatos_sepa)) {
-    if (typeof m.documento_path === 'string' && m.documento_path) {
-      adjuntos.push(
-        await firmar(service, BUCKET_MANDATO_SEPA, m.documento_path, 'Mandato SEPA firmado')
-      )
+  // El PDF del mandato no se firma: se enlaza a su ruta, que pide sesión, deja la lectura
+  // (`lecturas_mandato_sepa`, origen `export`) y entrega los bytes. Lleva el IBAN completo.
+  const rutasMandato = filas(extra?.mandatos_sepa)
+    .map((m) => m.documento_path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0)
+  if (rutasMandato.length > 0) {
+    // entre-centros: el export del sujeto (art. 15) es de todos sus centros, y aquí solo se busca el
+    // id de los mandatos que ya trae su export, por su ruta exacta.
+    const { data: ids, error: errIds } = await service
+      .from('mandatos_sepa')
+      .select('id, documento_path')
+      .in('documento_path', rutasMandato)
+    if (errIds) throw new Error(`recolectarUsuario: mandatos (${errIds.code ?? 'sin_codigo'})`)
+    const enlace = opts.enlaceMandato ?? ((id: string) => `/es/mandato-sepa/${id}?origen=export`)
+    for (const m of ids ?? []) {
+      if (!m.documento_path) continue
+      adjuntos.push({
+        descripcion: 'Mandato SEPA firmado (el PDF lleva el IBAN completo)',
+        bucket: BUCKET_MANDATO_SEPA,
+        path: m.documento_path,
+        url_firmada: enlace(m.id),
+        caduca_en: null,
+      })
     }
   }
 

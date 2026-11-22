@@ -3,47 +3,51 @@ import { createHash } from 'node:crypto'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { textoCanonicoMandatoV2 } from '@/features/alta/lib/mandato-sepa'
-
 import { POST } from '../route'
 
 /**
- * La domiciliación desde Recibos (0c-2), el segundo de los tres caminos que crean mandatos:
- *  - sin CID del centro: 409 `centro_sin_cid` antes de subir el PDF y de llamar a la RPC (la
- *    página no ofrece el botón; esto es por si llega igual);
- *  - con CID, la RPC recibe el v2 con el hash del texto v2;
- *  - el documento y la dirección del titular se validan antes de subir nada.
+ * La domiciliación desde Recibos, desde el 2026-11-22 (cierre del mandato): el PDF lo compone el
+ * servidor y se sube con el nombre del sello, sin `upsert`; la vía depende de la familia (validada,
+ * con mandato activo o sin él). El detalle del sello lo prueba el test de la ruta del alta, que
+ * comparte `firmarMandatoDigital`; aquí, lo que es de esta ruta.
  */
 
 const CENTRO = 'cccccccc-0000-4000-8000-000000000001'
 const FAMILIA = 'ffffffff-0000-4000-8000-000000000001'
 const USER = 'bbbbbbbb-0000-4000-8000-000000000001'
 const IBAN = 'ES9121000418450200051332'
+const PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
 
 const { bd } = vi.hoisted(() => ({
   bd: {
-    centro: null as { nombre: string; identificador_acreedor: string | null } | null,
+    centro: null as {
+      nombre: string
+      identificador_acreedor: string | null
+      direccion: string | null
+    } | null,
     llamadas: [] as string[],
     rpcArgs: null as Record<string, unknown> | null,
-    // 2026-11-20: ¿la familia tiene un alta validada? (entonces el mandato del tutor va a la cola)
     validada: false,
+    activo: null as { id: string } | null,
+    subidas: [] as { path: string; upsert: boolean; bytes: Uint8Array }[],
   },
 }))
 
 vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
   familiaAltaValidada: async () => bd.validada,
 }))
-
 vi.mock('@/shared/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
 vi.mock('@/features/centros/contexto/ambito-familiar', () => ({
   familiaDelUsuarioEn: async () => ({ centroId: CENTRO, familiaId: FAMILIA }),
 }))
 vi.mock('@/features/alta/queries/get-mandato-familia', () => ({
-  familiaTieneMandatoActivo: async () => null,
+  familiaTieneMandatoActivo: async () => bd.activo,
 }))
-vi.mock('@/shared/lib/adjuntos/storage', () => ({
-  BUCKET_MANDATO_SEPA: 'mandato-sepa',
-  firmarRuta: async () => 'https://firmada',
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: () => ({
+    storage: { from: () => ({ remove: async () => ({ error: null }) }) },
+  }),
 }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
@@ -58,7 +62,8 @@ vi.mock('@/lib/supabase/server', () => ({
     },
     storage: {
       from: () => ({
-        upload: async () => {
+        upload: async (path: string, bytes: Uint8Array, o: { upsert: boolean }) => {
+          bd.subidas.push({ path, upsert: o.upsert, bytes })
           bd.llamadas.push('sube')
           return { error: null }
         },
@@ -74,35 +79,64 @@ vi.mock('@/lib/supabase/server', () => ({
 
 async function enviar(campos: Record<string, string> = {}) {
   const form = new FormData()
-  form.append('file', new File(['%PDF'], 'mandato.pdf', { type: 'application/pdf' }))
   const base: Record<string, string> = {
     centro_id: CENTRO,
     iban: IBAN,
     titular: 'Tutor Demo',
-    titular_documento: '12345678Z',
+    titular_documento: 'X1234567L',
     titular_direccion: 'Calle Demo 1, Valencia',
-    identificador_mandato: 'NIDO-A-B-2',
     nombre_tecleado: 'Tutor Demo',
-    firma_imagen: 'data:image/png;base64,AAAA',
+    firma_imagen: PNG,
     ...campos,
   }
   for (const [k, v] of Object.entries(base)) form.append(k, v)
   const res = await POST(
-    new Request('http://x/es/family/domiciliacion', { method: 'POST', body: form })
+    new Request('http://x/es/family/domiciliacion', { method: 'POST', body: form }),
+    {
+      params: Promise.resolve({ locale: 'es' }),
+    }
   )
   return { status: res.status, json: (await res.json()) as { success: boolean; error?: string } }
 }
 
 beforeEach(() => {
-  bd.centro = { nombre: 'Centro Demo', identificador_acreedor: 'ES81ZZZB00000000' }
+  bd.centro = {
+    nombre: 'Centro Demo',
+    identificador_acreedor: 'ES81ZZZB00000000',
+    direccion: 'Calle 2',
+  }
   bd.llamadas = []
   bd.rpcArgs = null
   bd.validada = false
+  bd.activo = null
+  bd.subidas = []
 })
 
-describe('POST /family/domiciliacion (0c-2)', () => {
-  it('sin CID del centro: 409 centro_sin_cid, sin subir ni llamar a la RPC', async () => {
-    bd.centro = { nombre: 'Centro Demo', identificador_acreedor: null }
+describe('POST /family/domiciliacion (2026-11-22: el PDF del servidor, sellado)', () => {
+  it('sin mandato activo: registra un v3 con su fichero sellado, sin upsert', async () => {
+    const r = await enviar()
+    expect(r.json.success).toBe(true)
+    expect(bd.llamadas).toEqual(['sube', 'registrar_mandato_sepa'])
+    const { path, upsert, bytes } = bd.subidas[0]
+    expect(upsert).toBe(false)
+    expect(bd.rpcArgs!.p_documento_sha256).toBe(createHash('sha256').update(bytes).digest('hex'))
+    expect(path).toBe(
+      `${CENTRO}/familia/${FAMILIA}/mandato-${bd.rpcArgs!.p_texto_hash as string}.pdf`
+    )
+  })
+
+  it('con mandato activo, sustituye; con la familia validada, propone', async () => {
+    bd.activo = { id: 'm1' }
+    await enviar()
+    expect(bd.llamadas).toEqual(['sube', 'sustituir_mandato_sepa'])
+    bd.llamadas = []
+    bd.validada = true
+    await enviar()
+    expect(bd.llamadas).toEqual(['sube', 'proponer_mandato_sepa'])
+  })
+
+  it('sin CID del centro: 409 centro_sin_cid, sin subir ni registrar', async () => {
+    bd.centro = { nombre: 'Centro Demo', identificador_acreedor: null, direccion: null }
     expect(await enviar()).toEqual({
       status: 409,
       json: { success: false, error: 'alta.sepa.errors.centro_sin_cid' },
@@ -110,53 +144,16 @@ describe('POST /family/domiciliacion (0c-2)', () => {
     expect(bd.llamadas).toEqual([])
   })
 
-  it('con CID, la RPC recibe el v2 con el hash del texto v2', async () => {
-    const r = await enviar()
-    expect(r.json.success).toBe(true)
-    expect(bd.llamadas).toEqual(['sube', 'registrar_mandato_sepa'])
-    const a = bd.rpcArgs!
-    expect(a).toMatchObject({
-      p_titular_documento: '12345678Z',
-      p_titular_direccion: 'Calle Demo 1, Valencia',
-      p_acreedor_cid: 'ES81ZZZB00000000',
-      p_acreedor_nombre: 'Centro Demo',
-    })
-    expect(a.p_texto_hash).toBe(
-      createHash('sha256')
-        .update(
-          textoCanonicoMandatoV2({
-            identificadorMandato: 'NIDO-A-B-2',
-            iban: IBAN,
-            titular: 'Tutor Demo',
-            titularDocumento: '12345678Z',
-            titularDireccion: 'Calle Demo 1, Valencia',
-            acreedorNombre: 'Centro Demo',
-            acreedorCid: 'ES81ZZZB00000000',
-            fechaFirmaIso: a.p_fecha_firma as string,
-          })
-        )
-        .digest('hex')
-    )
-  })
-
   it('el documento y la dirección se validan antes de subir nada', async () => {
     for (const [campos, error] of [
       [{ titular_documento: '12345678A' }, 'alta.sepa.errors.documento'],
-      [{ titular_direccion: '' }, 'alta.sepa.errors.direccion'],
+      [{ titular_direccion: 'C/1' }, 'alta.sepa.errors.direccion'],
     ] as const) {
       bd.llamadas = []
-      expect.soft((await enviar(campos)).json, JSON.stringify(campos)).toEqual({
-        success: false,
-        error,
-      })
+      expect
+        .soft((await enviar(campos)).json, JSON.stringify(campos))
+        .toEqual({ success: false, error })
       expect.soft(bd.llamadas).toEqual([])
     }
-  })
-
-  it('2026-11-20 · familia validada: el mandato del tutor se propone, no se registra', async () => {
-    bd.validada = true
-    const r = await enviar()
-    expect(r.json).toMatchObject({ success: true, pendiente: true })
-    expect(bd.llamadas).toEqual(['sube', 'proponer_mandato_sepa'])
   })
 })

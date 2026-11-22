@@ -1,31 +1,33 @@
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
-import { MAX_LARGO_IDENTIFICADOR } from '@/features/alta/lib/mandato-sepa'
+import { generarIdentificadorMandato } from '@/features/alta/lib/mandato-sepa'
 import {
   acreedorDelCentro,
   errorDatosTitular,
   mandatoV2,
-  motivoRechazoV2,
 } from '@/features/alta/lib/mandato-v2-servidor'
-import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
+import {
+  errorDeFirmaMandato,
+  firmarMandatoDigital,
+  idiomaDelMandato,
+} from '@/features/alta/lib/mandato-v3-servidor'
+import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 import { familiaAltaValidada } from '@/features/cambios-pendientes/lib/gate'
-import { motivoCola, proponerMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const MAX_PDF_BYTES = 10 * 1024 * 1024
 const MAX_FIRMA_CHARS = 500000
 
 interface RespuestaOk {
   success: true
   /** 2026-11-20: con la familia ya validada, el mandato del tutor espera a Dirección en la cola. */
   pendiente: boolean
-  mandato: { identificador: string; documento: { path: string; url: string | null } }
+  /** El mandato registrado; su PDF se abre por `/{locale}/mandato-sepa/{id}`, nunca por un enlace. */
+  mandato: { identificador: string; id: string | null; conDocumento: boolean }
 }
 interface RespuestaError {
   success: false
@@ -36,24 +38,30 @@ function err(error: string, status = 400): Response {
   return Response.json({ success: false, error } satisfies RespuestaError, { status })
 }
 
+const CLAVES = {
+  noAutorizado: 'alta.errors.no_autorizado',
+  otroIban: 'alta.sepa.errors.mandato_activo_otro_iban',
+  guardado: 'alta.sepa.errors.guardado',
+  subida: 'alta.documentos.errors.subida',
+}
+
 /**
- * F11-G-2 (cifrado en G-2bis) — alta del **mandato SEPA Core** (paso 8 del wizard). El tutor 1
- * (titular) firma con trazo; el cliente genera el PDF (jsPDF) y lo envía aquí junto al IBAN, el
- * titular, el identificador único y el trazo. Todo va con el **cliente del USUARIO**:
- *  - el PDF se sube al bucket `mandato-sepa` en una ruta DETERMINISTA `{centroId}/{ninoId}/mandato.pdf`
- *    con `upsert` (la RLS de storage autoriza al tutor legal; re-firmar sobrescribe, sin huérfanos),
- *  - la fila de `mandatos_sepa` se persiste vía RPC `registrar_mandato_sepa` (SECURITY DEFINER) que
- *    **autoriza `es_tutor_legal_de` y CIFRA el IBAN** antes del upsert → el route ya NO usa
- *    service-role (#108).
- * El `texto_hash` (texto canónico v2, con el CID del centro y el documento y la dirección del
- * titular; 0c-2) se calcula aquí (servidor) sobre el IBAN **en claro del formulario** (ancla el
- * contenido firmado, independiente del cifrado en reposo). El IBAN nunca se almacena en claro.
+ * El mandato SEPA del paso 8 del alta. Desde el 2026-11-22 (cierre del mandato,
+ * `docs/specs/mandato-sepa-cierre.md`) el móvil manda los datos y el trazo, y el PDF lo compone el
+ * SERVIDOR (`firmarMandatoDigital`): su sha256 entra en el sello v3, el fichero se llama por el sello
+ * y se sube sin `upsert`. Antes lo componía el navegador y aquí solo se miraba que fuera un PDF.
+ *
+ * - **El tutor legal** firma con el dedo. Con el alta de la familia validada, el mandato va a la
+ *   cola (`proponer`); si no, `registrar` (con el mismo IBAN crea un mandato nuevo y conserva el
+ *   anterior; con otro, `mandato_activo_otro_iban`).
+ * - **Dirección, presencial** (re-derivado aquí, nunca del cliente): sin trazo y SIN PDF. La prueba
+ *   es el papel; el sello v2 cubre lo que teclea la directora. El superusuario no.
  */
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ ninoId: string }> }
+  { params }: { params: Promise<{ locale: string; ninoId: string }> }
 ): Promise<Response> {
-  const { ninoId } = await params
+  const { locale, ninoId } = await params
 
   const supabase = await createClient()
   const {
@@ -67,17 +75,9 @@ export async function POST(
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
-  if (!nino) return err('alta.errors.no_autorizado', 403)
-  // F-2c-1: el mandato es de la FAMILIA. `ninos.familia_id` es NOT NULL (F-2b-3);
-  // si por integridad faltara, no se puede registrar el mandato.
-  if (!nino.familia_id) return err('alta.errors.no_autorizado', 403)
+  if (!nino || !nino.familia_id) return err('alta.errors.no_autorizado', 403)
 
-  // Modo Dirección (B2): la Directora del centro del niño registra el mandato con respaldo
-  // en PAPEL. Se RE-DERIVA server-side (nunca del cliente) → 'presencial' + sin trazo (el
-  // PDF se genera con la nota "firmado en papel"). Tutor legal => 'digital' con trazo (igual).
   const esPresencial = await esAdminDeCentroDeNino(supabase, nino.id, user.id)
-  // El mandato presencial lo registra la directora, que tiene a la familia delante; el
-  // superusuario no (ADR-0061; la RPC también se lo cierra). Antes de subir nada.
   if (esPresencial && (await esSuperusuario(supabase))) {
     return err('alta.errors.presencial_solo_direccion', 403)
   }
@@ -86,21 +86,14 @@ export async function POST(
   try {
     form = await request.formData()
   } catch {
-    return err('alta.documentos.errors.subida')
+    return err('alta.sepa.errors.guardado')
   }
-
-  const file = form.get('file')
   const ibanRaw = form.get('iban')
   const titular = form.get('titular')
-  const identificador = form.get('identificador_mandato')
   const nombreTecleado = form.get('nombre_tecleado')
   const firmaImagen = form.get('firma_imagen')
   const titularDocumento = form.get('titular_documento')
   const titularDireccion = form.get('titular_direccion')
-
-  if (!(file instanceof Blob)) return err('alta.documentos.errors.subida')
-  if (file.type !== 'application/pdf') return err('alta.documentos.errors.tipo_pdf')
-  if (file.size > MAX_PDF_BYTES) return err('alta.documentos.errors.tamano')
 
   if (typeof ibanRaw !== 'string' || !ibanValido(ibanRaw)) return err('alta.sepa.errors.iban')
   if (typeof titular !== 'string' || titular.trim().length < 2 || titular.length > 140)
@@ -108,115 +101,91 @@ export async function POST(
   const errorTitular = errorDatosTitular(titularDocumento, titularDireccion)
   if (errorTitular) return err(`alta.sepa.errors.${errorTitular}`)
   if (
-    typeof identificador !== 'string' ||
-    identificador.length < 1 ||
-    identificador.length > MAX_LARGO_IDENTIFICADOR
-  )
-    return err('alta.sepa.errors.guardado')
-  if (
     typeof nombreTecleado !== 'string' ||
     nombreTecleado.trim().length < 2 ||
     nombreTecleado.length > 140
   )
     return err('alta.sepa.errors.nombre')
-  // Presencial (modo Dirección): sin trazo (firma_imagen vacía). Digital (tutor): trazo
-  // válido obligatorio, como hasta ahora.
   if (
     !esPresencial &&
     (typeof firmaImagen !== 'string' ||
-      !firmaImagen.startsWith('data:image/') ||
+      !firmaImagen.startsWith('data:image/png') ||
       firmaImagen.length > MAX_FIRMA_CHARS)
   )
     return err('alta.sepa.errors.firma')
-  const firmaParaRpc = esPresencial ? '' : (firmaImagen as string)
 
-  const iban = normalizarIban(ibanRaw)
-  // 2026-11-20 (regla de Jose, opción A): con el alta de la familia validada, el mandato del tutor es
-  // prueba y va a la cola. Su PDF va a una ruta NUEVA: el validado no se sobrescribe (la base tampoco
-  // lo deja). Dirección, presencial, sigue registrando directo.
-  const enCola =
-    !esPresencial && (await familiaAltaValidada(supabase, nino.centro_id, nino.familia_id))
-  // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos. En la cola, otra.
-  const path = enCola
-    ? `${nino.centro_id}/${nino.id}/mandato-${Date.now()}.pdf`
-    : `${nino.centro_id}/${nino.id}/mandato.pdf`
-
-  // Acreedor = centro, con su CID. Lo lee el cliente de usuario (RLS `centros`:
-  // pertenece_a_centro → el tutor lo ve). Sin CID no se firma ningún mandato (0c, 2026-11-04): el
-  // paso no aparece en el alta, y aquí se cierra antes de subir nada.
   const acreedor = await acreedorDelCentro(supabase, nino.centro_id)
   if (!acreedor) return err('alta.errors.no_autorizado', 403)
   if (!acreedor.cid) return err('alta.sepa.errors.centro_sin_cid', 409)
 
-  const fechaFirmaIso = new Date().toISOString()
-  // El texto canónico v2: con el CID y el documento y la dirección del titular.
-  const v2 = mandatoV2({
-    identificadorMandato: identificador,
-    iban,
-    titular,
-    titularDocumento: titularDocumento as string,
-    titularDireccion: titularDireccion as string,
-    acreedor: { nombre: acreedor.nombre, cid: acreedor.cid },
-    fechaFirmaIso,
-  })
-
-  // 1. Subida del PDF (cliente de usuario; RLS de storage autoriza al tutor). `upsert` para
-  //    sobrescribir en re-firma sin necesitar DELETE (que es admin-only en este bucket).
-  const subida = await supabase.storage
-    .from(BUCKET_MANDATO_SEPA)
-    .upload(path, file, { contentType: 'application/pdf', upsert: !enCola })
-  if (subida.error) {
-    const msg = subida.error.message
-    if (/row-level security|unauthorized|403/i.test(msg))
-      return err('alta.errors.no_autorizado', 403)
-    logger.warn('mandato-sepa: upload', msg)
-    return err('alta.documentos.errors.subida', 500)
-  }
-
-  // 2. Fila vía RPC SECURITY DEFINER: autoriza es_tutor_legal_de y CIFRA el IBAN antes del
-  //    upsert (sin service-role). El IBAN en claro solo viaja como parámetro, nunca se almacena.
   const ipAddress = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
-  const args = {
-    p_familia_id: nino.familia_id,
-    p_nino_id: nino.id,
-    p_iban: iban,
-    p_titular: titular.trim(),
-    p_identificador_mandato: identificador,
-    p_documento_path: path,
-    p_firma_imagen: firmaParaRpc,
-    p_nombre_tecleado: nombreTecleado.trim(),
-    p_texto_hash: v2.textoHash,
-    p_ip_address: ipAddress,
-    p_user_agent: userAgent ?? '',
-    p_fecha_firma: fechaFirmaIso,
-    p_metodo: esPresencial ? ('presencial' as const) : ('digital' as const),
-    ...v2.rpc,
-  }
-  const { error: rpcErr } = enCola
-    ? await proponerMandatoSepa(supabase, args)
-    : await supabase.rpc('registrar_mandato_sepa', args)
-  if (rpcErr) {
-    const cola = motivoCola(rpcErr.hint)
-    if (cola) return err(cola, 409)
-    // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).
-    if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
-    const motivo = motivoRechazoV2(rpcErr.hint)
-    if (motivo) return err(`alta.sepa.errors.${motivo}`, 409)
-    // F-2c-1: la familia ya tiene un mandato ACTIVO con OTRO IBAN → registrar no pisa el
-    // histórico. El cambio de cuenta va por sustituir_mandato_sepa (2c-3/2c-4). Se propaga
-    // como conflicto legible (no 500 silencioso).
-    if (/mandato_activo_otro_iban/i.test(rpcErr.message))
-      return err('alta.sepa.errors.mandato_activo_otro_iban', 409)
-    logger.warn('mandato-sepa: rpc', rpcErr.message)
-    return err('alta.sepa.errors.guardado', 500)
+  if (esPresencial) {
+    const identificador = generarIdentificadorMandato(nino.centro_id, user.id, Date.now())
+    const fechaFirmaIso = new Date().toISOString()
+    const iban = normalizarIban(ibanRaw)
+    const v2 = mandatoV2({
+      identificadorMandato: identificador,
+      iban,
+      titular,
+      titularDocumento: titularDocumento as string,
+      titularDireccion: titularDireccion as string,
+      acreedor: { nombre: acreedor.nombre, cid: acreedor.cid },
+      fechaFirmaIso,
+    })
+    const { data, error } = await registrarOSustituirMandatoSepa(supabase, false, {
+      p_familia_id: nino.familia_id,
+      p_nino_id: nino.id,
+      p_iban: iban,
+      p_titular: titular.trim(),
+      p_identificador_mandato: identificador,
+      p_documento_path: null,
+      p_firma_imagen: '',
+      p_nombre_tecleado: nombreTecleado.trim(),
+      p_texto_hash: v2.textoHash,
+      p_ip_address: ipAddress,
+      p_user_agent: userAgent,
+      p_fecha_firma: fechaFirmaIso,
+      p_metodo: 'presencial',
+      ...v2.rpc,
+    })
+    if (error) {
+      const e = errorDeFirmaMandato(error, CLAVES)
+      return err(e.clave, e.status)
+    }
+    return Response.json({
+      success: true,
+      pendiente: false,
+      mandato: { identificador, id: data ?? null, conDocumento: false },
+    } satisfies RespuestaOk)
   }
 
-  const url = await firmarRuta(supabase, BUCKET_MANDATO_SEPA, path)
+  const enCola = await familiaAltaValidada(supabase, nino.centro_id, nino.familia_id)
+  const r = await firmarMandatoDigital(supabase, {
+    familiaId: nino.familia_id,
+    centroId: nino.centro_id,
+    ninoId: nino.id,
+    usuarioId: user.id,
+    acreedor: { ...acreedor, cid: acreedor.cid },
+    iban: ibanRaw,
+    titular,
+    titularDocumento: titularDocumento as string,
+    titularDireccion: titularDireccion as string,
+    nombreTecleado,
+    firmaImagen: firmaImagen as string,
+    idioma: idiomaDelMandato(locale),
+    ipAddress,
+    userAgent,
+    via: enCola ? 'proponer' : 'registrar',
+  })
+  if (r.error) {
+    const e = errorDeFirmaMandato(r.error, CLAVES)
+    return err(e.clave, e.status)
+  }
   return Response.json({
     success: true,
     pendiente: enCola,
-    mandato: { identificador, documento: { path, url } },
+    mandato: { identificador: r.identificador, id: r.mandatoId, conDocumento: true },
   } satisfies RespuestaOk)
 }

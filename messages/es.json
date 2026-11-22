@@ -1609,6 +1609,13 @@
         "no_se_pudo_leer": "No se ha podido leer qué niños tienen la tarjeta. Vuelve a cargar la página.",
         "vacio": "Todos los niños matriculados tienen la tarjeta sanitaria."
       },
+      "mandatos_por_refirmar": {
+        "titulo": "Mandatos SEPA pendientes de volver a firmar",
+        "subtitulo": "Se firmaron antes de que el mandato llevara el identificador de acreedor del centro y el documento y la dirección del titular. Siguen activos y no se tocan: la familia tiene que volver a firmar la domiciliación.",
+        "no_se_pudo_leer": "No se ha podido leer qué mandatos faltan por volver a firmar. Vuelve a cargar la página.",
+        "vacio": "Ningún mandato activo está pendiente de volver a firmar.",
+        "firmado": "Firmado el {fecha}"
+      },
       "sin_acceso_ficha": {
         "titulo": "Tutores sin acceso a la ficha médica",
         "subtitulo": "No pueden firmar la ficha del alta hasta que les des acceso a la ficha médica.",
