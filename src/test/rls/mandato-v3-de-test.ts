@@ -46,7 +46,7 @@ export async function conPdfV3(cliente: SupabaseClient<Database>, args: object):
   const acreedorCid = String(a.p_acreedor_cid ?? c?.identificador_acreedor ?? '')
   const acreedorDireccion = (c?.direccion ?? '').trim()
   const fecha = new Date(String(a.p_fecha_firma ?? new Date().toISOString())).toISOString()
-  const firma =
+  const dada =
     typeof a.p_firma_imagen === 'string' && a.p_firma_imagen !== '' ? a.p_firma_imagen : PNG
   const identificador = String(a.p_identificador_mandato)
   const comun = {
@@ -60,12 +60,23 @@ export async function conPdfV3(cliente: SupabaseClient<Database>, args: object):
     acreedorDireccion,
     fechaFirmaIso: fecha,
   }
-  const pdf = generarMandatoPdf({
-    ...comun,
-    firmaDataUrl: firma,
-    idioma: 'es',
-    plantillaVersion: PLANTILLA_PDF_MANDATO_VIGENTE,
-  })
+  // Varios tests pasan una cabecera de PNG truncada (`iVBORw0KGgo=`) que jspdf no decodifica. La
+  // base no decodifica la imagen, así que se firma con la 1×1 válida y la llamada lleva esa misma.
+  const componer = (firmaDataUrl: string) =>
+    generarMandatoPdf({
+      ...comun,
+      firmaDataUrl,
+      idioma: 'es',
+      plantillaVersion: PLANTILLA_PDF_MANDATO_VIGENTE,
+    })
+  let firma = dada
+  let pdf: Uint8Array
+  try {
+    pdf = componer(dada)
+  } catch {
+    firma = PNG
+    pdf = componer(PNG)
+  }
   const documentoSha256 = sha256(pdf)
   const sello = sha256(
     textoCanonicoMandatoV3({
