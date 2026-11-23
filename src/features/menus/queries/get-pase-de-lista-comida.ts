@@ -44,22 +44,26 @@ export async function getPaseDeListaComida(
 ): Promise<PaseDeListaComidaState> {
   const supabase = await createClient()
 
-  const { data: aula } = await supabase
+  const { data: aula, error: errAula } = await supabase
     .from('aulas')
     .select('centro_id')
     .eq('id', aulaId)
     .maybeSingle()
 
+  // C, 2026-11-23: una lectura que falla no se pinta como «sin plantilla», «día sin menú» ni
+  // «nada apuntado»; el pase no sale (como con las alertas médicas).
+  if (errAula) throw new Error(`pase de comidas, aula: ${errAula.message}`)
   if (!aula) {
     return { kind: 'sin_plantilla_publicada' }
   }
   const centroId = (aula as AulaCentro).centro_id
 
   // 1. Centro abierto? Si no, devuelve el tipo del día.
-  const { data: tipoDia } = await supabase.rpc('tipo_de_dia', {
+  const { data: tipoDia, error: errTipoDia } = await supabase.rpc('tipo_de_dia', {
     p_centro_id: centroId,
     p_fecha: fecha,
   })
+  if (errTipoDia) throw new Error(`pase de comidas, tipo de día: ${errTipoDia.message}`)
   const abiertos = ['lectivo', 'escuela_verano', 'escuela_navidad', 'jornada_reducida']
   if (tipoDia && !abiertos.includes(tipoDia)) {
     return {
@@ -72,7 +76,7 @@ export async function getPaseDeListaComida(
 
   // 2. Hay plantilla publicada para mes/año?
   const [anio, mes] = fecha.split('-').map((s) => Number(s))
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: errPlantilla } = await supabase
     .from('plantillas_menu_mensual')
     .select('id')
     .eq('centro_id', centroId)
@@ -82,30 +86,33 @@ export async function getPaseDeListaComida(
     .is('deleted_at', null)
     .maybeSingle()
 
+  if (errPlantilla) throw new Error(`pase de comidas, plantilla: ${errPlantilla.message}`)
   if (!plantilla) {
     return { kind: 'sin_plantilla_publicada' }
   }
 
   // 3. Hay menu_dia para esa fecha?
-  const { data: menu } = await supabase
+  const { data: menu, error: errMenu } = await supabase
     .from('menu_dia')
     .select('*')
     .eq('plantilla_id', plantilla.id)
     .eq('fecha', fecha)
     .maybeSingle()
 
+  if (errMenu) throw new Error(`pase de comidas, menú del día: ${errMenu.message}`)
   if (!menu) {
     return { kind: 'dia_sin_menu' }
   }
 
   // 4. Listar niños del aula que toman sólidos.
-  const { data: matriculas } = await aplicarMatriculaActiva(
+  const { data: matriculas, error: errMatriculas } = await aplicarMatriculaActiva(
     supabase
       .from('matriculas')
       .select('ninos(id, nombre, apellidos, foto_url)')
       .eq('aula_id', aulaId)
   )
 
+  if (errMatriculas) throw new Error(`pase de comidas, matrículas: ${errMatriculas.message}`)
   const ninosBruto = ((matriculas ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)
     .filter((n): n is NonNullable<MatriculaJoinNino['ninos']> => n !== null)
@@ -162,7 +169,7 @@ export async function getPaseDeListaComida(
   // 5. Comidas ya registradas para esos niños/fecha/momento, filtradas
   //    por tipo_plato no nulo (las del batch del pase de lista). Necesitamos
   //    saber la agenda_id de cada niño para esa fecha.
-  const { data: agendas } = await supabase
+  const { data: agendas, error: errAgendas } = await supabase
     .from('agendas_diarias')
     .select('id, nino_id')
     .in(
@@ -171,6 +178,7 @@ export async function getPaseDeListaComida(
     )
     .eq('fecha', fecha)
 
+  if (errAgendas) throw new Error(`pase de comidas, agendas: ${errAgendas.message}`)
   const agendaIdByNino = new Map<string, string>(
     ((agendas ?? []) as Array<{ id: string; nino_id: string }>).map((a) => [a.nino_id, a.id])
   )
@@ -185,13 +193,14 @@ export async function getPaseDeListaComida(
   }> = []
 
   if (agendaIds.length > 0) {
-    const { data: comidas } = await supabase
+    const { data: comidas, error: errComidas } = await supabase
       .from('comidas')
       .select('id, agenda_id, momento, cantidad, descripcion, tipo_plato')
       .in('agenda_id', agendaIds)
       .eq('momento', momento)
       .not('tipo_plato', 'is', null)
 
+    if (errComidas) throw new Error(`pase de comidas, comidas apuntadas: ${errComidas.message}`)
     const agendaToNino = new Map<string, string>()
     for (const [nino, ag] of agendaIdByNino.entries()) agendaToNino.set(ag, nino)
 
