@@ -1,7 +1,9 @@
 import { z } from 'zod'
 
+import { horaSchema as horaSchemaComun } from '@/shared/lib/hora'
+
 // --- Helpers ------------------------------------------------------------------
-const horaSchema = z.string().regex(/^\d{2}:\d{2}$/, 'agenda.validation.hora_invalida')
+const horaSchema = horaSchemaComun('agenda.validation.hora_invalida')
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'agenda.validation.fecha_invalida')
 const observacionesSchema = z.string().max(500, 'agenda.validation.observaciones_largas')
 
