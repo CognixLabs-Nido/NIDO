@@ -224,7 +224,7 @@ queda (el `nino_id` es informativo). En el bucket hay 3 objetos, los 3 nombrados
 - **Los nombres `zz_`** hacen que el trigger del v1 dispare antes: en un v1 se sigue leyendo su
   motivo (`v1_solo_existentes`).
 
-## Pendiente: el PNG que no decodifica (decidido el 2026-11-23)
+## El PNG que no decodifica (decidido el 2026-11-23; hecho el 2026-11-23)
 
 Encontrado al arreglar el helper de los tests de la migración 2, leyendo el código (sin medir): la
 ruta del mandato digital comprueba que el trazo empiece por `data:image/png` y su longitud, y nada
@@ -246,3 +246,34 @@ lectura es que da un 500»: lánzalo contra la ruta y copia lo que devuelve.»
   rutas que llaman a `firmarMandatoDigital`: la del alta y `family/domiciliacion`.
 - **El orden:** medirlo contra la ruta y copiar lo que devuelve; el test con ese PNG exacto, en
   rojo; después el arreglo.
+
+**Hecho (2026-11-23):**
+
+- **Medido antes, contra las dos rutas** (el handler real, con la base simulada y el
+  `generarMandatoPdf` de verdad): con `data:image/png;base64,iVBORw0KGgo=` el handler **lanza**
+  `RangeError: Offset is outside the bounds of the DataView` y no llama a nada (ni la subida ni la
+  RPC), en la del alta y en `family/domiciliacion`. No devuelve respuesta: el 500 lo pone Next, y lo
+  que la familia veía era el `catch` de su pantalla al leer esa respuesta, «No se pudo guardar el
+  mandato SEPA» (`errors.guardado`). Leído, no medido en un servidor: hace falta una sesión.
+- **El arreglo:** `generarMandatoPdf` envuelve SOLO la línea que pinta el trazo y lanza
+  `FirmaNoDecodifica`; `firmarMandatoDigital` traduce esa y ninguna otra (`hint` `firma`), y
+  `errorDeFirmaMandato` la dice como el JPEG: 400 `alta.sepa.errors.firma` («Dibuja tu firma para
+  continuar»). Un fallo de otra parte del PDF sigue su camino: decirle «dibuja tu firma» por otra
+  cosa la mandaría a buscar donde no está.
+- **Tests:** el PNG exacto en las dos rutas (primero, en rojo: `RangeError`); `mandato-pdf-firma`
+  (el truncado da `FirmaNoDecodifica` con el `RangeError` como causa; uno válido compone; la
+  plantilla desconocida no sale como firma) y `firmar-mandato-digital-firma` (solo esa se traduce,
+  sin subir). Mutaciones, las cuatro como se predijeron: sin la traducción, las rutas reciben 500
+  `guardado`; con el catch ancho, el fallo ajeno se diría como firma; sin el envoltorio, vuelve el
+  `RangeError`; una plantilla que lanzara `FirmaNoDecodifica` se diría como firma.
+
+## La migración 2 en producción (2026-11-23, solo lectura, `~/nido-logs/13/m2/verifica/m2.sql`)
+
+El registro tiene `20270204120000`; las tres funciones dan el md5 normalizado del fichero, con
+`SECURITY DEFINER` donde lo dice (solo `mandato_sepa_objeto_defensa`) y sin `EXECUTE` para `anon`,
+`authenticated` ni `service_role`; los tres triggers, su definición y `O`, iguales a las de la guarda;
+en el bucket quedan exactamente las tres políticas, con su md5 de antes, y ninguna que cambie o borre
+objetos de `mandato-sepa`. Los datos, como estaban: 3 mandatos v1 (2 activos) y 3 objetos, los 3
+nombrados. Controles positivos: la función con una línea de lógica añadida da «distinto»; el
+trigger esperado en `A` en vez de `O`, «distinto»; y el mismo predicado de «ninguna que cambie»
+cuenta 2 en `dni-tutores`.
