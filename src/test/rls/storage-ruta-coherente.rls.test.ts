@@ -181,9 +181,13 @@ describe('PR 3 — las rutas de Storage no cruzan de centro', () => {
     expect((await leer(directoraB, 'mandato-sepa', propia)).error).toBeNull()
   })
 
-  it('mandato-sepa por niño: la ruta del niño sigue igual', async () => {
+  it('mandato-sepa por niño: la ruta del niño ya no admite nada, ni la propia (20270204120000)', async () => {
+    // La migración 2 del mandato quita la política de subir por la ruta del niño: los mandatos van
+    // por la de la familia (el caso de arriba). Hasta entonces la propia subía.
     const propia = `${centroB.id}/${ninoB.id}/${randomUUID()}.pdf`
-    expect((await subir(tutorB, 'mandato-sepa', propia, PDF, 'application/pdf')).error).toBeNull()
+    expect(
+      (await subir(tutorB, 'mandato-sepa', propia, PDF, 'application/pdf')).error
+    ).not.toBeNull()
     const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.pdf`
     expect(
       (await subir(tutorB, 'mandato-sepa', cruzada, PDF, 'application/pdf')).error

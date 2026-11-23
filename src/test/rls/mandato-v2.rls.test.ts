@@ -23,6 +23,8 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 
+import { conPdfV3 } from './mandato-v3-de-test'
+
 /**
  * El mandato v2 (`20261229120000`, 0c-1), contra la BD real.
  *
@@ -263,18 +265,20 @@ describe('El mandato v2 y el CID obligatorio', () => {
       titular_documento: 'X1234567L',
     })
     expect(v1.error?.code).toBe('23514')
-    // Y al cambiarlo: el v2 bueno no pierde su hash.
+    // Y al cambiarlo: el v2 bueno no pierde su hash. Desde 20270204120000 lo para antes el trigger de
+    // la fila (una firma no cambia); el CHECK sigue, detrás.
     const u = actualizarMandato(ok.data!.id, { texto_hash: null })
-    expect(u.error?.code).toBe('23514')
+    expect(u.error?.message ?? 'SIN ERROR: cambió').toMatch(/una firma no cambia/)
   })
 
   it('el documento y la dirección del titular quedan fuera de audit_log y salen en el export', async () => {
     const fam = await familia(conCid.id, true)
-    // Lo firma el tutor (digital), para pedir después su propio export.
+    // Lo firma el tutor (digital), para pedir después su propio export. Desde 20270204120000 un
+    // digital nuevo es v3, con el PDF del servidor: lleva también los datos del v2.
     await asignarRol(tutor.id, conCid.id, 'tutor_legal')
     const r = await cTutor.rpc(
       'registrar_mandato_sepa',
-      args(fam, IBAN_1, { p_metodo: 'digital', ...v2(conCid.nombre) })
+      await conPdfV3(cTutor, args(fam, IBAN_1, { p_metodo: 'digital', ...v2(conCid.nombre) }))
     )
     expect(r.error).toBeNull()
     const id = r.data as unknown as string
@@ -287,7 +291,7 @@ describe('El mandato v2 y el CID obligatorio', () => {
     // Premisa: el alta del mandato está auditada (si no, «no está» no diría nada).
     expect(audit).toHaveLength(1)
     const fila = audit![0]!.valores_despues as Record<string, unknown>
-    expect(fila).toMatchObject({ version_canonico: 2, acreedor_cid: CID_PRUEBA })
+    expect(fila).toMatchObject({ version_canonico: 3, acreedor_cid: CID_PRUEBA })
     for (const k of ['titular_documento', 'titular_direccion', 'titular', 'iban_cifrado']) {
       expect.soft(fila, k).not.toHaveProperty(k)
     }
@@ -304,7 +308,7 @@ describe('El mandato v2 y el CID obligatorio', () => {
     expect(mandatos).toContainEqual(
       expect.objectContaining({
         identificador_mandato: expect.stringMatching(/^NIDO-V2TEST-/),
-        version_canonico: 2,
+        version_canonico: 3,
         titular_documento: 'X1234567L',
         titular_direccion: 'Calle Prueba 1, Valencia',
         acreedor_cid: CID_PRUEBA,

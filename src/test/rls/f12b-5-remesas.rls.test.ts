@@ -25,6 +25,7 @@ import { insertarRecibos, pasarAEnviadoComoMarcar } from './remesa-como-sus-func
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F12-B-5 — RLS/reglas de la remesa SEPA. Verifica:
@@ -91,7 +92,7 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
     // Mandato SEPA activo de la FAMILIA del niño (vía RPC del tutor: cifra el IBAN).
     // 2026-11-20: el mandato del alta, antes de validar (con la familia validada, va a la cola).
     const { error: mandatoErr } = await antesDeValidar(ninoA.familia_id, () =>
-      cTutorA.rpc('registrar_mandato_sepa', {
+      firmarV3(cTutorA, 'registrar_mandato_sepa', {
         p_familia_id: ninoA.familia_id,
         p_nino_id: ninoA.id,
         p_iban: IBAN_DEUDOR,

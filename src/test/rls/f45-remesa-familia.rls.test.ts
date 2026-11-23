@@ -19,6 +19,7 @@ import {
 } from './setup'
 import { insertarRecibos } from './remesa-como-sus-funciones'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F-4-5 — get_mandatos_remesa a grano FAMILIA. Verifica que la RPC resuelve el mandato
@@ -90,7 +91,7 @@ describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
     const tutor = await createTestUser({ nombre: 'Tutor F45' })
     await crearFamiliaTutor(famConMandato, tutor.id, 'titular')
     const cTutor = await clientFor(tutor)
-    const { error: mandatoErr } = await cTutor.rpc('registrar_mandato_sepa', {
+    const { error: mandatoErr } = await firmarV3(cTutor, 'registrar_mandato_sepa', {
       p_familia_id: famConMandato,
       p_nino_id: null as unknown as string,
       p_iban: IBAN,

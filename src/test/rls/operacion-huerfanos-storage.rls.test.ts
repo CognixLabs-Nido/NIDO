@@ -57,6 +57,9 @@ async function existe(bucket: string, nombre: string): Promise<boolean | null> {
 }
 
 async function subir(bucket: string, nombre: string, cuerpo: Buffer = PDF) {
+  // Si ya está, se queda: desde 20270204120000 un PDF del bucket mandato-sepa no se sobrescribe,
+  // tampoco con el servicio (`mandato_sepa_objeto_defensa`), y aquí solo hace falta que exista.
+  if (await existe(bucket, nombre)) return
   const { error } = await serviceClient.storage
     .from(bucket)
     .upload(nombre, cuerpo, { contentType: 'application/pdf', upsert: true })

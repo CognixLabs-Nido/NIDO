@@ -29,6 +29,7 @@ import {
 import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
 import { recolectarNino, recolectarUsuario } from '@/features/export/lib/recolectar'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * Export RGPD (art. 15) completo — `export_datos_sujeto` (`20261014120000`).
@@ -182,7 +183,7 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
     const cTutor = await clientFor(tutor)
     // 2026-11-20: el mandato del alta, antes de validar (con la familia validada, va a la cola).
     const { error: mErr } = await antesDeValidar(nino.familia_id, () =>
-      cTutor.rpc('registrar_mandato_sepa', {
+      firmarV3(cTutor, 'registrar_mandato_sepa', {
         p_familia_id: nino.familia_id,
         p_nino_id: null,
         p_iban: 'ES76 2077 0024 0031 0257 5766',

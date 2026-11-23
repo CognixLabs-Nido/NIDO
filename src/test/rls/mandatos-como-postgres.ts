@@ -73,6 +73,9 @@ function comoFuncion(cuerpo: string, arg: string): string {
  * Sin `version_canonico`, un v2 completo (desde `20261230120000` no se crean mandatos v1): hash,
  * documento y dirección del titular de prueba y el CID y el nombre DEL CENTRO de la fila, leídos de
  * `centros` (un centro sin CID no da mandato: el CHECK lo rechaza). Lo que se le pase manda.
+ *
+ * Presencial si no se dice otra cosa: desde `20270204120000` un digital nuevo es v3, con el PDF del
+ * servidor (`zz_digital_v3`), y la fila a mano no lo lleva. El presencial v2 se sigue creando.
  */
 export function insertarMandato(fila: object): {
   data: { id: string } | null
@@ -82,6 +85,7 @@ export function insertarMandato(fila: object): {
   const completa = v2
     ? {
         version_canonico: 2,
+        metodo_firma: 'presencial',
         texto_hash: 'a'.repeat(64),
         titular_documento: 'X1234567L',
         titular_direccion: 'Calle Prueba 1, Valencia',
@@ -109,7 +113,8 @@ export function insertarMandato(fila: object): {
 /**
  * Un mandato v1 de los que ya existían (FICCIÓN de los tests, 2026-11-04: los 3 que había en
  * producción cuando se cerró el v1, `20261230120000`). El trigger `mandatos_sepa_v1_cerrado` no deja
- * crear ninguno, así que se apaga solo para este INSERT, en su transacción, y se vuelve a encender.
+ * crear ninguno, así que se apaga solo para este INSERT, en su transacción, y se vuelve a encender;
+ * y desde `20270204120000`, también `zz_digital_v3` (los v1 que había son digitales).
  * Sirve para probar lo que se puede hacer con uno que ya existe: revocarlo, borrarlo o volver a
  * firmarlo como v2. Con `iban`, lo cifra como `registrar_mandato_sepa` (el reintento del alta lo
  * descifra para comparar). La app no tiene este camino.
@@ -134,8 +139,10 @@ export function insertarMandatoV1Existente(
     comoFuncion(
       `${cifra}
        ALTER TABLE public.mandatos_sepa DISABLE TRIGGER mandatos_sepa_v1_cerrado;
+       ALTER TABLE public.mandatos_sepa DISABLE TRIGGER zz_digital_v3;
        INSERT INTO public.mandatos_sepa (${cols})
          SELECT ${cols} FROM jsonb_populate_record(NULL::public.mandatos_sepa, j) RETURNING id INTO r;
+       ALTER TABLE public.mandatos_sepa ENABLE TRIGGER zz_digital_v3;
        ALTER TABLE public.mandatos_sepa ENABLE TRIGGER mandatos_sepa_v1_cerrado;
        RETURN 'ok|' || r;`,
       json(completa)
@@ -160,7 +167,11 @@ export function actualizarMandato(id: string, cambios: object): { error: ErrorMa
   return { error }
 }
 
-/** La limpieza: borra los mandatos cuyo `columna` es `valor`. Falla si el borrado falla. */
+/**
+ * La limpieza: borra los mandatos cuyo `columna` es `valor`. Falla si el borrado falla. Desde
+ * `20270204120000` un mandato solo se borra con el marcador de los borrados sin copia y sin humano
+ * (`zz_firma_inmutable`), el que ponen `anular_alta` y `destruir_fiscal_familia`: lo pone aquí.
+ */
 export function borrarMandatos(
   columna: 'centro_id' | 'familia_id' | 'nino_id' | 'id',
   valor: string
@@ -168,10 +179,28 @@ export function borrarMandatos(
   if (!UUID.test(valor)) throw new Error(`mandatos-como-postgres: ${columna} no válido: ${valor}`)
   const { error } = respuesta(
     comoFuncion(
-      `DELETE FROM public.mandatos_sepa WHERE ${columna} = '${valor}';
+      `PERFORM set_config('app.borrar_sin_copia', 'on', true);
+       DELETE FROM public.mandatos_sepa WHERE ${columna} = '${valor}';
        RETURN 'ok|';`,
       'NULL'
     )
   )
   if (error) throw new Error(`borrarMandatos: ${error.code} ${error.message}`)
+}
+
+/**
+ * Borra un mandato SIN el marcador de los borrados sin copia: lo que haría una función cualquiera (o
+ * una cascada). Desde `20270204120000` lo para `zz_firma_inmutable`; solo para probarlo.
+ */
+export function borrarMandatoSinMarcador(id: string): { error: ErrorMandato | null } {
+  if (!UUID.test(id)) throw new Error(`mandatos-como-postgres: id no válido: ${id}`)
+  const { error } = respuesta(
+    comoFuncion(
+      `DELETE FROM public.mandatos_sepa WHERE id = '${id}';
+       IF NOT FOUND THEN RETURN 'error|P0002|mandato no encontrado'; END IF;
+       RETURN 'ok|';`,
+      'NULL'
+    )
+  )
+  return { error }
 }

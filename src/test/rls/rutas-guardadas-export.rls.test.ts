@@ -21,6 +21,7 @@ import {
 import { recolectarUsuario } from '@/features/export/lib/recolectar'
 import type { AdjuntoExport } from '@/features/export/types'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { conPdfV3, firmarV3 } from './mandato-v3-de-test'
 
 /**
  * PR 0b (Fase 4) — una ruta de documento guardada en la BD solo puede ser de su familia.
@@ -83,6 +84,9 @@ async function descarga(url: string | null): Promise<number> {
   return (await fetch(url)).status
 }
 
+/** El PDF que sube el helper en el control (por su sello); se borra al final. */
+let rutaMandatoA = ''
+
 beforeAll(async () => {
   centro = await createTestCentro('Rutas guardadas')
   familiaA = await createTestFamilia(centro.id)
@@ -112,7 +116,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await serviceClient.storage.from('dni-tutores').remove([dniB, dniA])
-  await serviceClient.storage.from('mandato-sepa').remove([mandatoB, mandatoA])
+  await serviceClient.storage
+    .from('mandato-sepa')
+    .remove([mandatoB, mandatoA, ...(rutaMandatoA ? [rutaMandatoA] : [])])
   borrarMandatos('centro_id', centro.id)
   await deleteTestUser(tutorA.id)
   await deleteTestUser(tutorB.id)
@@ -170,8 +176,16 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
 
   it('no puede registrar un mandato con el documento de B', async () => {
     const c = await clientFor(tutorA)
-    const { error } = await c.rpc('registrar_mandato_sepa', mandato(mandatoB))
-    expect(error?.code).toBe('23514')
+    // El caso es la ruta: va la de B tal cual (el helper, sin la opción, la cambiaría por la de A).
+    const args = (await conPdfV3(c, mandato(mandatoB), { rutaTalCual: true })) as {
+      p_documento_path: string
+    }
+    expect(args.p_documento_path, 'premisa: se manda el documento de B').toBe(mandatoB)
+    // Desde el v3 (20270203120000) la base deriva la ruta del sello y de la familia, y no acepta
+    // otra: la de B se para ahí (P0001 ruta_distinta), antes del trigger de 20261024130000 (23514),
+    // que para un digital v3 ya no se alcanza por las funciones.
+    const { error } = await c.rpc('registrar_mandato_sepa', args as never)
+    expect(error?.hint ?? 'SIN ERROR: registró').toBe('ruta_distinta')
     expect((await exportDe(tutorA)).some((a) => a.path === mandatoB)).toBe(false)
   })
 
@@ -183,20 +197,25 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
       p_path: dniA,
     })
     expect(dni.error).toBeNull()
-    const man = await c.rpc('registrar_mandato_sepa', mandato(mandatoA))
+    // La misma llamada que el caso de B, salvo la ruta: la que deriva la base, en la carpeta de A.
+    const man = await firmarV3(c, 'registrar_mandato_sepa', mandato(mandatoA))
     expect(man.error).toBeNull()
+    const { data: fila } = await serviceClient
+      .from('mandatos_sepa')
+      .select('id, documento_path')
+      .eq('id', man.data as unknown as string)
+      .single()
+    expect(fila?.documento_path, 'premisa: su ruta es de la familia A').toMatch(
+      new RegExp(`^${centro.id}/familia/${familiaA}/mandato-[0-9a-f]{64}\\.pdf$`)
+    )
+    rutaMandatoA = fila?.documento_path ?? ''
 
     const adjuntos = await exportDe(tutorA)
     const adjDni = adjuntos.find((a) => a.path === dniA)
     expect(await descarga(adjDni?.url_firmada ?? null)).toBe(200)
     // 2026-11-22 (cierre del mandato, «sin enlace, como la 10c»): el PDF del mandato no se firma; se
     // enlaza a su ruta, que pide sesión y deja la lectura. Sin caducidad: no hay enlace que caduque.
-    const { data: fila } = await serviceClient
-      .from('mandatos_sepa')
-      .select('id')
-      .eq('documento_path', mandatoA)
-      .single()
-    const enlace = adjuntos.find((a) => a.path === mandatoA)
+    const enlace = adjuntos.find((a) => a.path === fila?.documento_path)
     expect(enlace?.url_firmada).toBe(`/es/mandato-sepa/${fila?.id}?origen=export`)
     expect(enlace?.caduca_en).toBeNull()
   })

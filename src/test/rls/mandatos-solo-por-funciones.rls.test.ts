@@ -18,6 +18,7 @@ import { borrarMandatos } from './mandatos-como-postgres'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * `mandatos_sepa` solo se escribe por sus funciones (`20261225120000`).
@@ -123,7 +124,8 @@ describe('mandatos_sepa — solo por sus funciones', () => {
   })
 
   it('lo legítimo pasa: el tutor registra y la admin registra presencial', async () => {
-    const r = await cTutor.rpc(
+    const r = await firmarV3(
+      cTutor,
       'registrar_mandato_sepa',
       argsMandato(familia, IBAN_1, 'SOLO-FUNC-1')
     )
@@ -131,7 +133,8 @@ describe('mandatos_sepa — solo por sus funciones', () => {
     mandatoId = r.data as unknown as string
     expect((await leer(mandatoId)).estado).toBe('activo')
 
-    const p = await cAdmin.rpc(
+    const p = await firmarV3(
+      cAdmin,
       'registrar_mandato_sepa',
       argsMandato(familiaB, IBAN_2, 'SOLO-FUNC-2', 'presencial')
     )
@@ -212,7 +215,8 @@ describe('mandatos_sepa — solo por sus funciones', () => {
 
   it('lo legítimo pasa: sustituir deja el anterior revocado y uno nuevo activo', async () => {
     expect(mandatoId).toBeDefined()
-    const s = await cTutor.rpc(
+    const s = await firmarV3(
+      cTutor,
       'sustituir_mandato_sepa',
       argsMandato(familia, IBAN_2, 'SOLO-FUNC-3')
     )

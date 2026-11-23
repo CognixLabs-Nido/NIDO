@@ -19,6 +19,7 @@ import { insertarRecibos, intentarConMarcador } from './remesa-como-sus-funcione
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * PR-2 (`20261107120000`) — una devolución se resuelve UNA sola vez.
@@ -155,7 +156,7 @@ describe('PR-2 — devoluciones con una sola salida', () => {
     await asignarRol(tutoraCon.id, centro.id, 'tutor_legal')
     await crearFamiliaTutor(familiaCon, tutoraCon.id)
     const cTutoraCon = await clientFor(tutoraCon)
-    const { error } = await cTutoraCon.rpc('registrar_mandato_sepa', {
+    const { error } = await firmarV3(cTutoraCon, 'registrar_mandato_sepa', {
       p_familia_id: familiaCon,
       p_nino_id: ninoCon.id,
       p_iban: 'ES7620770024003102575766',
