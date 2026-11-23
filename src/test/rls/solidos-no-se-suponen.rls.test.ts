@@ -1,3 +1,5 @@
+import { render, screen } from '@testing-library/react'
+import { createElement } from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
@@ -55,6 +57,16 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// El texto lleva sus parámetros: así se ve a quién nombra el aviso.
+vi.mock('next-intl', () => ({
+  useTranslations: () =>
+    Object.assign(
+      (k: string, v?: Record<string, string>) => (v ? `${k} ${JSON.stringify(v)}` : k),
+      {
+        has: () => true,
+      }
+    ),
+}))
 vi.mock('next-intl/server', () => ({
   getTranslations: async () =>
     Object.assign((k: string) => k, { has: () => true, rich: (k: string) => k }),
@@ -71,10 +83,9 @@ const HOY = hoyMadrid()
 const [ANIO, MES] = HOY.split('-').map(Number)
 const RPC = 'nino_toma_comida_solida'
 
-/** Lo que el estado dice de los niños que no se pudieron comprobar (vacío si no dice nada). */
-function sinComprobar(s: Estado): string[] {
-  const v = (s as Record<string, unknown>).sinComprobarSolidos
-  return Array.isArray(v) ? v.map((n: { id: string }) => n.id) : []
+/** Los niños que el estado nombra como no comprobados. */
+function sinComprobar(s: Extract<Estado, { kind: 'listo' }>): string[] {
+  return s.sinComprobarSolidos.map((n) => n.id)
 }
 
 describe('los sólidos no se suponen', () => {
@@ -194,6 +205,17 @@ describe('los sólidos no se suponen', () => {
     expect
       .soft(sinComprobar(s), 'la pantalla nombra a los no comprobados')
       .toEqual(expect.arrayContaining([bebe, mayor]))
+    // Y la PANTALLA: el pase pintado con lo que la página le da avisa, nombrando a Bruno.
+    render(
+      createElement(PaseDeListaComidaCliente, {
+        aulaId,
+        fecha: HOY,
+        momentoInicial: 'comida',
+        states: { desayuno: s, media_manana: s, comida: s, merienda: s },
+        locale: 'es',
+      })
+    )
+    expect(screen.getByTestId('aviso-sin-comprobar-solidos').textContent).toContain('Bruno Biberon')
   })
 
   it('pase de un momento: lo mismo', async () => {

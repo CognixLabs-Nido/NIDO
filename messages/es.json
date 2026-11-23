@@ -3078,7 +3078,8 @@
         "sin_guardar": "Sin guardar",
         "guardado": "Guardado",
         "error": "Error"
-      }
+      },
+      "sin_comprobar_solidos": "No se ha podido comprobar si estos niños toman sólidos, así que no salen en la lista: {nombres}. Recarga la página antes de apuntarles comida."
     },
     "widget_familia": {
       "title": "Menú del día",

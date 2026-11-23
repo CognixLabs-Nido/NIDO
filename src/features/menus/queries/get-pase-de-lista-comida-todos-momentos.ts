@@ -117,7 +117,7 @@ export async function getPaseDeListaComidaTodosMomentos(
     .filter((n): n is NonNullable<MatriculaJoinNino['ninos']> => n !== null)
 
   if (ninosBruto.length === 0) {
-    return broadcast({ kind: 'listo', menu, filas: [], existentes: [] })
+    return broadcast({ kind: 'listo', menu, filas: [], existentes: [], sinComprobarSolidos: [] })
   }
 
   // 5. Filtrar via nino_toma_comida_solida en paralelo.
@@ -128,13 +128,17 @@ export async function getPaseDeListaComidaTodosMomentos(
       })
       if (error) {
         logger.warn('nino_toma_comida_solida failed', error.message)
-        return { ninoId: n.id, toma: true }
+        // Sin leer no se supone que come sólidos: fuera de la lista, y la pantalla lo dice (C,
+        // 2026-11-23: a un bebé de biberón no se le ofrece comida).
+        return { ninoId: n.id, toma: false, sinComprobar: true }
       }
-      return { ninoId: n.id, toma: Boolean(data) }
+      return { ninoId: n.id, toma: Boolean(data), sinComprobar: false }
     })
   )
   const ninosIdsSolidos = new Set(solidosChecks.filter((c) => c.toma).map((c) => c.ninoId))
   const ninos = ninosBruto.filter((n) => ninosIdsSolidos.has(n.id))
+  const idsSinComprobar = new Set(solidosChecks.filter((c) => c.sinComprobar).map((c) => c.ninoId))
+  const sinComprobarSolidos = ninosBruto.filter((n) => idsSinComprobar.has(n.id))
 
   // 6. Alergias graves + agendas en paralelo (1 query cada una).
   const ninoIds = ninos.map((n) => n.id)
@@ -218,6 +222,7 @@ export async function getPaseDeListaComidaTodosMomentos(
       menu,
       filas,
       existentes: existentesPorMomento[m],
+      sinComprobarSolidos,
     }
   }
   return result

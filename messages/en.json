@@ -3078,7 +3078,8 @@
         "sin_guardar": "Unsaved",
         "guardado": "Saved",
         "error": "Error"
-      }
+      },
+      "sin_comprobar_solidos": "We couldn't check whether these children eat solid food, so they're not on the list: {nombres}. Reload the page before recording a meal for them."
     },
     "widget_familia": {
       "title": "Today's menu",

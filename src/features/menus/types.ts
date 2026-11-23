@@ -45,6 +45,11 @@ export type PaseDeListaComidaState =
         descripcion: string | null
         comida_id: string
       }>
+      /**
+       * Niños cuyo «come sólidos» no se pudo leer (C, 2026-11-23). No salen en `filas`: el valor que
+       * no hace daño es «no come sólidos». La pantalla los nombra.
+       */
+      sinComprobarSolidos: PaseDeListaComidaFila['nino'][]
     }
 
 export interface PaseDeListaComidaFila {
