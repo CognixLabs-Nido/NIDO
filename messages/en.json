@@ -2116,7 +2116,8 @@
       "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming.",
       "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it.",
       "linea_arrastre": "The line of a returned receipt cannot be edited: remove it, and the return goes back to unresolved.",
-      "linea_sobrante": "A voucher credit line can’t be edited: if needed, remove it and the surplus goes back to pending."
+      "linea_sobrante": "A voucher credit line can’t be edited: if needed, remove it and the surplus goes back to pending.",
+      "metodo_recibo_sin_cambiar": "The method for this month was saved, but the draft receipt still has the previous one. Please try again."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",

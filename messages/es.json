@@ -2116,7 +2116,8 @@
       "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo.",
       "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo.",
       "linea_arrastre": "La línea de una devolución no se edita: se quita, y la devolución vuelve a quedar sin resolver.",
-      "linea_sobrante": "La línea del saldo a favor de un cheque no se edita: si hace falta, quítala y el sobrante vuelve a quedar pendiente."
+      "linea_sobrante": "La línea del saldo a favor de un cheque no se edita: si hace falta, quítala y el sobrante vuelve a quedar pendiente.",
+      "metodo_recibo_sin_cambiar": "Se ha guardado el método del mes, pero el recibo en borrador sigue con el anterior. Vuelve a intentarlo."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",

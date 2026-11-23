@@ -87,6 +87,24 @@ export async function setMetodoPagoFamiliaCore(
   }
   const esElDeLaFicha = input.metodo === familia.metodo_pago
 
+  // El recibo regular del mes, leído ANTES de escribir nada: si no se puede leer, no se sabe si
+  // hay que cambiarlo y la acción no dice que sí (C, 2026-11-23).
+  const { data: recibo, error: recLeerErr } = await supabase
+    .from('recibos')
+    .select('id, estado')
+    .eq('centro_id', centroId)
+    .eq('familia_id', input.familiaId)
+    .eq('anio', input.anio)
+    .eq('mes', input.mes)
+    .eq('es_esporadico', false)
+    .is('devuelto_de_recibo_id', null)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (recLeerErr) {
+    logger.warn('setMetodoPagoFamilia leer recibo', recLeerErr.message)
+    return fail('recibos_panel.errors.metodo_failed')
+  }
+
   // 1. La excepción del mes: se quita si es el de la ficha, se upserta si no.
   const { data: existente, error: selErr } = await supabase
     .from('metodo_pago_familia')
@@ -129,26 +147,16 @@ export async function setMetodoPagoFamiliaCore(
   }
 
   // 2. Reflejar en el recibo regular del mes si está en BORRADOR (el freeze lo permite).
-  const { data: recibo } = await supabase
-    .from('recibos')
-    .select('id, estado')
-    .eq('centro_id', centroId)
-    .eq('familia_id', input.familiaId)
-    .eq('anio', input.anio)
-    .eq('mes', input.mes)
-    .eq('es_esporadico', false)
-    .is('devuelto_de_recibo_id', null)
-    .is('deleted_at', null)
-    .maybeSingle()
-
   if (recibo && recibo.estado === 'borrador') {
     const { error: recErr } = await supabase
       .from('recibos')
       .update({ metodo: input.metodo })
       .eq('id', recibo.id)
     if (recErr) {
+      // La excepción del mes ya está guardada y el borrador sigue con el método viejo: se dice. Nada
+      // garantiza que alguien regenere, y reintentar es seguro (las dos escrituras son idempotentes).
       logger.warn('setMetodoPagoFamilia recibo', recErr.message)
-      // La preferencia ya quedó guardada; el recibo se corregirá al regenerar. No es fatal.
+      return fail('recibos_panel.errors.metodo_recibo_sin_cambiar')
     }
   }
 

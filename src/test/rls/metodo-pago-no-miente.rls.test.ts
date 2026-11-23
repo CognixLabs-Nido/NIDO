@@ -86,6 +86,7 @@ describe('el método de pago: ni se decide con lo que no se leyó ni se dice gua
 
   afterEach(() => {
     sesion.fallaTabla = null
+    sesion.fallaRpc = null
     sesion.fallaEscrituraTabla = null
   })
 
@@ -151,6 +152,23 @@ describe('el método de pago: ni se decide con lo que no se leyó ni se dice gua
       expect(sesion.fallidas, 'premisa: la lectura de la excepción falló').toBeGreaterThan(0)
       if (r.success) expect(await metodoDelRecibo(), 'el método del recibo').toBe('efectivo')
       else expect(r.success).toBe(false)
+    })
+  })
+
+  describe('1b · el recibo con una línea manual, si no se sabe si el mes está cerrado', () => {
+    it('si falla mes_cerrado, no se crea el recibo como si el mes estuviera abierto', async () => {
+      sesion.fallaRpc = 'mes_cerrado'
+      const r = await crearReciboConLineaManual({ ...linea, familiaId: familia })
+      expect(sesion.fallidas, 'premisa: la llamada de mes_cerrado falló').toBeGreaterThan(0)
+      expect(r.success, 'no dice que sí').toBe(false)
+      const { data, error } = await serviceClient
+        .from('recibos')
+        .select('id')
+        .eq('familia_id', familia)
+        .eq('anio', ANIO)
+        .eq('mes', MES)
+      if (error) throw new Error(`leer recibos: ${error.message}`)
+      expect(data, 'ningún recibo creado').toEqual([])
     })
   })
 
