@@ -17,6 +17,7 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F-2c-2 — `mandatos_sepa.iban_ultimos4` (enmascarado) rellenado por registrar/sustituir, y
@@ -84,7 +85,8 @@ describe('F-2c-2 — iban_ultimos4 (enmascarado del mandato de familia)', () => 
   }, 60_000)
 
   it('registrar rellena iban_ultimos4 con los últimos 4 del IBAN normalizado (sin espacios)', async () => {
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'registrar_mandato_sepa',
       argsMandato(familiaA, null, IBAN_1_CON_ESPACIOS, 'NIDO-F2C2-1')
     )
@@ -123,7 +125,8 @@ describe('F-2c-2 — iban_ultimos4 (enmascarado del mandato de familia)', () => 
   })
 
   it('sustituir rellena iban_ultimos4 del NUEVO IBAN; el revocado conserva el suyo', async () => {
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'sustituir_mandato_sepa',
       argsMandato(familiaA, null, IBAN_2, 'NIDO-F2C2-SUST')
     )

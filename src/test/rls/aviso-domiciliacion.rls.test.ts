@@ -21,6 +21,7 @@ import {
   type TestCentro,
 } from './setup'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * Aviso a Dirección cuando una familia firma o cambia su domiciliación por su cuenta.
@@ -169,7 +170,8 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
   // 2026-11-20 (`20270201120000`): con la familia ya validada, su mandato pasa por Dirección. Mientras
   // espera en la cola no avisa (ya lo avisa la cola); aprobado, pasa a activo y avisa como antes.
   it('la familia ya dada de alta propone su mandato: sin aviso hasta que Dirección lo aprueba', async () => {
-    const p = await cTutor.rpc(
+    const p = await firmarV3(
+      cTutor,
       'proponer_mandato_sepa',
       mandato(familia, IBAN, 'AVISO-1', 'digital')
     )
@@ -184,7 +186,8 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
   })
 
   it('lo firmado en el alta no avisa: Dirección lo ve al validarla', async () => {
-    const { error } = await cTutorAlta.rpc(
+    const { error } = await firmarV3(
+      cTutorAlta,
       'registrar_mandato_sepa',
       mandato(familiaAlta, IBAN, 'AVISO-ALTA', 'digital')
     )
@@ -194,7 +197,8 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
 
   it('el mandato presencial no avisa, aunque lo registre otra persona de Dirección', async () => {
     // Lo registra la directora y mira la admin: no lo excluye «otro usuario», sino «solo digital».
-    const { error } = await cDirectora.rpc(
+    const { error } = await firmarV3(
+      cDirectora,
       'registrar_mandato_sepa',
       mandato(familiaPresencial, IBAN, 'AVISO-PRES', 'presencial')
     )
@@ -213,7 +217,8 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
     expect(await avisoAdmin()).toEqual([])
 
     // El cambio de cuenta de una familia validada también pasa por Dirección (2026-11-20).
-    const p = await cTutor.rpc(
+    const p = await firmarV3(
+      cTutor,
       'proponer_mandato_sepa',
       mandato(familia, IBAN_OTRO, 'AVISO-2', 'digital')
     )

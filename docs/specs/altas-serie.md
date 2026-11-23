@@ -333,7 +333,10 @@ criterio:
 
 - **A la cola, porque son prueba:** 1 a 5, los cinco ficheros (DNI de los tutores, libro de familia,
   PDF del mandato, tarjeta sanitaria, justificante de gastos), y 8, el mandato SEPA, «con su PDF, su
-  titular y su firma».
+  titular y su firma». _(El PDF del mandato, sustituido el 2026-11-22 por la decisión 1 del cierre del
+  mandato, `docs/specs/mandato-sepa-cierre.md`: no lo sobrescribe ni lo borra nadie, ni antes ni
+  después de validar, tampoco Dirección; una firma nueva es un fichero nuevo. Migración
+  `20270204120000`.)_
 - **Libres, porque no son prueba:**
   - 6, la foto del niño; 9, los datos pedagógicos; 11, observaciones y hermanos.
   - 12, firmar un documento del centro: «firmar no es cambiar nada validado, es un acto nuevo del

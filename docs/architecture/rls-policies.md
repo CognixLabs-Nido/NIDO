@@ -67,8 +67,10 @@ Decisión del 2026-11-05 (#497), el mismo caso que la E de los recibos («Las pu
 - **Por qué se deja:** es la llave maestra, la de las migraciones y del SQL Editor, y la usa el
   responsable. Ninguna defensa de la base puede cerrarse contra quien puede quitarla.
 - **Quién la usa hoy:** solo los tests, en la base efímera del CI. `src/test/rls/mandatos-como-postgres.ts`
-  desactiva `mandatos_sepa_v1_cerrado` para preparar mandatos v1 y lo vuelve a encender en la misma
-  función. Ningún guion contra producción: ni `scripts/`, ni `supabase/operaciones/`, ni un runbook
+  desactiva `mandatos_sepa_v1_cerrado` (y, desde `20270204120000`, `zz_digital_v3`) para preparar
+  mandatos v1 y los vuelve a encender en la misma función; y `mandato-prueba-sellada.rls.test.ts`
+  pone `replica` en una sentencia para fechar hace dos días un PDF del bucket `mandato-sepa` (el
+  barrido de huérfanos), que `mandato_sepa_objeto_defensa` no deja cambiar. Ningún guion contra producción: ni `scripts/`, ni `supabase/operaciones/`, ni un runbook
   (`session_replication_role`, `DISABLE TRIGGER` y `DROP TRIGGER`: 0 fuera de las migraciones).
 - **La condición:** el día que haga falta corregir algo por fuera de las funciones, se hace con una
   función con nombre y su registro en `audit_log`, nunca quitando o apagando un trigger a mano.
@@ -2754,10 +2756,39 @@ cerrado en producción (ensayos terminados en RAISE, LF y CRLF; `~/nido-logs/13/
 - **El huérfano**: `mandatos_sepa_huerfanos()` (solo `service_role`) lista los ficheros del bucket
   que ninguna fila nombra, de más de un día; el cron los cuenta y los borra
   (`barrerMandatosHuerfanos`, clave `mandatosHuerfanos` de `retencion_pasadas`).
-- **Lo que cierra la migración 2**, después del despliegue: las políticas de UPDATE y DELETE del
-  bucket, el trigger que impide cambiar un objeto del bucket a todos, el que deja cambiar de una fila
-  solo el estado, y que un mandato digital nuevo sea v3.
+- **Lo que cierra la migración 2**, después del despliegue: la sección siguiente.
 - Test: `mandato-prueba-sellada.rls.test.ts`.
+
+### El mandato SEPA como prueba (2026-11-22, migración 2)
+
+Migración `20270204120000_fix_mandato_prueba_inmutable` (después del despliegue de #543); spec
+`docs/specs/mandato-sepa-cierre.md`, «La migración 2». Medido abierto y cerrado en producción
+(ensayos terminados en RAISE, LF y CRLF; `~/nido-logs/13/m2/`).
+
+- **El bucket `mandato-sepa`**: sin `mandato_sepa_update`, `mandato_sepa_update_familia`,
+  `mandato_sepa_delete` ni `mandato_sepa_insert` (la de la ruta del niño). Quedan
+  `mandato_sepa_select`, `mandato_sepa_select_familia` y `mandato_sepa_insert_familia`: con sesión,
+  un PDF se sube por la ruta de la familia y se lee; ni se cambia ni se borra.
+- **El PDF no cambia nunca, para nadie salvo `postgres`** (`mandato_sepa_objeto_defensa` en
+  `storage.objects`, como `documentos_centro_objeto_defensa`): ningún objeto del bucket se
+  sustituye ni se mueve (P0001 `pdf_mandato_inmutable`), tampoco con `service_role`; deja pasar la
+  lectura (`updated_at`, `last_accessed_at` y las columnas generadas). **Un PDF que nombra un
+  mandato solo lo borra `service_role`** (`pdf_mandato_solo_servidor`): la anulación del alta y la
+  destrucción fiscal, que borran el fichero antes que la fila. El huérfano, que no nombra nadie, lo
+  borra el barrido.
+- **De la fila solo cambia el estado** (`zz_firma_inmutable`, `privado.mandato_sepa_firma_inmutable`;
+  el criterio de la fase 3): `activo → revocado`, `propuesto → activo` y `propuesto → rechazado`
+  (`transicion_no_valida`); `nino_id` solo a NULL (informativo, fuera del sello; lo pone
+  `anular_alta`). Cualquier otro cambio, `mandato_inmutable`. **Borrar, solo con
+  `app.borrar_sin_copia` y sin humano** (`borrar_solo_por_plazo`), el marcador que ya ponen
+  `anular_alta` y `destruir_fiscal_familia`: tampoco en cascada desde el niño o el centro. La fila
+  ya no la escribía ninguna sesión ni `service_role` (`20261225120000`); esto la cierra a las
+  funciones. En un v1, el trigger del v1 dispara antes y da su motivo (`v1_solo_existentes`).
+- **Un mandato digital nuevo es v3** (`zz_digital_v3`, `privado.mandato_sepa_digital_v3`,
+  `digital_v3`), por cualquier función. El presencial sigue v2: no tiene PDF, la prueba es el papel.
+- Las tres funciones, cerradas a todos los roles (también `service_role`); la guarda posterior lo
+  comprueba, y la definición de los tres triggers.
+- Test: `mandato-prueba-inmutable.rls.test.ts`.
 
 ### La red del export art. 15: cada columna, decidida
 

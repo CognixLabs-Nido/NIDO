@@ -21,6 +21,7 @@ import {
 import { recolectarUsuario } from '@/features/export/lib/recolectar'
 import type { AdjuntoExport } from '@/features/export/types'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * PR 0b (Fase 4) — una ruta de documento guardada en la BD solo puede ser de su familia.
@@ -170,7 +171,7 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
 
   it('no puede registrar un mandato con el documento de B', async () => {
     const c = await clientFor(tutorA)
-    const { error } = await c.rpc('registrar_mandato_sepa', mandato(mandatoB))
+    const { error } = await firmarV3(c, 'registrar_mandato_sepa', mandato(mandatoB))
     expect(error?.code).toBe('23514')
     expect((await exportDe(tutorA)).some((a) => a.path === mandatoB)).toBe(false)
   })
@@ -183,7 +184,7 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
       p_path: dniA,
     })
     expect(dni.error).toBeNull()
-    const man = await c.rpc('registrar_mandato_sepa', mandato(mandatoA))
+    const man = await firmarV3(c, 'registrar_mandato_sepa', mandato(mandatoA))
     expect(man.error).toBeNull()
 
     const adjuntos = await exportDe(tutorA)

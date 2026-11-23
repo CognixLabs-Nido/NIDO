@@ -18,6 +18,7 @@ import {
   type TestCentro,
 } from './setup'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * PR-7 — el método de pago va en la FICHA de la familia (`familias.metodo_pago`).
@@ -230,7 +231,11 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
   it('una familia ya dada de alta: su mandato pasa por Dirección y, aprobado, no cambia de método', async () => {
     // Premisa: el niño de esta familia tiene la matrícula activada.
     expect(await activadas(familia)).toBe(1)
-    const p = await cTutor.rpc('proponer_mandato_sepa', mandato(familia, IBAN, 'PR7-1', 'digital'))
+    const p = await firmarV3(
+      cTutor,
+      'proponer_mandato_sepa',
+      mandato(familia, IBAN, 'PR7-1', 'digital')
+    )
     expect(p.error).toBeNull()
     const { error } = await cAdmin.rpc('decidir_mandato_propuesto', {
       p_mandato_id: p.data as string,
@@ -244,7 +249,8 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
   it('el primer mandato que la familia firma en su alta la pasa a sepa', async () => {
     expect(await activadas(familiaA)).toBe(0)
     expect(await metodoFicha(familiaA)).toBe('efectivo')
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'registrar_mandato_sepa',
       mandato(familiaA, IBAN, 'PR7-A', 'digital')
     )
@@ -269,13 +275,15 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
 
   it('con la familia validada el reintento del tutor va a la cola, y el cambio de cuenta de Dirección no toca lo que eligió la directora', async () => {
     expect(await metodoFicha()).toBe('cheque_guarderia')
-    const reintento = await cTutor.rpc(
+    const reintento = await firmarV3(
+      cTutor,
       'registrar_mandato_sepa',
       mandato(familia, IBAN, 'PR7-1', 'digital')
     )
     expect(reintento.error?.hint).toBe('cola_validacion')
     expect(await metodoFicha()).toBe('cheque_guarderia')
-    const sustituir = await cAdmin.rpc(
+    const sustituir = await firmarV3(
+      cAdmin,
       'sustituir_mandato_sepa',
       mandato(familia, IBAN_OTRO, 'PR7-2')
     )
@@ -285,7 +293,11 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
 
   it('el mandato presencial de Dirección no cambia el método: lo pregunta la app', async () => {
     expect(await metodoFicha(familiaB)).toBe('efectivo')
-    const { error } = await cAdmin.rpc('registrar_mandato_sepa', mandato(familiaB, IBAN, 'PR7-B'))
+    const { error } = await firmarV3(
+      cAdmin,
+      'registrar_mandato_sepa',
+      mandato(familiaB, IBAN, 'PR7-B')
+    )
     expect(error).toBeNull()
     expect(await metodoFicha(familiaB)).toBe('efectivo')
   })
@@ -294,7 +306,8 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     expect(await activadas(familiaC)).toBe(0)
     const r = await fijarAMano(familiaC, 'transferencia')
     expect(r.data).toHaveLength(1)
-    const { error } = await cTutorC.rpc(
+    const { error } = await firmarV3(
+      cTutorC,
       'registrar_mandato_sepa',
       mandato(familiaC, IBAN, 'PR7-C', 'digital')
     )

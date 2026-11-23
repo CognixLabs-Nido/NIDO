@@ -19,6 +19,7 @@ import { intentarConMarcador, insertarRecibos } from './remesa-como-sus-funcione
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * PR-1b (`20261106120000`) — cobrar con cheque guardería / ticket restaurant.
@@ -124,7 +125,7 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
     await asignarRol(tutoraCon.id, centro.id, 'tutor_legal')
     await crearFamiliaTutor(familiaCon, tutoraCon.id)
     const cTutoraCon = await clientFor(tutoraCon)
-    const { error } = await cTutoraCon.rpc('registrar_mandato_sepa', {
+    const { error } = await firmarV3(cTutoraCon, 'registrar_mandato_sepa', {
       p_familia_id: familiaCon,
       p_nino_id: ninoCon.id,
       p_iban: 'ES7620770024003102575766',

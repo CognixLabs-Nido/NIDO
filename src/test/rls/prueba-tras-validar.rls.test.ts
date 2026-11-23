@@ -26,6 +26,7 @@ import {
   type TestCentro,
   type TestUser,
 } from './setup'
+import { firmarV3 } from './mandato-v3-de-test'
 
 type Cliente = SupabaseClient<Database>
 
@@ -58,7 +59,12 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
   const IBAN_1 = 'ES7620770024003102575766'
   const IBAN_2 = 'ES9121000418450200051332'
 
-  /** Los cinco ficheros que son prueba (seis rutas: el mandato tiene la del niño y la de familia). */
+  /**
+   * Los ficheros que son prueba y se cambian por la cola. El PDF del mandato ya no está: desde
+   * 20270204120000 no lo sobrescribe ni lo borra nadie, ni antes ni después de validar (decisión 1
+   * del cierre del mandato, 2026-11-22, que sustituye aquí a la de #541); lo mide
+   * `mandato-prueba-inmutable.rls.test.ts`.
+   */
   const ficheros = () => [
     {
       nombre: 'dni',
@@ -66,12 +72,6 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
       ruta: `${centro.id}/${N}/dni-tutor_legal_principal-${randomUUID()}.pdf`,
     },
     { nombre: 'libro', bucket: 'libro-familia', ruta: `${centro.id}/${N}/${randomUUID()}.pdf` },
-    { nombre: 'mandato del niño', bucket: 'mandato-sepa', ruta: `${centro.id}/${N}/mandato.pdf` },
-    {
-      nombre: 'mandato de familia',
-      bucket: 'mandato-sepa',
-      ruta: `${centro.id}/familia/${F}/mandato-${Date.now()}.pdf`,
-    },
     { nombre: 'tarjeta', bucket: 'sip-ninos', ruta: `${centro.id}/${N}/${randomUUID()}.pdf` },
     {
       nombre: 'justificante',
@@ -216,14 +216,16 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
   })
 
   it('C+: sin validar, el mandato del tutor se registra directo; y no se puede proponer', async () => {
-    const r = await s.T.rpc(
+    const r = await firmarV3(
+      s.T,
       'registrar_mandato_sepa',
       argsMandato(IBAN_1, `${centro.id}/familia/${F}/mandato-inicial.pdf`)
     )
     expect(r.error).toBeNull()
     activoInicial = r.data as string
     expect(mandatos()).toBe('activo')
-    const p = await s.T.rpc(
+    const p = await firmarV3(
+      s.T,
       'proponer_mandato_sepa',
       argsMandato(IBAN_2, `${centro.id}/familia/${F}/mandato-x.pdf`)
     )
@@ -282,7 +284,7 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
   })
 
   it('1-5 · pero sube uno NUEVO a otra ruta: así propone el cambio a la cola', async () => {
-    for (const x of F6.filter((f) => f.nombre !== 'mandato del niño')) {
+    for (const x of F6) {
       const nueva = x.ruta.replace(/[^/]+\.pdf$/, `nuevo-${randomUUID()}.pdf`)
       expect.soft((await subir(s.T, x.bucket, nueva, 'n1', false)).error, x.nombre).toBeNull()
     }
@@ -298,13 +300,15 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
   // ─── 8 · el mandato ──────────────────────────────────────────────────────────────────────────
 
   it('8 · validada, la tutora no registra ni sustituye: cola_validacion', async () => {
-    const r = await s.T.rpc(
+    const r = await firmarV3(
+      s.T,
       'registrar_mandato_sepa',
       argsMandato(IBAN_1, `${centro.id}/familia/${F}/mandato-r.pdf`)
     )
     expect(r.error?.code).toBe('42501')
     expect(r.error?.hint).toBe('cola_validacion')
-    const u = await s.T.rpc(
+    const u = await firmarV3(
+      s.T,
       'sustituir_mandato_sepa',
       argsMandato(IBAN_2, `${centro.id}/familia/${F}/mandato-s.pdf`)
     )
@@ -314,7 +318,8 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
 
   let propuesto = ''
   it('8 · propone: el mandato queda propuesto y su entrada, en la cola de Dirección', async () => {
-    const r = await s.T.rpc(
+    const r = await firmarV3(
+      s.T,
       'proponer_mandato_sepa',
       argsMandato(IBAN_2, `${centro.id}/familia/${F}/mandato-p.pdf`)
     )
@@ -333,7 +338,8 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
   })
 
   it('8 · una segunda propuesta espera a que se resuelva la primera', async () => {
-    const r = await s.T.rpc(
+    const r = await firmarV3(
+      s.T,
       'proponer_mandato_sepa',
       argsMandato(IBAN_1, `${centro.id}/familia/${F}/mandato-q.pdf`)
     )
@@ -369,7 +375,8 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
   })
 
   it('8 · otra propuesta, y Dirección la rechaza: queda rechazada y el activo sigue', async () => {
-    const r = await s.T.rpc(
+    const r = await firmarV3(
+      s.T,
       'proponer_mandato_sepa',
       argsMandato(IBAN_1, `${centro.id}/familia/${F}/mandato-t.pdf`)
     )

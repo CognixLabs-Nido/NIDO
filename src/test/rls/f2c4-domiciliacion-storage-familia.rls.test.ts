@@ -20,6 +20,7 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F-2c-4 — el TUTOR gestiona la domiciliación SEPA de su familia desde `/family/recibos` con
@@ -137,15 +138,18 @@ describe('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', 
     expect(ajeno.data?.signedUrl).toBeFalsy()
   })
 
-  it('NO regresión: la política del niño sigue dejando subir {centro}/{ninoSuyo}/mandato.pdf (hasta la migración 2)', async () => {
+  it('la ruta del niño ya no admite mandatos: el tutor no sube {centro}/{ninoSuyo}/mandato.pdf (migración 2)', async () => {
+    // 20270204120000 quita `mandato_sepa_insert` (la del niño): los mandatos nuevos van por la de
+    // la familia. Hasta entonces este test afirmaba lo contrario, «hasta la migración 2».
     const res = await subir(tutorA, `${centro.id}/${ninoA.id}/mandato.pdf`)
-    expect(res.error).toBeNull()
+    expect(res.error?.message ?? 'SIN ERROR: subió').toMatch(/row-level security/i)
   })
 
   // ─── B) RPC digital (registrar → sustituir) ──────────────────────────────────
   it('registrar digital: 1 activo, metodo=digital, documento_path del path familia', async () => {
     const path = `${centro.id}/familia/${familiaA}/mandato-reg.pdf`
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'registrar_mandato_sepa',
       argsDigital(familiaA, IBAN_1, 'NIDO-F2C4-REG', path)
     )
@@ -159,13 +163,17 @@ describe('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', 
       .is('deleted_at', null)
       .maybeSingle()
     expect(data?.metodo_firma).toBe('digital')
-    expect(data?.documento_path).toBe(path)
+    // Un digital nuevo es v3 (20270204120000): el fichero se llama por su sello, en la ruta de la familia.
+    expect(data?.documento_path).toMatch(
+      new RegExp(`^${centro.id}/familia/${familiaA}/mandato-[0-9a-f]{64}\\.pdf$`)
+    )
     expect(data?.iban_ultimos4).toBe('5766')
   })
 
   it('sustituir digital: viejo revocado (conservado), nuevo activo digital', async () => {
     const path = `${centro.id}/familia/${familiaA}/mandato-sust.pdf`
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'sustituir_mandato_sepa',
       argsDigital(familiaA, IBAN_2, 'NIDO-F2C4-SUST', path)
     )

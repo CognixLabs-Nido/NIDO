@@ -25,6 +25,7 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F11-G-4 — RLS del modelo de "Altas con documentos" (cierra el pendiente de G-1) +
@@ -110,7 +111,7 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
     it('el tutor registra el mandato por RPC; el IBAN queda CIFRADO (nunca en claro)', async () => {
       // 2026-11-20: el mandato del alta, antes de validar (con la familia validada, va a la cola).
       const { error } = await antesDeValidar(ninoA.familia_id, () =>
-        cTutorA.rpc('registrar_mandato_sepa', {
+        firmarV3(cTutorA, 'registrar_mandato_sepa', {
           p_familia_id: ninoA.familia_id,
           p_nino_id: ninoA.id,
           p_iban: IBAN_TEST,
@@ -229,7 +230,19 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
 
   // ─── buckets de Storage ──────────────────────────────────────────────────────
   describe('buckets (libro-familia / dni-tutores / mandato-sepa)', () => {
-    for (const bucket of ['libro-familia', 'dni-tutores', 'mandato-sepa'] as const) {
+    // mandato-sepa ya no admite la ruta del niño (20270204120000): los mandatos van por la de la
+    // familia (`f2c4-domiciliacion-storage-familia`). Aquí, que por la del niño no sube nadie.
+    it('mandato-sepa: por la ruta del niño no sube ni el tutor legal', async () => {
+      const r = await cTutorA.storage
+        .from('mandato-sepa')
+        .upload(`${centroA.id}/${ninoA.id}/mandato-sepa.pdf`, PDF, {
+          contentType: 'application/pdf',
+          upsert: false,
+        })
+      expect(r.error?.message ?? 'SIN ERROR: subió').toMatch(/row-level security/i)
+    })
+
+    for (const bucket of ['libro-familia', 'dni-tutores'] as const) {
       it(`${bucket}: tutor sube su carpeta; profe NO; tutor no escribe carpeta ajena`, async () => {
         const propio = await cTutorA.storage
           .from(bucket)
@@ -260,8 +273,8 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
     // Recoge lo que ha subido. Su limpieza borra el centro y no los ficheros: así quedaron en
     // producción 60 PDF bajo 20 centros que ya no existen (operación 20270106120000). Comprueba
     // que ya no están; un `remove` sin error no lo demuestra.
-    it('recoge lo que ha subido: los tres ficheros ya no están en Storage', async () => {
-      const rutas = (['libro-familia', 'dni-tutores', 'mandato-sepa'] as const).map(
+    it('recoge lo que ha subido: los dos ficheros ya no están en Storage', async () => {
+      const rutas = (['libro-familia', 'dni-tutores'] as const).map(
         (b) => [b, `${centroA.id}/${ninoA.id}/${b}.pdf`] as const
       )
       for (const [b, r] of rutas) {

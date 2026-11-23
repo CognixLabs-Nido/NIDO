@@ -73,6 +73,9 @@ function comoFuncion(cuerpo: string, arg: string): string {
  * Sin `version_canonico`, un v2 completo (desde `20261230120000` no se crean mandatos v1): hash,
  * documento y dirección del titular de prueba y el CID y el nombre DEL CENTRO de la fila, leídos de
  * `centros` (un centro sin CID no da mandato: el CHECK lo rechaza). Lo que se le pase manda.
+ *
+ * Presencial si no se dice otra cosa: desde `20270204120000` un digital nuevo es v3, con el PDF del
+ * servidor (`zz_digital_v3`), y la fila a mano no lo lleva. El presencial v2 se sigue creando.
  */
 export function insertarMandato(fila: object): {
   data: { id: string } | null
@@ -82,6 +85,7 @@ export function insertarMandato(fila: object): {
   const completa = v2
     ? {
         version_canonico: 2,
+        metodo_firma: 'presencial',
         texto_hash: 'a'.repeat(64),
         titular_documento: 'X1234567L',
         titular_direccion: 'Calle Prueba 1, Valencia',

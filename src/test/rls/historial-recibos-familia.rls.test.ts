@@ -23,6 +23,7 @@ import { insertarRecibos } from './remesa-como-sus-funciones'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F-6 — el histórico de recibos de una familia, contra la BD real y con la sesión de Dirección.
@@ -152,7 +153,7 @@ describe('F-6 — histórico de recibos de la familia', () => {
       familia,
       async () =>
         await ok(
-          cTutora.rpc('registrar_mandato_sepa', {
+          firmarV3(cTutora, 'registrar_mandato_sepa', {
             p_familia_id: familia,
             p_nino_id: nino.id,
             p_iban: 'ES7620770024003102575766',

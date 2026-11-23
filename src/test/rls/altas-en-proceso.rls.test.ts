@@ -414,7 +414,8 @@ describe('Altas en proceso: el embudo de la directora', () => {
       usuario_id: tutora.id,
       titular: 'Tutora Embudo',
       iban_cifrado: '\\x00',
-      metodo_firma: 'digital',
+      // Presencial: el embudo cuenta cualquier mandato, y un digital nuevo es v3 (20270204120000).
+      metodo_firma: 'presencial',
       identificador_mandato: `NIDO-EMBUDO-${sufijo}`,
     })
     expect(m.error).toBeNull()

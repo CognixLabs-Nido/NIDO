@@ -26,6 +26,7 @@ import { insertarRecibos } from './remesa-como-sus-funciones'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
+import { firmarV3 } from './mandato-v3-de-test'
 
 /**
  * F-2c-1 — el mandato SEPA es de la FAMILIA (nino_id relajado a nullable; cuelga de
@@ -157,7 +158,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
   }, 60_000)
 
   it('registra el mandato de la familia: 1 activo, familia_id set, centro_id derivado de familia', async () => {
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'registrar_mandato_sepa',
       argsMandato(familiaA, ninoA1.id, IBAN_1, 'NIDO-F2C1-1')
     )
@@ -179,7 +181,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     // 2026-11-22 (decisión 3 del cierre del mandato, «Una firma no se borra»: SUSTITUYE a la regla de
     // F-2c-1, que lo actualizaba en su sitio). Mismo IBAN_1 con espacios y otro identificador:
     // normaliza (quita espacios, mayúsculas), revoca el activo y crea otro.
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'registrar_mandato_sepa',
       argsMandato(familiaA, ninoA1.id, 'ES76 2077 0024 0031 0257 5766', 'NIDO-F2C1-1B')
     )
@@ -204,7 +207,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
   })
 
   it('registrar con un IBAN DISTINTO estando la familia con mandato activo → RAISE, no pisa', async () => {
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'registrar_mandato_sepa',
       argsMandato(familiaA, ninoA1.id, IBAN_2, 'NIDO-F2C1-OTRO')
     )
@@ -250,7 +254,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     // reutilizarlo: familiaSolo es del mismo centro.
     const familiaSolo = await createTestFamilia(centroA.id)
     await crearFamiliaTutor(familiaSolo, tutorSolo.id, 'titular')
-    const { error } = await cTutorSolo.rpc(
+    const { error } = await firmarV3(
+      cTutorSolo,
       'registrar_mandato_sepa',
       argsMandato(familiaSolo, null, IBAN_1, 'NIDO-F2C1-SOLO')
     )
@@ -266,7 +271,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
   })
 
   it('sustituir: el activo pasa a revocado (conservado) y el nuevo queda activo; 1 solo activo', async () => {
-    const { error } = await cTutorA.rpc(
+    const { error } = await firmarV3(
+      cTutorA,
       'sustituir_mandato_sepa',
       argsMandato(familiaA, ninoA1.id, IBAN_1, 'NIDO-F2C1-SUST')
     )
@@ -364,7 +370,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     expect(profe.data ?? []).toHaveLength(0)
 
     // El tutor de otra familia no puede registrar en familiaA (gate es_tutor_de_familia).
-    const { error } = await cTutorOtro.rpc(
+    const { error } = await firmarV3(
+      cTutorOtro,
       'registrar_mandato_sepa',
       argsMandato(familiaA, ninoA1.id, IBAN_1, 'NIDO-F2C1-HACK')
     )

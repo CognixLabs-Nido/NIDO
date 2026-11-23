@@ -386,12 +386,20 @@ describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
   })
 
   describe('el huérfano: el cron lo cuenta y lo borra', () => {
+    /**
+     * El fichero, de hace dos días. Desde 20270204120000 ningún objeto del bucket cambia
+     * (`mandato_sepa_objeto_defensa`), tampoco su fecha: se la cambia la llave de `postgres`
+     * (`session_replication_role = replica`), solo en esta sentencia y en la BD efímera.
+     */
+    const envejecer = (ruta: string) =>
+      comoPostgres(
+        `SET session_replication_role = replica; UPDATE storage.objects SET created_at = now() - interval '2 days' WHERE bucket_id = '${BUCKET}' AND name = '${ruta}'; RESET session_replication_role;`
+      )
+
     it('un fichero que ninguna fila nombra, de hace dos días, se cuenta y se borra', async () => {
       const ruta = `${centro.id}/familia/${familia}/huerfano-${randomUUID().slice(0, 8)}.pdf`
       await subir(ruta, new TextEncoder().encode('%PDF-1.4\n%%EOF\n'))
-      comoPostgres(
-        `UPDATE storage.objects SET created_at = now() - interval '2 days' WHERE bucket_id = '${BUCKET}' AND name = '${ruta}';`
-      )
+      envejecer(ruta)
       const { data: lista } = await serviceClient.rpc('mandatos_sepa_huerfanos')
       expect((lista ?? []).map((l) => l.ruta)).toContain(ruta)
       const r = await barrerMandatosHuerfanos({ dryRun: false })
@@ -409,9 +417,7 @@ describe('El mandato SEPA como prueba (migración 1, 2026-11-22)', () => {
         .not('documento_path', 'is', null)
         .limit(1)
         .single()
-      comoPostgres(
-        `UPDATE storage.objects SET created_at = now() - interval '2 days' WHERE bucket_id = '${BUCKET}' AND name = '${m!.documento_path}';`
-      )
+      envejecer(m!.documento_path!)
       const { data: lista } = await serviceClient.rpc('mandatos_sepa_huerfanos')
       expect((lista ?? []).map((l) => l.ruta)).not.toContain(m!.documento_path)
     })
