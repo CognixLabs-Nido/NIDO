@@ -69,6 +69,38 @@ con el resto.»
 «Bien comprobar los duplicados de producción antes de poner el índice único: si ya los hay, el
 índice no se crea y te enteras a mitad de la migración.»
 
+### 2026-11-23 · los niños sin datos pedagógicos: ni TRUE ni FALSE
+
+«LO DE LA BASE NO SE ARREGLA PONIENDO FALSE. Tienes razón en que es el mismo defecto dentro de la
+base, pero las dos salidas son malas: con TRUE le ofrecemos sólidos a un bebé que no debe masticar, y
+con FALSE el niño desaparece del pase de comidas y nadie puede registrar lo que come.
+La salida es no inventar el dato en ninguna dirección: que el niño SALGA en el pase marcado como «sin
+datos pedagógicos», no como que sí ni como que no, y que la profe vea que falta ese dato antes de
+darle de comer. Y que Dirección tenga la lista de los niños sin datos pedagógicos, como tiene la de
+los que están sin tarjeta sanitaria, para poder reclamarlos.
+Eso sí lleva migración, y va con su medición abierta: hoy los 2 niños sin datos cuentan como que
+comen sólidos, y eso es lo que hay que medir antes.»
+
+### 2026-11-23 · la lista de espera
+
+«LA LISTA DE ESPERA: tu propuesta, entera. Reordenar el curso en una sola sentencia, la posición
+asignada dentro de la base al crear, y después el índice único. Posiciones duplicadas no son un
+detalle: son dos familias convencidas de ser la tercera, y el día que se libere una plaza el centro no
+sabe a quién llamar. Y el choque con los invitados que conservan su posición cuéntalo en el PR, porque
+es la prueba de que esto ya pasa hoy y no es un riesgo teórico.»
+
+### 2026-11-23 · la imagen
+
+«LA IMAGEN: una por niño y versión del texto, como propones. Es el significado correcto: cinco clics
+de la misma versión no son cinco consentimientos, y una versión nueva sí es algo nuevo que la familia
+tiene que poder firmar. Y cierra con ella lo que has visto de que un fallo al leer la instancia
+existente crea otra: es la misma puerta.»
+
+### 2026-11-23 · getCalendarioMes, al censo
+
+«Y apunta getCalendarioMes para el censo, que un festivo contado como día de clase en el editor del
+menú es forma regla de libro.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
