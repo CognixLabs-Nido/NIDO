@@ -79,3 +79,30 @@ con el resto.»
 6. Esquema de hora de agenda, citas y eventos: el del pase de lista (los dos formatos, recorta).
 7. «Sin plantilla» de la imagen: con el resto, y contado en el censo como forma regla.
 8. Censo del resto por helper, las tres formas por separado; número y troceo antes de tocar nada.
+
+## Hecho
+
+### Los sólidos (2026-11-23)
+
+- Medido abierto (run 45202220193, sin arreglo): con `nino_toma_comida_solida` fallando, el bebé de
+  biberón salía en el pase de los dos helpers y nada lo decía («expected [ …(2) ] to not include» y
+  «expected [] …»).
+- Arreglo: en los dos helpers del pase (`getPaseDeListaComidaTodosMomentos` y `getPaseDeListaComida`,
+  este sin llamador en la app hoy), un fallo de esa llamada cuenta como «no come sólidos» y el niño
+  va a `sinComprobarSolidos`. La pantalla lo nombra (`aviso-sin-comprobar-solidos`), también cuando
+  la lista se queda vacía: ahí no dice «ningún niño come sólidos».
+- Tests: `src/test/rls/solidos-no-se-suponen.rls.test.ts` (página real) y
+  `src/features/menus/__tests__/solidos-no-se-suponen.test.tsx` (unidad, para mutar). Cuatro
+  mutaciones, cada una un rojo en el test previsto.
+- **Pendiente de decisión (no tocado):** la función SQL `nino_toma_comida_solida` devuelve `TRUE` a un
+  niño SIN fila de datos pedagógicos («COALESCE de seguridad»): la misma regla, en la base. En
+  producción (2026-11-23, solo lectura) son 2 de los 3 niños con matrícula activa. Cambiarlo es una
+  migración y saca del pase a todo niño sin esos datos. Tampoco filtra `deleted_at` de esa tabla.
+
+### La hora (2026-11-23)
+
+- Medido abierto (unidad, contra los esquemas de HEAD): sueño, citas y eventos rechazaban una hora
+  'HH:MM:SS'; el test de la clase nombraba 4 ficheros con su propia regex.
+- Arreglo: `src/shared/lib/hora.ts`, un solo esquema (las dos formas, deja 'HH:MM'); los cuatro lo
+  importan. `src/shared/lib/__tests__/hora.test.ts` se pone rojo si otro fichero de `src` valida una
+  hora con su regex (mutación: eventos con la suya → 2 rojos, el de eventos y el de la clase).
