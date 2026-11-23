@@ -223,3 +223,26 @@ queda (el `nino_id` es informativo). En el bucket hay 3 objetos, los 3 nombrados
   mandato digital que entra sin ser v3 se rechaza, por cualquier función. El presencial sigue v2.
 - **Los nombres `zz_`** hacen que el trigger del v1 dispare antes: en un v1 se sigue leyendo su
   motivo (`v1_solo_existentes`).
+
+## Pendiente: el PNG que no decodifica (decidido el 2026-11-23)
+
+Encontrado al arreglar el helper de los tests de la migración 2, leyendo el código (sin medir): la
+ruta del mandato digital comprueba que el trazo empiece por `data:image/png` y su longitud, y nada
+más. Un PNG con esa cabecera que no decodifica (`data:image/png;base64,iVBORw0KGgo=`) pasa, y
+`generarMandatoPdf` lanza (`RangeError` de jspdf) sin que nadie lo capture en
+`firmarMandatoDigital`. No se sube ni se registra nada: el PDF se compone antes.
+
+Literal: «EL HUECO VA EN SU PROPIO PR, PERO DESPUÉS DE LA MIGRACIÓN 2, no antes: no mezcles un
+arreglo de la app con el cierre de la base, que llevamos toda la serie separándolos. Apúntalo y lo
+haces en cuanto la 2 esté aplicada. Y cuando lo hagas, que el arreglo no sea solo capturar el error:
+lo que tiene que ver la familia es el mensaje de firma, el mismo que ya da el caso del JPEG, para que
+sepa que vuelva a firmar. Un 500 no le dice nada y además parece que la culpa es del centro. Con su
+test, el PNG exacto primero y el catch después, como propones. Y mídelo antes, no lo dejes en «mi
+lectura es que da un 500»: lánzalo contra la ruta y copia lo que devuelve.»
+
+- **Cuándo:** en su propio PR, en cuanto la migración 2 esté aplicada.
+- **Qué ve la familia:** `alta.sepa.errors.firma`, el mismo mensaje que el JPEG
+  (`route.test.ts`, «el documento, la dirección y el trazo se validan antes de subir nada»). Las dos
+  rutas que llaman a `firmarMandatoDigital`: la del alta y `family/domiciliacion`.
+- **El orden:** medirlo contra la ruta y copiar lo que devuelve; el test con ese PNG exacto, en
+  rojo; después el arreglo.

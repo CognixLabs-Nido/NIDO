@@ -19,6 +19,11 @@ import { serviceClient } from './setup'
  *
  * Si la subida falla (quien firma no puede escribir en esa familia), no lanza: la llamada a la base
  * contesta lo suyo, que es lo que esos tests miden.
+ *
+ * Lo que este helper sustituye (la ruta, el sello, la fecha, el método, la dirección del acreedor y
+ * un trazo que no decodifica) deja de ser lo que el test mandó. Un test cuyo caso ES uno de esos
+ * campos no puede pasar por aquí tal cual: para la ruta, `{ rutaTalCual: true }` manda la del test
+ * sin tocarla y no sube nada (rutas-guardadas-export, «el documento de B»).
  */
 const PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
@@ -26,7 +31,13 @@ const sha256 = (b: Uint8Array | string) => createHash('sha256').update(b).digest
 
 type Args = Record<string, unknown>
 
-export async function conPdfV3(cliente: SupabaseClient<Database>, args: object): Promise<never> {
+type Opciones = { rutaTalCual?: boolean }
+
+export async function conPdfV3(
+  cliente: SupabaseClient<Database>,
+  args: object,
+  opciones: Opciones = {}
+): Promise<never> {
   const a = args as Args
   if (a.p_metodo === 'presencial') return args as never
   const familia = String(a.p_familia_id)
@@ -86,10 +97,13 @@ export async function conPdfV3(cliente: SupabaseClient<Database>, args: object):
       plantillaPdfVersion: PLANTILLA_PDF_MANDATO_VIGENTE,
     })
   )
-  const ruta = `${f?.centro_id ?? 'sin-centro'}/familia/${familia}/mandato-${sello}.pdf`
-  await cliente.storage
-    .from('mandato-sepa')
-    .upload(ruta, pdf, { contentType: 'application/pdf', upsert: false })
+  const ruta = opciones.rutaTalCual
+    ? String(a.p_documento_path)
+    : `${f?.centro_id ?? 'sin-centro'}/familia/${familia}/mandato-${sello}.pdf`
+  if (!opciones.rutaTalCual)
+    await cliente.storage
+      .from('mandato-sepa')
+      .upload(ruta, pdf, { contentType: 'application/pdf', upsert: false })
   return {
     ...a,
     p_metodo: 'digital',
@@ -111,7 +125,8 @@ export async function conPdfV3(cliente: SupabaseClient<Database>, args: object):
 export async function firmarV3(
   cliente: SupabaseClient<Database>,
   fn: 'registrar_mandato_sepa' | 'sustituir_mandato_sepa' | 'proponer_mandato_sepa',
-  args: object
+  args: object,
+  opciones: Opciones = {}
 ) {
-  return cliente.rpc(fn, await conPdfV3(cliente, args))
+  return cliente.rpc(fn, await conPdfV3(cliente, args, opciones))
 }
