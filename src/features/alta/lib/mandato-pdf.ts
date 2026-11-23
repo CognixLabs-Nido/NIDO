@@ -22,6 +22,18 @@ import {
  *
  * Sin el bloque «firmado en papel»: el presencial no tiene PDF, su prueba es el papel.
  */
+/**
+ * El trazo no se puede pintar en el PDF: la ruta solo comprueba que empiece por `data:image/png`, y
+ * un PNG con esa cabecera y sin imagen dentro llega hasta aquí (medido el 2026-11-23: jspdf lanza
+ * `RangeError`). Lo traduce `firmarMandatoDigital` al mensaje de firma; ningún otro error, sí.
+ */
+export class FirmaNoDecodifica extends Error {
+  constructor(causa: unknown) {
+    super('la firma no es una imagen PNG que se pueda pintar', { cause: causa })
+    this.name = 'FirmaNoDecodifica'
+  }
+}
+
 export interface DatosMandatoPdf {
   identificadorMandato: string
   iban: string
@@ -86,7 +98,13 @@ export function generarMandatoPdf(d: DatosMandatoPdf): Uint8Array {
   linea(`${textos.fecha}: ${fechaDelMandato(textos, d.fechaFirmaIso)}`, 10, false, 18)
   linea(textos.firma, 10, true, 14)
   // Un trazo que no es una imagen válida no se sella: el servidor no compone un mandato sin firma.
-  doc.addImage(d.firmaDataUrl, 'PNG', margen, y, 200, 80)
+  // Solo esta línea se envuelve: lo que falle al componer el resto NO es un problema de la firma, y
+  // decirle a la familia «dibuja tu firma» por otra cosa la mandaría a buscar donde no está.
+  try {
+    doc.addImage(d.firmaDataUrl, 'PNG', margen, y, 200, 80)
+  } catch (e) {
+    throw new FirmaNoDecodifica(e)
+  }
 
   return new Uint8Array(doc.output('arraybuffer'))
 }

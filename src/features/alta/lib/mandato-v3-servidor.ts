@@ -10,7 +10,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { normalizarIban } from './iban'
-import { generarMandatoPdf } from './mandato-pdf'
+import { FirmaNoDecodifica, generarMandatoPdf } from './mandato-pdf'
 import {
   IDIOMAS_MANDATO,
   PLANTILLA_PDF_MANDATO_VIGENTE,
@@ -79,20 +79,38 @@ export async function firmarMandatoDigital(
   const titularDireccion = f.titularDireccion.trim()
   const plantilla = PLANTILLA_PDF_MANDATO_VIGENTE
 
-  const pdf = generarMandatoPdf({
-    identificadorMandato: identificador,
-    iban,
-    titular,
-    titularDocumento,
-    titularDireccion,
-    acreedorNombre: f.acreedor.nombre,
-    acreedorDireccion: f.acreedor.direccion,
-    acreedorCid: f.acreedor.cid,
-    firmaDataUrl: f.firmaImagen,
-    fechaFirmaIso,
-    idioma: f.idioma,
-    plantillaVersion: plantilla,
-  })
+  let pdf: Uint8Array
+  try {
+    pdf = generarMandatoPdf({
+      identificadorMandato: identificador,
+      iban,
+      titular,
+      titularDocumento,
+      titularDireccion,
+      acreedorNombre: f.acreedor.nombre,
+      acreedorDireccion: f.acreedor.direccion,
+      acreedorCid: f.acreedor.cid,
+      firmaDataUrl: f.firmaImagen,
+      fechaFirmaIso,
+      idioma: f.idioma,
+      plantillaVersion: plantilla,
+    })
+  } catch (e) {
+    // Solo el trazo que no se puede pintar (`FirmaNoDecodifica`): la familia vuelve a firmar. Nada se
+    // ha subido ni registrado. Cualquier otro fallo sigue su camino.
+    if (!(e instanceof FirmaNoDecodifica)) throw e
+    return {
+      error: {
+        name: 'PostgrestError',
+        message: e.message,
+        details: '',
+        hint: 'firma',
+        code: '22023',
+      } as PostgrestError,
+      mandatoId: null,
+      identificador,
+    }
+  }
   const documentoSha256 = sha256(pdf)
   const sello = sha256(
     textoCanonicoMandatoV3({
@@ -174,6 +192,7 @@ export function errorDeFirmaMandato(
   error: Pick<PostgrestError, 'message' | 'hint' | 'code'>,
   claves: { noAutorizado: string; otroIban: string; guardado: string; subida: string }
 ): { clave: string; status: number } {
+  if (error.hint === 'firma') return { clave: 'alta.sepa.errors.firma', status: 400 }
   if (error.hint === 'subida')
     return error.code === '42501'
       ? { clave: claves.noAutorizado, status: 403 }

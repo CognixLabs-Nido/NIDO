@@ -156,4 +156,18 @@ describe('POST /family/domiciliacion (2026-11-22: el PDF del servidor, sellado)'
       expect.soft(bd.llamadas).toEqual([])
     }
   })
+  it('un PNG que pasa la cabecera y no decodifica: el mensaje de firma (400), sin subir ni registrar', async () => {
+    // El trazo exacto que medimos el 2026-11-23: la cabecera de un PNG y nada más. La ruta solo mira
+    // el prefijo y la longitud, así que este NO es el caso del JPEG: llega a componer el PDF.
+    const TRUNCADO = 'data:image/png;base64,iVBORw0KGgo='
+    expect(TRUNCADO.startsWith('data:image/png'), 'premisa: pasa la comprobación de la ruta').toBe(
+      true
+    )
+    bd.llamadas = []
+    expect(await enviar({ firma_imagen: TRUNCADO })).toEqual({
+      status: 400,
+      json: { success: false, error: 'alta.sepa.errors.firma' },
+    })
+    expect(bd.llamadas).toEqual([])
+  })
 })
