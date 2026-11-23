@@ -3104,7 +3104,9 @@ ni dejar rastro.
   como se propone el cambio a la cola. En `mandato_sepa_update` la rama del tutor va dentro de un CASE
   que mira que el segundo segmento sea un uuid: en ese bucket conviven las rutas del niño y las de
   familia, y un OR no fija el orden de evaluación (sin el CASE, 22P02 al convertir `familia`; medido en
-  el ensayo).
+  el ensayo). _(Sustituido el 2026-11-22 para el mandato, `20270204120000`: el bucket `mandato-sepa` ya
+  no tiene ninguna política de UPDATE ni de DELETE, para nadie, y su PDF no cambia tampoco para
+  `service_role`. Ver «El mandato SEPA como prueba». Las otras cuatro siguen así.)_
 - **El mandato.** `registrar_mandato_sepa` y `sustituir_mandato_sepa`: un tutor con la familia validada
   recibe 42501 `cola_validacion`. Propone con `proponer_mandato_sepa` (tutor de la familia validada; una
   propuesta a la vez, `mandato_pendiente`) y decide Dirección con `decidir_mandato_propuesto` (`es_admin`

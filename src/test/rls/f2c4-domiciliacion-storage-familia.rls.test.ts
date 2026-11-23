@@ -30,9 +30,9 @@ import { firmarV3 } from './mandato-v3-de-test'
  *     `20260727120000_phase_f2c4_mandato_storage_familia`): el tutor sube/lee bajo
  *     `{centro}/familia/{suFamilia}/…`, NO bajo la de otra familia; y las políticas nino-scoped
  *     de F11-G-0 (`{centro}/{ninoSuyo}/mandato.pdf`) siguen funcionando (no regresión: se AÑADEN
- *     políticas, no se reemplazan). Desde el 2026-11-22 la app ya no sube por la ruta del niño
- *     (el fichero se llama por el sello, en la de la familia); la política se cierra en la
- *     migración 2 del cierre del mandato, y entonces este caso cambia.
+ *     políticas, no se reemplazan). Sustituido el 2026-11-22: la app ya no sube por la ruta del
+ *     niño (el fichero se llama por el sello, en la de la familia), y la migración 2 del cierre del
+ *     mandato (`20270204120000`) quita esa política: el caso de abajo ahora espera el rechazo.
  *
  *  B) Las RPCs por familia con params DIGITALES tal como las llama el route del tutor:
  *     `registrar` (familia sin mandato) → activo, metodo='digital', documento_path del path
