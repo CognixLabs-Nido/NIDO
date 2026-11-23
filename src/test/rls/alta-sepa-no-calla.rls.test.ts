@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { propsDe, type SesionConFallos } from './lectura-fallida'
 import {
+  asignarRol,
   clientFor,
   createTestAula,
   createTestCentro,
@@ -80,6 +81,9 @@ describe('el alta no calla el SEPA cuando no pudo leer el centro', () => {
     nino = await createTestNino(centro.id, 'Nino Alta Sepa No Calla')
     const matricula = await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Alta Sepa No Calla' })
+    // El rol del centro que el tutor real tiene (medido en prod el 2026-11-23: 4 de 4); sin él la
+    // RLS de `centros` no deja leer y el control sale rojo sin fallo inyectado.
+    await asignarRol(legal.id, centro.id, 'tutor_legal')
     await crearFamiliaTutor(nino.familia_id, legal.id)
     await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', { puede_ver_info_medica: true })
     const m = await serviceClient

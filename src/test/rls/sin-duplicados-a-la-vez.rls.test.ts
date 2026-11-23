@@ -56,6 +56,8 @@ describe('dos a la vez no crean un duplicado', () => {
     await asignarRol(admin.id, centro.id, 'admin')
     ninoId = (await createTestNino(centro.id, 'Nino Sin Duplicados')).id
     tutor = await createTestUser({ nombre: 'Tutor Sin Duplicados' })
+    // Sin el rol del centro la RLS no deja leer la plantilla y la acción contesta «sin plantilla».
+    await asignarRol(tutor.id, centro.id, 'tutor_legal')
     await crearVinculo(ninoId, tutor.id, 'tutor_legal_principal', {
       puede_firmar_autorizaciones: true,
     })
@@ -115,10 +117,11 @@ describe('dos a la vez no crean un duplicado', () => {
     const r = await Promise.all(
       Array.from({ length: A_LA_VEZ }, () => crearImagenAutorizacion({ nino_id: ninoId }))
     )
-    expect(
-      r.every((x) => x.success),
-      `premisa: todas contestan (${JSON.stringify(r.map((x) => x.success))})`
-    ).toBe(true)
+    // Premisa: ninguna contesta «sin plantilla» (la forma regla, que dejaría esto en 0 instancias
+    // sin medir nada: pasó el 2026-11-23 con un montaje sin rol) y al menos una la dejó lista.
+    const estados = r.map((x) => (x.success ? x.data.estado : `fallo:${x.error}`))
+    expect(estados, 'premisa: ninguna «sin plantilla»').not.toContain('sin_plantilla')
+    expect(estados, 'premisa: al menos una lista').toContain('lista')
     const { data, error } = await serviceClient
       .from('autorizaciones')
       .select('id')
