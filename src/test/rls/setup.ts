@@ -7,6 +7,7 @@ import type { Database } from '@/types/db'
 import { comprobarBdLocal } from '../guarda-bd-local'
 
 import { cursoDeTest } from './curso-de-test'
+import { borrarMandatos } from './mandatos-como-postgres'
 import { FECHA_INCORPORACION_DE_TEST } from './fecha-incorporacion-de-test'
 import { isRetryableAuthError, withRetry } from './retry'
 
@@ -247,6 +248,14 @@ export async function deleteTestCentro(id: string): Promise<void> {
   // (RESTRICT en roles_usuario, matriculas, ninos y otras bloquea el borrado directo).
   // Best-effort a nivel de fichero, pero YA NO muere mudo: inspecciona el error final.
   const svc = serviceClient
+
+  // Los mandatos primero: desde `20270204120000` no se borran en cascada con el niño ni con el centro
+  // (`zz_firma_inmutable`), solo con el marcador, que pone `borrarMandatos`.
+  try {
+    borrarMandatos('centro_id', id)
+  } catch (e) {
+    console.error(`deleteTestCentro(${id}): ${e instanceof Error ? e.message : String(e)}`)
+  }
 
   // Niños del centro: los dependientes con FK RESTRICT sobre ninos hay que borrarlos
   // ANTES que los propios niños. El resto (vinculos, autorizaciones-instancia, firmas,
