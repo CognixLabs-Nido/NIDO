@@ -50,6 +50,7 @@ import { RevocarImagenNinoButton } from '@/features/ninos/components/RevocarImag
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
+import { datosPedagogicosContestados } from '@/features/datos-pedagogicos/lib/contestados'
 import { ExportButton } from '@/features/export/components/ExportButton'
 import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentacionTab'
 import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
@@ -308,7 +309,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
           estado={matriculaActiva.estado as 'pendiente' | 'lista'}
           matriculaId={matriculaActiva.id}
           avance={avance}
-          pedagogicos={datosPed !== null}
+          pedagogicos={datosPedagogicosContestados(datosPed)}
           sinTerminar={sinTerminar}
           servicios={
             peticionServicios === null

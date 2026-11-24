@@ -137,11 +137,17 @@ export async function getPaseDeListaComidaTodosMomentos(
         logger.warn('nino_toma_comida_solida failed', error.message)
         // Sin leer no se supone que come sólidos: fuera de la lista, y la pantalla lo dice (C,
         // 2026-11-23: a un bebé de biberón no se le ofrece comida).
-        return { ninoId: n.id, toma: false, sinComprobar: true }
+        return { ninoId: n.id, toma: false, sinComprobar: true, sinDatos: false }
       }
-      return { ninoId: n.id, toma: Boolean(data), sinComprobar: false }
+      // NULL = nadie lo ha contestado (sin registro vivo o lactancia vacía). Sale en el pase,
+      // marcado: ni que sí (un bebé de biberón) ni que no (nadie podría apuntar lo que come). C,
+      // 2026-11-23/24. El tipo generado dice `boolean`, pero la función devuelve NULL.
+      const valor = data as boolean | null
+      if (valor === null) return { ninoId: n.id, toma: true, sinComprobar: false, sinDatos: true }
+      return { ninoId: n.id, toma: valor, sinComprobar: false, sinDatos: false }
     })
   )
+  const idsSinDatos = new Set(solidosChecks.filter((c) => c.sinDatos).map((c) => c.ninoId))
   const ninosIdsSolidos = new Set(solidosChecks.filter((c) => c.toma).map((c) => c.ninoId))
   const ninos = ninosBruto.filter((n) => ninosIdsSolidos.has(n.id))
   const idsSinComprobar = new Set(solidosChecks.filter((c) => c.sinComprobar).map((c) => c.ninoId))
@@ -173,7 +179,11 @@ export async function getPaseDeListaComidaTodosMomentos(
   )
 
   const filas: PaseDeListaComidaFila[] = ninos
-    .map((n) => ({ nino: n, alergiaGrave: alergiaByNino.get(n.id) ?? false }))
+    .map((n) => ({
+      nino: n,
+      alergiaGrave: alergiaByNino.get(n.id) ?? false,
+      sinDatosPedagogicos: idsSinDatos.has(n.id),
+    }))
     .sort((a, b) => a.nino.nombre.localeCompare(b.nino.nombre))
 
   // 7. Comidas existentes para los 4 momentos en una sola query.

@@ -9,6 +9,10 @@ import { AltaSinTerminarAcciones } from '@/features/matriculas/components/AltaSi
 import { InvitacionTutor2Acciones } from '@/features/matriculas/components/InvitacionTutor2Acciones'
 import { ChecklistAvance } from '@/features/matriculas/components/ChecklistAvance'
 import {
+  getNinosSinDatosPedagogicos,
+  type NinoSinDatosPedagogicos,
+} from '@/features/datos-pedagogicos/queries/get-ninos-sin-datos-pedagogicos'
+import {
   getAltasEnProceso,
   type AltaEnProceso,
 } from '@/features/matriculas/queries/get-altas-en-proceso'
@@ -65,13 +69,15 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
   const { centroId } = await requireContextoCentro(locale)
 
   const supabase = await createClient()
-  const [altas, sinTarjeta, sinAccesoFicha, fichasSinValidez, porRefirmar] = await Promise.all([
-    getAltasEnProceso(supabase, centroId),
-    getNinosSinTarjeta(supabase, centroId),
-    getTutoresSinAccesoFicha(supabase, centroId),
-    getFichasSinValidez(supabase, centroId),
-    getMandatosPorRefirmar(supabase, centroId),
-  ])
+  const [altas, sinTarjeta, sinDatosPed, sinAccesoFicha, fichasSinValidez, porRefirmar] =
+    await Promise.all([
+      getAltasEnProceso(supabase, centroId),
+      getNinosSinTarjeta(supabase, centroId),
+      getNinosSinDatosPedagogicos(supabase, centroId),
+      getTutoresSinAccesoFicha(supabase, centroId),
+      getFichasSinValidez(supabase, centroId),
+      getMandatosPorRefirmar(supabase, centroId),
+    ])
   const tValores = await getTranslations('export.doc.valores')
 
   const fecha = (iso: string) =>
@@ -122,6 +128,7 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
       <FichasSinValidez fichas={fichasSinValidez} locale={locale} t={t} fecha={fecha} />
 
       <SinTarjeta ninos={sinTarjeta} locale={locale} t={t} />
+      <SinDatosPedagogicos ninos={sinDatosPed} locale={locale} t={t} />
       <MandatosPorRefirmar mandatos={porRefirmar} locale={locale} fecha={fecha} t={t} />
     </div>
   )
@@ -259,6 +266,52 @@ function SinTarjeta({
               >
                 <span>
                   {n.nombre} {n.apellidos ?? ''}
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/**
+ * C (2026-11-23/24): los niños matriculados de los que nadie sabe si toman sólidos, en sus tres casos.
+ * El pase de comidas los pinta «sin datos pedagógicos»; aquí la Dirección ve a quién pedírselos.
+ */
+function SinDatosPedagogicos({
+  ninos,
+  locale,
+  t,
+}: {
+  ninos: NinoSinDatosPedagogicos[] | null
+  locale: string
+  t: T
+}) {
+  return (
+    <section className="space-y-2" data-testid="ninos-sin-datos-pedagogicos">
+      <h2 className="text-h3 text-foreground">{t('sin_datos_pedagogicos.titulo')}</h2>
+      <p className="text-muted-foreground text-sm">{t('sin_datos_pedagogicos.subtitulo')}</p>
+      {ninos === null ? (
+        <p className="text-sm">{t('sin_datos_pedagogicos.no_se_pudo_leer')}</p>
+      ) : ninos.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{t('sin_datos_pedagogicos.vacio')}</p>
+      ) : (
+        <ul className="divide-border divide-y rounded-xl border">
+          {ninos.map((n) => (
+            <li key={n.id} data-caso={n.caso}>
+              <Link
+                href={`/${locale}/admin/ninos/${n.id}?tab=pedagogico`}
+                className="hover:bg-muted flex items-center justify-between gap-3 px-4 py-3 text-sm"
+              >
+                <span>
+                  {n.nombre} {n.apellidos ?? ''}
+                  <span className="text-muted-foreground">
+                    {' '}
+                    · {t(`sin_datos_pedagogicos.casos.${n.caso}`)}
+                  </span>
                 </span>
                 <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
               </Link>

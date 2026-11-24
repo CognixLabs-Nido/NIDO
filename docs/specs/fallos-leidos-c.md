@@ -202,6 +202,21 @@ Verificado (2026-11-24, solo lectura, `~/nido-logs/15/c/verif-b/`): 202702051200
 cuerpos vivos son los del fichero con los CRLF del editor (md5 sin CR = el del fichero; control con una
 letra cambiada = distinto); restricción, índice, trigger y permisos como en la migración.
 
+### 2026-11-24 · guardar revive el registro borrado
+
+«Que guardar revive el registro borrado. El motivo: hoy una familia rellenaría los tres campos, el
+formulario diría que se ha guardado, y el niño seguiría contando como «sin datos» para la profe. Eso es
+un formulario que se traga lo que le escribes, y es peor que el defecto que estamos cerrando.
+Y revivir es seguro aquí porque lo has medido: ningún código de la app borra en blando esa tabla —las
+purgas hacen DELETE—, así que no hay ningún borrado legítimo que estaríamos deshaciendo. Si algún día
+existiera uno, esta decisión es la que habría que revisar; déjalo escrito así.
+Con su test: guardar sobre una fila borrada a mano la deja viva y la función deja de decir «sin datos».»
+
+**Lo que la sostiene, y cuándo revisarla:** medido el 2026-11-24, nada pone `deleted_at` en
+`datos_pedagogicos_nino` (ni la app ni las funciones; las siete purgas y `anular_alta` hacen
+`DELETE`). El día que algo la borre en blando, `upsertDatosPedagogicos` desharía ese borrado al
+guardar: **esta decisión es la que hay que revisar**. Lo dice también el comentario de la acción.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
@@ -231,6 +246,8 @@ letra cambiada = distinto); restricción, índice, trigger y permisos como en la
   niño SIN fila de datos pedagógicos («COALESCE de seguridad»): la misma regla, en la base. En
   producción (2026-11-23, solo lectura) son 2 de los 3 niños con matrícula activa. Cambiarlo es una
   migración y saca del pase a todo niño sin esos datos. Tampoco filtra `deleted_at` de esa tabla.
+  _Decidido el 2026-11-23 y 2026-11-24 (arriba: «ni TRUE ni FALSE», «el registro borrado…», «C, desde
+  main») y cerrado en el PR C: la función devuelve NULL y el pase SACA al niño marcado, no lo quita._
 
 ### La hora (2026-11-23)
 

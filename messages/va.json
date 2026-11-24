@@ -1609,6 +1609,17 @@
         "no_se_pudo_leer": "No s’ha pogut llegir quins xiquets tenen la targeta. Torna a carregar la pàgina.",
         "vacio": "Tots els xiquets matriculats tenen la targeta sanitària."
       },
+      "sin_datos_pedagogicos": {
+        "titulo": "Matriculats sense dades pedagògiques",
+        "subtitulo": "Sense la lactància ningú sap si el xiquet pren sòlids, i la llista del dinar li ho diu a la mestra. A aquestes famílies cal demanar-les-hi.",
+        "no_se_pudo_leer": "No s'ha pogut llegir quins xiquets tenen dades pedagògiques. Torna a carregar la pàgina.",
+        "vacio": "Tots els xiquets matriculats tenen la lactància contestada.",
+        "casos": {
+          "sin_registro": "sense dades",
+          "registro_borrado": "dades esborrades",
+          "lactancia_vacia": "lactància sense contestar"
+        }
+      },
       "mandatos_por_refirmar": {
         "titulo": "Mandats SEPA pendents de tornar a firmar",
         "subtitulo": "Es van firmar abans que el mandat portara l'identificador de creditor del centre i el document i l'adreça del titular. Continuen actius i no es toquen: la família ha de tornar a firmar la domiciliació.",
@@ -1896,7 +1907,8 @@
     },
     "no_leidos": "No hem pogut llegir les dades pedagògiques guardades, així que ara no es poden canviar: guardar substituiria el que ja hi ha sense que ho hages vist. Torna a carregar la pàgina.",
     "no_leidos_alta": "No hem pogut llegir les dades pedagògiques guardades, així que ací no es poden canviar: el que escrigueres substituiria el que ja hi ha sense que ho hages vist. Pots continuar amb l'alta i completar-les després.",
-    "no_leidos_lectura": "No hem pogut llegir les dades pedagògiques. Torna a carregar la pàgina."
+    "no_leidos_lectura": "No hem pogut llegir les dades pedagògiques. Torna a carregar la pàgina.",
+    "sin_contestar": "Sense contestar"
   },
   "centro": {
     "validation": {
@@ -3070,6 +3082,7 @@
         "unico": "Plat"
       },
       "badge_alergia_grave": "Al·lèrgia greu",
+      "badge_sin_datos_pedagogicos": "Sense dades pedagògiques",
       "quick": {
         "aplicar_a_todos_a_columna": "Aplicar {valor} a tots · {columna}"
       },
@@ -3080,7 +3093,8 @@
         "guardado": "Guardat",
         "error": "Error"
       },
-      "sin_comprobar_solidos": "No s'ha pogut comprovar si aquests xiquets prenen sòlids, així que no ixen en la llista: {nombres}. Recarrega la pàgina abans d'apuntar-los menjar."
+      "sin_comprobar_solidos": "No s'ha pogut comprovar si aquests xiquets prenen sòlids, així que no ixen en la llista: {nombres}. Recarrega la pàgina abans d'apuntar-los menjar.",
+      "sin_datos_pedagogicos": "Ningú ha dit encara si aquests xiquets prenen sòlids (no tenen dades pedagògiques): {nombres}. Pregunta abans de donar-los menjar."
     },
     "widget_familia": {
       "title": "Menú del dia",

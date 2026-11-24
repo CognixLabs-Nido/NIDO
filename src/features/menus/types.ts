@@ -60,6 +60,12 @@ export interface PaseDeListaComidaFila {
     foto_url: string | null
   }
   alergiaGrave: boolean
+  /**
+   * Nadie ha contestado si come sólidos (sin registro vivo de datos pedagógicos, o con la lactancia
+   * vacía: `nino_toma_comida_solida` NULL). El niño SALE en el pase, ni como que sí ni como que no, y
+   * la pantalla lo dice antes de darle de comer (C, 2026-11-23 y 2026-11-24).
+   */
+  sinDatosPedagogicos: boolean
 }
 
 /** Resumen del menú del día para el widget familia (B56). */
