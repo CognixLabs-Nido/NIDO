@@ -174,6 +174,34 @@ ficheros de ninos.
 El check de tipos que montamos en el #523 va a cazar el cambio de nullability, así que eso ya está
 cubierto, pero quiero saber qué más lo asume antes de aplicarlo, no después.»
 
+### 2026-11-24 · C, desde main: lo que lleva
+
+«La 20270205120000 está aplicada y el #547 mergeado. Verifícala en producción, solo lectura y con
+control positivo. Y saca C de main, sin apilar.
+C lleva esto, que ya está todo decidido:
+
+- Las DOS MEDIDAS ABIERTAS POR SEPARADO, cada una con su predicción: un niño sin registro ninguno (hoy
+  la función dice que come sólidos) y un niño con registro borrado (hoy decide con el registro
+  borrado). Son dos defectos distintos y el PR los cuenta por separado.
+- La función devuelve NULL cuando no hay registro vivo o la lactancia está vacía, y filtra los borrados.
+- Las tres columnas dejan de ser NOT NULL.
+- El formulario sale EN BLANCO, sin nada preseleccionado, y si nadie toca esos tres campos no se guarda
+  nada. Siguen siendo OPCIONALES: Jose dijo B y eso no cambia.
+- Las cinco cosas que asumen que siempre hay valor: la vista de la familia, que hoy pintaría la clave de
+  traducción; el ✓ del avance del alta, que solo aparece con los tres contestados; y el conjunto del
+  contrato —formulario, esquema, acción, tipo y la página del alta—.
+- En el pase de comidas el niño SALE marcado «sin datos pedagógicos», ni como que sí ni como que no, y
+  la profe lo ve antes de darle de comer.
+- Dirección tiene la lista de los niños sin datos pedagógicos, con los tres casos: sin registro,
+  registro borrado y lactancia vacía.
+  Ensayo en producción terminando en RAISE, una sonda una defensa con su arrastre previsto, mide.sh para
+  el build, espera-build.sh con su tope, y la predicción de cada ronda nombrando los tests con sus
+  cuentas. Dame el md5 cuando ensayes y el orden de aplicación.»
+
+Verificado (2026-11-24, solo lectura, `~/nido-logs/15/c/verif-b/`): 20270205120000 aplicada; los dos
+cuerpos vivos son los del fichero con los CRLF del editor (md5 sin CR = el del fichero; control con una
+letra cambiada = distinto); restricción, índice, trigger y permisos como en la migración.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
