@@ -254,3 +254,9 @@ cubierto, pero quiero saber qué más lo asume antes de aplicarlo, no después.�
   tutor», «sin plantilla», o creaba otra instancia) y ante un 23505 devuelve la que quedó.
 - Ensayo en producción (`~/nido-logs/14/c/duplicados/ensayo`, terminado en RAISE): todo como predicho
   en la 2.ª corrida; la 1.ª no midió la imagen (el montaje no llevaba plantilla).
+
+### 2026-11-24 · el PR C no se apila
+
+«Y para C, que también la ibas a apilar: no la apiles sobre B. Sácala de main en cuanto B esté dentro,
+que acabamos de ver lo que cuesta el apilado con squash.» (B se rebasó sobre main tras el squash de A:
+árbol idéntico al de antes, migración con el mismo md5.)
