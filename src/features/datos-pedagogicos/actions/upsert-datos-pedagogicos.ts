@@ -48,6 +48,12 @@ export async function upsertDatosPedagogicos(
         alimentacion_observaciones: parsed.data.alimentacion_observaciones ?? null,
         idiomas_casa: parsed.data.idiomas_casa,
         tiene_hermanos_en_centro: parsed.data.tiene_hermanos_en_centro,
+        // Guardar REVIVE un registro borrado (decisión del responsable, 2026-11-24): el upsert por
+        // `nino_id` cae sobre la fila borrada, y sin esto lo escrito se quedaba borrado (el niño
+        // seguía «sin datos» con el formulario diciendo «guardado»). Es seguro porque nada borra en
+        // blando esta tabla (medido el 2026-11-24: las purgas hacen DELETE). Si algún día algo la
+        // borrara en blando, ESTA es la decisión que hay que revisar (spec fallos-leidos-c.md).
+        deleted_at: null,
       },
       { onConflict: 'nino_id' }
     )
