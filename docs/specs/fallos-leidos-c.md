@@ -193,3 +193,21 @@ el PR cuenta los dos defectos por separado con su medición cada uno.»
   si fallan (9 de 9 con la de sólidos). Unidad contra HEAD: 14 rojos, uno por lectura y helper.
 - Menú, abierto: los 5 platos a `null`. `getPlantillaMes` lanza en vez de `null` (404) o `menus: []`.
 - Medido cerrado: run 45262811042, solo los duplicados en rojo (van al PR B).
+
+### Los duplicados, PR B (2026-11-24)
+
+- Medido abierto (run 45370448276, sin migración ni arreglo): reordenar [C, A] con B descartado en 2
+  («posiciones: A=2, B=2, C=1: expected 2 to be 3»), sin concurrencia ninguna; cinco altas a la vez
+  («posiciones: 1,1,1,1,1»); cinco «crear imagen» a la vez («expected 5 to be 1»).
+- En producción (2026-11-24, solo lectura): el único curso con lista tiene invitados en 1, 4 y 5 y
+  descartados en 2 y 3. Un arrastre con el código de antes numeraba los invitados 1, 2, 3 y pisaba a
+  los descartados: la colisión estaba a un arrastre.
+- Migración `20270205120000_fix_sin_duplicados`: la posición la pone un trigger con cerrojo por curso;
+  `reordenar_lista_espera` numera el curso entero en una sentencia (descartados detrás) y rechaza un
+  orden desfasado (`orden_desfasado`); restricción única `DEFERRABLE` (curso, posición); índice único
+  de imagen (niño, versión del texto) sobre las publicadas. Aborta antes si hay duplicados de partida.
+- App: `crearProspecto` ya no calcula la posición; `reordenarListaEspera` llama a la función y el
+  panel recarga si falla; `crearImagenAutorizacion` falla en cada lectura que falla (antes: «no eres
+  tutor», «sin plantilla», o creaba otra instancia) y ante un 23505 devuelve la que quedó.
+- Ensayo en producción (`~/nido-logs/14/c/duplicados/ensayo`, terminado en RAISE): todo como predicho
+  en la 2.ª corrida; la 1.ª no midió la imagen (el montaje no llevaba plantilla).
