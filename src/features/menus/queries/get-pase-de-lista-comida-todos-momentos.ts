@@ -52,22 +52,26 @@ export async function getPaseDeListaComidaTodosMomentos(
 ): Promise<Record<MomentoComida, PaseDeListaComidaState>> {
   const supabase = await createClient()
 
-  const { data: aula } = await supabase
+  const { data: aula, error: errAula } = await supabase
     .from('aulas')
     .select('centro_id')
     .eq('id', aulaId)
     .maybeSingle()
 
+  // C, 2026-11-23: una lectura que falla no se pinta como «sin plantilla», «día sin menú» ni
+  // «nada apuntado»; el pase no sale (como con las alertas médicas).
+  if (errAula) throw new Error(`pase de comidas, aula: ${errAula.message}`)
   if (!aula) {
     return broadcastSinPlantilla()
   }
   const centroId = (aula as AulaCentro).centro_id
 
   // 1. Centro abierto?
-  const { data: tipoDia } = await supabase.rpc('tipo_de_dia', {
+  const { data: tipoDia, error: errTipoDia } = await supabase.rpc('tipo_de_dia', {
     p_centro_id: centroId,
     p_fecha: fecha,
   })
+  if (errTipoDia) throw new Error(`pase de comidas, tipo de día: ${errTipoDia.message}`)
   const abiertos = ['lectivo', 'escuela_verano', 'escuela_navidad', 'jornada_reducida']
   if (tipoDia && !abiertos.includes(tipoDia)) {
     return broadcast({
@@ -78,7 +82,7 @@ export async function getPaseDeListaComidaTodosMomentos(
 
   // 2. Plantilla publicada del mes?
   const [anio, mes] = fecha.split('-').map((s) => Number(s))
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: errPlantilla } = await supabase
     .from('plantillas_menu_mensual')
     .select('id')
     .eq('centro_id', centroId)
@@ -88,36 +92,39 @@ export async function getPaseDeListaComidaTodosMomentos(
     .is('deleted_at', null)
     .maybeSingle()
 
+  if (errPlantilla) throw new Error(`pase de comidas, plantilla: ${errPlantilla.message}`)
   if (!plantilla) {
     return broadcastSinPlantilla()
   }
 
   // 3. menu_dia para la fecha?
-  const { data: menu } = await supabase
+  const { data: menu, error: errMenu } = await supabase
     .from('menu_dia')
     .select('*')
     .eq('plantilla_id', plantilla.id)
     .eq('fecha', fecha)
     .maybeSingle()
 
+  if (errMenu) throw new Error(`pase de comidas, menú del día: ${errMenu.message}`)
   if (!menu) {
     return broadcast({ kind: 'dia_sin_menu' })
   }
 
   // 4. Niños del aula con matrícula activa.
-  const { data: matriculas } = await aplicarMatriculaActiva(
+  const { data: matriculas, error: errMatriculas } = await aplicarMatriculaActiva(
     supabase
       .from('matriculas')
       .select('ninos(id, nombre, apellidos, foto_url)')
       .eq('aula_id', aulaId)
   )
 
+  if (errMatriculas) throw new Error(`pase de comidas, matrículas: ${errMatriculas.message}`)
   const ninosBruto = ((matriculas ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)
     .filter((n): n is NonNullable<MatriculaJoinNino['ninos']> => n !== null)
 
   if (ninosBruto.length === 0) {
-    return broadcast({ kind: 'listo', menu, filas: [], existentes: [] })
+    return broadcast({ kind: 'listo', menu, filas: [], existentes: [], sinComprobarSolidos: [] })
   }
 
   // 5. Filtrar via nino_toma_comida_solida en paralelo.
@@ -128,13 +135,17 @@ export async function getPaseDeListaComidaTodosMomentos(
       })
       if (error) {
         logger.warn('nino_toma_comida_solida failed', error.message)
-        return { ninoId: n.id, toma: true }
+        // Sin leer no se supone que come sólidos: fuera de la lista, y la pantalla lo dice (C,
+        // 2026-11-23: a un bebé de biberón no se le ofrece comida).
+        return { ninoId: n.id, toma: false, sinComprobar: true }
       }
-      return { ninoId: n.id, toma: Boolean(data) }
+      return { ninoId: n.id, toma: Boolean(data), sinComprobar: false }
     })
   )
   const ninosIdsSolidos = new Set(solidosChecks.filter((c) => c.toma).map((c) => c.ninoId))
   const ninos = ninosBruto.filter((n) => ninosIdsSolidos.has(n.id))
+  const idsSinComprobar = new Set(solidosChecks.filter((c) => c.sinComprobar).map((c) => c.ninoId))
+  const sinComprobarSolidos = ninosBruto.filter((n) => idsSinComprobar.has(n.id))
 
   // 6. Alergias graves + agendas en paralelo (1 query cada una).
   const ninoIds = ninos.map((n) => n.id)
@@ -153,6 +164,7 @@ export async function getPaseDeListaComidaTodosMomentos(
   for (const m of medicasRes.data ?? []) {
     alergiaByNino.set(m.nino_id, m.alergia_grave)
   }
+  if (agendasRes.error) throw new Error(`pase de comidas, agendas: ${agendasRes.error.message}`)
   const agendaIdByNino = new Map<string, string>(
     ((agendasRes.data ?? []) as Array<{ id: string; nino_id: string }>).map((a) => [
       a.nino_id,
@@ -183,12 +195,13 @@ export async function getPaseDeListaComidaTodosMomentos(
   }
 
   if (agendaIds.length > 0) {
-    const { data: comidas } = await supabase
+    const { data: comidas, error: errComidas } = await supabase
       .from('comidas')
       .select('id, agenda_id, momento, cantidad, descripcion, tipo_plato')
       .in('agenda_id', agendaIds)
       .not('tipo_plato', 'is', null)
 
+    if (errComidas) throw new Error(`pase de comidas, comidas apuntadas: ${errComidas.message}`)
     const agendaToNino = new Map<string, string>()
     for (const [nino, ag] of agendaIdByNino.entries()) agendaToNino.set(ag, nino)
 
@@ -218,6 +231,7 @@ export async function getPaseDeListaComidaTodosMomentos(
       menu,
       filas,
       existentes: existentesPorMomento[m],
+      sinComprobarSolidos,
     }
   }
   return result

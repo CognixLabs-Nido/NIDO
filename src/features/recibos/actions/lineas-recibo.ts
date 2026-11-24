@@ -164,11 +164,16 @@ export async function crearReciboConLineaManual(
 
   // Un mes cerrado no admite recibos nuevos. El motor ya lo rechaza al regenerar; sin este
   // chequeo se podría colar un recibo por la puerta de atrás en un mes ya liquidado.
-  const { data: cerrado } = await supabase.rpc('mes_cerrado', {
+  // Si no se pudo saber, no se da por abierto (C, 2026-11-23).
+  const { data: cerrado, error: errorCerrado } = await supabase.rpc('mes_cerrado', {
     p_centro_id: centroId,
     p_anio: parsed.data.anio,
     p_mes: parsed.data.mes,
   })
+  if (errorCerrado) {
+    logger.warn('crearReciboConLineaManual mes_cerrado', errorCerrado.message)
+    return fail('recibos_panel.errors.linea_failed')
+  }
   if (cerrado) return fail('recibos_panel.errors.mes_cerrado')
 
   // Hay UNIQUE(familia_id, anio, mes) para regulares: si alguien regeneró entre que se pintó
@@ -187,7 +192,7 @@ export async function crearReciboConLineaManual(
 
   // Método CONGELADO, igual que hace el motor al crear la carcasa: la excepción del mes si la
   // hay; si no, el de la ficha de la familia (PR-7).
-  const { data: pref } = await supabase
+  const { data: pref, error: errorPref } = await supabase
     .from('metodo_pago_familia')
     .select('metodo')
     .eq('familia_id', parsed.data.familiaId)
@@ -195,6 +200,11 @@ export async function crearReciboConLineaManual(
     .eq('mes', parsed.data.mes)
     .is('deleted_at', null)
     .maybeSingle()
+  // Sin leer la excepción del mes, el recibo nacería con el de la ficha: no se crea.
+  if (errorPref) {
+    logger.warn('crearReciboConLineaManual excepción del mes', errorPref.message)
+    return fail('recibos_panel.errors.linea_failed')
+  }
 
   const { data: recibo, error: errorRecibo } = await supabase
     .from('recibos')

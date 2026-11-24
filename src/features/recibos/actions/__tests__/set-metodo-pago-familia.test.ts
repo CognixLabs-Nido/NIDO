@@ -24,15 +24,27 @@ interface Call {
 
 function makeClient(
   recibo: { id: string; estado: string } | null,
-  { ficha = 'sepa', excepcion = null }: { ficha?: string; excepcion?: { id: string } | null } = {}
+  {
+    ficha = 'sepa',
+    excepcion = null,
+    reciboLeerFalla = false,
+    reciboEscribirFalla = false,
+  }: {
+    ficha?: string
+    excepcion?: { id: string } | null
+    reciboLeerFalla?: boolean
+    reciboEscribirFalla?: boolean
+  } = {}
 ) {
   const calls: Call[] = []
 
-  function selectChain(terminal: unknown) {
+  const FALLO = { message: 'fallo' }
+  function selectChain(terminal: unknown, falla = false) {
     const c: Record<string, unknown> = {}
     c.eq = () => c
     c.is = () => c
-    c.maybeSingle = () => Promise.resolve({ data: terminal, error: null })
+    c.maybeSingle = () =>
+      Promise.resolve(falla ? { data: null, error: FALLO } : { data: terminal, error: null })
     return c
   }
 
@@ -45,7 +57,8 @@ function makeClient(
               ? { metodo_pago: ficha }
               : table === 'metodo_pago_familia'
                 ? excepcion
-                : recibo
+                : recibo,
+            table === 'recibos' && reciboLeerFalla
           ),
         insert: (patch: Record<string, unknown>) => {
           calls.push({ table, op: 'insert', patch })
@@ -53,7 +66,8 @@ function makeClient(
         },
         update: (patch: Record<string, unknown>) => {
           calls.push({ table, op: 'update', patch })
-          return { eq: () => Promise.resolve({ error: null }) }
+          const falla = table === 'recibos' && reciboEscribirFalla
+          return { eq: () => Promise.resolve({ error: falla ? FALLO : null }) }
         },
       }
     },
@@ -63,6 +77,30 @@ function makeClient(
 }
 
 describe('setMetodoPagoFamiliaCore', () => {
+  // C, 2026-11-23: ni con lo que no se leyó, ni «sí» con una escritura fallida.
+  it('si no se puede leer el recibo del mes, falla SIN escribir nada', async () => {
+    const { fake, calls } = makeClient(
+      { id: 'rec-1', estado: 'borrador' },
+      { reciboLeerFalla: true }
+    )
+    const res = await setMetodoPagoFamiliaCore(fake, CENTRO, INPUT)
+    expect(res).toEqual({ success: false, error: 'recibos_panel.errors.metodo_failed' })
+    expect(calls, 'nada escrito').toEqual([])
+  })
+
+  it('si falla el UPDATE del borrador, no dice que sí: lo dice', async () => {
+    const { fake, calls } = makeClient(
+      { id: 'rec-1', estado: 'borrador' },
+      { reciboEscribirFalla: true }
+    )
+    const res = await setMetodoPagoFamiliaCore(fake, CENTRO, INPUT)
+    expect(
+      calls.some((c) => c.table === 'recibos' && c.op === 'update'),
+      'premisa: lo intentó'
+    ).toBe(true)
+    expect(res).toEqual({ success: false, error: 'recibos_panel.errors.metodo_recibo_sin_cambiar' })
+  })
+
   it('recibo en BORRADOR → upsert de preferencia + UPDATE del método en el recibo', async () => {
     const { fake, calls } = makeClient({ id: 'rec-1', estado: 'borrador' })
 

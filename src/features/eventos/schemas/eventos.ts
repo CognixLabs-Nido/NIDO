@@ -1,12 +1,14 @@
 import { z } from 'zod'
 
+import { horaSchema as horaSchemaComun } from '@/shared/lib/hora'
+
 // --- ENUMs (F7, decisiones D1/D3/D9) ----------------------------------------
 export const ambitoEventoEnum = z.enum(['centro', 'aula', 'nino'])
 export const tipoEventoEnum = z.enum(['excursion', 'reunion', 'fiesta', 'vacaciones', 'otro'])
 export const confirmacionEstadoEnum = z.enum(['confirmado', 'rechazado'])
 
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'eventos.validation.fecha_invalida')
-const horaSchema = z.string().regex(/^\d{2}:\d{2}$/, 'eventos.validation.hora_invalida')
+const horaSchema = horaSchemaComun('eventos.validation.hora_invalida')
 
 const tituloSchema = z
   .string()

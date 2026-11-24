@@ -16,6 +16,11 @@ export interface SesionConFallos {
   fallaRpc: string | null
   /** Cuántas veces entró el fallo: la premisa de cada test. */
   fallidas: number
+  /**
+   * Tabla cuyas ESCRITURAS (`insert`, `update`, `upsert`, `delete`) contestan error, y sus lecturas
+   * no (C, 2026-11-23: la tercera forma, una escritura que falla y se informa como éxito).
+   */
+  fallaEscrituraTabla?: string | null
 }
 
 const RESPUESTA_FALLIDA = {
@@ -49,7 +54,17 @@ export function clienteConFallos(s: SesionConFallos): SupabaseClient<Database> {
   return new Proxy(real, {
     get(t, p, r) {
       if (p === 'from')
-        return (tabla: string) => (tabla === s.fallaTabla ? cadena() : t.from(tabla as never))
+        return (tabla: string) => {
+          if (tabla === s.fallaTabla) return cadena()
+          const qb = t.from(tabla as never)
+          if (tabla !== s.fallaEscrituraTabla) return qb
+          const escribe = new Set(['insert', 'update', 'upsert', 'delete'])
+          return new Proxy(qb, {
+            get(q, m, rq) {
+              return escribe.has(String(m)) ? () => cadena() : Reflect.get(q, m, rq)
+            },
+          })
+        }
       if (p === 'rpc')
         return (fn: string, args?: unknown, opts?: unknown) => {
           if (fn === s.fallaRpc) {

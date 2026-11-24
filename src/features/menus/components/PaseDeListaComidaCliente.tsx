@@ -255,7 +255,7 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states
       params: { tipo?: string }
     ) => React.ReactNode
   }) {
-    const { menu, filas, existentes } = state
+    const { menu, filas, existentes, sinComprobarSolidos } = state
     const isComidaMomento = _momento === 'comida'
 
     // Indexa existentes para pre-cargar TValue por niño.
@@ -300,11 +300,25 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states
       [filas, existentesPorNino]
     )
 
+    // Los que no se pudieron comprobar no salen en la lista, y se dice quiénes (C, 2026-11-23).
+    const avisoSinComprobar =
+      sinComprobarSolidos.length > 0 ? (
+        <div
+          role="alert"
+          data-testid="aviso-sin-comprobar-solidos"
+          className="border-destructive/40 bg-destructive/10 text-foreground rounded-md border p-3 text-sm"
+        >
+          {t('sin_comprobar_solidos', {
+            nombres: sinComprobarSolidos.map((n) => `${n.nombre} ${n.apellidos}`).join(', '),
+          })}
+        </div>
+      ) : null
+
     if (items.length === 0) {
       return (
         <div className="space-y-3">
           <CabeceraMenu menu={menu} momento={_momento} />
-          {renderEmpty('sin_ninos_solidos', {})}
+          {avisoSinComprobar ?? renderEmpty('sin_ninos_solidos', {})}
         </div>
       )
     }
@@ -348,6 +362,7 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states
     return (
       <div className="space-y-4">
         <CabeceraMenu menu={menu} momento={_momento} />
+        {avisoSinComprobar}
         <PaseDeListaTable<NinoCellData, ValorComida>
           items={items}
           renderItem={(item) => (

@@ -374,11 +374,14 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // SEPA (G-2): datos del centro (acreedor, con su CID desde el 0c-2) y mandato activo previo del
   // tutor 1 (titular).
-  const { data: centro } = await supabase
+  const { data: centro, error: errCentro } = await supabase
     .from('centros')
     .select('nombre, direccion, identificador_acreedor')
     .eq('id', nino.centro_id)
     .maybeSingle()
+  // Sin el centro leído no se sabe si domicilia: montar el alta sin el paso SEPA le diría a la familia
+  // que el centro no domicilia (C, 2026-11-23). Se lanza, como las otras lecturas de esta página.
+  if (errCentro) throw new Error(`alta: no se pudo leer el centro: ${errCentro.message}`)
 
   // El IBAN va cifrado (G-2bis) y no se pre-rellena: solo titular/identificador/PDF para el preview.
   const { data: mandatoRow } = await supabase

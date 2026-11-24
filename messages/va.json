@@ -2116,7 +2116,8 @@
       "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo.",
       "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo.",
       "linea_arrastre": "La línia d’una devolució no s’edita: es lleva, i la devolució torna a quedar sense resoldre.",
-      "linea_sobrante": "La línia del saldo a favor d’un xec no s’edita: si cal, lleva-la i el sobrant torna a quedar pendent."
+      "linea_sobrante": "La línia del saldo a favor d’un xec no s’edita: si cal, lleva-la i el sobrant torna a quedar pendent.",
+      "metodo_recibo_sin_cambiar": "S'ha guardat el mètode del mes, però el rebut en esborrany continua amb l'anterior. Torna-ho a intentar."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",
@@ -3078,7 +3079,8 @@
         "sin_guardar": "Sense guardar",
         "guardado": "Guardat",
         "error": "Error"
-      }
+      },
+      "sin_comprobar_solidos": "No s'ha pogut comprovar si aquests xiquets prenen sòlids, així que no ixen en la llista: {nombres}. Recarrega la pàgina abans d'apuntar-los menjar."
     },
     "widget_familia": {
       "title": "Menú del dia",
