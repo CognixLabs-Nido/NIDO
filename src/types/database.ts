@@ -6570,6 +6570,10 @@ export type Database = {
         Args: { p_actor: string; p_email: string; p_nino_id: string }
         Returns: Json
       }
+      reordenar_lista_espera: {
+        Args: { p_curso: string; p_orden: string[] }
+        Returns: number
+      }
       reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
       resolver_devolucion: {
         Args: {

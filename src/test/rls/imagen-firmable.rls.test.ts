@@ -89,6 +89,20 @@ describe('RLS imagen firmable — F11-A3', () => {
     version: string,
     firmantes: PoliticaFirmantes = 'uno_principal'
   ): Promise<string> {
+    // Como el producto (`crearImagenAutorizacion`): si el niño ya tiene la instancia publicada de esa
+    // versión, es esa. Crear otra igual no lo hace ninguna pantalla, y desde 20270205120000 la base
+    // lo impide (una por niño y versión del texto). i02 la creaba otra vez tras i01.
+    const ya = await serviceClient
+      .from('autorizaciones')
+      .select('id')
+      .eq('nino_id', ninoId)
+      .eq('tipo', 'autorizacion_imagenes')
+      .eq('es_plantilla', false)
+      .eq('estado', 'publicada')
+      .eq('texto_version', version)
+      .maybeSingle()
+    if (ya.error) throw new Error(`crearInstanciaImagenes, leer: ${ya.error.message}`)
+    if (ya.data) return ya.data.id
     const { data, error } = await serviceClient
       .from('autorizaciones')
       .insert({

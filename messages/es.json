@@ -5110,7 +5110,8 @@
       "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta.",
       "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo.",
       "alta_creada_sin_correo": "El alta está creada, pero el correo de invitación no ha salido: la familia no lo ha recibido. No vuelvas a dar el alta; avisa al responsable de NIDO para reenviarlo.",
-      "tutor_olvido": "No se puede completar el alta con esta cuenta: hay en curso una petición de borrado de sus datos en este centro (derecho al olvido)."
+      "tutor_olvido": "No se puede completar el alta con esta cuenta: hay en curso una petición de borrado de sus datos en este centro (derecho al olvido).",
+      "orden_desfasado": "La lista ha cambiado mientras la ordenabas (alguien añadió o descartó un prospecto). Se ha recargado: vuelve a ordenarla."
     }
   },
   "recibos": {
