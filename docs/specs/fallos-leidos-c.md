@@ -131,6 +131,49 @@ inventar el dato igual que el COALESCE, solo al revés. Un niño al que le borra
 pedagógicos no es un niño con datos antiguos, es un niño sin datos. La función filtra los borrados, y
 el PR cuenta los dos defectos por separado con su medición cada uno.»
 
+### 2026-11-24 · el formulario de datos pedagógicos, en blanco (Jose: opción B)
+
+«Jose: opción B. La alimentación y el resto de los datos pedagógicos siguen OPCIONALES, como se decidió
+en junio. No los hagas obligatorios.
+Pero el formulario sí cambia, y es lo que de verdad arregla esto:
+
+- Fuera las marcas preseleccionadas. Lactancia, esfínteres y alimentación salen EN BLANCO, sin nada
+  elegido.
+- Si nadie los toca, NO SE GUARDA NADA en esos campos. Guardar solo la hora de la siesta no puede crear
+  un registro que diga que el niño come de todo.
+- Y la consecuencia encaja con el PR C: queda NULL, la profe ve «sin datos» en el pase de comidas y
+  Dirección lo tiene en su lista para reclamarlo.
+  UNA COSA QUE QUIERO MEDIDA ANTES DE DARLO POR CERRADO: en producción hay un niño con registro. ¿Sus
+  valores son exactamente los tres preseleccionados? Si lo son, no podemos distinguir si esa familia los
+  eligió de verdad o si se guardaron solos, y eso hay que decirlo en el PR en vez de darlo por bueno.
+  No toques ese registro: no se puede saber cuál es el caso y cambiarlo sería inventar en la otra
+  dirección. Lo que sí hace falta es que Dirección pueda verlo y confirmarlo con la familia, con la misma
+  lista de los que están sin datos.
+  Y apunta para el censo esta forma, que es la cuarta y no la teníamos: un VALOR POR DEFECTO de un
+  formulario que se guarda como si alguien lo hubiera elegido. No es un fallo de lectura ni de
+  escritura: es un dato inventado en el origen. Busca cuántos formularios más vienen con una opción
+  marcada de la que depende algo.»
+
+Medido (2026-11-24, solo lectura, `~/nido-logs/14/c/prod/c4.txt`): la única fila de producción NO tiene
+los tres valores preseleccionados (lactancia, esfínteres y alimentación distintos del defecto): alguien
+los eligió. Idiomas (`['es']`) y hermanos (`false`) sí coinciden con su defecto: indistinguibles, y no
+deciden la comida. El registro no se toca.
+
+### 2026-11-24 · sin lista «a confirmar»; y medir quién lee las tres columnas antes del NOT NULL
+
+«No construyas la lista de «a confirmar»: tu razonamiento la deja sin sentido —0 registros
+indistinguibles en los campos que deciden la comida, y con el formulario en blanco no pueden aparecer
+más—. La lista de Dirección es la de sin datos pedagógicos, con los tres casos que dices: sin registro,
+registro borrado y lactancia vacía.
+[…]
+UNA MEDIDA ANTES DE QUITAR EL NOT NULL: dime TODO lo que lee esas tres columnas, en la base y en la
+app, no solo lo que ya has listado. Pasar tres columnas de NOT NULL a nullable es cambiar un contrato
+en el que puede apoyarse algo que no esperamos: otra función, una vista, un informe, el PDF de la
+ficha firmada, la purga, la exportación del art. 15. Mídelo y dame el número, como hiciste con los 12
+ficheros de ninos.
+El check de tipos que montamos en el #523 va a cazar el cambio de nullability, así que eso ya está
+cubierto, pero quiero saber qué más lo asume antes de aplicarlo, no después.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
