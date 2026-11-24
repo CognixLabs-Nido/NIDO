@@ -92,6 +92,8 @@ export function ListaEsperaPanel({
       } else {
         toast.error(tErrors(r.error))
         setOrden(prospectos) // revertir
+        // Si la lista cambió por debajo (`orden_desfasado`), lo que hay pintado ya no es la verdad.
+        router.refresh()
       }
     })
 

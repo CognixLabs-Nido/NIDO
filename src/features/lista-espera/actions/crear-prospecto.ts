@@ -12,8 +12,8 @@ import { crearProspectoSchema, type CrearProspectoInput } from '../schemas/lista
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * F11-H-3: añade un prospecto a la lista de espera de un curso. `posicion` se
- * calcula al final de la cola (max + 1). `centro_id` lo deriva el trigger de BD
+ * F11-H-3: añade un prospecto a la lista de espera de un curso. `posicion` la pone la base al
+ * final de la cola (trigger con cerrojo por curso, 2026-11-24). `centro_id` lo deriva el trigger de BD
  * del curso; el insert va por el cliente autenticado → RLS exige admin del centro.
  *
  * U-5 (D7) — es la PUERTA ÚNICA de alta de alumnos. Antes había dos: esta ("añadir niño
@@ -49,17 +49,6 @@ export async function crearProspecto(
   const tutor = await resolverTutorPorEmail(createServiceRoleClient(), data.email_tutor, centroId)
   if (!tutor) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
 
-  // Siguiente posición en la cola del curso (sobre todas las filas, no solo en_espera,
-  // para no colisionar con invitados/descartados que conservan su `posicion`).
-  const { data: ultima } = await supabase
-    .from('lista_espera')
-    .select('posicion')
-    .eq('curso_academico_id', data.curso_academico_id)
-    .order('posicion', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  const posicion = (ultima?.posicion ?? 0) + 1
-
   const { data: creado, error } = await supabase
     .from('lista_espera')
     .insert({
@@ -74,7 +63,9 @@ export async function crearProspecto(
       nota: data.nota,
       // D1: la pista EXACTA para vincular al promover cuando el tutor ya existe.
       tutor_usuario_id: tutor.tutorUsuarioId,
-      posicion,
+      // La pone la base al insertar (trigger, con cerrojo por curso: C, 2026-11-24). Calcularla aquí
+      // como «la última + 1» daba la misma a dos altas a la vez. Lo que se manda se ignora.
+      posicion: 0,
     })
     .select('id')
     .single()

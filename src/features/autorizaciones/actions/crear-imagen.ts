@@ -50,37 +50,44 @@ export async function crearImagenAutorizacion(
   const ninoId = parsed.data.nino_id
 
   // Tutela (clave de error clara; la RLS también lo enforza en el INSERT).
-  const { data: vinculo } = await supabase
+  // C, 2026-11-24: cada lectura que falla falla la acción. Leída como ausencia decía «no eres tutor»,
+  // «no existe el niño», «sin plantilla» (forma regla) o, la de la instancia, CREABA otra.
+  const { data: vinculo, error: errVinculo } = await supabase
     .from('vinculos_familiares')
     .select('id')
     .eq('nino_id', ninoId)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errVinculo) return falloDeLectura('vínculo', errVinculo.message)
   if (!vinculo) return fail('autorizaciones.errors.no_es_tutor')
 
   // Centro del niño + requisito de doble firma (deriva firmantes_requeridos).
-  const { data: nino } = await supabase
+  const { data: nino, error: errNino } = await supabase
     .from('ninos')
     .select('centro_id, requiere_ambos_firmantes')
     .eq('id', ninoId)
     .maybeSingle()
+  if (errNino) return falloDeLectura('niño', errNino.message)
   if (!nino) return fail('autorizaciones.errors.nino_no_encontrado')
 
   // ¿Ya hay instancia de imagen para este niño? (find-or-create, 1 por niño).
-  const { data: existente } = await supabase
-    .from('autorizaciones')
-    .select('id')
-    .eq('nino_id', ninoId)
-    .eq('tipo', 'autorizacion_imagenes')
-    .eq('es_plantilla', false)
-    .eq('estado', 'publicada')
-    .limit(1)
-    .maybeSingle()
+  const leerInstancia = () =>
+    supabase
+      .from('autorizaciones')
+      .select('id')
+      .eq('nino_id', ninoId)
+      .eq('tipo', 'autorizacion_imagenes')
+      .eq('es_plantilla', false)
+      .eq('estado', 'publicada')
+      .limit(1)
+      .maybeSingle()
+  const { data: existente, error: errExistente } = await leerInstancia()
+  if (errExistente) return falloDeLectura('instancia', errExistente.message)
   if (existente) return ok({ estado: 'lista', autorizacionId: existente.id })
 
   // Plantilla de imagen publicada del centro. Sin ella → el paso se omite.
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: errPlantilla } = await supabase
     .from('autorizaciones')
     .select('id, titulo, texto, texto_version')
     .eq('centro_id', nino.centro_id)
@@ -89,6 +96,7 @@ export async function crearImagenAutorizacion(
     .eq('estado', 'publicada')
     .eq('texto_definitivo', true)
     .maybeSingle()
+  if (errPlantilla) return falloDeLectura('plantilla', errPlantilla.message)
   if (!plantilla) return ok({ estado: 'sin_plantilla' })
 
   const firmantesRequeridos = nino.requiere_ambos_firmantes
@@ -117,6 +125,13 @@ export async function crearImagenAutorizacion(
     .select('id')
     .maybeSingle()
 
+  // 23505: otra llamada a la vez (doble clic, los dos tutores) la creó antes. El índice único
+  // (niño, versión del texto, publicada) lo garantiza desde el 2026-11-24: se devuelve esa.
+  if (insErr?.code === '23505') {
+    const { data: otra, error: errOtra } = await leerInstancia()
+    if (errOtra) return falloDeLectura('instancia tras 23505', errOtra.message)
+    if (otra) return ok({ estado: 'lista', autorizacionId: otra.id })
+  }
   if (insErr || !creada) {
     logger.warn('crearImagenAutorizacion: insert', insErr?.message)
     if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
@@ -125,4 +140,9 @@ export async function crearImagenAutorizacion(
 
   revalidarAutorizaciones()
   return ok({ estado: 'lista', autorizacionId: creada.id })
+}
+
+function falloDeLectura(que: string, mensaje: string): ActionResult<ResultadoImagen> {
+  logger.warn(`crearImagenAutorizacion: ${que}`, mensaje)
+  return fail('autorizaciones.errors.creacion_fallo')
 }

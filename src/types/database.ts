@@ -6530,6 +6530,10 @@ export type Database = {
         }
         Returns: string
       }
+      reordenar_lista_espera: {
+        Args: { p_curso: string; p_orden: string[] }
+        Returns: number
+      }
       registrar_mandato_sepa: {
         Args: {
           p_acreedor_cid?: string

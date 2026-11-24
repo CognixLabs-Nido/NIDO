@@ -107,6 +107,10 @@ describe('dos a la vez no crean un duplicado', () => {
     if (error) throw new Error(`leer la lista: ${error.message}`)
     const creados = r.filter((x) => x.success).length
     expect(creados, 'premisa: al menos uno entró').toBeGreaterThan(0)
+    // Las cinco entran: la base las pone en fila (cerrojo por curso), no rechaza a cuatro.
+    expect(creados, `entraron las cinco (${JSON.stringify(r.map((x) => x.success))})`).toBe(
+      A_LA_VEZ
+    )
     expect(data!.length, 'filas = las que dijeron que sí').toBe(creados)
     const posiciones = data!.map((d) => d.posicion)
     expect(new Set(posiciones).size, `posiciones: ${posiciones.join(',')}`).toBe(posiciones.length)
@@ -130,5 +134,13 @@ describe('dos a la vez no crean un duplicado', () => {
       .eq('es_plantilla', false)
     if (error) throw new Error(`leer las instancias: ${error.message}`)
     expect(data!.length, 'instancias de imagen del niño').toBe(1)
+    // Cinco clics son UN consentimiento: las cinco contestan «lista» con la MISMA instancia. Sin esto,
+    // cuatro que fallaran con `creacion_fallo` dejarían también una sola fila.
+    const ids = r.map((x) =>
+      x.success && x.data.estado === 'lista' ? x.data.autorizacionId : null
+    )
+    expect(ids, 'las cinco contestan con la instancia que quedó').toEqual(
+      Array(A_LA_VEZ).fill(data![0]!.id)
+    )
   })
 })
