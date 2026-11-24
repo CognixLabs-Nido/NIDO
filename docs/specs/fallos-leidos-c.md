@@ -124,6 +124,13 @@ entera, sin filtrar `deleted_at`). Comen sólidos por el `COALESCE … TRUE`, no
 Un registro borrado hace hoy lo contrario: como la función no filtra `deleted_at`, sigue contando como
 dato. Son dos defectos y el PR C los cuenta por separado.
 
+### 2026-11-24 · el registro borrado también se cierra en el PR C
+
+«Y el segundo defecto se cierra en el mismo PR C: que un registro BORRADO siga contando como dato es
+inventar el dato igual que el COALESCE, solo al revés. Un niño al que le borraron los datos
+pedagógicos no es un niño con datos antiguos, es un niño sin datos. La función filtra los borrados, y
+el PR cuenta los dos defectos por separado con su medición cada uno.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
@@ -161,3 +168,28 @@ dato. Son dos defectos y el PR C los cuenta por separado.
 - Arreglo: `src/shared/lib/hora.ts`, un solo esquema (las dos formas, deja 'HH:MM'); los cuatro lo
   importan. `src/shared/lib/__tests__/hora.test.ts` se pone rojo si otro fichero de `src` valida una
   hora con su regex (mutación: eventos con la suya → 2 rojos, el de eventos y el de la clase).
+
+### El dinero (2026-11-23)
+
+- Medido abierto (run 45200099198): «el método del recibo: expected 'transferencia' to be 'efectivo'»
+  (recibo con línea manual) y lo mismo en el cambio de método, con la lectura del recibo fallando y
+  con su UPDATE fallando (la tercera forma). Sonda sin arreglo para `mes_cerrado` (run 45261410542):
+  «no dice que sí: expected true to be false».
+- Arreglo: `crearReciboConLineaManual` falla si no lee la excepción del mes o `mes_cerrado`.
+  `setMetodoPagoFamilia` lee el recibo antes de escribir nada, y si el UPDATE del borrador falla
+  contesta `metodo_recibo_sin_cambiar` (sale el comentario «se corregirá al regenerar. No es fatal.»).
+  La lectura de `yaExiste` no se toca: si falla y el recibo existe, el UNIQUE devuelve 23505 →
+  `recibo_ya_existe` (garantía de la base).
+- Mutaciones (unidad): quitar el `return` de la lectura → 1 rojo; volver al comentario → 1 rojo.
+
+### El SEPA del alta (2026-11-23)
+
+- Medido abierto (run 45204687262, con el rol del tutor): «el centro tiene CID: expected false to be
+  true». Arreglo: si la página no lee el centro, lanza, como sus otras lecturas.
+
+### El pase de comidas y el menú del mes (2026-11-23)
+
+- Pase, abierto: «expected 'todo' to be 'poco'». Por helper: las 8 lecturas de los dos helpers lanzan
+  si fallan (9 de 9 con la de sólidos). Unidad contra HEAD: 14 rojos, uno por lectura y helper.
+- Menú, abierto: los 5 platos a `null`. `getPlantillaMes` lanza en vez de `null` (404) o `menus: []`.
+- Medido cerrado: run 45262811042, solo los duplicados en rojo (van al PR B).
