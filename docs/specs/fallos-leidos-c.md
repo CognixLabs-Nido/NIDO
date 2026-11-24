@@ -101,6 +101,29 @@ existente crea otra: es la misma puerta.»
 «Y apunta getCalendarioMes para el censo, que un festivo contado como día de clase en el editor del
 menú es forma regla de libro.»
 
+### 2026-11-23 · el troceo, y lo que tiene que quedar dicho en los PR
+
+«Los tres PR, tal cual: A sin migración, B los dos índices contra duplicados —que son el mismo tema— y
+C los datos pedagógicos con sus pantallas. Y bien que cada uno lleve su medición abierta y su ensayo
+propio.
+Dos cosas del diseño que están bien resueltas y quiero que queden dichas en los PR:
+
+- Que la función devuelva NULL cuando no hay registro vivo es la representación correcta de «no se
+  sabe». Lo importante entonces está en la app: que NULL se pinte como «sin datos pedagógicos» y no se
+  colapse a sí o a no en ninguna pantalla. Si alguna lo colapsa, estaríamos otra vez inventando el
+  dato, solo que una capa más arriba.
+- Que un registro borrado cuente hoy como «sin datos» y la función no los filtre: dilo así en el PR,
+  porque es la razón de que 2 de 3 niños estén en este caso y no un número suelto.
+  La precisión de la lista de espera es mejor que lo que me contaste antes y la medición que propones es
+  la correcta: A(1), B descartado en 2, C(3), reordenas y A y B acaban los dos en 2. Eso demuestra que la
+  colisión existe hoy.»
+
+Corrección de los hechos (2026-11-24), dicha al responsable antes de escribirla aquí: los 2 de 3 son
+niños SIN NINGUNA fila en `datos_pedagogicos_nino` (la lectura contó `NOT EXISTS` sobre la tabla
+entera, sin filtrar `deleted_at`). Comen sólidos por el `COALESCE … TRUE`, no por registros borrados.
+Un registro borrado hace hoy lo contrario: como la función no filtra `deleted_at`, sigue contando como
+dato. Son dos defectos y el PR C los cuenta por separado.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
