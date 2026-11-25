@@ -6,10 +6,8 @@ import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const {
-  analizar,
-  volatilidadDeMigraciones,
-} = require('../../../scripts/ci/cadena-tras-escritura.cjs')
+const cadena = require('../../../scripts/ci/cadena-tras-escritura.cjs')
+const { analizar, volatilidadDeMigraciones } = cadena
 
 /**
  * El escáner de cadena del censo C (decisiones de Jose del 2026-11-25): sus casos, con la respuesta

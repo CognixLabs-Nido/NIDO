@@ -26,6 +26,12 @@ const eslintConfig = defineConfig([
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  // Un fichero CommonJS (`.cjs`: el escáner de cadena de la CI y los codemods del censo C) carga con
+  // `require`: es la única forma que tiene. La regla de los imports es para los módulos ES.
+  {
+    files: ['**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
   // Lint-guard F11-D fase 2: el cliente service-role (que bypassa TODA la RLS) vive
   // en UN solo módulo, `src/lib/supabase/admin.ts`. Nadie más puede tocar la
   // SERVICE_ROLE key ni, por tanto, recrear el footgun cookie-bound (pasarla a
