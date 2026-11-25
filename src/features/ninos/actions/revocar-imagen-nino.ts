@@ -71,23 +71,52 @@ export async function revocarImagenNino(
     return fail('nino.imagen.errors.fallo')
   }
 
-  // (b) Eliminar la foto de PERFIL (si la hay): foto_url → NULL por RPC de sesión + borrar
-  //     blobs con service role. El trigger derivador deja el flag en false (consent revocado).
+  // (b) Eliminar la foto de PERFIL (si la hay): PRIMERO el fichero, DESPUÉS `foto_url → NULL`
+  //     (decisión de Jose del 2026-11-25: «borra el fichero primero y la fila después»). Antes era
+  //     al revés y el borrado del fichero se tragaba (`.catch(() => undefined)`): la familia había
+  //     retirado el consentimiento y la foto de su hijo seguía en el bucket, sin fila que la nombrara.
+  //     Esto no es la limpieza del fichero viejo de una sustitución: es seguir teniendo la imagen de
+  //     un niño cuyos padres han dicho que no. Si el fichero no se borra, `foto_url` se queda: la
+  //     ficha de Dirección lo enseña («consentimiento retirado y la foto sigue») y se puede repetir.
+  //     El permiso ya se comprobó arriba (Dirección o tutor legal, como la política del bucket y la
+  //     RPC); el fichero lo borra el servicio y la RPC, con la sesión, vuelve a mirarlo.
   if (nino.foto_url) {
+    try {
+      await borrarObjetosBucket(createServiceRoleClient(), BUCKET_NINOS_FOTOS, [
+        nino.foto_url,
+        rutaThumbDe(nino.foto_url),
+      ])
+    } catch (e) {
+      logger.error(
+        'revocarImagenNino: la foto de perfil no se borró (consentimiento ya retirado)',
+        e instanceof Error ? e.message : String(e)
+      )
+      return fail('nino.imagen.errors.foto_no_borrada')
+    }
     const { data: anterior, error: errFoto } = await supabase.rpc('quitar_foto_perfil_nino', {
       p_nino_id: ninoId,
     })
     if (errFoto) {
-      logger.warn('revocarImagenNino: quitar foto', errFoto.message)
+      // El fichero ya no está y la ficha aún lo nombra: se ve rota, y repetir lo arregla.
+      logger.error('revocarImagenNino: quitar foto', errFoto.message)
       if (errFoto.code === '42501') return fail('nino.imagen.errors.no_autorizado')
-      return fail('nino.imagen.errors.fallo')
+      return fail('nino.imagen.errors.foto_no_borrada')
     }
-    if (anterior) {
-      const service = createServiceRoleClient()
-      await borrarObjetosBucket(service, BUCKET_NINOS_FOTOS, [
-        anterior,
-        rutaThumbDe(anterior),
-      ]).catch(() => undefined)
+    // Si entre la lectura y la RPC alguien cambió la foto, la que la RPC quitó es otra: también se
+    // borra, y si no se puede, se dice (su ruta ya no está en la ficha; queda en el log).
+    if (anterior && anterior !== nino.foto_url) {
+      try {
+        await borrarObjetosBucket(createServiceRoleClient(), BUCKET_NINOS_FOTOS, [
+          anterior,
+          rutaThumbDe(anterior),
+        ])
+      } catch (e) {
+        logger.error(
+          'revocarImagenNino: la foto cambiada entre medias no se borró',
+          e instanceof Error ? e.message : String(e)
+        )
+        return fail('nino.imagen.errors.foto_no_borrada')
+      }
     }
   }
 

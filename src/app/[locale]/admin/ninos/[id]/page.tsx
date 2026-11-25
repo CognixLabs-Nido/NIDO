@@ -431,6 +431,23 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
                 />
                 {/* IU-4: revocar el consent de imagen oculta al niño de las fotos y elimina
                     su perfil. Solo se ofrece si hoy puede aparecer (consent vigente). */}
+                {/* Censo C (2026-11-25): sin permiso de imagen y con la foto guardada. Es lo que
+                    deja un revocar cuyo borrado del fichero falló (ahora no se traga: la foto
+                    se queda y se ve aquí), y se puede repetir. */}
+                {!nino.puede_aparecer_en_fotos && nino.foto_url && (
+                  <div className="border-t pt-4" data-testid="foto-sin-permiso">
+                    <p className="text-warning-700 mb-2 text-xs" role="status">
+                      {t('fotos.foto_sin_permiso.aviso_ficha', {
+                        nombre: `${nino.nombre} ${nino.apellidos ?? ''}`.trim(),
+                      })}
+                    </p>
+                    <RevocarImagenNinoButton
+                      ninoId={nino.id}
+                      nombreCompleto={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
+                      textos="admin.ninos.fotos.foto_sin_permiso"
+                    />
+                  </div>
+                )}
                 {nino.puede_aparecer_en_fotos && (
                   <div className="border-t pt-4">
                     <p className="text-muted-foreground mb-2 text-xs">

@@ -15,6 +15,7 @@ import type { ResultadoExportLog } from './export-log'
 import type { ResultadoFicherosRemesa } from './ficheros-remesa'
 import type { ResultadoFirmas } from './firmas'
 import type { ResultadoFiscal } from './fiscal'
+import type { ResultadoFotosBlogHuerfanas } from './fotos-blog-huerfanas'
 import type { ResultadoLecturas } from './lecturas-ficha-medica'
 import type { ResultadoListaEspera } from './lista-espera'
 import type { ResultadoMandatosHuerfanos } from './mandatos-huerfanos'
@@ -29,7 +30,7 @@ export interface FalloBarrido {
 }
 
 /**
- * El recuento de cada uno de los trece barridos de una pasada, con las claves que exige el CHECK de
+ * El recuento de cada uno de los barridos de una pasada, con las claves que exige el CHECK de
  * `retencion_pasadas` (20261213120000; la decimotercera, `ficherosRemesa`, desde 20261220120000).
  * Va a la base y a los logs: solo números, marcas y nulos.
  */
@@ -49,6 +50,8 @@ export interface RecuentosPasada {
   ficherosRemesa: ResultadoFicherosRemesa
   /** La decimocuarta, desde 20270203120000: los ficheros del mandato que ninguna fila nombra. */
   mandatosHuerfanos: ResultadoMandatosHuerfanos
+  /** La decimoquinta, desde 20270207120000: las fotos del blog que ninguna fila de `media` nombra. */
+  fotosBlogHuerfanas: ResultadoFotosBlogHuerfanas
 }
 
 // Un recuento no lleva texto: un id, un nombre o un mensaje de error llegarían a la base y a los

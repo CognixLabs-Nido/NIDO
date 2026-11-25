@@ -5553,6 +5553,12 @@ export type Database = {
         Args: { p_fecha_baja?: string; p_motivo?: string; p_nino_id: string }
         Returns: Json
       }
+      aula_fotos_huerfanas: {
+        Args: never
+        Returns: {
+          ruta: string
+        }[]
+      }
       baja_de_direccion: {
         Args: { p_centro_id: string; p_usuario_id: string }
         Returns: undefined

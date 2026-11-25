@@ -23,7 +23,8 @@ import type { Database, Json } from '@/types/db'
  * El registro de cada pasada del cron de retención (20261213120000), contra la BD:
  *   · `registrarPasada` deja la fila, en modo simulado o purgado, con las trece claves (doce hasta
  *     20261220120000, que añade `ficherosRemesa`).
- *   · El CHECK exige las catorce claves (`mandatosHuerfanos`, 20270203120000) y el modo es el tipo `retencion_accion`.
+ *   · El CHECK exige las quince claves (`mandatosHuerfanos`, 20270203120000; `fotosBlogHuerfanas`,
+ *     20270207120000) y el modo es el tipo `retencion_accion`.
  *   · service_role inserta y lee, y no puede cambiar ni borrar una pasada (42501).
  *   · Las sesiones (también la admin del centro) y anon no tienen ningún privilegio (42501).
  * La tabla solo crece: estas filas se quedan en la BD efímera.
@@ -58,6 +59,7 @@ function recuentos(marca: number): RecuentosPasada {
       fallidos: 0,
     },
     mandatosHuerfanos: { dryRun: true, huerfanos: 0, borrados: 0, fallidos: 0 },
+    fotosBlogHuerfanas: { dryRun: true, huerfanas: 0, borradas: 0, fallidas: 0 },
   }
 }
 
@@ -86,7 +88,7 @@ describe('retencion_pasadas', () => {
     if (admin) await deleteTestUser(admin.id)
   })
 
-  it('premisa: registrarPasada deja una fila simulada con las catorce claves', async () => {
+  it('premisa: registrarPasada deja una fila simulada con las quince claves', async () => {
     const marca = randomInt(1e9)
     expect(await filasCon(marca)).toHaveLength(0)
 
@@ -107,8 +109,13 @@ describe('retencion_pasadas', () => {
     expect(filas.map((f) => f.modo)).toEqual(['purgado'])
   })
 
-  it.each(['cuentasOlvidadas', 'ficherosRemesa', 'mandatosHuerfanos'] as const)(
-    'sin una de las catorce claves (%s), el CHECK la rechaza y registrarPasada devuelve false',
+  it.each([
+    'cuentasOlvidadas',
+    'ficherosRemesa',
+    'mandatosHuerfanos',
+    'fotosBlogHuerfanas',
+  ] as const)(
+    'sin una de las quince claves (%s), el CHECK la rechaza y registrarPasada devuelve false',
     async (clave) => {
       const marca = randomInt(1e9)
       const sinUna: Partial<RecuentosPasada> = recuentos(marca)

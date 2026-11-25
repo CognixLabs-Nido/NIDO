@@ -876,6 +876,16 @@
           "confirmar": "Revoke",
           "procesando": "Revoking…",
           "exito": "Image consent revoked; the child no longer appears in photos."
+        },
+        "foto_sin_permiso": {
+          "aviso_ficha": "{nombre} cannot appear in photos and their profile photo is still stored. If permission was withdrawn and the deletion failed, delete it here.",
+          "boton": "Delete profile photo",
+          "titulo": "Delete profile photo",
+          "aviso": "{nombre}'s profile photo will be deleted. Any remaining image permission is withdrawn. Other children are not affected. Delete?",
+          "cancelar": "Cancel",
+          "confirmar": "Delete",
+          "procesando": "Deleting…",
+          "exito": "Profile photo deleted."
         }
       },
       "badge": {
@@ -2570,7 +2580,8 @@
         "fallo_otorgar": "The image could not be authorised",
         "no_autorizado_denegar": "You are not allowed to answer for this child's image",
         "fallo_denegar": "Your «no» could not be saved",
-        "fallo_retirar_no": "Your «no» could not be withdrawn"
+        "fallo_retirar_no": "Your «no» could not be withdrawn",
+        "foto_no_borrada": "Image permission has been withdrawn, but the profile photo could not be deleted. Please try again; the centre's management can see this on the child's record."
       }
     },
     "tarjeta_sanitaria": {
@@ -4274,6 +4285,7 @@
       "creacion_fallo": "Could not create the post.",
       "guardado_fallo": "Could not save.",
       "borrado_fallo": "Could not delete.",
+      "fotos_no_borradas": "The photos could not be deleted, so nothing was deleted. Please try again.",
       "etiquetado_fallo": "Could not tag.",
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",

@@ -38,6 +38,8 @@ export const FUNCIONES_RETURNS_TABLE = [
   'alertas_medicas',
   'altas_sin_terminar',
   'anadir_cargo_puntual',
+  // Censo C (2026-11-25): las fotos del blog que ninguna fila nombra, para el barrido.
+  'aula_fotos_huerfanas',
   'buscar_auth_user_por_email',
   'contenido_firmas',
   'contenido_firmas_documentos',
