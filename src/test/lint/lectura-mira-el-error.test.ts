@@ -30,6 +30,9 @@ tester.run('lectura-mira-el-error', regla, {
     `async function f(s) { const r = await s.rpc('c'); return tratar(r) }`,
     // Promise.all con los dos errores mirados.
     `async function f(s) { const [{ data: a, error: e1 }, { data: b, error: e2 }] = await Promise.all([s.from('a').select(), s.from('b').select()]); if (e1 || e2) throw new Error('x'); return [a, b] }`,
+    // Promise.all a variables y el error mirado en un bucle sobre la lista (leer-panel-becas, cruce del
+    // lint con el censo del 2026-11-25: era un falso positivo).
+    `async function f(s) { const [a, b] = await Promise.all([s.from('a').select(), s.from('b').select()]); for (const r of [a, b]) { if (r.error) throw new Error('x') } return [a.data, b.data] }`,
     // No es Supabase.
     `async function f() { const { data } = await Array.from([1]); return data }`,
     // Sin await: un builder, no un resultado.

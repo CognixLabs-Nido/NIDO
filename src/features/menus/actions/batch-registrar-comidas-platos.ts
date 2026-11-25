@@ -47,10 +47,13 @@ export async function batchRegistrarComidasPlatos(
   const agendaIdByNino = new Map<string, string>()
   for (const ninoId of ninosUnicos) {
     const ag = await asegurarAgenda(ninoId, parsed.data.fecha)
-    if (!ag) {
+    // El motivo de verdad (censo C): no leída, fuera de la ventana o no guardada.
+    if ('motivo' in ag) {
+      if (ag.motivo === 'lectura_fallida') return fail('common.lectura_fallida')
+      if (ag.motivo === 'fuera_de_ventana') return fail('menus.toasts.error_fuera_de_ventana')
       return fail('menus.toasts.error_guardar')
     }
-    agendaIdByNino.set(ninoId, ag)
+    agendaIdByNino.set(ninoId, ag.id)
   }
 
   const agendaIds = Array.from(agendaIdByNino.values())

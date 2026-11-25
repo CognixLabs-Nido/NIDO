@@ -50,31 +50,57 @@ export async function upsertAgendaCabecera(
   return ok({ id: data.id })
 }
 
+/** Por qué no hay agenda: el motivo de verdad, para que el llamador no diga otro. */
+export type MotivoSinAgenda = 'lectura_fallida' | 'fuera_de_ventana' | 'guardar_fallo'
+
 /**
- * Helper interno: asegura que existe una fila padre para (nino_id, fecha).
- * Devuelve `agenda_id`. Si la inserción falla por RLS (fuera de ventana o
- * sin permisos), devuelve null y deja al caller fallar con un error
- * tipado.
+ * Helper interno: asegura que existe una fila padre para (nino_id, fecha) y devuelve su id, o el motivo
+ * de que no la haya. Censo C (decisión de Jose del 2026-11-25): antes devolvía null en cualquier fallo y
+ * los cinco llamadores decían «Ya no puedes editar este día», también cuando no se pudo LEER o el insert
+ * falló por otra cosa.
+ *   · Si la lectura falla se intenta el insert igual: con el día sin agenda, eso guarda, y es verdad.
+ *   · Si el insert choca (23505), la agenda ya estaba (la lectura falló, o otra profe la creó a la vez):
+ *     se relee una vez; si tampoco se puede, `lectura_fallida`.
+ *   · 42501 / RLS: `fuera_de_ventana`, el único caso en que lo es. Cualquier otro: `guardar_fallo`.
  */
-export async function asegurarAgenda(ninoId: string, fecha: string): Promise<string | null> {
+export async function asegurarAgenda(
+  ninoId: string,
+  fecha: string
+): Promise<{ id: string } | { motivo: MotivoSinAgenda }> {
   const supabase = await createClient()
-  const { data: existing } = await supabase
-    .from('agendas_diarias')
-    .select('id')
-    .eq('nino_id', ninoId)
-    .eq('fecha', fecha)
-    .maybeSingle()
-  if (existing?.id) return existing.id
+  const leer = () =>
+    supabase
+      .from('agendas_diarias')
+      .select('id')
+      .eq('nino_id', ninoId)
+      .eq('fecha', fecha)
+      .maybeSingle()
+
+  const { data: existing, error: errorLectura } = await leer()
+  if (errorLectura) logger.warn('asegurarAgenda: lectura', errorLectura.code ?? 'sin_codigo')
+  if (existing?.id) return { id: existing.id }
 
   const { data, error } = await supabase
     .from('agendas_diarias')
     .insert({ nino_id: ninoId, fecha })
     .select('id')
     .single()
+  if (data && !error) return { id: data.id }
 
-  if (error || !data) {
-    logger.warn('asegurarAgenda insert failed', error?.message)
-    return null
+  logger.warn('asegurarAgenda: insert', error?.code ?? 'sin_codigo')
+  if (error?.code === '42501' || error?.message.includes('row-level security')) {
+    return { motivo: 'fuera_de_ventana' }
   }
-  return data.id
+  if (error?.code === '23505') {
+    const { data: releida, error: errorRelectura } = await leer()
+    if (releida?.id) return { id: releida.id }
+    if (errorRelectura) return { motivo: 'lectura_fallida' }
+  }
+  return { motivo: 'guardar_fallo' }
+}
+
+/** La clave de error de un motivo, para los cuatro llamadores de la agenda. */
+export async function claveSinAgenda(motivo: MotivoSinAgenda): Promise<string> {
+  if (motivo === 'lectura_fallida') return 'common.lectura_fallida'
+  return `agenda.errors.${motivo}`
 }

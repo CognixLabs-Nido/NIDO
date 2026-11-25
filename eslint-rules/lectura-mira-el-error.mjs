@@ -198,12 +198,16 @@ export default {
             r.padre.property.name === 'error' &&
             !soloLog({ n: r.padre })
         )
+        // Se devuelve, se pasa entero a una función o se mete en una lista (`for (const r of [a, b]) if
+        // (r.error) …`, el patrón de leer-panel-becas; cruce con el censo del 2026-11-25): quien lo
+        // recibe es quien mira el error.
         const seDevuelveOSePasa = refs.some(
           (r) =>
             r.padre &&
             (r.padre.type === 'ReturnStatement' ||
               (r.padre.type === 'CallExpression' && r.padre.arguments.includes(r.n)) ||
-              r.padre.type === 'ArrowFunctionExpression')
+              r.padre.type === 'ArrowFunctionExpression' ||
+              r.padre.type === 'ArrayExpression')
         )
         if (!leeError && !seDevuelveOSePasa) hallados.push({ node: idNodo, messageId: 'sinError' })
       }
