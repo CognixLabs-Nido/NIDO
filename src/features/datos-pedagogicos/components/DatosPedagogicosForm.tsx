@@ -64,18 +64,21 @@ export function DatosPedagogicosForm({
   // escriba "es,en,va" cómodamente sin parsing intermedio.
   const [idiomasRaw, setIdiomasRaw] = useState<string>((initial?.idiomas_casa ?? ['es']).join(', '))
 
+  // Lactancia, esfínteres y alimentación salen EN BLANCO (C, 2026-11-24, Jose: opción B): un valor
+  // preseleccionado se guardaba como si la familia lo hubiera elegido (un niño que «come de todo» porque
+  // alguien guardó solo la siesta). Sin tocar, se guardan vacíos y el pase dice «sin datos pedagógicos».
   const form = useForm<DatosPedagogicosInput>({
     resolver: zodResolver(datosPedagogicosInputSchema),
     defaultValues: {
       nino_id: ninoId,
-      lactancia_estado: initial?.lactancia_estado ?? 'no_aplica',
+      lactancia_estado: initial?.lactancia_estado ?? null,
       lactancia_observaciones: initial?.lactancia_observaciones ?? null,
-      control_esfinteres: initial?.control_esfinteres ?? 'panal_completo',
+      control_esfinteres: initial?.control_esfinteres ?? null,
       control_esfinteres_observaciones: initial?.control_esfinteres_observaciones ?? null,
       siesta_horario_habitual: initial?.siesta_horario_habitual ?? null,
       siesta_numero_diario: initial?.siesta_numero_diario ?? null,
       siesta_observaciones: initial?.siesta_observaciones ?? null,
-      tipo_alimentacion: initial?.tipo_alimentacion ?? 'omnivora',
+      tipo_alimentacion: initial?.tipo_alimentacion ?? null,
       alimentacion_observaciones: initial?.alimentacion_observaciones ?? null,
       idiomas_casa: initial?.idiomas_casa ?? ['es'],
       tiene_hermanos_en_centro: initial?.tiene_hermanos_en_centro ?? false,
@@ -142,7 +145,7 @@ export function DatosPedagogicosForm({
                 <Select items={lactanciaItems} value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={t('sin_contestar')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -184,7 +187,7 @@ export function DatosPedagogicosForm({
                 <Select items={esfinteresItems} value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={t('sin_contestar')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -284,7 +287,7 @@ export function DatosPedagogicosForm({
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={t('sin_contestar')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>

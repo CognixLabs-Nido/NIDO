@@ -174,6 +174,49 @@ ficheros de ninos.
 El check de tipos que montamos en el #523 va a cazar el cambio de nullability, así que eso ya está
 cubierto, pero quiero saber qué más lo asume antes de aplicarlo, no después.»
 
+### 2026-11-24 · C, desde main: lo que lleva
+
+«La 20270205120000 está aplicada y el #547 mergeado. Verifícala en producción, solo lectura y con
+control positivo. Y saca C de main, sin apilar.
+C lleva esto, que ya está todo decidido:
+
+- Las DOS MEDIDAS ABIERTAS POR SEPARADO, cada una con su predicción: un niño sin registro ninguno (hoy
+  la función dice que come sólidos) y un niño con registro borrado (hoy decide con el registro
+  borrado). Son dos defectos distintos y el PR los cuenta por separado.
+- La función devuelve NULL cuando no hay registro vivo o la lactancia está vacía, y filtra los borrados.
+- Las tres columnas dejan de ser NOT NULL.
+- El formulario sale EN BLANCO, sin nada preseleccionado, y si nadie toca esos tres campos no se guarda
+  nada. Siguen siendo OPCIONALES: Jose dijo B y eso no cambia.
+- Las cinco cosas que asumen que siempre hay valor: la vista de la familia, que hoy pintaría la clave de
+  traducción; el ✓ del avance del alta, que solo aparece con los tres contestados; y el conjunto del
+  contrato —formulario, esquema, acción, tipo y la página del alta—.
+- En el pase de comidas el niño SALE marcado «sin datos pedagógicos», ni como que sí ni como que no, y
+  la profe lo ve antes de darle de comer.
+- Dirección tiene la lista de los niños sin datos pedagógicos, con los tres casos: sin registro,
+  registro borrado y lactancia vacía.
+  Ensayo en producción terminando en RAISE, una sonda una defensa con su arrastre previsto, mide.sh para
+  el build, espera-build.sh con su tope, y la predicción de cada ronda nombrando los tests con sus
+  cuentas. Dame el md5 cuando ensayes y el orden de aplicación.»
+
+Verificado (2026-11-24, solo lectura, `~/nido-logs/15/c/verif-b/`): 20270205120000 aplicada; los dos
+cuerpos vivos son los del fichero con los CRLF del editor (md5 sin CR = el del fichero; control con una
+letra cambiada = distinto); restricción, índice, trigger y permisos como en la migración.
+
+### 2026-11-24 · guardar revive el registro borrado
+
+«Que guardar revive el registro borrado. El motivo: hoy una familia rellenaría los tres campos, el
+formulario diría que se ha guardado, y el niño seguiría contando como «sin datos» para la profe. Eso es
+un formulario que se traga lo que le escribes, y es peor que el defecto que estamos cerrando.
+Y revivir es seguro aquí porque lo has medido: ningún código de la app borra en blando esa tabla —las
+purgas hacen DELETE—, así que no hay ningún borrado legítimo que estaríamos deshaciendo. Si algún día
+existiera uno, esta decisión es la que habría que revisar; déjalo escrito así.
+Con su test: guardar sobre una fila borrada a mano la deja viva y la función deja de decir «sin datos».»
+
+**Lo que la sostiene, y cuándo revisarla:** medido el 2026-11-24, nada pone `deleted_at` en
+`datos_pedagogicos_nino` (ni la app ni las funciones; las siete purgas y `anular_alta` hacen
+`DELETE`). El día que algo la borre en blando, `upsertDatosPedagogicos` desharía ese borrado al
+guardar: **esta decisión es la que hay que revisar**. Lo dice también el comentario de la acción.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
@@ -203,6 +246,8 @@ cubierto, pero quiero saber qué más lo asume antes de aplicarlo, no después.�
   niño SIN fila de datos pedagógicos («COALESCE de seguridad»): la misma regla, en la base. En
   producción (2026-11-23, solo lectura) son 2 de los 3 niños con matrícula activa. Cambiarlo es una
   migración y saca del pase a todo niño sin esos datos. Tampoco filtra `deleted_at` de esa tabla.
+  _Decidido el 2026-11-23 y 2026-11-24 (arriba: «ni TRUE ni FALSE», «el registro borrado…», «C, desde
+  main») y cerrado en el PR C: la función devuelve NULL y el pase SACA al niño marcado, no lo quita._
 
 ### La hora (2026-11-23)
 

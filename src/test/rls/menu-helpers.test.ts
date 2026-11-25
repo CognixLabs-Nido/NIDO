@@ -11,7 +11,9 @@ import { createTestCentro, createTestNino, deleteTestCentro, serviceClient } fro
  *  - lactancia materna/biberon → FALSE (no come sólidos)
  *  - lactancia mixta → TRUE (matiz importante: come sólidos parciales)
  *  - lactancia finalizada / no_aplica → TRUE
- *  - niño sin datos pedagógicos → TRUE (COALESCE seguro)
+ *  - niño sin datos pedagógicos → NULL (no se sabe; C, 2026-11-24). Hasta entonces era TRUE
+ *    («COALESCE seguro»): un bebé sin la lactancia apuntada salía como que come sólidos. El registro
+ *    borrado y la lactancia vacía, en `sin-datos-pedagogicos-*.rls.test.ts` y aquí abajo.
  *
  * `menu_del_dia` busca por mes/año y solo considera plantillas
  * `publicada` (no borrador / no archivada).
@@ -46,10 +48,26 @@ describe('nino_toma_comida_solida — helper SQL', () => {
       ninos.push({ id: n.id, lactancia: c.lactancia })
     }
 
-    // Quinto niño SIN datos_pedagogicos_nino (caso COALESCE).
+    // Quinto niño SIN datos_pedagogicos_nino (no se sabe: NULL).
     const sinDatos = await createTestNino(centro.id, 'Niño sin datos pedagógicos')
     ninosCreadosIds.push(sinDatos.id)
     ninos.push({ id: sinDatos.id, lactancia: 'SIN_DATOS' })
+
+    // Sexto niño CON registro vivo y la lactancia sin contestar (C, 2026-11-24: el formulario sale en
+    // blanco y guardar solo la siesta no inventa la lactancia). Posible desde 20270206120000.
+    const vacia = await createTestNino(centro.id, 'Niño lactancia vacía')
+    ninosCreadosIds.push(vacia.id)
+    const { error: errVacia } = await serviceClient.from('datos_pedagogicos_nino').insert({
+      nino_id: vacia.id,
+      lactancia_estado: null,
+      control_esfinteres: null,
+      tipo_alimentacion: null,
+      siesta_horario_habitual: '13:00-14:30',
+      idiomas_casa: ['es'],
+      tiene_hermanos_en_centro: false,
+    })
+    if (errVacia) throw new Error(`seed datos_pedagogicos lactancia vacía: ${errVacia.message}`)
+    ninos.push({ id: vacia.id, lactancia: 'VACIA' })
   }, 120_000)
 
   afterAll(async () => {
@@ -94,13 +112,32 @@ describe('nino_toma_comida_solida — helper SQL', () => {
     expect(data).toBe(true)
   })
 
-  it('niño sin datos pedagógicos → TRUE (COALESCE de seguridad)', async () => {
+  it('niño sin datos pedagógicos → NULL (ni TRUE ni FALSE)', async () => {
     const ninoSinDatos = ninos.find((n) => n.lactancia === 'SIN_DATOS')!
     const { data, error } = await serviceClient.rpc('nino_toma_comida_solida', {
       p_nino_id: ninoSinDatos.id,
     })
     expect(error).toBeNull()
-    expect(data).toBe(true)
+    expect(data).toBeNull()
+  })
+
+  it('registro vivo con la lactancia sin contestar → NULL', async () => {
+    const nino = ninos.find((n) => n.lactancia === 'VACIA')!
+    const fila = await serviceClient
+      .from('datos_pedagogicos_nino')
+      .select('lactancia_estado, deleted_at')
+      .eq('nino_id', nino.id)
+      .single()
+    expect(fila.error, 'premisa: hay registro').toBeNull()
+    expect(fila.data, 'premisa: vivo y con la lactancia vacía').toEqual({
+      lactancia_estado: null,
+      deleted_at: null,
+    })
+    const { data, error } = await serviceClient.rpc('nino_toma_comida_solida', {
+      p_nino_id: nino.id,
+    })
+    expect(error).toBeNull()
+    expect(data).toBeNull()
   })
 })
 

@@ -35,17 +35,22 @@ const idiomasArraySchema = z
   .min(1, 'pedagogico.validation.idioma_min_uno')
   .max(8, 'pedagogico.validation.idioma_max_ocho')
 
+/**
+ * Lactancia, esfínteres y alimentación son OPCIONALES (Jose, opción B) y el formulario sale EN BLANCO
+ * (C, 2026-11-24): `null` es «sin contestar» y se guarda así. Ningún valor por defecto se escribe como
+ * si alguien lo hubiera elegido: el pase de comidas pinta a ese niño «sin datos pedagógicos».
+ */
 export const datosPedagogicosInputSchema = z
   .object({
     nino_id: z.string().uuid(),
-    lactancia_estado: lactanciaEstadoEnum,
+    lactancia_estado: lactanciaEstadoEnum.nullable(),
     lactancia_observaciones: z.string().max(500).nullable().optional(),
-    control_esfinteres: controlEsfinteresEnum,
+    control_esfinteres: controlEsfinteresEnum.nullable(),
     control_esfinteres_observaciones: z.string().max(500).nullable().optional(),
     siesta_horario_habitual: z.string().max(40).nullable().optional(),
     siesta_numero_diario: z.number().int().min(0).max(5).nullable().optional(),
     siesta_observaciones: z.string().max(500).nullable().optional(),
-    tipo_alimentacion: tipoAlimentacionEnum,
+    tipo_alimentacion: tipoAlimentacionEnum.nullable(),
     alimentacion_observaciones: z.string().max(500).nullable().optional(),
     idiomas_casa: idiomasArraySchema,
     tiene_hermanos_en_centro: z.boolean(),

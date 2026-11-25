@@ -101,8 +101,23 @@ describe('los sólidos no se suponen', () => {
   it.each(helpers)('%s · control: si come sólidos, sale y nada sin comprobar', async (_, h) => {
     const s = listo(await h())
     expect(s.filas.map((f) => f.nino.id)).toEqual([NINO])
+    expect(s.filas[0].sinDatosPedagogicos, 'tiene datos').toBe(false)
     expect(s.sinComprobarSolidos).toEqual([])
   })
+
+  it.each(helpers)(
+    '%s · sin datos pedagógicos (NULL): SALE marcado, ni que sí ni que no',
+    async (_, h) => {
+      solidos = { data: null, error: null }
+      const s = listo(await h())
+      expect(
+        s.filas.map((f) => f.nino.id),
+        'sale: con FALSE nadie apuntaría lo que come'
+      ).toEqual([NINO])
+      expect(s.filas[0].sinDatosPedagogicos, 'marcado: con TRUE comería como los demás').toBe(true)
+      expect(s.sinComprobarSolidos, 'NULL no es un fallo de lectura').toEqual([])
+    }
+  )
 
   it.each(helpers)('%s · control: si es de biberón, no sale y nada sin comprobar', async (_, h) => {
     solidos = { data: false, error: null }
@@ -146,7 +161,7 @@ describe('los sólidos no se suponen', () => {
     pintar({
       kind: 'listo',
       menu,
-      filas: [{ nino: carla, alergiaGrave: false }],
+      filas: [{ nino: carla, alergiaGrave: false, sinDatosPedagogicos: false }],
       existentes: [],
       sinComprobarSolidos: [bruno],
     })
@@ -157,5 +172,38 @@ describe('los sólidos no se suponen', () => {
   it('pantalla · control: sin nadie sin comprobar, no hay aviso', () => {
     pintar({ kind: 'listo', menu, filas: [], existentes: [], sinComprobarSolidos: [] })
     expect(screen.queryByTestId('aviso-sin-comprobar-solidos')).toBeNull()
+  })
+
+  it('pantalla · el niño sin datos pedagógicos se nombra ENCIMA de la lista y su fila lo dice', () => {
+    pintar({
+      kind: 'listo',
+      menu,
+      filas: [
+        { nino: bruno, alergiaGrave: false, sinDatosPedagogicos: true },
+        { nino: carla, alergiaGrave: false, sinDatosPedagogicos: false },
+      ],
+      existentes: [],
+      sinComprobarSolidos: [],
+    })
+    const aviso = screen.getByTestId('aviso-sin-datos-pedagogicos')
+    expect(aviso.textContent).toContain('Bruno Biberon')
+    expect(aviso.textContent).not.toContain('Carla Solidos')
+    expect(screen.getByText('Bruno Biberon'), 'sale en la lista').toBeTruthy()
+    expect(
+      screen.getAllByText('badge_sin_datos_pedagogicos'),
+      'su fila, y solo la suya'
+    ).toHaveLength(1)
+  })
+
+  it('pantalla · control: con todos con datos, ni aviso ni etiqueta', () => {
+    pintar({
+      kind: 'listo',
+      menu,
+      filas: [{ nino: carla, alergiaGrave: false, sinDatosPedagogicos: false }],
+      existentes: [],
+      sinComprobarSolidos: [],
+    })
+    expect(screen.queryByTestId('aviso-sin-datos-pedagogicos')).toBeNull()
+    expect(screen.queryByText('badge_sin_datos_pedagogicos')).toBeNull()
   })
 })

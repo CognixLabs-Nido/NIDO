@@ -292,9 +292,15 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states
               alergiaGrave: f.alergiaGrave,
             },
             initial,
-            badges: f.alergiaGrave
-              ? [{ label: t('badge_alergia_grave'), variant: 'destructive' }]
-              : [],
+            badges: [
+              ...(f.alergiaGrave
+                ? [{ label: t('badge_alergia_grave'), variant: 'destructive' as const }]
+                : []),
+              // Nadie ha dicho si come sólidos: ni que sí ni que no (C, 2026-11-24).
+              ...(f.sinDatosPedagogicos
+                ? [{ label: t('badge_sin_datos_pedagogicos'), variant: 'warm' as const }]
+                : []),
+            ],
           }
         }),
       [filas, existentesPorNino]
@@ -310,6 +316,22 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states
         >
           {t('sin_comprobar_solidos', {
             nombres: sinComprobarSolidos.map((n) => `${n.nombre} ${n.apellidos}`).join(', '),
+          })}
+        </div>
+      ) : null
+
+    // Los que salen sin datos pedagógicos, nombrados ARRIBA: la profe lo ve antes de darles de
+    // comer, no solo en la etiqueta de la fila (C, 2026-11-24).
+    const sinDatos = filas.filter((f) => f.sinDatosPedagogicos)
+    const avisoSinDatos =
+      sinDatos.length > 0 ? (
+        <div
+          role="status"
+          data-testid="aviso-sin-datos-pedagogicos"
+          className="border-warm-300 bg-warm-100 text-warm-800 rounded-md border p-3 text-sm"
+        >
+          {t('sin_datos_pedagogicos', {
+            nombres: sinDatos.map((f) => `${f.nino.nombre} ${f.nino.apellidos}`).join(', '),
           })}
         </div>
       ) : null
@@ -363,6 +385,7 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states
       <div className="space-y-4">
         <CabeceraMenu menu={menu} momento={_momento} />
         {avisoSinComprobar}
+        {avisoSinDatos}
         <PaseDeListaTable<NinoCellData, ValorComida>
           items={items}
           renderItem={(item) => (

@@ -1609,6 +1609,17 @@
         "no_se_pudo_leer": "We couldn’t read which children have the card. Reload the page.",
         "vacio": "Every enrolled child has a health card."
       },
+      "sin_datos_pedagogicos": {
+        "titulo": "Enrolled children without care details",
+        "subtitulo": "Without the milk feeding state nobody knows whether the child eats solid food, and the meal list tells the teacher so. Ask these families for them.",
+        "no_se_pudo_leer": "We couldn't read which children have care details. Reload the page.",
+        "vacio": "Every enrolled child has the milk feeding state answered.",
+        "casos": {
+          "sin_registro": "no details",
+          "registro_borrado": "details deleted",
+          "lactancia_vacia": "milk feeding state not answered"
+        }
+      },
       "mandatos_por_refirmar": {
         "titulo": "SEPA mandates to be signed again",
         "subtitulo": "They were signed before the mandate included the centre's creditor identifier and the account holder's document and address. They are still active and are not changed: the family has to sign the direct debit again.",
@@ -1896,7 +1907,8 @@
     },
     "no_leidos": "We couldn't read the saved educational details, so they can't be changed right now: saving would replace what's already there without you having seen it. Reload the page.",
     "no_leidos_alta": "We couldn't read the saved educational details, so they can't be changed here: anything you typed would replace what's already there without you having seen it. You can carry on with the enrolment and fill them in later.",
-    "no_leidos_lectura": "We couldn't read the educational details. Reload the page."
+    "no_leidos_lectura": "We couldn't read the educational details. Reload the page.",
+    "sin_contestar": "Not answered"
   },
   "centro": {
     "validation": {
@@ -3070,6 +3082,7 @@
         "unico": "Course"
       },
       "badge_alergia_grave": "Severe allergy",
+      "badge_sin_datos_pedagogicos": "No care details",
       "quick": {
         "aplicar_a_todos_a_columna": "Apply {valor} to all · {columna}"
       },
@@ -3080,7 +3093,8 @@
         "guardado": "Saved",
         "error": "Error"
       },
-      "sin_comprobar_solidos": "We couldn't check whether these children eat solid food, so they're not on the list: {nombres}. Reload the page before recording a meal for them."
+      "sin_comprobar_solidos": "We couldn't check whether these children eat solid food, so they're not on the list: {nombres}. Reload the page before recording a meal for them.",
+      "sin_datos_pedagogicos": "Nobody has said yet whether these children eat solid food (they have no care details): {nombres}. Check before feeding them."
     },
     "widget_familia": {
       "title": "Today's menu",

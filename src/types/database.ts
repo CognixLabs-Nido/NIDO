@@ -1870,56 +1870,74 @@ export type Database = {
       datos_pedagogicos_nino: {
         Row: {
           alimentacion_observaciones: string | null
-          control_esfinteres: Database["public"]["Enums"]["control_esfinteres"]
+          control_esfinteres:
+            | Database["public"]["Enums"]["control_esfinteres"]
+            | null
           control_esfinteres_observaciones: string | null
           created_at: string
           deleted_at: string | null
           id: string
           idiomas_casa: string[]
-          lactancia_estado: Database["public"]["Enums"]["lactancia_estado"]
+          lactancia_estado:
+            | Database["public"]["Enums"]["lactancia_estado"]
+            | null
           lactancia_observaciones: string | null
           nino_id: string
           siesta_horario_habitual: string | null
           siesta_numero_diario: number | null
           siesta_observaciones: string | null
           tiene_hermanos_en_centro: boolean
-          tipo_alimentacion: Database["public"]["Enums"]["tipo_alimentacion"]
+          tipo_alimentacion:
+            | Database["public"]["Enums"]["tipo_alimentacion"]
+            | null
           updated_at: string
         }
         Insert: {
           alimentacion_observaciones?: string | null
-          control_esfinteres: Database["public"]["Enums"]["control_esfinteres"]
+          control_esfinteres?:
+            | Database["public"]["Enums"]["control_esfinteres"]
+            | null
           control_esfinteres_observaciones?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           idiomas_casa: string[]
-          lactancia_estado: Database["public"]["Enums"]["lactancia_estado"]
+          lactancia_estado?:
+            | Database["public"]["Enums"]["lactancia_estado"]
+            | null
           lactancia_observaciones?: string | null
           nino_id: string
           siesta_horario_habitual?: string | null
           siesta_numero_diario?: number | null
           siesta_observaciones?: string | null
           tiene_hermanos_en_centro?: boolean
-          tipo_alimentacion: Database["public"]["Enums"]["tipo_alimentacion"]
+          tipo_alimentacion?:
+            | Database["public"]["Enums"]["tipo_alimentacion"]
+            | null
           updated_at?: string
         }
         Update: {
           alimentacion_observaciones?: string | null
-          control_esfinteres?: Database["public"]["Enums"]["control_esfinteres"]
+          control_esfinteres?:
+            | Database["public"]["Enums"]["control_esfinteres"]
+            | null
           control_esfinteres_observaciones?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           idiomas_casa?: string[]
-          lactancia_estado?: Database["public"]["Enums"]["lactancia_estado"]
+          lactancia_estado?:
+            | Database["public"]["Enums"]["lactancia_estado"]
+            | null
           lactancia_observaciones?: string | null
           nino_id?: string
           siesta_horario_habitual?: string | null
           siesta_numero_diario?: number | null
           siesta_observaciones?: string | null
           tiene_hermanos_en_centro?: boolean
-          tipo_alimentacion?: Database["public"]["Enums"]["tipo_alimentacion"]
+          tipo_alimentacion?:
+            | Database["public"]["Enums"]["tipo_alimentacion"]
+            | null
           updated_at?: string
         }
         Relationships: [

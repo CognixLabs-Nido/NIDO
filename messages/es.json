@@ -1609,6 +1609,17 @@
         "no_se_pudo_leer": "No se ha podido leer qué niños tienen la tarjeta. Vuelve a cargar la página.",
         "vacio": "Todos los niños matriculados tienen la tarjeta sanitaria."
       },
+      "sin_datos_pedagogicos": {
+        "titulo": "Matriculados sin datos pedagógicos",
+        "subtitulo": "Sin la lactancia nadie sabe si el niño toma sólidos, y el pase de comidas se lo dice a la profe. A estas familias hay que pedírselos.",
+        "no_se_pudo_leer": "No se ha podido leer qué niños tienen datos pedagógicos. Vuelve a cargar la página.",
+        "vacio": "Todos los niños matriculados tienen la lactancia contestada.",
+        "casos": {
+          "sin_registro": "sin datos",
+          "registro_borrado": "datos borrados",
+          "lactancia_vacia": "lactancia sin contestar"
+        }
+      },
       "mandatos_por_refirmar": {
         "titulo": "Mandatos SEPA pendientes de volver a firmar",
         "subtitulo": "Se firmaron antes de que el mandato llevara el identificador de acreedor del centro y el documento y la dirección del titular. Siguen activos y no se tocan: la familia tiene que volver a firmar la domiciliación.",
@@ -1896,7 +1907,8 @@
     },
     "no_leidos": "No hemos podido leer los datos pedagógicos guardados, así que ahora no se pueden cambiar: guardar sustituiría lo que ya hay sin que lo hayas visto. Vuelve a cargar la página.",
     "no_leidos_alta": "No hemos podido leer los datos pedagógicos guardados, así que aquí no se pueden cambiar: lo que escribieras sustituiría lo que ya hay sin que lo hayas visto. Puedes seguir con el alta y completarlos después.",
-    "no_leidos_lectura": "No hemos podido leer los datos pedagógicos. Vuelve a cargar la página."
+    "no_leidos_lectura": "No hemos podido leer los datos pedagógicos. Vuelve a cargar la página.",
+    "sin_contestar": "Sin contestar"
   },
   "centro": {
     "validation": {
@@ -3070,6 +3082,7 @@
         "unico": "Plato"
       },
       "badge_alergia_grave": "Alergia grave",
+      "badge_sin_datos_pedagogicos": "Sin datos pedagógicos",
       "quick": {
         "aplicar_a_todos_a_columna": "Aplicar {valor} a todos · {columna}"
       },
@@ -3080,7 +3093,8 @@
         "guardado": "Guardado",
         "error": "Error"
       },
-      "sin_comprobar_solidos": "No se ha podido comprobar si estos niños toman sólidos, así que no salen en la lista: {nombres}. Recarga la página antes de apuntarles comida."
+      "sin_comprobar_solidos": "No se ha podido comprobar si estos niños toman sólidos, así que no salen en la lista: {nombres}. Recarga la página antes de apuntarles comida.",
+      "sin_datos_pedagogicos": "Nadie ha dicho todavía si estos niños toman sólidos (no tienen datos pedagógicos): {nombres}. Pregunta antes de darles de comer."
     },
     "widget_familia": {
       "title": "Menú del día",

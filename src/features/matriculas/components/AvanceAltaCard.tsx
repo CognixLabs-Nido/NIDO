@@ -20,7 +20,10 @@ interface Props {
    * proceso. NULL si no se pudo leer.
    */
   avance: LineaAvance[] | null
-  /** Datos pedagógicos: opcionales y no son un consentimiento. Se enseñan aparte, neutros. */
+  /**
+   * Datos pedagógicos: opcionales y no son un consentimiento. Se enseñan aparte, neutros. TRUE solo con
+   * los tres contestados (`datosPedagogicosContestados`, C, 2026-11-24): una fila no basta.
+   */
   pedagogicos: boolean
   /** El alta sin terminar (`altas_sin_terminar`, 20261209120000): solo con la matrícula pendiente. */
   sinTerminar?: {

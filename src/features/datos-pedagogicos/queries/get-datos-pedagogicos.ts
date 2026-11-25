@@ -5,14 +5,27 @@ import { createClient } from '@/lib/supabase/server'
 export interface DatosPedagogicosRow {
   id: string
   nino_id: string
-  lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
+  /** NULL = sin contestar (opcional; C, 2026-11-24). Ninguna pantalla lo pinta como un valor. */
+  lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica' | null
   lactancia_observaciones: string | null
-  control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
+  control_esfinteres:
+    | 'panal_completo'
+    | 'transicion'
+    | 'sin_panal_diurno'
+    | 'sin_panal_total'
+    | null
   control_esfinteres_observaciones: string | null
   siesta_horario_habitual: string | null
   siesta_numero_diario: number | null
   siesta_observaciones: string | null
-  tipo_alimentacion: 'omnivora' | 'vegetariana' | 'vegana' | 'sin_lactosa' | 'sin_gluten' | 'otra'
+  tipo_alimentacion:
+    | 'omnivora'
+    | 'vegetariana'
+    | 'vegana'
+    | 'sin_lactosa'
+    | 'sin_gluten'
+    | 'otra'
+    | null
   alimentacion_observaciones: string | null
   idiomas_casa: string[]
   tiene_hermanos_en_centro: boolean
