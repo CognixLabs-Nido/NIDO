@@ -217,6 +217,28 @@ Con su test: guardar sobre una fila borrada a mano la deja viva y la función de
 `DELETE`). El día que algo la borre en blando, `upsertDatosPedagogicos` desharía ese borrado al
 guardar: **esta decisión es la que hay que revisar**. Lo dice también el comentario de la acción.
 
+### 2026-11-25 · el barrido de los 8 buckets, en el grupo 1 si la purga no recoge huérfanos
+
+Medido antes (solo lectura, `~/nido-logs/16/c/g1/MEDIDO.md`): solo existen dos barridos de huérfanos de
+Storage, el del mandato y el de las remesas; ni el blog ni los 8 buckets de los 40
+`.catch(() => undefined)` tienen uno.
+
+«SÍ AL BARRIDO DE LOS 8 BUCKETS, Y EN EL GRUPO 1, con un PR propio.
+El motivo no es higiene, y quiero que lo midas antes de construirlo: ¿LA PURGA DEL ART. 17 RECOGE UN
+HUÉRFANO? Mi lectura es que no, porque borra por la ruta que nombra cada fila, y un huérfano no está en
+ninguna fila. Si es así, entonces un DNI de un padre que se quedó huérfano al sustituir el fichero
+SOBREVIVE a una solicitud de derecho al olvido, y eso ya no es un fichero que sobra: es un borrado que
+decimos haber hecho y no hicimos.
+Mídelo con un huérfano montado en el ensayo, y según salga:
+
+- si la purga no lo recoge, el barrido es parte del cumplimiento del art. 17 y va en el grupo 1 con ese
+  motivo escrito;
+- si sí lo recoge, entonces es higiene y lo bajamos de prioridad.
+  Y en los dos casos quiero saber si el barrido debe avisar o solo contar: un huérfano con un DNI dentro
+  no es lo mismo que un avatar viejo.
+  El barrido del blog en el PR 1 con su migración, como propones. Y sigue con el PR 1 mientras mides
+  esto, que tienes razón en que no cambia su código.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
