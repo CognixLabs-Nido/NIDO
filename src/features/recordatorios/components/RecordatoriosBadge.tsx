@@ -34,7 +34,9 @@ export function RecordatoriosBadge({ initialTotal, centroId }: Props) {
       const r = await getRecordatoriosPendientesCountAction(centroId)
       setTotal(r.total)
     } catch {
-      // Error silencioso: el badge no debe romper la app si la consulta falla.
+      // El badge no rompe la app, pero tampoco se queda con el número de antes (censo C, 2026-11-25):
+      // si el recuento no llega, «?».
+      setTotal(null)
     }
   }, [centroId])
 
