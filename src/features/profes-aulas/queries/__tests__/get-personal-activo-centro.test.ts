@@ -155,6 +155,14 @@ describe('getPersonalActivoCentroCore', () => {
     expect(result).toEqual([])
   })
 
+  // Censo C (2026-11-25): la mutación del grupo «consulta» sobrevivía sin este caso (la primera lectura).
+  it('error en aulas_curso → LecturaFallida, no «el curso no tiene aulas»', async () => {
+    const client = makeClient({ aulas: [], profes: [], aulasErr: { message: 'boom' } })
+    await expect(
+      getPersonalActivoCentroCore(client, CURSO_ID, resolver({}))
+    ).rejects.toBeInstanceOf(LecturaFallida)
+  })
+
   // Censo C (2026-11-25): sustituye a «error en profes_aulas → []». La lista vacía decía «el centro
   // no tiene personal»; ahora la página dice «no se ha podido leer».
   it('error en profes_aulas → LecturaFallida, no una lista vacía', async () => {
