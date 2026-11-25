@@ -217,6 +217,44 @@ Con su test: guardar sobre una fila borrada a mano la deja viva y la función de
 `DELETE`). El día que algo la borre en blando, `upsertDatosPedagogicos` desharía ese borrado al
 guardar: **esta decisión es la que hay que revisar**. Lo dice también el comentario de la acción.
 
+### 2026-11-25 · el censo: forma 4 en blanco, y el troceo con el pase de curso en el grupo 1
+
+Jose, sobre el biberón: «opción A. El formulario del biberón sale EN BLANCO y la profe elige las tres
+cosas cada vez.»
+
+«Y DE AHÍ SALE EL CRITERIO PARA LOS 14, no solo para el biberón: ningún campo del que dependa algo
+viene preseleccionado. Aplícalo a los seis del niño —biberón, comida, pañal, recogida y el tipo de
+personal en los dos sitios— y a los seis de dinero. El del tipo de personal me importa especialmente:
+que venga marcado «profesora» significa que quien invite sin mirar está dando permiso para escribir
+informes.
+Los 9 que tienen un valor por defecto del que no depende nada, déjalos.
+Si al construir alguno resulta que en blanco estorba de verdad en el uso diario, para y dímelo antes
+de cambiarlo por tu cuenta.»
+
+«EL TROCEO ME VALE TAL CUAL, con una precisión: el pase de curso sube al grupo 1. Tienes razón en
+ordenar por lo irreversible, pero ese es el único que afecta a TODOS los niños del centro de una vez,
+y un centro entero dado de baja por un fallo de lectura es de otra magnitud, aunque se pueda revertir
+a mano. Que vaya con los borrados.»
+
+«EMPIEZA POR EL GRUPO 1, y dentro de él por lo que no se deshace: las dos purgas, borrarObjetosBucket
+y las fotos del blog, lo que la purga deja atrás de las invitaciones, el export del art. 15, y el pase
+de curso. Mide cada uno abierto antes de cerrarlo […]. Y dime cuántos PRs te sale el grupo 1: si son
+más de dos, prefiero varios cortos que uno que no se pueda leer.»
+
+**El censo** (2026-11-25, sobre main `35792116`, `~/nido-logs/16/c/censo/CENSO.md` y `F4.md`): 298 de
+582 helpers con forma 1-3 (niño 70, dinero 28, pantalla 200); forma 4, 14 formularios con una opción
+marcada de la que depende algo y 9 con un defecto del que no depende nada.
+
+**Los 12 nombrados, que salen en blanco** (los otros dos del censo —el `borrador.default(false)` de
+autorizaciones y el tipo de día del calendario— el criterio «para los 14» los cubre pero no se
+nombraron: **preguntado el 2026-11-25, sin tocar hasta la respuesta**): niño — SeccionBiberones, SeccionComidas, SeccionDeposiciones, CrearRecogidaDialog,
+InvitarProfeDialog y GestionarPersonalDialog (más sus esquemas: `tomado_completo.default(true)`,
+`tipo_personal_aula.default('profesora')`); dinero — ResolverDevolucionDialog, MarcarDevueltoDialog,
+MarcarCobradoDialog, ConceptoFormDialog, ReciboEsporadicoDialog, EditarReciboDialog.
+
+**El troceo:** grupo 1 (lo que se borra o no se borra, y el pase de curso) → 2 (el estado del niño) →
+3 (salud, recogida y avisos) → 4 (forma 4 del niño) → 5 y 6 (dinero) → 7 y 8 (pantalla).
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
