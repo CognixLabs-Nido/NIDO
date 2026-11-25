@@ -6,6 +6,7 @@ import { logger } from '@/shared/lib/logger'
 import type { AnuncioDetalle } from '../types'
 
 import { audienciaAnuncio } from './audiencia-anuncio'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Detalle de un anuncio. RLS filtra: el usuario solo lo lee si es
@@ -56,7 +57,7 @@ export async function getAnuncioDetalle(
 
   if (error) {
     logger.warn('getAnuncioDetalle', error.message)
-    return null
+    throw new LecturaFallida('getAnuncioDetalle', error)
   }
   if (!anuncio) return null
 
@@ -83,10 +84,11 @@ export async function getAnuncioDetalle(
     // todas las filas de `lectura_anuncio` correspondientes a SUS anuncios.
     // Antes solo veía las suyas (0 si no se autoleyó), de ahí el bug
     // "0 de N" reportado en producción.
-    const { count: leidos } = await supabase
+    const { count: leidos, error: errorLectura } = await supabase
       .from('lectura_anuncio')
       .select('*', { count: 'exact', head: true })
       .eq('anuncio_id', anuncioId)
+    if (errorLectura) throw new LecturaFallida('getAnuncioDetalle', errorLectura)
 
     const audiencia = await audienciaAnuncio(supabase, {
       centro_id: anuncio.centro_id,

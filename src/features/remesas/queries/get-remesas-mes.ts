@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type EstadoRemesa = Database['public']['Enums']['estado_remesa']
 
@@ -38,7 +39,7 @@ export async function getRemesasMes(
 ): Promise<RemesaListItem[]> {
   const supabase = await createClient()
 
-  const { data: remesas } = await supabase
+  const { data: remesas, error } = await supabase
     .from('remesas')
     // `*`: lee fichero_generado_at sin romper si el despliegue llega antes que su migración.
     .select('*')
@@ -47,16 +48,18 @@ export async function getRemesasMes(
     .eq('mes', mes)
     .is('deleted_at', null)
     .order('created_at', { ascending: true })
+  if (error) throw new LecturaFallida('getRemesasMes', error)
 
   if (!remesas || remesas.length === 0) return []
 
   // Recibos ligados a estas remesas + su importe (selects separados, unidos en
   // memoria: las tablas B-0 se tiparon a mano sin metadata de relaciones).
   const ids = remesas.map((r) => r.id)
-  const { data: enlaces } = await supabase
+  const { data: enlaces, error: errorLectura } = await supabase
     .from('recibos_remesa')
     .select('remesa_id, recibo_id')
     .in('remesa_id', ids)
+  if (errorLectura) throw new LecturaFallida('getRemesasMes', errorLectura)
 
   const reciboIds = [...new Set((enlaces ?? []).map((e) => e.recibo_id))]
   const { data: recibos } = reciboIds.length

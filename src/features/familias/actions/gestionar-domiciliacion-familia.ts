@@ -51,11 +51,12 @@ export async function gestionarDomiciliacionFamilia(
   // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS `familias_select`
   // (es_admin(centro)) solo deja leerla si es de uno de sus centros → si no aparece, es de otro
   // centro (o no existe).
-  const { data: familia } = await supabase
+  const { data: familia, error: errorLectura } = await supabase
     .from('familias')
     .select('id, centro_id')
     .eq('id', parsed.data.familia_id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!familia) return fail('admin.familias.errors.no_encontrada')
   const centroId = familia.centro_id
 

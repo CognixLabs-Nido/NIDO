@@ -30,11 +30,12 @@ export async function editarEtiquetaFamilia(
 
   // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS solo deja leer a
   // Dirección las familias de sus centros.
-  const { data: familia } = await supabase
+  const { data: familia, error: errorLectura } = await supabase
     .from('familias')
     .select('centro_id')
     .eq('id', parsed.data.familia_id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!familia) return fail('admin.familias.errors.no_encontrada')
   if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
     return fail('auth.invitation.errors.forbidden')

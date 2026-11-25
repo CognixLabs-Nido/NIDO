@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * U-5 — gate "¿soy admin de ESTE centro?" para las acciones de admisiones que leen por
@@ -22,11 +23,12 @@ export async function centroDelCurso(
   supabase: SupabaseClient<Database>,
   cursoId: string
 ): Promise<string | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('cursos_academicos')
     .select('centro_id')
     .eq('id', cursoId)
     .maybeSingle()
+  if (error) throw new LecturaFallida('centroDelCurso', error)
   return data?.centro_id ?? null
 }
 

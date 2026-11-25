@@ -32,11 +32,12 @@ export async function editarEvento(
 
   // Estado material previo, para decidir si re-notificar (lo leemos antes del
   // UPDATE; el autor/admin tiene RLS de SELECT sobre su propio evento).
-  const { data: previo } = await supabase
+  const { data: previo, error: errorLectura } = await supabase
     .from('eventos')
     .select('fecha, fecha_fin, hora_inicio, hora_fin, lugar')
     .eq('id', d.evento_id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   const { data: updated, error } = await supabase
     .from('eventos')

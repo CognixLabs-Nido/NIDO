@@ -4,6 +4,7 @@ import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']
@@ -53,7 +54,7 @@ export async function getRecibosFamilia(ambito: AmbitoFamiliar): Promise<ReciboF
 
   if (error) {
     logger.warn('getRecibosFamilia', error.message)
-    return []
+    throw new LecturaFallida('getRecibosFamilia', error)
   }
   if (!recibos || recibos.length === 0) return []
 
@@ -63,10 +64,11 @@ export async function getRecibosFamilia(ambito: AmbitoFamiliar): Promise<ReciboF
   ]
   const nombrePorNino = new Map<string, string>()
   if (ninoIds.length > 0) {
-    const { data: ninos } = await supabase
+    const { data: ninos, error: errorLectura } = await supabase
       .from('ninos')
       .select('id, nombre, apellidos')
       .in('id', ninoIds)
+    if (errorLectura) throw new LecturaFallida('getRecibosFamilia', errorLectura)
     for (const n of ninos ?? []) {
       nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }

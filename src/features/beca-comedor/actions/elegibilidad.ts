@@ -33,11 +33,12 @@ export async function toggleElegibilidad(
   const supabase = await createClient()
 
   // Centro DEL NIÑO (multicentro · Fase 1): admin en él, no en el centro activo.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('centro_id')
     .eq('id', parsed.data.nino_id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!nino || !(await usuarioAdminEn(supabase, nino.centro_id))) {
     return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
   }

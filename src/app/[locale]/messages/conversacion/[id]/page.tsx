@@ -8,6 +8,7 @@ import { ConversacionView } from '@/features/messaging/components/ConversacionVi
 import { getAdminFamiliaDetalle } from '@/features/messaging/queries/get-admin-familia-detalle'
 import { getConversacionDetalle } from '@/features/messaging/queries/get-conversacion-detalle'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>
@@ -51,11 +52,12 @@ export default async function ConversacionPage({ params, searchParams }: PagePro
   // Multicentro: las dos consultas de detalle solo devuelven la conversación del centro activo;
   // la de otro centro (un enlace o una notificación de allí) también acaba en notFound().
   const supabase = await createClient()
-  const { data: tipoRow } = await supabase
+  const { data: tipoRow, error } = await supabase
     .from('conversaciones')
     .select('tipo_conversacion')
     .eq('id', id)
     .maybeSingle()
+  if (error) throw new LecturaFallida('ConversacionPage', error)
 
   if (!tipoRow) notFound()
 

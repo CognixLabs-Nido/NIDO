@@ -9,6 +9,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { fail, ok, type ActionResult, type TipoCita } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /** Fecha de hoy en huso Europe/Madrid como 'YYYY-MM-DD' (ventana de RSVP, AG-11). */
 export function hoyMadridYmd(): string {
@@ -57,7 +58,8 @@ export async function puedeGestionarCita(
   userId: string
 ): Promise<boolean> {
   if (organizadorId === userId) return true
-  const { data } = await supabase.rpc('es_admin', { p_centro_id: centroId })
+  const { data, error } = await supabase.rpc('es_admin', { p_centro_id: centroId })
+  if (error) throw new LecturaFallida('puedeGestionarCita', error)
   return data === true
 }
 
@@ -130,16 +132,23 @@ export async function puedeOrganizarCita(
   ninoId: string | null,
   aulaId: string | null
 ): Promise<boolean> {
-  const { data: esAdmin } = await supabase.rpc('es_admin', { p_centro_id: centroId })
+  const { data: esAdmin, error } = await supabase.rpc('es_admin', { p_centro_id: centroId })
+  if (error) throw new LecturaFallida('puedeOrganizarCita', error)
   if (esAdmin === true) return true
 
   // Profe solo organiza reunion_familia (de su niño) y reunion_clase (de su aula).
   if (tipo === 'reunion_familia' && ninoId) {
-    const { data } = await supabase.rpc('es_profe_de_nino', { p_nino_id: ninoId })
+    const { data, error: errorLectura } = await supabase.rpc('es_profe_de_nino', {
+      p_nino_id: ninoId,
+    })
+    if (errorLectura) throw new LecturaFallida('puedeOrganizarCita', errorLectura)
     return data === true
   }
   if (tipo === 'reunion_clase' && aulaId) {
-    const { data } = await supabase.rpc('es_profe_de_aula', { p_aula_id: aulaId })
+    const { data, error: errorLectura2 } = await supabase.rpc('es_profe_de_aula', {
+      p_aula_id: aulaId,
+    })
+    if (errorLectura2) throw new LecturaFallida('puedeOrganizarCita', errorLectura2)
     return data === true
   }
   // reunion_claustro / visita → solo admin (ya descartado arriba).

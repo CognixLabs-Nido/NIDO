@@ -11,6 +11,7 @@ import {
   rutaThumbDe,
   rutasConThumb,
 } from '@/shared/lib/adjuntos/storage'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -114,11 +115,12 @@ export async function POST(
   // 3. El UPDATE de `usuarios.foto_url` va por SERVICE-ROLE: la RLS de `usuarios` no
   //    deja al usuario tocar la columna, y el upload anterior ya autorizó (gate real).
   const service = createServiceRoleClient()
-  const { data: anterior } = await service
+  const { data: anterior, error: errorLectura } = await service
     .from('usuarios')
     .select('foto_url')
     .eq('id', usuarioId)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
 
   const { error: updErr } = await service
     .from('usuarios')

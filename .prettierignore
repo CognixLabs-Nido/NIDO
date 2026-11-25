@@ -8,3 +8,6 @@ public
 # con las comillas dobles del generador → diff cosmético gigante en cada commit). Regenerar
 # tras aplicar migraciones; no editar.
 src/types/database.ts
+
+# Casos del codemod de lecturas: su texto exacto es el caso; reformatearlos lo rompe.
+scripts/codemods/casos-lectura/

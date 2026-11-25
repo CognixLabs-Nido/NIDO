@@ -57,11 +57,12 @@ export async function activarMatricula(
   }
   if (!data) return fail('matricula.errors.no_lista')
 
-  const { data: m } = await supabase
+  const { data: m, error: errorLectura } = await supabase
     .from('matriculas')
     .select('nino_id')
     .eq('id', data)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   // Decisión D-a: al validar el alta, invitar al tutor 2 con el email del wizard
   // (best-effort, idempotente; un fallo no revierte la activación ya hecha).
   if (m) await invitarTutor2AlValidar(supabase, m.nino_id)

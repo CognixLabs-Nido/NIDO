@@ -11,6 +11,7 @@ import {
   borrarObjetosBucket,
   firmarRuta,
 } from '@/shared/lib/adjuntos/storage'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -55,12 +56,13 @@ export async function POST(
   if (!user) return err('alta.errors.no_autorizado', 401)
 
   // Ficha visible para el usuario (RLS de `ninos`) → centro_id para la ruta.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, centro_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
   if (!nino) return err('alta.errors.no_autorizado', 403)
 
   let form: FormData

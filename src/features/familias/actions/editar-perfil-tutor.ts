@@ -27,12 +27,13 @@ export async function editarPerfilTutor(
 
   // El centro es el DE LA FAMILIA del tutor, no el centro activo de la cookie. La RLS solo deja
   // leer a Dirección los tutores y las familias de sus centros.
-  const { data: tutor } = await supabase
+  const { data: tutor, error: errorLectura } = await supabase
     .from('familia_tutores')
     .select('familia_id, rol_familia')
     .eq('id', parsed.data.tutor_id)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   const { data: familia } = tutor
     ? await supabase.from('familias').select('centro_id').eq('id', tutor.familia_id).maybeSingle()
     : { data: null }

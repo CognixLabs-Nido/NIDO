@@ -8,6 +8,7 @@ import {
 import { logger } from '@/shared/lib/logger'
 
 import { esIdioma, IDIOMA_POR_DEFECTO, type Idioma } from './idioma'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Devuelve los `usuario_id` que deben recibir un push tras un mensaje nuevo
@@ -41,6 +42,7 @@ export async function destinatariosDeNino(
       .eq('nino_id', ninoId)
       .is('deleted_at', null),
   ])
+  if (vinculosRes.error) throw new LecturaFallida('destinatariosDeNino', vinculosRes.error)
 
   const destinatarios = new Set<string>(profes)
 
@@ -133,19 +135,21 @@ export async function destinatariosPushDeAnuncio(
   if (anuncio.ambito === 'aula' && anuncio.aula_id) {
     // R3 (multi-centro): el aula tiene que ser del centro del anuncio. Si no lo es, nadie
     // recibe el push (las familias de un aula de OTRO centro nunca).
-    const { data: aula } = await supabase
+    const { data: aula, error } = await supabase
       .from('aulas')
       .select('id')
       .eq('id', anuncio.aula_id)
       .eq('centro_id', anuncio.centro_id)
       .maybeSingle()
+    if (error) throw new LecturaFallida('destinatariosPushDeAnuncio', error)
     aulasObjetivo = aula ? [aula.id] : []
   } else if (anuncio.ambito === 'centro') {
-    const { data: aulas } = await supabase
+    const { data: aulas, error: errorLectura } = await supabase
       .from('aulas')
       .select('id')
       .eq('centro_id', anuncio.centro_id)
       .is('deleted_at', null)
+    if (errorLectura) throw new LecturaFallida('destinatariosPushDeAnuncio', errorLectura)
     aulasObjetivo = (aulas ?? []).map((a) => a.id)
   }
 
@@ -155,13 +159,14 @@ export async function destinatariosPushDeAnuncio(
   // las aulas objetivo. Cargamos el grafo de los niños del centro (service role: sin el filtro
   // traería los de toda la plataforma) y filtramos en JS para evitar ambigüedad con filtros
   // JSONB en PostgREST.
-  const { data: tutores } = await supabase
+  const { data: tutores, error: errorLectura2 } = await supabase
     .from('vinculos_familiares')
     .select(
       'usuario_id, permisos, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))'
     )
     .eq('nino.centro_id', anuncio.centro_id)
     .is('deleted_at', null)
+  if (errorLectura2) throw new LecturaFallida('destinatariosPushDeAnuncio', errorLectura2)
 
   const aulaSet = new Set(aulasObjetivo)
   for (const v of tutores ?? []) {
@@ -186,11 +191,12 @@ export async function destinatariosPushDeAnuncio(
  */
 export async function getAutorPushInfo(userId: string): Promise<{ nombre: string }> {
   const supabase = createServiceRoleClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', userId)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getAutorPushInfo', error)
   return { nombre: data?.nombre_completo ?? 'NIDO' }
 }
 

@@ -33,6 +33,7 @@ import type {
   TipoAutorizacion,
 } from '../types'
 import { conDatosDeFirmas } from '../lib/contenido-firmas'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Detalle de una autorización + su **roster por niño** (estado de firma calculado
@@ -58,7 +59,7 @@ export async function getAutorizacionDetalle(
     .maybeSingle()
   if (error) {
     logger.warn('getAutorizacionDetalle: select', error.message)
-    return null
+    throw new LecturaFallida('getAutorizacionDetalle', error)
   }
   if (!aut) return null
 
@@ -219,11 +220,12 @@ async function resolverNinosEnAlcance(
 ): Promise<string[]> {
   if (aut.tipo === 'salida') {
     if (!aut.evento_id) return []
-    const { data: ev } = await supabase
+    const { data: ev, error } = await supabase
       .from('eventos')
       .select('ambito, aula_id, nino_id, centro_id')
       .eq('id', aut.evento_id)
       .maybeSingle()
+    if (error) throw new LecturaFallida('resolverNinosEnAlcance', error)
     if (!ev) return []
     if (ev.ambito === 'nino' && ev.nino_id) return [ev.nino_id]
     if (ev.ambito === 'aula' && ev.aula_id) return ninosDeAula(supabase, ev.aula_id)
@@ -253,11 +255,12 @@ async function ninosDeCentro(
   supabase: Awaited<ReturnType<typeof createClient>>,
   centroId: string
 ): Promise<string[]> {
-  const { data: ns } = await supabase
+  const { data: ns, error } = await supabase
     .from('ninos')
     .select('id')
     .eq('centro_id', centroId)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('ninosDeCentro', error)
   return (ns ?? []).map((n) => n.id)
 }
 

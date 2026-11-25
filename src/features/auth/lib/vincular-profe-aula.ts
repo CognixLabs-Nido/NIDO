@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type ServiceClient = SupabaseClient<Database>
 
@@ -43,9 +44,10 @@ export async function crearVinculoProfeAula(
     .maybeSingle()
   if (!aulaRow) return { error: 'auth.invitation.errors.profe_aula_failed' }
 
-  const { data: cursoActivoId } = await service.rpc('curso_activo_de_centro', {
+  const { data: cursoActivoId, error: errorLectura } = await service.rpc('curso_activo_de_centro', {
     p_centro_id: aulaRow.centro_id,
   })
+  if (errorLectura) throw new LecturaFallida('crearVinculoProfeAula', errorLectura)
   if (!cursoActivoId) return { error: 'auth.invitation.errors.sin_curso_activo' }
 
   const { error } = await service.from('profes_aulas').insert({

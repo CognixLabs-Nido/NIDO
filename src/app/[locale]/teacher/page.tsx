@@ -10,6 +10,7 @@ import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -28,13 +29,14 @@ export default async function TeacherDashboard({ params }: PageProps) {
   if (userId) {
     // F11-H: la asignación es por (aula, curso) y el tramo de edad vive en aulas_curso.
     // Las del centro activo: con aula en dos centros, la RLS devuelve las de los dos.
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profes_aulas')
       .select('aula_id, curso_academico_id, aula:aulas!inner(id, nombre, deleted_at)')
       .eq('aula.centro_id', centroId)
       .eq('profe_id', userId)
       .is('fecha_fin', null)
       .is('deleted_at', null)
+    if (error) throw new LecturaFallida('TeacherDashboard', error)
 
     const activos = (
       (data ?? []) as unknown as Array<{
@@ -47,10 +49,11 @@ export default async function TeacherDashboard({ params }: PageProps) {
     const aulaIds = activos.map((r) => r.aula_id)
     const tramoPorAulaCurso = new Map<string, number[]>()
     if (aulaIds.length > 0) {
-      const { data: configs } = await supabase
+      const { data: configs, error: errorLectura } = await supabase
         .from('aulas_curso')
         .select('aula_id, curso_academico_id, tramo_edad')
         .in('aula_id', aulaIds)
+      if (errorLectura) throw new LecturaFallida('TeacherDashboard', errorLectura)
       for (const c of (configs ?? []) as Array<{
         aula_id: string
         curso_academico_id: string

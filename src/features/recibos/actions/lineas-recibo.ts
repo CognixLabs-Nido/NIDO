@@ -151,12 +151,13 @@ export async function crearReciboConLineaManual(
 
   // El centro es el DE LA FAMILIA (multicentro · Fase 1), con admin en él: el familiaId viaja
   // desde el cliente y así no se crea un recibo de una familia de un centro donde no se dirige.
-  const { data: familia } = await supabase
+  const { data: familia, error: errorLectura } = await supabase
     .from('familias')
     .select('id, centro_id, metodo_pago')
     .eq('id', parsed.data.familiaId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!familia || !(await usuarioAdminEn(supabase, familia.centro_id))) {
     return fail('recibos_panel.errors.no_autorizado')
   }

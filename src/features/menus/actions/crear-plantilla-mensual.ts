@@ -29,7 +29,7 @@ export async function crearPlantillaMensual(
   const userId = userData.user?.id ?? null
 
   // Idempotencia: si ya hay un borrador, devolverlo.
-  const { data: existente } = await supabase
+  const { data: existente, error: errorLectura } = await supabase
     .from('plantillas_menu_mensual')
     .select('id')
     .eq('centro_id', parsed.data.centro_id)
@@ -38,6 +38,7 @@ export async function crearPlantillaMensual(
     .eq('estado', 'borrador')
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (existente?.id) {
     return ok({ id: existente.id })

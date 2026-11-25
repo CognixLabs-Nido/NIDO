@@ -17,6 +17,7 @@ import { localeIntl } from '@/shared/lib/locale-intl'
 import type { RolNotif } from '../lib/helpers'
 import { esStaff } from '../lib/helpers'
 import type { AvisosInicio as Avisos } from '../types'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 /**
  * Aviso de inicio (puntos 2 + 3): RESUMEN DE ESTADO «X firmadas · Y pendientes».
@@ -24,7 +25,7 @@ import type { AvisosInicio as Avisos } from '../types'
  * resumen son las confirmadas; para familia, pendientes de firmar + firmadas. Debajo,
  * medicaciones activas hoy. No renderiza nada si no hay actividad. Server component.
  */
-export async function AvisosInicio({
+async function AvisosInicioContenido({
   avisos,
   rol,
   locale,
@@ -306,5 +307,17 @@ export async function AvisosInicio({
         </Link>
       )}
     </div>
+  )
+}
+
+/**
+ * Una SECCIÓN (censo C, 2026-11-25): si su lectura falla, esta parte dice «no se ha podido leer» y el
+ * resto de la pantalla sigue (`LimiteSeccion`). El contenido es `AvisosInicioContenido`.
+ */
+export function AvisosInicio(props: { avisos: Avisos; rol: RolNotif; locale: string }) {
+  return (
+    <LimiteSeccion>
+      <AvisosInicioContenido {...props} />
+    </LimiteSeccion>
   )
 }

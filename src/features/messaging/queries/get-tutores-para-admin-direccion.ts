@@ -7,6 +7,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import type { TutorDireccionItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * F5B-Items1+2 — Lista de tutores del centro para el split-view del admin
@@ -80,7 +81,7 @@ export async function getTutoresParaAdminDireccionCore(
 
   if (vErr) {
     logger.warn('getTutoresParaAdminDireccion: vinculos', vErr.message)
-    return []
+    throw new LecturaFallida('getTutoresParaAdminDireccionCore', vErr)
   }
 
   // Dedup por usuario_id. Filtramos por centro y soft-delete del niño
@@ -131,7 +132,7 @@ export async function getTutoresParaAdminDireccionCore(
 
   if (cErr) {
     logger.warn('getTutoresParaAdminDireccion: conversaciones', cErr.message)
-    return []
+    throw new LecturaFallida('getTutoresParaAdminDireccionCore', cErr)
   }
 
   const conversaciones = convs ?? []
@@ -143,19 +144,22 @@ export async function getTutoresParaAdminDireccionCore(
   const unreadByConv = new Map<string, number>()
 
   if (convIds.length > 0) {
-    const [{ data: msgs }, { data: lecturas }] = await Promise.all([
-      supabase
-        .from('mensajes')
-        .select('conversacion_id, contenido, erroneo, created_at, autor_id')
-        .in('conversacion_id', convIds)
-        .order('created_at', { ascending: false })
-        .limit(500),
-      supabase
-        .from('lectura_conversacion')
-        .select('conversacion_id, last_read_at')
-        .eq('usuario_id', userId)
-        .in('conversacion_id', convIds),
-    ])
+    const [{ data: msgs, error: errorLectura }, { data: lecturas, error: errorLectura2 }] =
+      await Promise.all([
+        supabase
+          .from('mensajes')
+          .select('conversacion_id, contenido, erroneo, created_at, autor_id')
+          .in('conversacion_id', convIds)
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('lectura_conversacion')
+          .select('conversacion_id, last_read_at')
+          .eq('usuario_id', userId)
+          .in('conversacion_id', convIds),
+      ])
+    if (errorLectura) throw new LecturaFallida('getTutoresParaAdminDireccionCore', errorLectura)
+    if (errorLectura2) throw new LecturaFallida('getTutoresParaAdminDireccionCore', errorLectura2)
 
     const lastReadByConv = new Map(lecturas?.map((l) => [l.conversacion_id, l.last_read_at]) ?? [])
 

@@ -695,11 +695,12 @@ export async function rejectPendingInvitation(invitationId: string): Promise<Act
   if (!user.user?.email) return fail('auth.invitation.errors.unauthenticated')
 
   const service = createServiceRoleClient()
-  const { data: invitation } = await service
+  const { data: invitation, error } = await service
     .from('invitaciones')
     .select('id, email, accepted_at, rejected_at')
     .eq('id', invitationId)
     .maybeSingle()
+  if (error) return fail('common.lectura_fallida')
 
   if (!invitation) return fail('auth.invitation.errors.invalid')
   if (invitation.email.toLowerCase() !== user.user.email.toLowerCase()) {

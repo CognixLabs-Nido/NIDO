@@ -21,7 +21,14 @@
       "todas": "All",
       "buscar": "Search by name",
       "sin_resultados": "No one matches the filter."
-    }
+    },
+    "lectura": {
+      "pagina": "This page could not be read. It isn't that there is nothing: the read failed.",
+      "seccion": "This part could not be read. The rest of the screen is up to date.",
+      "reintentar": "Try again",
+      "contador": "Could not be counted"
+    },
+    "lectura_fallida": "What was needed could not be read. Nothing has been changed; please try again."
   },
   "nav": {
     "home": "Home",

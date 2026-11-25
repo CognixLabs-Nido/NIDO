@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { PendingInvitationsList } from '@/features/auth/components/PendingInvitationsList'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -22,13 +23,14 @@ export default async function PendingInvitationsPage({ params }: PageProps) {
   // (las políticas RLS solo permiten ver al admin del centro, no al destinatario).
   const service = createServiceRoleClient()
   // entre-centros: las invitaciones a su email, de cualquier centro: es la vía para entrar en otro.
-  const { data: invitations } = await service
+  const { data: invitations, error } = await service
     .from('invitaciones')
     .select('id, rol_objetivo, centro_id, expires_at')
     .eq('email', userData.user.email)
     .is('accepted_at', null)
     .is('rejected_at', null)
     .gt('expires_at', new Date().toISOString())
+  if (error) throw new LecturaFallida('PendingInvitationsPage', error)
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">

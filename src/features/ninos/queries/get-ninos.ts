@@ -5,6 +5,7 @@ import { logger } from '@/shared/lib/logger'
 import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-bloqueada'
 import type { HistoricoTramo } from '@/features/ninos/lib/historico-matriculas'
 import { fueAlumno, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface NinoListItem {
   id: string
@@ -73,12 +74,13 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
   const supabase = await createClient()
   // Doble query: niños del centro + matrícula activa para cada uno con aula.nombre.
   // Hacerlo separado evita complejidad de embebido y permite RLS independiente.
-  const { data: ninos } = await supabase
+  const { data: ninos, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos, fecha_nacimiento')
     .eq('centro_id', centroId)
     .is('deleted_at', null)
     .order('apellidos', { ascending: true })
+  if (errorLectura) throw new LecturaFallida('getNinosPorCentro', errorLectura)
 
   if (!ninos?.length) return []
 
@@ -148,7 +150,7 @@ export interface NinoArchivadoItem {
  */
 export async function getNinosArchivadosPorCentro(centroId: string): Promise<NinoArchivadoItem[]> {
   const supabase = await createClient()
-  const { data: ninos } = await supabase
+  const { data: ninos, error } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos')
     .eq('centro_id', centroId)
@@ -159,13 +161,14 @@ export async function getNinosArchivadosPorCentro(centroId: string): Promise<Nin
     // "Reincorporar" sobre un registro en olvido/anonimizado ('[borrado]').
     .eq('deleted_reason', 'baja_nino')
     .order('apellidos', { ascending: true })
+  if (error) throw new LecturaFallida('getNinosArchivadosPorCentro', error)
 
   if (!ninos?.length) return []
 
   // TODAS las matrículas (no solo las 'baja'): las cerradas dan fecha/motivo, y el conjunto
   // completo decide si este archivado llegó a ser alumno.
   const ninoIds = ninos.map((n) => n.id)
-  const [{ data: matriculas }, motivos] = await Promise.all([
+  const [{ data: matriculas, error: errorLectura }, motivos] = await Promise.all([
     supabase
       .from('matriculas')
       .select('id, nino_id, estado, activada_at, fecha_baja')
@@ -173,6 +176,7 @@ export async function getNinosArchivadosPorCentro(centroId: string): Promise<Nin
       .is('deleted_at', null),
     motivosBajaPorMatricula(supabase, ninoIds),
   ])
+  if (errorLectura) throw new LecturaFallida('getNinosArchivadosPorCentro', errorLectura)
 
   // Última baja por niño (fecha_baja más reciente).
   const ultimaBaja = new Map<string, { fecha_baja: string | null; motivo_baja: string | null }>()

@@ -29,11 +29,12 @@ export async function editarProspecto(
   const data = parsed.data
 
   const supabase = await createClient()
-  const { data: actual } = await supabase
+  const { data: actual, error: errorLectura } = await supabase
     .from('lista_espera')
     .select('centro_id, email_tutor')
     .eq('id', data.id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!actual) return fail('listaEspera.errors.no_encontrado')
 
   const cambios: Database['public']['Tables']['lista_espera']['Update'] = {

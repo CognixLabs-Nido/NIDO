@@ -5,6 +5,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { agruparLineasPorHijo, type DesgloseReciboFamilia } from '../lib/recibo-familia-detalle'
 import { getHistorialRecibosFamilia, type ReciboHistorial } from './get-historial-recibos-familia'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export type ReciboAdminDetalleResult =
   | { ok: true; recibo: ReciboHistorial; desglose: DesgloseReciboFamilia }
@@ -42,11 +43,12 @@ export async function getReciboAdminDetalle(
   ]
   const nombrePorNino = new Map<string, string>()
   if (ninoIds.length > 0) {
-    const { data: ninos } = await supabase
+    const { data: ninos, error: errorLectura } = await supabase
       .from('ninos')
       .select('id, nombre, apellidos')
       .eq('centro_id', centroId)
       .in('id', ninoIds)
+    if (errorLectura) throw new LecturaFallida('getReciboAdminDetalle', errorLectura)
     for (const n of ninos ?? []) {
       nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }

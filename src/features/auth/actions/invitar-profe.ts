@@ -90,19 +90,20 @@ export async function invitarProfeCore(
   // 1. Derivar el centro del aula (y verificar que existe). No se pide centro en
   //    el input: se deriva del aula para no fiarse del cliente. Acotado a los centros
   //    donde quien llama es admin (R5): un aula ajena = inexistente.
-  const { data: aula } = await serviceClient
+  const { data: aula, error: errorLectura } = await serviceClient
     .from('aulas')
     .select('centro_id')
     .eq('id', parsed.data.aulaId)
     .in('centro_id', centrosAdmin)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!aula) return fail('aula.errors.no_encontrada')
 
   // 2. Coordinadora-única AL INVITAR (decisión E): si el aula ya tiene
   //    coordinadora activa, no creamos la invitación.
   if (parsed.data.tipoPersonalAula === 'coordinadora') {
-    const { data: coord } = await serviceClient
+    const { data: coord, error: errorLectura2 } = await serviceClient
       .from('profes_aulas')
       .select('id')
       .eq('aula_id', parsed.data.aulaId)
@@ -111,6 +112,7 @@ export async function invitarProfeCore(
       .is('deleted_at', null)
       .limit(1)
       .maybeSingle()
+    if (errorLectura2) return fail('common.lectura_fallida')
     if (coord) return fail('auth.invitation.errors.coordinadora_ocupada')
   }
 
@@ -173,12 +175,13 @@ export async function reenviarInvitacionProfeCore(
   if (centrosAdmin.length === 0) return fail('auth.invitation.errors.forbidden')
 
   // Acotado a los centros donde quien llama es admin (R5): una invitación ajena = inexistente.
-  const { data: inv } = await serviceClient
+  const { data: inv, error } = await serviceClient
     .from('invitaciones')
     .select('email, centro_id, aula_id, rol_objetivo, accepted_at, rejected_at')
     .eq('id', invitationId)
     .in('centro_id', centrosAdmin)
     .maybeSingle()
+  if (error) return fail('common.lectura_fallida')
 
   if (!inv || inv.rol_objetivo !== 'profe' || inv.accepted_at || inv.rejected_at) {
     return fail('auth.invitation.errors.invalid')

@@ -89,7 +89,7 @@ export async function actualizarNinoTutor(
   if (await altaValidada(supabase, d.nino_id)) {
     // El DNI es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), no de la tabla; la
     // tarjeta, por `sip_de_ninos` (fase 7).
-    const [{ data: identidad }, gestion, tarjeta] = await Promise.all([
+    const [{ data: identidad, error: errorLectura }, gestion, tarjeta] = await Promise.all([
       supabase
         .from('ninos')
         .select(
@@ -100,6 +100,7 @@ export async function actualizarNinoTutor(
       leerFichaGestionDe(supabase, d.nino_id),
       leerTarjetaSanitariaDe(supabase, d.nino_id),
     ])
+    if (errorLectura) return fail('common.lectura_fallida')
     if (!identidad || !gestion || !tarjeta) return fail('nino.errors.no_autorizado')
     const guardada = { ...identidad, dni: gestion.dni, sip: tarjeta.sip }
     const cambios = cambiosIdentidad(propuesta, guardada)

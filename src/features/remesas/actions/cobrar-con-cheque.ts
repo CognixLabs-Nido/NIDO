@@ -44,12 +44,13 @@ export async function cobrarConCheque(
 
   const supabase = await createClient()
 
-  const { data: recibo } = await supabase
+  const { data: recibo, error: errorLectura } = await supabase
     .from('recibos')
     .select('id, centro_id')
     .eq('id', reciboId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (!recibo) return fail('remesas.errors.no_encontrada')
   // Centro DEL REGISTRO (multicentro · Fase 1): admin en él, no en el centro activo.

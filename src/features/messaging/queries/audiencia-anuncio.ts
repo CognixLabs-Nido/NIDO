@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { esMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Audiencia teórica de un anuncio: lista de usuario_id que deberían recibir
@@ -37,12 +38,13 @@ export async function audienciaAnuncio(
     const aulaId = anuncio.aula_id
 
     // Tutores con flag activo, vinculados a niños matriculados activos en el aula.
-    const { data: tutores } = await supabase
+    const { data: tutores, error } = await supabase
       .from('vinculos_familiares')
       .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))')
       .eq('nino.centro_id', anuncio.centro_id)
       .filter('permisos->puede_recibir_mensajes', 'eq', true)
       .is('deleted_at', null)
+    if (error) throw new LecturaFallida('audienciaAnuncio', error)
 
     for (const v of tutores ?? []) {
       const matriculas = v.nino?.matriculas ?? []
@@ -55,41 +57,45 @@ export async function audienciaAnuncio(
     }
 
     // Profes activos del aula.
-    const { data: profes } = await supabase
+    const { data: profes, error: errorLectura } = await supabase
       .from('profes_aulas')
       .select('profe_id')
       .eq('aula_id', aulaId)
       .is('fecha_fin', null)
       .is('deleted_at', null)
+    if (errorLectura) throw new LecturaFallida('audienciaAnuncio', errorLectura)
     for (const p of profes ?? []) audiencia.add(p.profe_id)
     return audiencia
   }
 
   if (anuncio.ambito === 'centro') {
     // Aulas activas del centro.
-    const { data: aulasCentro } = await supabase
+    const { data: aulasCentro, error: errorLectura2 } = await supabase
       .from('aulas')
       .select('id')
       .eq('centro_id', anuncio.centro_id)
       .is('deleted_at', null)
+    if (errorLectura2) throw new LecturaFallida('audienciaAnuncio', errorLectura2)
     const aulaIds = aulasCentro?.map((a) => a.id) ?? []
 
     if (aulaIds.length > 0) {
-      const { data: profes } = await supabase
+      const { data: profes, error: errorLectura3 } = await supabase
         .from('profes_aulas')
         .select('profe_id')
         .in('aula_id', aulaIds)
         .is('fecha_fin', null)
         .is('deleted_at', null)
+      if (errorLectura3) throw new LecturaFallida('audienciaAnuncio', errorLectura3)
       for (const p of profes ?? []) audiencia.add(p.profe_id)
     }
 
-    const { data: tutores } = await supabase
+    const { data: tutores, error: errorLectura4 } = await supabase
       .from('vinculos_familiares')
       .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))')
       .eq('nino.centro_id', anuncio.centro_id)
       .filter('permisos->puede_recibir_mensajes', 'eq', true)
       .is('deleted_at', null)
+    if (errorLectura4) throw new LecturaFallida('audienciaAnuncio', errorLectura4)
 
     const aulaSet = new Set(aulaIds)
     for (const v of tutores ?? []) {

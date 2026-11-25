@@ -2,10 +2,20 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import nextVitals from 'eslint-config-next/core-web-vitals'
 import nextTs from 'eslint-config-next/typescript'
 
+import lecturaMiraElError from './eslint-rules/lectura-mira-el-error.mjs'
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'src/types/database.ts']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    'src/types/database.ts',
+    // Los casos del codemod de lecturas: su texto exacto ES el caso (entrada y salida esperada).
+    'scripts/codemods/casos-lectura/**',
+  ]),
   {
     rules: {
       // TypeScript strict — sin any
@@ -38,6 +48,14 @@ const eslintConfig = defineConfig([
         },
       ],
     },
+  },
+  // Censo C (decisión de Jose del 2026-11-25): una llamada a Supabase mira su `error`. Un sitio nuevo con el
+  // patrón viejo pone la CI roja; los que quedan hoy, en la lista blanca temporal, que solo baja.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/test/**', '**/__tests__/**', '**/*.test.{ts,tsx}'],
+    plugins: { nido: { rules: { 'lectura-mira-el-error': lecturaMiraElError } } },
+    rules: { 'nido/lectura-mira-el-error': 'error' },
   },
   // `src/types/database.ts` es la salida del generador, sin tocar. Lo que el generador no sabe (la
   // nulabilidad de las funciones RETURNS TABLE, los argumentos que aceptan NULL, las columnas

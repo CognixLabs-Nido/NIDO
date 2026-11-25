@@ -8,6 +8,7 @@ import type { Database } from '@/types/db'
 import type { IdiomaCorreo } from '../schemas/invitation'
 
 import { llamarGoTrue } from './llamar-gotrue'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Idioma del correo de invitación (y de la página a la que lleva su enlace). La plantilla lo lee
@@ -35,11 +36,12 @@ export async function prepararIdiomaInvitacion(
   if (buscarErr) logger.warn('prepararIdiomaInvitacion: buscar cuenta', buscarErr.message)
   if (!cuenta) return elegido ?? 'es'
 
-  const { data: usuario } = await service
+  const { data: usuario, error: errorLectura } = await service
     .from('usuarios')
     .select('idioma_preferido')
     .eq('id', cuenta.id)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('prepararIdiomaInvitacion', errorLectura)
   const actual = (usuario?.idioma_preferido ?? 'es') as IdiomaCorreo
   if (!elegido || elegido === actual) return elegido ?? actual
 

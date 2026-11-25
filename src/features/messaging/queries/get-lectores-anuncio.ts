@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { audienciaAnuncio } from './audiencia-anuncio'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface LectorAnuncioItem {
   usuario_id: string
@@ -46,7 +47,7 @@ export async function getLectoresAnuncio(anuncioId: string): Promise<LectorAnunc
 
   if (anErr) {
     logger.warn('getLectoresAnuncio: anuncio', anErr.message)
-    return []
+    throw new LecturaFallida('getLectoresAnuncio', anErr)
   }
   if (!anuncio) return []
   if (anuncio.autor_id !== userId) {
@@ -73,7 +74,7 @@ export async function getLectoresAnuncio(anuncioId: string): Promise<LectorAnunc
 
   if (usuariosErr) {
     logger.warn('getLectoresAnuncio: usuarios', usuariosErr.message)
-    return []
+    throw new LecturaFallida('getLectoresAnuncio', usuariosErr)
   }
   if (lecturasErr) {
     logger.warn('getLectoresAnuncio: lecturas', lecturasErr.message)

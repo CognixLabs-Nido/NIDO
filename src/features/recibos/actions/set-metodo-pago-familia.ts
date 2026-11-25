@@ -50,11 +50,12 @@ export async function setMetodoPagoFamilia(
 
   // Centro DE LA FAMILIA (multicentro · Fase 1): admin en él, no en el centro activo. La RLS solo
   // deja leer a Dirección las familias de sus centros.
-  const { data: familia } = await supabase
+  const { data: familia, error } = await supabase
     .from('familias')
     .select('centro_id')
     .eq('id', parsed.data.familiaId)
     .maybeSingle()
+  if (error) return fail('common.lectura_fallida')
   if (!familia || !(await usuarioAdminEn(supabase, familia.centro_id))) {
     return fail('recibos_panel.errors.no_autorizado')
   }

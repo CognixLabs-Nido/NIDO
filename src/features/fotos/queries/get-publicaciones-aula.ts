@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { firmarRutas } from '../lib/storage'
 import type { MediaItem, PublicacionItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /** Tope de publicaciones por carga (paginación simple del blog — Performance spec). */
 const LIMITE_PUBLICACIONES = 20
@@ -48,23 +49,25 @@ export async function getPublicacionesAula(
   // `centroId` es el del aula (explícito): admin de ESE centro, no del centro activo.
   const esAdmin = await esAdminEn(supabase, user.id, centroId)
 
-  const { data: pubs } = await supabase
+  const { data: pubs, error } = await supabase
     .from('publicaciones')
     .select('id, texto, autor_id, created_at, updated_at, autor:usuarios!inner(nombre_completo)')
     .eq('aula_id', aulaId)
     .order('created_at', { ascending: false })
     .limit(LIMITE_PUBLICACIONES)
+  if (error) throw new LecturaFallida('getPublicacionesAula', error)
 
   const publicaciones = (pubs ?? []) as unknown as PublicacionRow[]
   if (publicaciones.length === 0) return []
 
   const pubIds = publicaciones.map((p) => p.id)
 
-  const { data: mediaData } = await supabase
+  const { data: mediaData, error: errorLectura } = await supabase
     .from('media')
     .select('id, publicacion_id, path, path_miniatura, ancho, alto')
     .in('publicacion_id', pubIds)
     .order('created_at', { ascending: true })
+  if (errorLectura) throw new LecturaFallida('getPublicacionesAula', errorLectura)
 
   const medias = (mediaData ?? []) as MediaRow[]
   const mediaIds = medias.map((m) => m.id)

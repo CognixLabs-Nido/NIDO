@@ -39,6 +39,7 @@ import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 import { esFamiliaNuevaEnCentro } from '@/features/alta/queries/familia-nueva-en-centro'
 import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -535,7 +536,7 @@ async function panelFirma(
   ninoId: string,
   tipo: 'autorizacion_imagenes'
 ): Promise<ImagenPanelData | null> {
-  const { data: instancia } = await supabase
+  const { data: instancia, error } = await supabase
     .from('autorizaciones')
     .select('id')
     .eq('centro_id', centroId)
@@ -545,6 +546,7 @@ async function panelFirma(
     .eq('nino_id', ninoId)
     .limit(1)
     .maybeSingle()
+  if (error) throw new LecturaFallida('panelFirma', error)
   if (!instancia) return null
   const detalle = await getAutorizacionDetalle(instancia.id)
   if (!detalle) return null

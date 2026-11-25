@@ -20,11 +20,12 @@ export async function cancelarAusencia(id: string): Promise<ActionResult<{ id: s
   if (!id) return fail('ausencia.errors.id_requerido')
 
   const supabase = await createClient()
-  const { data: actual } = await supabase
+  const { data: actual, error: errorLectura } = await supabase
     .from('ausencias')
     .select('id, descripcion')
     .eq('id', id)
     .single()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (!actual) return fail('ausencia.errors.no_encontrada')
   if (esCancelada(actual.descripcion)) return ok({ id: actual.id })

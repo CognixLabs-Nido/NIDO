@@ -21,7 +21,14 @@
       "todas": "Todas",
       "buscar": "Buscar por nombre",
       "sin_resultados": "Nadie coincide con el filtro."
-    }
+    },
+    "lectura": {
+      "pagina": "No se ha podido leer esta página. No es que no haya nada: la lectura ha fallado.",
+      "seccion": "No se ha podido leer esta parte. El resto de la pantalla sí está al día.",
+      "reintentar": "Reintentar",
+      "contador": "No se ha podido contar"
+    },
+    "lectura_fallida": "No se ha podido leer lo que hacía falta. No se ha cambiado nada; vuelve a intentarlo."
   },
   "nav": {
     "home": "Inicio",

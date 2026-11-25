@@ -11,6 +11,7 @@ import {
   rutaThumbDe,
   rutasConThumb,
 } from '@/shared/lib/adjuntos/storage'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -58,12 +59,13 @@ export async function POST(
   if (!user) return err('fotos.errors.no_autorizado', 401)
 
   // Ficha visible para el usuario (RLS de `ninos`) → nos da centro_id para la ruta.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, centro_id, foto_url, puede_aparecer_en_fotos')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
   if (!nino) return err('fotos.errors.no_autorizado', 403)
 
   // IU-3: sin consentimiento de imagen vigente (flag derivado por-niño) no se sube la

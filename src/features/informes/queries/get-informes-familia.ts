@@ -10,6 +10,7 @@ import {
   type NinoInformesFamilia,
   type PeriodoInforme,
 } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface InformeFamiliaRow {
   id: string
@@ -49,7 +50,7 @@ export async function getInformesPublicadosFamilia(
   } = await supabase.auth.getUser()
   if (!user) return []
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('informes_evolucion')
     .select(
       'id, nino_id, periodo, estado, publicado_at, curso_academico_id, ninos(nombre, apellidos), cursos_academicos(nombre)'
@@ -57,6 +58,7 @@ export async function getInformesPublicadosFamilia(
     .eq('centro_id', ambito.centroId)
     .eq('estado', 'publicado')
     .order('publicado_at', { ascending: false })
+  if (error) throw new LecturaFallida('getInformesPublicadosFamilia', error)
 
   const rows = (data ?? []) as InformeFamiliaRow[]
 

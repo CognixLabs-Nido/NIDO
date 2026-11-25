@@ -1,0 +1,10 @@
+[
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":9,"helper":"aNoMira","molde":"A","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":14,"helper":"aConErrorYaUsado","molde":"A","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":19,"helper":"aIdentificador","molde":"A","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":25,"helper":"aPromiseAll","molde":"A","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":26,"helper":"aPromiseAll","molde":"A","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":32,"helper":"bVacio","molde":"B","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":41,"helper":"bOtraCondicion","molde":"B","destino":"throw"},
+ {"f":"scripts/codemods/casos-lectura/caso.ts","l":47,"helper":"accion","molde":"A","destino":"fail"}
+]

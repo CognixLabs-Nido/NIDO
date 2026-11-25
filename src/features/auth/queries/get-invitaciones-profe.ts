@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import type { TipoPersonalAula } from '@/features/profes-aulas/types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface InvitacionProfePendiente {
   id: string
@@ -37,7 +38,7 @@ export async function getInvitacionesProfePendientes(
   centroId: string
 ): Promise<InvitacionProfePendiente[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('invitaciones')
     .select(
       'id, email, nombre_completo, tipo_personal_aula, aula_id, expires_at, created_at, aula:aulas(nombre)'
@@ -47,6 +48,7 @@ export async function getInvitacionesProfePendientes(
     .is('accepted_at', null)
     .is('rejected_at', null)
     .order('created_at', { ascending: false })
+  if (error) throw new LecturaFallida('getInvitacionesProfePendientes', error)
 
   const ahora = Date.now()
   const rows = (data ?? []) as unknown as InvitacionRow[]

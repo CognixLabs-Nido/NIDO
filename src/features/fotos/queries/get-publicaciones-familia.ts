@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { firmarRutas } from '../lib/storage'
 import type { MediaFamiliaItem, PublicacionFamiliaItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /** Tope de publicaciones por carga (paginación simple del blog — Performance spec). */
 const LIMITE_PUBLICACIONES = 20
@@ -52,23 +53,25 @@ export async function getPublicacionesFamilia(
   // Sin join a `usuarios` (la RLS solo deja leer la fila propia/admin → un `!inner`
   // descartaría las publicaciones de la familia). El nombre del autor se resuelve con
   // service role abajo (patrón F9 `get-informe-pdf-data`).
-  const { data: pubs } = await supabase
+  const { data: pubs, error } = await supabase
     .from('publicaciones')
     .select('id, texto, created_at, autor_id')
     .eq('centro_id', ambito.centroId)
     .order('created_at', { ascending: false })
     .limit(LIMITE_PUBLICACIONES)
+  if (error) throw new LecturaFallida('getPublicacionesFamilia', error)
 
   const publicaciones = (pubs ?? []) as PublicacionRow[]
   if (publicaciones.length === 0) return []
 
   const pubIds = publicaciones.map((p) => p.id)
 
-  const { data: mediaData } = await supabase
+  const { data: mediaData, error: errorLectura } = await supabase
     .from('media')
     .select('id, publicacion_id, path, path_miniatura, ancho, alto')
     .in('publicacion_id', pubIds)
     .order('created_at', { ascending: true })
+  if (errorLectura) throw new LecturaFallida('getPublicacionesFamilia', errorLectura)
 
   const medias = (mediaData ?? []) as MediaRow[]
 
@@ -81,6 +84,7 @@ export async function getPublicacionesFamilia(
     firmarRutas(service, rutas),
     service.from('usuarios').select('id, nombre_completo').in('id', autorIds),
   ])
+  if (autoresRes.error) throw new LecturaFallida('getPublicacionesFamilia', autoresRes.error)
   const nombrePorAutor = new Map(
     (autoresRes.data ?? []).map((u) => [u.id, u.nombre_completo as string | null])
   )

@@ -6,6 +6,7 @@ import { logger } from '@/shared/lib/logger'
 import type { AutorizacionItem } from '../types'
 
 import { getEstadoFirmaPorInstancia } from './estado-firma-instancias'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Lista de **instancias** firmables del centro (`es_plantilla=false`: salida,
@@ -32,7 +33,7 @@ export async function getAutorizacionesAdmin(centroId: string): Promise<Autoriza
 
   if (error) {
     logger.warn('getAutorizacionesAdmin', error.message)
-    return []
+    throw new LecturaFallida('getAutorizacionesAdmin', error)
   }
   const filas = data ?? []
   const estados = await getEstadoFirmaPorInstancia(

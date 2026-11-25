@@ -26,6 +26,7 @@ import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { AvisoPeticionesOlvido } from '@/features/olvido/components/AvisoPeticionesOlvido'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { cn } from '@/lib/utils'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type StatTone = 'primary' | 'accent-warm' | 'success' | 'info'
 
@@ -83,6 +84,9 @@ export default async function AdminDashboard({ params }: PageProps) {
     getResumenAsistenciaCentro(centroId, fecha),
     getAvisosInicio('admin', centroId),
   ])
+  if (aulasResp.error) throw new LecturaFallida('AdminDashboard', aulasResp.error)
+  if (altasListaResp.error) throw new LecturaFallida('AdminDashboard', altasListaResp.error)
+  if (ninosResp.error) throw new LecturaFallida('AdminDashboard', ninosResp.error)
 
   const aulasCount = aulasResp.count ?? 0
   const ninosCount = ninosResp.count ?? 0

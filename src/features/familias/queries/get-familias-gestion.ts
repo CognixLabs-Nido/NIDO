@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface FamiliaGestionItem {
   id: string
@@ -25,22 +26,26 @@ export interface FamiliaGestionItem {
 export async function getFamiliasParaGestion(centroId: string): Promise<FamiliaGestionItem[]> {
   const supabase = await createClient()
 
-  const { data: familias } = await supabase
+  const { data: familias, error } = await supabase
     .from('familias')
     .select('id, etiqueta, deleted_at')
     .eq('centro_id', centroId)
+  if (error) throw new LecturaFallida('getFamiliasParaGestion', error)
 
   if (!familias?.length) return []
   const ids = familias.map((f) => f.id)
 
-  const [{ data: tutores }, { data: ninos }] = await Promise.all([
-    supabase
-      .from('familia_tutores')
-      .select('familia_id, nombre_completo, rol_familia')
-      .in('familia_id', ids)
-      .is('deleted_at', null),
-    supabase.from('ninos').select('familia_id').in('familia_id', ids).is('deleted_at', null),
-  ])
+  const [{ data: tutores, error: errorLectura }, { data: ninos, error: errorLectura2 }] =
+    await Promise.all([
+      supabase
+        .from('familia_tutores')
+        .select('familia_id, nombre_completo, rol_familia')
+        .in('familia_id', ids)
+        .is('deleted_at', null),
+      supabase.from('ninos').select('familia_id').in('familia_id', ids).is('deleted_at', null),
+    ])
+  if (errorLectura) throw new LecturaFallida('getFamiliasParaGestion', errorLectura)
+  if (errorLectura2) throw new LecturaFallida('getFamiliasParaGestion', errorLectura2)
 
   const tutoresPorFamilia = new Map<
     string,

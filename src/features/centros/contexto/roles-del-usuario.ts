@@ -4,6 +4,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { centrosDelSuperusuario, centrosDelUsuario, type CentroDelUsuario } from './resolver'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Los roles de un usuario, con el cliente y el usuario que pasa quien llama (multicentro · Fase 1).
@@ -49,7 +50,7 @@ export async function leerCentrosDe(
       .is('deleted_at', null),
     esSuperusuario(supabase),
   ])
-  if (error) return null
+  if (error) throw new LecturaFallida('leerCentrosDe', error)
   const propios = centrosDelUsuario(data ?? [])
   if (!esSuper) return propios
   // entre-centros: el superusuario es admin de todos los centros que existen.
@@ -57,7 +58,7 @@ export async function leerCentrosDe(
     .from('centros')
     .select('id')
     .is('deleted_at', null)
-  if (errorCentros) return null
+  if (errorCentros) throw new LecturaFallida('leerCentrosDe', errorCentros)
   return centrosDelSuperusuario(
     propios,
     (centros ?? []).map((c) => c.id)
@@ -84,11 +85,12 @@ export async function rolesEnCualquierCentro(
   supabase: Client,
   usuarioId: string
 ): Promise<Database['public']['Enums']['user_role'][]> {
-  const [{ data }, esSuper] = await Promise.all([
+  const [{ data, error }, esSuper] = await Promise.all([
     // entre-centros: el proxy gatea la ruta antes de que haya centro (lo dice el comentario).
     supabase.from('roles_usuario').select('rol').eq('usuario_id', usuarioId).is('deleted_at', null),
     esSuperusuario(supabase),
   ])
+  if (error) throw new LecturaFallida('rolesEnCualquierCentro', error)
   const roles = (data ?? []).map((r) => r.rol)
   return esSuper && !roles.includes('admin') ? [...roles, 'admin'] : roles
 }

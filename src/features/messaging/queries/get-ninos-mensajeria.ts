@@ -7,6 +7,7 @@ import {
 } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface NinoMensajeriaItem {
   /** id del niño (no de la conversación). */
@@ -71,7 +72,7 @@ export async function getNinosMensajeriaParaUsuario(
 
     if (asigErr) {
       logger.warn('getNinosMensajeriaParaUsuario: asignaciones', asigErr.message)
-      return []
+      throw new LecturaFallida('getNinosMensajeriaParaUsuario', asigErr)
     }
 
     const aulasMap = new Map<string, string>() // aula_id -> nombre
@@ -122,7 +123,7 @@ export async function getNinosMensajeriaParaUsuario(
 
     if (vErr) {
       logger.warn('getNinosMensajeriaParaUsuario: vinculos', vErr.message)
-      return []
+      throw new LecturaFallida('getNinosMensajeriaParaUsuario', vErr)
     }
 
     const pend: Array<{ idx: number; aulaId: string | null }> = []
@@ -193,10 +194,11 @@ export async function getNinosMensajeriaParaUsuario(
 
   // 2. Conversaciones existentes (RLS filtra).
   const ninoIds = ninos.map((n) => n.id)
-  const { data: convs } = await supabase
+  const { data: convs, error: errorLectura } = await supabase
     .from('conversaciones')
     .select('id, nino_id, last_message_at')
     .in('nino_id', ninoIds)
+  if (errorLectura) throw new LecturaFallida('getNinosMensajeriaParaUsuario', errorLectura)
 
   const convByNino = new Map(convs?.map((c) => [c.nino_id, c]) ?? [])
   const convIds = (convs ?? []).map((c) => c.id)
@@ -205,19 +207,22 @@ export async function getNinosMensajeriaParaUsuario(
   const lastByConv = new Map<string, { contenido: string; erroneo: boolean; created_at: string }>()
   const unreadByConv = new Map<string, number>()
   if (convIds.length > 0) {
-    const [{ data: msgs }, { data: lecturas }] = await Promise.all([
-      supabase
-        .from('mensajes')
-        .select('conversacion_id, contenido, erroneo, created_at, autor_id')
-        .in('conversacion_id', convIds)
-        .order('created_at', { ascending: false })
-        .limit(1000),
-      supabase
-        .from('lectura_conversacion')
-        .select('conversacion_id, last_read_at')
-        .eq('usuario_id', userId)
-        .in('conversacion_id', convIds),
-    ])
+    const [{ data: msgs, error: errorLectura2 }, { data: lecturas, error: errorLectura3 }] =
+      await Promise.all([
+        supabase
+          .from('mensajes')
+          .select('conversacion_id, contenido, erroneo, created_at, autor_id')
+          .in('conversacion_id', convIds)
+          .order('created_at', { ascending: false })
+          .limit(1000),
+        supabase
+          .from('lectura_conversacion')
+          .select('conversacion_id, last_read_at')
+          .eq('usuario_id', userId)
+          .in('conversacion_id', convIds),
+      ])
+    if (errorLectura2) throw new LecturaFallida('getNinosMensajeriaParaUsuario', errorLectura2)
+    if (errorLectura3) throw new LecturaFallida('getNinosMensajeriaParaUsuario', errorLectura3)
 
     const lastReadByConv = new Map(lecturas?.map((l) => [l.conversacion_id, l.last_read_at]) ?? [])
 

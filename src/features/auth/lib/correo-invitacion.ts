@@ -10,6 +10,7 @@ import { enviarAvisoInvitacion } from './aviso-invitacion'
 import { prepararIdiomaInvitacion } from './idioma-invitacion'
 import { llamarGoTrue } from './llamar-gotrue'
 import type { IdiomaCorreo } from '../schemas/invitation'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type ServiceClient = SupabaseClient<Database>
 
@@ -39,11 +40,12 @@ export async function enviarCorreoInvitacion(
 
   // Nombre del centro para personalizar la firma del email ({{ .Data.centro_nombre }}
   // en la plantilla de invitación). Si faltara, la plantilla cae a "la escuela".
-  const { data: centro } = await service
+  const { data: centro, error: errorLectura } = await service
     .from('centros')
     .select('nombre')
     .eq('id', datos.centroId)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('enviarCorreoInvitacion', errorLectura)
 
   // Idioma del correo y de la página del enlace (elegido por la Dirección, el de la cuenta
   // provisional si es un reenvío, o castellano). Ajusta la cuenta provisional si hace falta.

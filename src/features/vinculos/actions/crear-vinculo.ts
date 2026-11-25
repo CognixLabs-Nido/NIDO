@@ -27,12 +27,13 @@ export async function crearVinculo(
   const supabase = await createClient()
 
   // El usuario invitado debe tener un rol activo familiar en el centro del niño.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('centro_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (!nino) return fail('nino.errors.no_encontrado')
 

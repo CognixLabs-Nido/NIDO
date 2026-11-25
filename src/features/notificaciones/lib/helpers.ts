@@ -11,6 +11,7 @@ import {
   PREF_RECIBOS_VISTOS,
   VENTANA_NOVEDADES_DIAS,
 } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export type RolNotif = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
@@ -50,11 +51,12 @@ export async function getVistoAt(): Promise<string | null> {
  */
 export async function getFirmasVistas(): Promise<Record<string, string>> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_FIRMAS_VISTAS)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getFirmasVistas', error)
   if (!data?.valor) return {}
   try {
     const parsed = JSON.parse(data.valor)
@@ -72,11 +74,12 @@ export async function getFirmasVistas(): Promise<Record<string, string>> {
  */
 export async function getInformesVistos(): Promise<Record<string, string>> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_INFORMES_VISTOS)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getInformesVistos', error)
   if (!data?.valor) return {}
   try {
     const parsed = JSON.parse(data.valor)
@@ -93,11 +96,12 @@ export async function getInformesVistos(): Promise<Record<string, string>> {
  */
 export async function getFotosVistas(): Promise<Record<string, string>> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_FOTOS_VISTAS)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getFotosVistas', error)
   if (!data?.valor) return {}
   try {
     const parsed = JSON.parse(data.valor)
@@ -114,11 +118,12 @@ export async function getFotosVistas(): Promise<Record<string, string>> {
  */
 export async function getRecibosVistos(): Promise<Record<string, string>> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_RECIBOS_VISTOS)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getRecibosVistos', error)
   if (!data?.valor) return {}
   try {
     const parsed = JSON.parse(data.valor)
@@ -135,11 +140,12 @@ export async function getRecibosVistos(): Promise<Record<string, string>> {
  */
 export async function getDomiciliacionesVistas(): Promise<Record<string, string>> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_DOMICILIACIONES_VISTAS)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getDomiciliacionesVistas', error)
   if (!data?.valor) return {}
   try {
     const parsed = JSON.parse(data.valor)

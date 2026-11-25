@@ -21,19 +21,24 @@ export async function asignarProfeAula(
   const supabase = await createClient()
 
   // El usuario debe tener rol profe en el centro del aula.
-  const { data: aula } = await supabase
+  const { data: aula, error: errorLectura } = await supabase
     .from('aulas')
     .select('centro_id')
     .eq('id', aulaId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!aula) return fail('aula.errors.no_encontrada')
 
   // F11-H: la asignación de personal es por curso. Se asigna al curso ACTIVO
   // del centro (el único operativo). Sin curso activo no hay dónde asignar.
-  const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
-    p_centro_id: aula.centro_id,
-  })
+  const { data: cursoActivoId, error: errorLectura2 } = await supabase.rpc(
+    'curso_activo_de_centro',
+    {
+      p_centro_id: aula.centro_id,
+    }
+  )
+  if (errorLectura2) return fail('common.lectura_fallida')
   if (!cursoActivoId) return fail('profeAula.errors.sin_curso_activo')
 
   if (!(await tieneRolProfeEn(supabase, parsed.data.profe_id, aula.centro_id)))

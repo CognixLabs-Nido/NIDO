@@ -21,7 +21,14 @@
       "todas": "Totes",
       "buscar": "Busca pel nom",
       "sin_resultados": "Ningú coincidix amb el filtre."
-    }
+    },
+    "lectura": {
+      "pagina": "No s'ha pogut llegir esta pàgina. No és que no hi haja res: la lectura ha fallat.",
+      "seccion": "No s'ha pogut llegir esta part. La resta de la pantalla sí que està al dia.",
+      "reintentar": "Tornar-ho a intentar",
+      "contador": "No s'ha pogut comptar"
+    },
+    "lectura_fallida": "No s'ha pogut llegir el que calia. No s'ha canviat res; torna-ho a intentar."
   },
   "nav": {
     "home": "Inici",

@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge'
 
 import { getUnreadCountsAction } from '../actions/get-unread-counts'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
+import { ContadorNoLeido } from '@/shared/components/ContadorNoLeido'
 
 interface Props {
   /** Conteo inicial calculado server-side (evita el flash 0 al hidratar). */
-  initialTotal: number
+  /** `null`: no se pudo contar (censo C): pinta «?», nunca un 0. */
+  initialTotal: number | null
   /** Centro de la página: decide si el usuario cuenta como admin al recalcular. */
   centroId: string
 }
@@ -28,7 +30,7 @@ interface Props {
  */
 export function MessagingBadge({ initialTotal, centroId }: Props) {
   const t = useTranslations('messages')
-  const [total, setTotal] = useState(initialTotal)
+  const [total, setTotal] = useState<number | null>(initialTotal)
 
   const refresh = useCallback(async () => {
     try {
@@ -53,6 +55,7 @@ export function MessagingBadge({ initialTotal, centroId }: Props) {
     onChange: onRealtimeChange,
   })
 
+  if (total === null) return <ContadorNoLeido />
   if (total <= 0) return null
 
   const label = t('badge_aria', { n: total })

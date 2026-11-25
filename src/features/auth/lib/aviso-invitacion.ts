@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { enviarCorreo } from '@/shared/lib/correo/enviar-correo'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type ServiceClient = SupabaseClient<Database>
 
@@ -23,15 +24,17 @@ function escaparHtml(texto: string): string {
 
 /** El idioma de la cuenta que recibe el aviso (ADR-0060), o castellano. */
 async function idiomaDeLaCuenta(service: ServiceClient, email: string): Promise<Idioma> {
-  const { data: cuenta } = await service
+  const { data: cuenta, error } = await service
     .rpc('buscar_auth_user_por_email', { p_email: email })
     .maybeSingle()
+  if (error) throw new LecturaFallida('idiomaDeLaCuenta', error)
   if (!cuenta) return 'es'
-  const { data: usuario } = await service
+  const { data: usuario, error: errorLectura } = await service
     .from('usuarios')
     .select('idioma_preferido')
     .eq('id', cuenta.id)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('idiomaDeLaCuenta', errorLectura)
   const idioma = usuario?.idioma_preferido
   return (IDIOMAS as readonly string[]).includes(idioma ?? '') ? (idioma as Idioma) : 'es'
 }

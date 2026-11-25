@@ -4,6 +4,7 @@ import { esMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 
 import type { ResumenAulaCount } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Resumen rápido por aula para la card "Asistencia hoy" del admin: total de
@@ -19,11 +20,12 @@ export async function getResumenAsistenciaCentro(
   // F11-H: matriculas ya no tiene FK directa a aulas (es compuesta a aulas_curso),
   // así que no se puede anidar `aulas(matriculas(...))`. Se leen por separado y se
   // agrupan por aula_id; las matrículas quedan acotadas por las aulas del centro.
-  const { data: aulas } = await supabase
+  const { data: aulas, error } = await supabase
     .from('aulas')
     .select('id, nombre')
     .eq('centro_id', centroId)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('getResumenAsistenciaCentro', error)
 
   const aulasRows = (aulas ?? []) as Array<{ id: string; nombre: string }>
 
@@ -62,11 +64,12 @@ export async function getResumenAsistenciaCentro(
     }))
   }
 
-  const { data: asistencias } = await supabase
+  const { data: asistencias, error: errorLectura } = await supabase
     .from('asistencias')
     .select('nino_id, estado')
     .in('nino_id', todosNinoIds)
     .eq('fecha', fecha)
+  if (errorLectura) throw new LecturaFallida('getResumenAsistenciaCentro', errorLectura)
 
   const estadoByNino = new Map<string, string>(
     ((asistencias ?? []) as Array<{ nino_id: string; estado: string }>).map((r) => [

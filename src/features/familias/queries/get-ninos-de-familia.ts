@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface NinoDeFamiliaItem {
   id: string
@@ -35,11 +36,12 @@ function extraerNombreAula(aulasCurso: unknown): string | null {
  */
 export async function getNinosDeFamilia(familiaId: string): Promise<NinoDeFamiliaItem[]> {
   const supabase = await createClient()
-  const { data: ninos } = await supabase
+  const { data: ninos, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos, deleted_at')
     .eq('familia_id', familiaId)
     .order('apellidos', { ascending: true })
+  if (errorLectura) throw new LecturaFallida('getNinosDeFamilia', errorLectura)
 
   if (!ninos?.length) return []
 

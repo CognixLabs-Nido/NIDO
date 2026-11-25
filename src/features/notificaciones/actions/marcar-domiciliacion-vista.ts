@@ -20,11 +20,12 @@ export async function marcarDomiciliacionVista(familiaId: string): Promise<Actio
   } = await supabase.auth.getUser()
   if (!user) return fail('notificaciones.errors.no_autorizado')
 
-  const { data: pref } = await supabase
+  const { data: pref, error: errorLectura } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_DOMICILIACIONES_VISTAS)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   let mapa: Record<string, string> = {}
   if (pref?.valor) {

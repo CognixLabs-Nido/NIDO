@@ -69,11 +69,12 @@ export async function guardarDatosTutor(
   }
 
   // Niño → familia. Con `ninos.familia_id` NOT NULL esto no falla salvo niño inexistente o sin acceso.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('familia_id')
     .eq('id', nino_id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!nino?.familia_id) return fail('alta.errors.no_autorizado')
   const rolFamilia = rolFamiliaDeVinculo(tipo_vinculo)
 

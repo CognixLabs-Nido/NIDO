@@ -7,6 +7,7 @@ import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { idiomaCorreoEnum, type IdiomaCorreo } from '@/features/auth/schemas/invitation'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = SupabaseClient<Database>
 
@@ -31,12 +32,13 @@ type Client = SupabaseClient<Database>
 export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): Promise<void> {
   try {
     // centro del niño (matriculas no lleva centro_id).
-    const { data: nino } = await supabase
+    const { data: nino, error: errorLectura } = await supabase
       .from('ninos')
       .select('centro_id')
       .eq('id', ninoId)
       .is('deleted_at', null)
       .maybeSingle()
+    if (errorLectura) throw new LecturaFallida('invitarTutor2AlValidar', errorLectura)
     if (!nino) return
 
     // Email del tutor 2 capturado en el wizard, desde el perfil COMPARTIDO `familia_tutores`
@@ -50,7 +52,7 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
     if (tutor2?.usuario_id) return
 
     // ¿Ya está vinculado a este niño (p. ej. aceptó por B8, que no enlaza el perfil)? → nada.
-    const { data: vinculo } = await supabase
+    const { data: vinculo, error: errorLectura2 } = await supabase
       .from('vinculos_familiares')
       .select('id')
       .eq('nino_id', ninoId)
@@ -58,11 +60,12 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .is('deleted_at', null)
       .limit(1)
       .maybeSingle()
+    if (errorLectura2) throw new LecturaFallida('invitarTutor2AlValidar', errorLectura2)
     if (vinculo) return
 
     // ¿Ya tiene una invitación abierta (de otro hijo de la familia)? → al aceptarla queda
     // vinculado a todos los hijos; no se manda otra.
-    const { data: abierta } = await supabase
+    const { data: abierta, error: errorLectura3 } = await supabase
       .from('invitaciones')
       .select('id')
       .eq('email', email)
@@ -73,6 +76,7 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .gt('expires_at', new Date().toISOString())
       .limit(1)
       .maybeSingle()
+    if (errorLectura3) throw new LecturaFallida('invitarTutor2AlValidar', errorLectura3)
     if (abierta) return
 
     const idioma = await idiomaDelTitular(supabase, tutores)
@@ -102,11 +106,12 @@ export async function idiomaDelTitular(
 ): Promise<IdiomaCorreo> {
   const principal = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   if (!principal?.usuario_id) return 'es'
-  const { data: perfil } = await supabase
+  const { data: perfil, error } = await supabase
     .from('usuarios')
     .select('idioma_preferido')
     .eq('id', principal.usuario_id)
     .maybeSingle()
+  if (error) throw new LecturaFallida('idiomaDelTitular', error)
   const leido = idiomaCorreoEnum.safeParse(perfil?.idioma_preferido)
   return leido.success ? leido.data : 'es'
 }

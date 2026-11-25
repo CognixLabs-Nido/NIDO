@@ -5,6 +5,7 @@ import type { Database } from '@/types/db'
 import { parseEstructura, parseRespuestas } from '../lib/estructura'
 import type { InformePdfData } from '../lib/informe-pdf'
 import type { PeriodoInforme } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Datos del informe necesarios para el PDF, leídos **con el cliente del usuario**
@@ -76,6 +77,9 @@ export async function assembleInformePdfData(
       .maybeSingle(),
     serviceClient.from('usuarios').select('nombre_completo').eq('id', row.creado_por).maybeSingle(),
   ])
+  if (centroRes.error) throw new LecturaFallida('assembleInformePdfData', centroRes.error)
+  if (autorRes.error) throw new LecturaFallida('assembleInformePdfData', autorRes.error)
+  if (cursoRes.error) throw new LecturaFallida('assembleInformePdfData', cursoRes.error)
 
   const nino = unwrap(row.ninos)
 

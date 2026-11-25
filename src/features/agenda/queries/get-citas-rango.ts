@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { CitaAgenda, RsvpEstado } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Citas del rango `[desde, hasta]` (fechas 'YYYY-MM-DD') visibles para el usuario
@@ -37,7 +38,7 @@ export async function getCitasRango(
 
   if (error) {
     logger.warn('getCitasRango', error.message)
-    return []
+    throw new LecturaFallida('getCitasRango', error)
   }
 
   return (data ?? []).map((c) => {

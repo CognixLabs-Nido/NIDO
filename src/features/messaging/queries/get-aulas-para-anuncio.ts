@@ -3,6 +3,7 @@ import 'server-only'
 import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface AulaParaAnuncio {
   id: string
@@ -35,7 +36,7 @@ export async function getAulasParaAnuncio(centroId: string): Promise<AulaParaAnu
       .order('nombre', { ascending: true })
     if (error) {
       logger.warn('getAulasParaAnuncio: admin', error.message)
-      return []
+      throw new LecturaFallida('getAulasParaAnuncio', error)
     }
     return aulas ?? []
   }
@@ -51,7 +52,7 @@ export async function getAulasParaAnuncio(centroId: string): Promise<AulaParaAnu
 
   if (error) {
     logger.warn('getAulasParaAnuncio: profe', error.message)
-    return []
+    throw new LecturaFallida('getAulasParaAnuncio', error)
   }
 
   const aulas: AulaParaAnuncio[] = []

@@ -22,13 +22,14 @@ export async function anadirARemesa(input: AnadirARemesaInput): Promise<ActionRe
 
   const supabase = await createClient()
 
-  const { data: remesa } = await supabase
+  const { data: remesa, error: errorLectura } = await supabase
     .from('remesas')
     // `*`: lee fichero_generado_at sin romper si el despliegue llega antes que su migración.
     .select('*')
     .eq('id', parsed.data.remesaId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (!remesa) return fail('remesas.errors.no_encontrada')
   // Centro DEL REGISTRO (multicentro · Fase 1): admin en él, no en el centro activo.

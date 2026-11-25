@@ -19,6 +19,7 @@ import type {
   TutorDireccionItem,
 } from '@/features/messaging/types'
 import { PushBanner } from '@/features/push/components/PushBanner'
+import { oNoLeido } from '@/shared/lib/en-seccion'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -92,22 +93,36 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   // TODAS las conversaciones profe↔familia del centro; `getConversacionesDelUsuario`
   // las devuelve ya con niño/aula/preview. Para profe/tutor no se carga (su
   // lista la sirve `getNinosMensajeriaParaUsuario`).
-  const [ninos, anuncios, adminFamiliaItems, tutoresAdminDireccion, supervisionConversaciones] =
-    await Promise.all([
-      rol === 'admin'
-        ? Promise.resolve([] as Awaited<ReturnType<typeof getNinosMensajeriaParaUsuario>>)
-        : getNinosMensajeriaParaUsuario(centroId, rol),
-      getAnunciosDelUsuario(centroId),
-      rol === 'admin'
-        ? Promise.resolve([] as Awaited<ReturnType<typeof getAdminFamiliaList>>)
-        : getAdminFamiliaList(rol, centroId),
-      rol === 'admin'
-        ? getTutoresParaAdminDireccion(centroId)
-        : Promise.resolve([] as TutorDireccionItem[]),
-      rol === 'admin'
-        ? getConversacionesDelUsuario(centroId)
-        : Promise.resolve([] as ConversacionListItem[]),
-    ])
+  // Censo C (2026-11-25): pantalla diaria, por sección. Cada lista y el hilo abierto: si no se leen, lo
+  // dice su pestaña (`noLeidas`) y las demás siguen. `null` = no se pudo leer; una lista vacía es «no hay».
+  const [ninosL, anunciosL, adminFamiliaL, tutoresL, supervisionL] = await Promise.all([
+    rol === 'admin'
+      ? Promise.resolve([] as Awaited<ReturnType<typeof getNinosMensajeriaParaUsuario>>)
+      : oNoLeido(getNinosMensajeriaParaUsuario(centroId, rol), 'mensajes: niños'),
+    oNoLeido(getAnunciosDelUsuario(centroId), 'mensajes: anuncios'),
+    rol === 'admin'
+      ? Promise.resolve([] as Awaited<ReturnType<typeof getAdminFamiliaList>>)
+      : oNoLeido(getAdminFamiliaList(rol, centroId), 'mensajes: dirección-familia'),
+    rol === 'admin'
+      ? oNoLeido(getTutoresParaAdminDireccion(centroId), 'mensajes: tutores de dirección')
+      : Promise.resolve([] as TutorDireccionItem[]),
+    rol === 'admin'
+      ? oNoLeido(getConversacionesDelUsuario(centroId), 'mensajes: supervisión')
+      : Promise.resolve([] as ConversacionListItem[]),
+  ])
+  const noLeidas = {
+    ninos: ninosL === null,
+    anuncios: anunciosL === null,
+    adminFamilia: adminFamiliaL === null,
+    direccion: tutoresL === null,
+    supervision: supervisionL === null,
+    detalle: false,
+  }
+  const ninos = ninosL ?? []
+  const anuncios = anunciosL ?? []
+  const adminFamiliaItems = adminFamiliaL ?? []
+  const tutoresAdminDireccion = tutoresL ?? []
+  const supervisionConversaciones = supervisionL ?? []
 
   // Resolvemos el niño seleccionado en URL. Si no está en la lista del
   // usuario (manipulación o link viejo), lo ignoramos.
@@ -132,7 +147,12 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   if (ninoSeleccionado) {
     const nino = ninos.find((n) => n.nino_id === ninoSeleccionado)
     if (nino?.conversacion_id) {
-      const detalle = await getConversacionDetalle(nino.conversacion_id, centroId)
+      const leido = await oNoLeido(
+        getConversacionDetalle(nino.conversacion_id, centroId).then((valor) => ({ valor })),
+        'mensajes: hilo'
+      )
+      if (leido === null) noLeidas.detalle = true
+      const detalle = leido?.valor ?? null
       if (detalle) {
         detalleHeader = detalle.header
         detalleMensajes = detalle.mensajes
@@ -164,7 +184,12 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
       (tt) => tt.usuario_id === tutorAdminDireccionSeleccionadoId
     )
     if (tutorSel?.conversacion_id) {
-      const detalle = await getAdminFamiliaDetalle(tutorSel.conversacion_id, centroId)
+      const leido = await oNoLeido(
+        getAdminFamiliaDetalle(tutorSel.conversacion_id, centroId).then((valor) => ({ valor })),
+        'mensajes: hilo de dirección'
+      )
+      if (leido === null) noLeidas.detalle = true
+      const detalle = leido?.valor ?? null
       if (detalle) {
         adminDireccionDetalleHeader = detalle.header
         adminDireccionDetalleMensajes = detalle.mensajes
@@ -183,7 +208,12 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   let supervisionDetalleHeader: ConversacionHeader | null = null
   let supervisionDetalleMensajes: MensajeView[] = []
   if (supervisionConvSeleccionadaId) {
-    const detalle = await getConversacionDetalle(supervisionConvSeleccionadaId, centroId)
+    const leido = await oNoLeido(
+      getConversacionDetalle(supervisionConvSeleccionadaId, centroId).then((valor) => ({ valor })),
+      'mensajes: hilo supervisado'
+    )
+    if (leido === null) noLeidas.detalle = true
+    const detalle = leido?.valor ?? null
     if (detalle) {
       supervisionDetalleHeader = detalle.header
       supervisionDetalleMensajes = detalle.mensajes
@@ -222,6 +252,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
         supervisionConvSeleccionadaId={supervisionConvSeleccionadaId}
         supervisionDetalleHeader={supervisionDetalleHeader}
         supervisionDetalleMensajes={supervisionDetalleMensajes}
+        noLeidas={noLeidas}
       />
     </div>
   )

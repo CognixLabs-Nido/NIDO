@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface ConceptoCobroListItem {
   id: string
@@ -38,13 +39,14 @@ export async function getConceptosCobroCore(
   supabase: SupabaseClient<Database>,
   centroId: string
 ): Promise<ConceptoCobroListItem[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('conceptos_cobro')
     .select(
       'id, nombre, tipo_concepto, signo, tipo_valor, ambito, aplicacion, importe_centimos, porcentaje_bp, servicio, concepto_base_id, activo, tarifa_por_anio_nacimiento'
     )
     .eq('centro_id', centroId)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('getConceptosCobroCore', error)
 
   return (data ?? []).sort(
     (a, b) =>

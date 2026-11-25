@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 
 import type { AusenciaRow } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Lista las ausencias de un niño ordenadas por fecha de inicio descendente.
@@ -20,6 +21,6 @@ export async function getAusenciasNino(ninoId: string): Promise<AusenciaRow[]> {
     )
     .eq('nino_id', ninoId)
     .order('fecha_inicio', { ascending: false })
-  if (error) return []
+  if (error) throw new LecturaFallida('getAusenciasNino', error)
   return (data ?? []) as AusenciaRow[]
 }

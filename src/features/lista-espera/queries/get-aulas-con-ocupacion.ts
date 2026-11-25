@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 
 import { ESTADOS_QUE_OCUPAN, contarOcupacionAula, type AulaConOcupacion } from '../lib/ocupacion'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export type { AulaConOcupacion }
 
@@ -23,23 +24,25 @@ interface AulaCursoRow {
 export async function getAulasConOcupacion(cursoAcademicoId: string): Promise<AulaConOcupacion[]> {
   const supabase = await createClient()
 
-  const { data: aulasCurso } = await supabase
+  const { data: aulasCurso, error } = await supabase
     .from('aulas_curso')
     .select('aula_id, capacidad, aula:aulas!inner(nombre, deleted_at)')
     .eq('curso_academico_id', cursoAcademicoId)
+  if (error) throw new LecturaFallida('getAulasConOcupacion', error)
 
   const aulasVivas = ((aulasCurso ?? []) as unknown as AulaCursoRow[]).filter(
     (a) => a.aula && a.aula.deleted_at === null
   )
   if (aulasVivas.length === 0) return []
 
-  const { data: matriculas } = await supabase
+  const { data: matriculas, error: errorLectura } = await supabase
     .from('matriculas')
     .select('aula_id, estado')
     .eq('curso_academico_id', cursoAcademicoId)
     .is('deleted_at', null)
     .is('fecha_baja', null)
     .in('estado', ESTADOS_QUE_OCUPAN)
+  if (errorLectura) throw new LecturaFallida('getAulasConOcupacion', errorLectura)
 
   const mats = matriculas ?? []
 

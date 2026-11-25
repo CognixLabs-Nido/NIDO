@@ -6,6 +6,7 @@ import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-acti
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * F5B-#33 — Vínculos activos (tutor/autorizado) por niño matriculado en
@@ -103,7 +104,7 @@ export async function getVinculosTutoresAulaCore(
 
   if (vErr) {
     logger.warn('getVinculosTutoresAula: vinculos', vErr.message)
-    return new Map()
+    throw new LecturaFallida('getVinculosTutoresAulaCore', vErr)
   }
 
   const map = new Map<string, VinculoTutorMin[]>()

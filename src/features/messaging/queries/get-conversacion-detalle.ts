@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { ConversacionHeader, MensajeView, ProfeAula } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface ConversacionDetalle {
   header: ConversacionHeader
@@ -69,7 +70,7 @@ export async function getConversacionDetalle(
 
   if (convErr) {
     logger.warn('getConversacionDetalle: conversacion', convErr.message)
-    return null
+    throw new LecturaFallida('getConversacionDetalle', convErr)
   }
   if (!conv) return null
   // Narrow defensivo: las profe_familia siempre tienen `nino_id` poblado
@@ -79,9 +80,13 @@ export async function getConversacionDetalle(
 
   // RLS ya lo filtra: si llega aquí, el usuario puede leer la conversación.
   // Para saber si "participa" (puede escribir) re-evaluamos el helper SQL.
-  const { data: participoData } = await supabase.rpc('puede_participar_conversacion', {
-    p_conversacion_id: conversacionId,
-  })
+  const { data: participoData, error: errorLectura } = await supabase.rpc(
+    'puede_participar_conversacion',
+    {
+      p_conversacion_id: conversacionId,
+    }
+  )
+  if (errorLectura) throw new LecturaFallida('getConversacionDetalle', errorLectura)
   const participo = participoData === true
 
   // 200 mensajes recientes en orden ascendente. Si crece el volumen, se
@@ -105,7 +110,7 @@ export async function getConversacionDetalle(
 
   if (msgErr) {
     logger.warn('getConversacionDetalle: mensajes', msgErr.message)
-    return null
+    throw new LecturaFallida('getConversacionDetalle', msgErr)
   }
 
   // Determinar rol del autor en el centro (para el label visual del mensaje).

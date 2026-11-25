@@ -21,6 +21,8 @@ import {
   type VinculoTutorMin,
 } from '@/features/messaging/queries/get-vinculos-tutores-aula'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
+import { NoSePudoLeer } from '@/shared/components/NoSePudoLeer'
+import { oNoLeido } from '@/shared/lib/en-seccion'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -65,10 +67,14 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
   // una resolved promise vacía (profe). Lección PR #32.
   const [resumenes, vinculosPorNino]: [
     Awaited<ReturnType<typeof getAgendasAulaDelDia>>,
-    Map<string, VinculoTutorMin[]> | undefined,
+    Map<string, VinculoTutorMin[]> | null | undefined,
   ] = await Promise.all([
     getAgendasAulaDelDia(id, fecha),
-    rol === 'admin' ? getVinculosTutoresAula(id) : Promise.resolve(undefined),
+    // Censo C (2026-11-25): pantalla diaria, por sección. Los vínculos son secundarios (los botones de
+    // escribir a la familia, solo Dirección): si no se leen, lo dice aquí y la agenda sigue.
+    rol === 'admin'
+      ? oNoLeido(getVinculosTutoresAula(id), 'agenda del aula: vínculos')
+      : Promise.resolve(undefined),
   ])
 
   return (
@@ -137,13 +143,14 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
         </div>
       </header>
 
+      {vinculosPorNino === null && <NoSePudoLeer alcance="seccion" />}
       <AgendaAulaCliente
         aulaId={id}
         locale={locale}
         fecha={fecha}
         resumenes={resumenes}
         rol={rol}
-        vinculosPorNino={vinculosPorNino}
+        vinculosPorNino={vinculosPorNino ?? undefined}
       />
     </div>
   )

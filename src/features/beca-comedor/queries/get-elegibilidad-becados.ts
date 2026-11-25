@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getCursoActivo, type CursoListItem } from '@/features/cursos/queries/get-cursos'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface AlumnoElegibilidad {
   id: string
@@ -28,24 +29,32 @@ export async function getElegibilidadBecados(centroId: string): Promise<Elegibil
 
   // Alumnos con matrícula activa en el curso (dos pasos: matrículas → ninos, como get-ninos,
   // para no acoplarse a la cardinalidad del embebido).
-  const { data: mats } = await supabase
+  const { data: mats, error } = await supabase
     .from('matriculas')
     .select('nino_id')
     .eq('curso_academico_id', curso.id)
     .eq('estado', 'activa')
     .is('fecha_baja', null)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('getElegibilidadBecados', error)
   const ninoIds = [...new Set((mats ?? []).map((m) => m.nino_id))]
   if (ninoIds.length === 0) return { curso, alumnos: [] }
 
-  const [{ data: ninos }, { data: elig }] = await Promise.all([
-    supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds).is('deleted_at', null),
-    supabase
-      .from('beca_comedor_elegibilidad')
-      .select('nino_id, activa')
-      .eq('curso_academico_id', curso.id)
-      .in('nino_id', ninoIds),
-  ])
+  const [{ data: ninos, error: errorLectura }, { data: elig, error: errorLectura2 }] =
+    await Promise.all([
+      supabase
+        .from('ninos')
+        .select('id, nombre, apellidos')
+        .in('id', ninoIds)
+        .is('deleted_at', null),
+      supabase
+        .from('beca_comedor_elegibilidad')
+        .select('nino_id, activa')
+        .eq('curso_academico_id', curso.id)
+        .in('nino_id', ninoIds),
+    ])
+  if (errorLectura) throw new LecturaFallida('getElegibilidadBecados', errorLectura)
+  if (errorLectura2) throw new LecturaFallida('getElegibilidadBecados', errorLectura2)
 
   const elegibles = new Set((elig ?? []).filter((e) => e.activa).map((e) => e.nino_id))
 

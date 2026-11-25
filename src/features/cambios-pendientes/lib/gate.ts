@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/db'
 
 import type { EntidadCambio } from '../schemas'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = SupabaseClient<Database>
 
@@ -18,7 +19,7 @@ type Client = SupabaseClient<Database>
  * cuenta si ALGUNA es `activa`; antes `maybeSingle` daba error con dos filas → "no validada".
  */
 export async function altaValidada(supabase: Client, ninoId: string): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('matriculas')
     .select('id')
     .eq('nino_id', ninoId)
@@ -26,6 +27,7 @@ export async function altaValidada(supabase: Client, ninoId: string): Promise<bo
     .is('fecha_baja', null)
     .is('deleted_at', null)
     .limit(1)
+  if (error) throw new LecturaFallida('altaValidada', error)
   return (data?.length ?? 0) > 0
 }
 
@@ -46,11 +48,12 @@ export async function registrarCambioPendiente(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   // `centro_id` lo deriva el trigger `cambios_pendientes_set_centro_id`; se pasa también
   // porque el tipo generado lo exige NOT NULL. El tutor lee la ficha de su niño (RLS).
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('centro_id')
     .eq('id', input.ninoId)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('registrarCambioPendiente', errorLectura)
   if (!nino) return { ok: false, error: 'alta.errors.no_autorizado' }
 
   const { error } = await supabase.from('cambios_pendientes').insert({
@@ -80,7 +83,7 @@ export async function familiaAltaValidada(
   centroId: string,
   familiaId: string
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('matriculas')
     .select('id, nino:ninos!inner(familia_id, centro_id)')
     .eq('nino.centro_id', centroId)
@@ -89,5 +92,6 @@ export async function familiaAltaValidada(
     .is('fecha_baja', null)
     .is('deleted_at', null)
     .limit(1)
+  if (error) throw new LecturaFallida('familiaAltaValidada', error)
   return (data?.length ?? 0) > 0
 }

@@ -43,12 +43,13 @@ export async function desconfirmarRecibo(
 
   const supabase = await createClient()
 
-  const { data: recibo } = await supabase
+  const { data: recibo, error: errorLectura } = await supabase
     .from('recibos')
     .select('id, estado, es_esporadico, devuelto_de_recibo_id')
     .eq('id', parsed.data.reciboId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (!recibo) return fail('recibos_panel.errors.no_encontrado')
   if (recibo.es_esporadico || recibo.devuelto_de_recibo_id != null) {

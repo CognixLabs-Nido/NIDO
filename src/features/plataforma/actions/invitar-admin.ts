@@ -38,10 +38,11 @@ export async function invitarAdmin(
 
   // A quién y en qué idioma: la invitación que acaba de escribir la RPC y el idioma del centro.
   const service = createServiceRoleClient()
-  const [{ data: invitacion }, { data: centro }] = await Promise.all([
+  const [{ data: invitacion }, { data: centro, error: errorLectura }] = await Promise.all([
     service.from('invitaciones').select('email').eq('id', invitationId).single(),
     service.from('centros').select('idioma_default').eq('id', centroId).single(),
   ])
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!invitacion) return fail('auth.invitation.errors.lookup_failed')
   const idioma = idiomaCorreoEnum.safeParse(centro?.idioma_default)
 

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 
 import { PERIODOS_INFORME, type CampanaInformeItem, type CampanasCursoActivo } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Campañas de informe del **curso activo** del centro (Q7), ordenadas por período.
@@ -19,11 +20,12 @@ export async function getCampanasInformeCursoActivo(
   if (!curso) return null
 
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('campanas_informe')
     .select('id, periodo, fecha_limite, estado, created_at, updated_at')
     .eq('centro_id', centroId)
     .eq('curso_academico_id', curso.id)
+  if (error) throw new LecturaFallida('getCampanasInformeCursoActivo', error)
 
   const campanas = ((data ?? []) as CampanaInformeItem[]).sort(
     (a, b) => PERIODOS_INFORME.indexOf(a.periodo) - PERIODOS_INFORME.indexOf(b.periodo)

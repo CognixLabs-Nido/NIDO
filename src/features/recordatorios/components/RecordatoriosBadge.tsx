@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge'
 
 import { getRecordatoriosPendientesCountAction } from '../actions/get-pendientes-count-action'
 import { useRecordatoriosRealtime } from '../lib/use-recordatorios-realtime'
+import { ContadorNoLeido } from '@/shared/components/ContadorNoLeido'
 
 interface Props {
   /** Conteo inicial calculado server-side (evita el flash 0 al hidratar). */
-  initialTotal: number
+  /** `null`: no se pudo contar (censo C): pinta «?», nunca un 0. */
+  initialTotal: number | null
   /** Centro de la página: el badge cuenta solo sus recordatorios. */
   centroId: string
 }
@@ -25,7 +27,7 @@ interface Props {
  */
 export function RecordatoriosBadge({ initialTotal, centroId }: Props) {
   const t = useTranslations('recordatorios')
-  const [total, setTotal] = useState(initialTotal)
+  const [total, setTotal] = useState<number | null>(initialTotal)
 
   const refresh = useCallback(async () => {
     try {
@@ -41,6 +43,7 @@ export function RecordatoriosBadge({ initialTotal, centroId }: Props) {
   }, [refresh])
   useRecordatoriosRealtime({ channel: 'recordatorios-badge-global', onChange: onRealtimeChange })
 
+  if (total === null) return <ContadorNoLeido />
   if (total <= 0) return null
 
   const label = t('badge_aria', { n: total })

@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface CursoListItem {
   id: string
@@ -12,12 +13,13 @@ export interface CursoListItem {
 
 export async function getCursosPorCentro(centroId: string): Promise<CursoListItem[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('cursos_academicos')
     .select('id, nombre, fecha_inicio, fecha_fin, estado')
     .eq('centro_id', centroId)
     .is('deleted_at', null)
     .order('fecha_inicio', { ascending: false })
+  if (error) throw new LecturaFallida('getCursosPorCentro', error)
   return (data ?? []) as CursoListItem[]
 }
 
@@ -36,12 +38,13 @@ export async function getCursoActivo(centroId: string): Promise<CursoListItem | 
 /** Cursos planificados (candidatos a destino del "pasar de curso"), por fecha. */
 export async function getCursosPlanificados(centroId: string): Promise<CursoListItem[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('cursos_academicos')
     .select('id, nombre, fecha_inicio, fecha_fin, estado')
     .eq('centro_id', centroId)
     .eq('estado', 'planificado')
     .is('deleted_at', null)
     .order('fecha_inicio', { ascending: true })
+  if (error) throw new LecturaFallida('getCursosPlanificados', error)
   return (data ?? []) as CursoListItem[]
 }

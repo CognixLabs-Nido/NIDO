@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface AulaParaRecordatorio {
   id: string
@@ -36,7 +37,7 @@ export async function getAulasParaRecordatorios(
       .order('nombre', { ascending: true })
     if (error) {
       logger.warn('getAulasParaRecordatorios(admin)', error.message)
-      return []
+      throw new LecturaFallida('getAulasParaRecordatorios', error)
     }
     return data ?? []
   }
@@ -51,7 +52,7 @@ export async function getAulasParaRecordatorios(
     .is('deleted_at', null)
   if (error) {
     logger.warn('getAulasParaRecordatorios(profe)', error.message)
-    return []
+    throw new LecturaFallida('getAulasParaRecordatorios', error)
   }
 
   const porId = new Map<string, AulaParaRecordatorio>()

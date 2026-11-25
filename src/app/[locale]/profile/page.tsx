@@ -13,6 +13,7 @@ import { AvatarUploader } from '@/features/usuarios/components/AvatarUploader'
 import { BUCKET_USUARIOS_FOTOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
 import { AuthShell } from '@/shared/components/AuthShell'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -31,11 +32,12 @@ export default async function ProfilePage({ params }: PageProps) {
   let idioma = ''
   let fotoUrl: string | null = null
   if (user) {
-    const { data: usuario } = await supabase
+    const { data: usuario, error } = await supabase
       .from('usuarios')
       .select('nombre_completo, idioma_preferido, foto_url')
       .eq('id', user.id)
       .maybeSingle()
+    if (error) throw new LecturaFallida('ProfilePage', error)
     nombre = usuario?.nombre_completo ?? ''
     idioma = usuario?.idioma_preferido ?? locale
     // La RLS de `usuarios-fotos` deja al propio usuario firmar su avatar.

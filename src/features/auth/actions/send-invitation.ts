@@ -57,21 +57,23 @@ export async function sendInvitation(
   // Un admin del centro A no ata una invitación a un niño o un aula del centro B (al aceptar,
   // crearía el vínculo / la asignación en el otro centro).
   if (parsed.data.ninoId) {
-    const { data: nino } = await service
+    const { data: nino, error: errorLectura } = await service
       .from('ninos')
       .select('id')
       .eq('id', parsed.data.ninoId)
       .eq('centro_id', parsed.data.centroId)
       .maybeSingle()
+    if (errorLectura) return fail('common.lectura_fallida')
     if (!nino) return fail('auth.invitation.errors.forbidden')
   }
   if (parsed.data.aulaId) {
-    const { data: aula } = await service
+    const { data: aula, error: errorLectura2 } = await service
       .from('aulas')
       .select('id')
       .eq('id', parsed.data.aulaId)
       .eq('centro_id', parsed.data.centroId)
       .maybeSingle()
+    if (errorLectura2) return fail('common.lectura_fallida')
     if (!aula) return fail('auth.invitation.errors.forbidden')
   }
 
@@ -79,9 +81,13 @@ export async function sendInvitation(
   // un aviso para quien invita; la puerta es la aceptación, que lo vuelve a mirar (si esta
   // lectura falla, se sigue).
   if (parsed.data.rolObjetivo === 'profe') {
-    const { data: cuentas } = await service.rpc('buscar_auth_user_por_email', {
-      p_email: parsed.data.email,
-    })
+    const { data: cuentas, error: errorLectura3 } = await service.rpc(
+      'buscar_auth_user_por_email',
+      {
+        p_email: parsed.data.email,
+      }
+    )
+    if (errorLectura3) return fail('common.lectura_fallida')
     const cuenta = cuentas?.[0]
     if (cuenta) {
       const { motivo } = await motivoQueImpideElRol(service, {

@@ -3,6 +3,7 @@ import 'server-only'
 import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface UnreadCounts {
   conversaciones: number
@@ -59,21 +60,24 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
 
   let convsUnread = 0
   if (convIds.length > 0) {
-    const [{ data: msgs }, { data: lecturas }] = await Promise.all([
-      supabase
-        .from('mensajes')
-        .select('conversacion_id, autor_id, created_at, erroneo')
-        .in('conversacion_id', convIds)
-        .neq('autor_id', userId)
-        .eq('erroneo', false)
-        .order('created_at', { ascending: false })
-        .limit(1000),
-      supabase
-        .from('lectura_conversacion')
-        .select('conversacion_id, last_read_at')
-        .eq('usuario_id', userId)
-        .in('conversacion_id', convIds),
-    ])
+    const [{ data: msgs, error: errorLectura }, { data: lecturas, error: errorLectura2 }] =
+      await Promise.all([
+        supabase
+          .from('mensajes')
+          .select('conversacion_id, autor_id, created_at, erroneo')
+          .in('conversacion_id', convIds)
+          .neq('autor_id', userId)
+          .eq('erroneo', false)
+          .order('created_at', { ascending: false })
+          .limit(1000),
+        supabase
+          .from('lectura_conversacion')
+          .select('conversacion_id, last_read_at')
+          .eq('usuario_id', userId)
+          .in('conversacion_id', convIds),
+      ])
+    if (errorLectura) throw new LecturaFallida('countNoLeidos', errorLectura)
+    if (errorLectura2) throw new LecturaFallida('countNoLeidos', errorLectura2)
 
     const lastRead = new Map(lecturas?.map((l) => [l.conversacion_id, l.last_read_at]) ?? [])
     for (const m of msgs ?? []) {
@@ -98,11 +102,12 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   let anunciosUnread = 0
   if (anuncios && anuncios.length > 0) {
     const ids = anuncios.map((a) => a.id)
-    const { data: lecturas } = await supabase
+    const { data: lecturas, error: errorLectura3 } = await supabase
       .from('lectura_anuncio')
       .select('anuncio_id')
       .eq('usuario_id', userId)
       .in('anuncio_id', ids)
+    if (errorLectura3) throw new LecturaFallida('countNoLeidos', errorLectura3)
     const leidos = new Set(lecturas?.map((l) => l.anuncio_id) ?? [])
     for (const a of anuncios) {
       if (!leidos.has(a.id)) anunciosUnread++

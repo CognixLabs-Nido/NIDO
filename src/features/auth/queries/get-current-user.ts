@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface CurrentUser {
   id: string
@@ -17,11 +18,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return null
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', userData.user.id)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getCurrentUser', error)
 
   return {
     id: userData.user.id,
