@@ -88,4 +88,32 @@ describe('enviarAvisoInvitacion', () => {
       await enviarAvisoInvitacion(service('es'), { email: 'persona@nido.test', centroNombre: null })
     ).toBe(false)
   })
+
+  // Censo C (2026-11-25): el aviso sale DESPUÉS de escribir la invitación. Antes del PR A, sin poder
+  // leer el idioma de la cuenta salía en castellano; el codemod lo hizo lanzar y la invitación guardada
+  // se contaba como fallida. Vuelve a salir en castellano, y el fallo va a Sentry.
+  it('no se puede leer la cuenta ni su idioma: el aviso sale igual, en castellano', async () => {
+    const caido = { message: 'timeout' }
+    const sinCuenta = {
+      rpc: () => ({ maybeSingle: async () => ({ data: null, error: caido }) }),
+    } as unknown as SupabaseClient<Database>
+    expect(
+      await enviarAvisoInvitacion(sinCuenta, { email: 'p@nido.test', centroNombre: null })
+    ).toBe(true)
+    expect(h.enviados[0]!.asunto).toBe('es:asunto')
+
+    const sinIdioma = {
+      rpc: () => ({ maybeSingle: async () => ({ data: { id: 'cuenta-1' }, error: null }) }),
+      from: () => {
+        const b: Record<string, unknown> = {}
+        for (const m of ['select', 'eq']) b[m] = () => b
+        b.maybeSingle = async () => ({ data: null, error: caido })
+        return b
+      },
+    } as unknown as SupabaseClient<Database>
+    expect(
+      await enviarAvisoInvitacion(sinIdioma, { email: 'p@nido.test', centroNombre: null })
+    ).toBe(true)
+    expect(h.enviados[1]!.asunto).toBe('es:asunto')
+  })
 })

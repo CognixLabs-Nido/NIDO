@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { siFallaTrasEscribir } from '@/shared/lib/tras-escritura'
 
 import { FotoInvalidaError, procesarFoto } from '@/features/fotos/lib/procesar-foto'
 import { firmarRutas, prefijoPublicacion, rutasFotoNueva } from '@/features/fotos/lib/storage'
@@ -155,7 +156,13 @@ export async function POST(request: Request): Promise<Response> {
     return err('fotos.errors.subida_fallo', 500)
   }
 
-  const firmadas = await firmarRutas(service, [rutas.original, rutas.miniatura])
+  // La foto y su fila ya están guardadas (censo C, 2026-11-25): si no se puede firmar la vista previa,
+  // la respuesta va sin ella (como antes) y no con un 500 que haría volver a subirla.
+  const firmadas = await siFallaTrasEscribir(
+    'fotos/upload: la vista previa',
+    firmarRutas(service, [rutas.original, rutas.miniatura]),
+    new Map<string, string>()
+  )
 
   return Response.json({
     success: true,

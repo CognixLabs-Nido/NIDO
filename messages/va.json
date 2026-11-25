@@ -28,7 +28,8 @@
       "reintentar": "Tornar-ho a intentar",
       "contador": "No s'ha pogut comptar"
     },
-    "lectura_fallida": "No s'ha pogut llegir el que calia. No s'ha canviat res; torna-ho a intentar."
+    "lectura_fallida": "No s'ha pogut llegir el que calia. No s'ha canviat res; torna-ho a intentar.",
+    "guardado_sin_aviso": "Desat; no s'ha pogut enviar l'avís o el correu."
   },
   "nav": {
     "home": "Inici",

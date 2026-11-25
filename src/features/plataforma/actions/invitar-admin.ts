@@ -8,6 +8,7 @@ import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 import { errorDePlataforma } from '../lib/errores'
 import { invitarAdminSchema, type InvitarAdminInput } from '../schemas/crear-centro'
@@ -42,7 +43,9 @@ export async function invitarAdmin(
     service.from('invitaciones').select('email').eq('id', invitationId).single(),
     service.from('centros').select('idioma_default').eq('id', centroId).single(),
   ])
-  if (errorLectura) return fail('common.lectura_fallida')
+  // La invitación ya está escrita: sin el idioma del centro, el correo sale en el idioma por defecto
+  // (como antes del censo C) y el fallo va a Sentry. Parar aquí diría «no» sobre algo guardado.
+  if (errorLectura) lecturaFallidaTrasEscritura('invitarAdmin: idioma del centro', errorLectura)
   if (!invitacion) return fail('auth.invitation.errors.lookup_failed')
   const idioma = idiomaCorreoEnum.safeParse(centro?.idioma_default)
 

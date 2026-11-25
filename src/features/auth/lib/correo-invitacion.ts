@@ -4,13 +4,13 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 import type { Database } from '@/types/db'
 
 import { enviarAvisoInvitacion } from './aviso-invitacion'
 import { prepararIdiomaInvitacion } from './idioma-invitacion'
 import { llamarGoTrue } from './llamar-gotrue'
 import type { IdiomaCorreo } from '../schemas/invitation'
-import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type ServiceClient = SupabaseClient<Database>
 
@@ -39,13 +39,15 @@ export async function enviarCorreoInvitacion(
   if (!invitation) return 'auth.invitation.errors.lookup_failed'
 
   // Nombre del centro para personalizar la firma del email ({{ .Data.centro_nombre }}
-  // en la plantilla de invitación). Si faltara, la plantilla cae a "la escuela".
+  // en la plantilla de invitación). Si faltara, la plantilla cae a "la escuela". La invitación ya
+  // está escrita (censo C, 2026-11-25): si no se puede leer, el correo sale sin el nombre, como
+  // antes, y el fallo va a Sentry; parar contaría como fallida una invitación guardada.
   const { data: centro, error: errorLectura } = await service
     .from('centros')
     .select('nombre')
     .eq('id', datos.centroId)
     .maybeSingle()
-  if (errorLectura) throw new LecturaFallida('enviarCorreoInvitacion', errorLectura)
+  if (errorLectura) lecturaFallidaTrasEscritura('correo de invitación: el centro', errorLectura)
 
   // Idioma del correo y de la página del enlace (elegido por la Dirección, el de la cuenta
   // provisional si es un reenvío, o castellano). Ajusta la cuenta provisional si hace falta.

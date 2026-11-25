@@ -24,12 +24,17 @@ type Client = SupabaseClient<Database>
  * invitación colgada. Tampoco reinvita si ya tiene una invitación abierta para otro hijo de la
  * familia: al aceptarla queda vinculado a TODOS los hijos (`accept-invitation`).
  *
- * **Best-effort, idempotente y silencioso**: si no hay tutor 2, si no dejó email, o si no hay
- * nada que invitar, no hace nada. `sendInvitation` ya deduplica invitaciones abiertas
- * por (email, centro, rol, niño), así que reactivar no genera duplicados. Un fallo aquí NO
- * debe abortar la activación (el alta ya quedó validada).
+ * **Best-effort e idempotente**: si no hay tutor 2, si no dejó email, o si no hay nada que invitar,
+ * no hace nada (`no_hacia_falta`). `sendInvitation` ya deduplica invitaciones abiertas por (email,
+ * centro, rol, niño), así que reactivar no genera duplicados. Un fallo aquí NO aborta la activación
+ * (el alta ya quedó validada), pero ya no es silencioso (censo C, 2026-11-25): devuelve `no_enviada` y
+ * la pantalla dice «Guardado; no se ha podido enviar el aviso o el correo», para que se reenvíe desde
+ * Altas en proceso.
  */
-export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): Promise<void> {
+export async function invitarTutor2AlValidar(
+  supabase: Client,
+  ninoId: string
+): Promise<'enviada' | 'no_hacia_falta' | 'no_enviada'> {
   try {
     // centro del niño (matriculas no lleva centro_id).
     const { data: nino, error: errorLectura } = await supabase
@@ -39,17 +44,17 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .is('deleted_at', null)
       .maybeSingle()
     if (errorLectura) throw new LecturaFallida('invitarTutor2AlValidar', errorLectura)
-    if (!nino) return
+    if (!nino) return 'no_hacia_falta'
 
     // Email del tutor 2 capturado en el wizard, desde el perfil COMPARTIDO `familia_tutores`
     // (F-2b-3): el segundo_tutor de la familia del niño.
     const { tutores } = await leerTutoresDeNino(supabase, ninoId)
     const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
     const email = tutor2?.email?.trim()
-    if (!email) return
+    if (!email) return 'no_hacia_falta'
 
     // ¿El tutor 2 ya tiene cuenta en la familia? → lo vincula la RPC, nada que invitar.
-    if (tutor2?.usuario_id) return
+    if (tutor2?.usuario_id) return 'no_hacia_falta'
 
     // ¿Ya está vinculado a este niño (p. ej. aceptó por B8, que no enlaza el perfil)? → nada.
     const { data: vinculo, error: errorLectura2 } = await supabase
@@ -61,7 +66,7 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .limit(1)
       .maybeSingle()
     if (errorLectura2) throw new LecturaFallida('invitarTutor2AlValidar', errorLectura2)
-    if (vinculo) return
+    if (vinculo) return 'no_hacia_falta'
 
     // ¿Ya tiene una invitación abierta (de otro hijo de la familia)? → al aceptarla queda
     // vinculado a todos los hijos; no se manda otra.
@@ -77,7 +82,7 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .limit(1)
       .maybeSingle()
     if (errorLectura3) throw new LecturaFallida('invitarTutor2AlValidar', errorLectura3)
-    if (abierta) return
+    if (abierta) return 'no_hacia_falta'
 
     const idioma = await idiomaDelTitular(supabase, tutores)
 
@@ -89,9 +94,14 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       tipoVinculo: 'tutor_legal_secundario',
       idioma,
     })
-    if (!r.success) logger.warn('invitarTutor2AlValidar', r.error)
+    if (!r.success) {
+      logger.warn('invitarTutor2AlValidar', r.error)
+      return 'no_enviada'
+    }
+    return 'enviada'
   } catch (e) {
     logger.warn('invitarTutor2AlValidar', e instanceof Error ? e.message : 'desconocido')
+    return 'no_enviada'
   }
 }
 

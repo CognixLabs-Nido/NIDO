@@ -21,7 +21,7 @@ interface Resp {
   error: unknown
 }
 
-function makeFake(responses: Resp[]) {
+function makeFake(responses: Resp[], cursoActivo: Resp = { data: 'curso-1', error: null }) {
   const calls: { table: string; op: 'insert' | 'update'; patch: unknown }[] = []
   let i = 0
   const next = (): Resp => responses[i++] ?? { data: null, error: null }
@@ -55,7 +55,7 @@ function makeFake(responses: Resp[]) {
   const fake = {
     from: (table: string) => builder(table),
     // F11-H: curso activo del centro del aula (siempre presente en estos tests).
-    rpc: (_fn: string, _args: unknown) => Promise.resolve({ data: 'curso-1', error: null }),
+    rpc: (_fn: string, _args: unknown) => Promise.resolve(cursoActivo),
   } as unknown as SupabaseClient<Database>
   return { fake, calls }
 }
@@ -106,5 +106,20 @@ describe('crearVinculoProfeAula', () => {
       tipoPersonalAula: 'profesora',
     })
     expect(r.error).toBe('auth.invitation.errors.profe_aula_failed')
+  })
+
+  // Censo C (2026-11-25, «¿este arreglo convierte en fallo algo que hoy funciona?»): el codemod hizo
+  // LANZAR esta lectura, y en `acceptInvitationCore` eso se saltaba el rollback de la cuenta recién
+  // creada. El helper contesta sus errores en `{ error }`: la lectura fallida va por ahí, y el llamador
+  // deshace la cuenta como con cualquier otro error. Antes decía «sin curso activo», que era falso.
+  it('la lectura del curso activo falla: { error: lectura_fallida }, sin lanzar y sin insertar', async () => {
+    const { fake, calls } = makeFake([], { data: null, error: { message: 'timeout' } })
+    const r = await crearVinculoProfeAula(fake, {
+      profeId: PROFE,
+      aulaId: AULA,
+      tipoPersonalAula: 'profesora',
+    })
+    expect(r).toEqual({ error: 'common.lectura_fallida' })
+    expect(calls).toEqual([])
   })
 })

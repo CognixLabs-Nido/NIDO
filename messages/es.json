@@ -28,7 +28,8 @@
       "reintentar": "Reintentar",
       "contador": "No se ha podido contar"
     },
-    "lectura_fallida": "No se ha podido leer lo que hacía falta. No se ha cambiado nada; vuelve a intentarlo."
+    "lectura_fallida": "No se ha podido leer lo que hacía falta. No se ha cambiado nada; vuelve a intentarlo.",
+    "guardado_sin_aviso": "Guardado; no se ha podido enviar el aviso o el correo."
   },
   "nav": {
     "home": "Inicio",

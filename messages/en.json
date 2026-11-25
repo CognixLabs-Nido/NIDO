@@ -28,7 +28,8 @@
       "reintentar": "Try again",
       "contador": "Could not be counted"
     },
-    "lectura_fallida": "What was needed could not be read. Nothing has been changed; please try again."
+    "lectura_fallida": "What was needed could not be read. Nothing has been changed; please try again.",
+    "guardado_sin_aviso": "Saved; the notice or email could not be sent."
   },
   "nav": {
     "home": "Home",
