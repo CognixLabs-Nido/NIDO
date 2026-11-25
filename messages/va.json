@@ -198,6 +198,11 @@
       "campo_label": "Foto de perfil (opcional)",
       "campo_ayuda": "JPG o PNG, màxim 4 MB. Pots afegir-la després des del teu perfil.",
       "opcional_fallo": "No s’ha pogut pujar la foto; pots afegir-la després des del teu perfil."
+    },
+    "no_se_pudo_leer": {
+      "title": "No s'ha pogut llegir",
+      "description": "No s'ha pogut comprovar a què pots entrar. Torna a carregar la pàgina d'ací a un moment.",
+      "back_to_home": "Tornar a l'inici"
     }
   },
   "legal": {

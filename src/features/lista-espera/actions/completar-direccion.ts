@@ -20,6 +20,7 @@ import { tutorDeEsteCentro } from '../lib/resolver-tutor-email'
 import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existente'
 import { completarDireccionSchema, type CompletarDireccionInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /** Retorno JSON de la RPC `crear_o_anadir_a_familia` (F-2b-1). */
 type ResultadoCrearFamilia = {
@@ -64,189 +65,194 @@ export async function completarEnDireccion(
   input: CompletarDireccionInput,
   locale: 'es' | 'en' | 'va' = 'es'
 ): Promise<ActionResult<CompletarEnDireccionOk>> {
-  const parsed = completarDireccionSchema.safeParse(input)
-  if (!parsed.success)
-    return fail(parsed.error.issues[0]?.message ?? 'listaEspera.validation.invalid')
+  try {
+    const parsed = completarDireccionSchema.safeParse(input)
+    if (!parsed.success)
+      return fail(parsed.error.issues[0]?.message ?? 'listaEspera.validation.invalid')
 
-  const supabase = await createClient()
-  const { data: userData, indisponible: authIndisponible } = await llamarGoTrue('getUser', () =>
-    supabase.auth.getUser()
-  )
-  if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
-
-  // Prospecto primero: SU centro es el de la acción, no el centro activo de la cookie (una
-  // pestaña de otro centro actúa sobre el prospecto que enseña). La RLS de `lista_espera`
-  // solo deja leer a Dirección los de sus centros.
-  const { data: prospecto } = await supabase
-    .from('lista_espera')
-    .select(
-      'id, centro_id, nombre_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, tutor_usuario_id, estado'
+    const supabase = await createClient()
+    const { data: userData, indisponible: authIndisponible } = await llamarGoTrue('getUser', () =>
+      supabase.auth.getUser()
     )
-    .eq('id', parsed.data.id)
-    .maybeSingle()
-  if (!prospecto) return fail('listaEspera.errors.no_encontrado')
-  const centroId = prospecto.centro_id
+    if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  // Gate admin del centro del prospecto (los INSERT van por service role → sin RLS que los cubra).
-  if (!(await esAdminEn(supabase, userData.user.id, centroId)))
-    return fail('auth.invitation.errors.forbidden')
-  // Completar en Dirección registra, con la familia delante, los consentimientos del tutor como
-  // presenciales (`crearTutorDirecto`). Eso lo hace la directora; el superusuario no (ADR-0061).
-  // Aquí, porque `crearTutorDirecto` va con service role y la BD no sabe quién lo pidió.
-  if (await esSuperusuario(supabase)) return fail('listaEspera.errors.presencial_solo_direccion')
+    // Prospecto primero: SU centro es el de la acción, no el centro activo de la cookie (una
+    // pestaña de otro centro actúa sobre el prospecto que enseña). La RLS de `lista_espera`
+    // solo deja leer a Dirección los de sus centros.
+    const { data: prospecto } = await supabase
+      .from('lista_espera')
+      .select(
+        'id, centro_id, nombre_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, tutor_usuario_id, estado'
+      )
+      .eq('id', parsed.data.id)
+      .maybeSingle()
+    if (!prospecto) return fail('listaEspera.errors.no_encontrado')
+    const centroId = prospecto.centro_id
 
-  // Curso activo del centro (autoritativo server-side; la matrícula va contra él).
-  const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
-    p_centro_id: centroId,
-  })
-  if (!cursoActivoId) return fail('listaEspera.errors.sin_curso_activo')
+    // Gate admin del centro del prospecto (los INSERT van por service role → sin RLS que los cubra).
+    if (!(await esAdminEn(supabase, userData.user.id, centroId)))
+      return fail('auth.invitation.errors.forbidden')
+    // Completar en Dirección registra, con la familia delante, los consentimientos del tutor como
+    // presenciales (`crearTutorDirecto`). Eso lo hace la directora; el superusuario no (ADR-0061).
+    // Aquí, porque `crearTutorDirecto` va con service role y la BD no sabe quién lo pidió.
+    if (await esSuperusuario(supabase)) return fail('listaEspera.errors.presencial_solo_direccion')
 
-  // El aula elegida debe estar configurada en el curso activo (aulas_curso).
-  const { data: aulaCurso } = await supabase
-    .from('aulas_curso')
-    .select('aula_id')
-    .eq('aula_id', parsed.data.aulaId)
-    .eq('curso_academico_id', cursoActivoId)
-    .maybeSingle()
-  if (!aulaCurso) return fail('listaEspera.errors.aula_invalida')
-
-  // Debe estar en espera. A diferencia de invitar, el email NO sale del prospecto: lo teclea la
-  // Dirección en el diálogo.
-  if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
-
-  // `fecha_nacimiento` es obligatoria para crear el niño (`ninos.fecha_nacimiento` NOT NULL).
-  // Se captura en un const para que el narrowing sobreviva a los `await` posteriores.
-  const fechaNacimiento = prospecto.fecha_nacimiento
-  if (!fechaNacimiento) return fail('listaEspera.errors.sin_fecha_nacimiento')
-
-  const service = createServiceRoleClient()
-
-  // ¿Es el 2.º hijo de una familia de ESTE centro? Entonces se vincula a esa cuenta: no se recrea
-  // ni se le pide contraseña. La regla es la de `invitarAlAlta` (`tutorDeEsteCentro`): primero la
-  // cuenta que guardó el prospecto, si sigue teniendo familia aquí; si no, la del email.
-  const tutorExistenteId = await tutorDeEsteCentro(service, {
-    tutorPrevioId: prospecto.tutor_usuario_id,
-    email: parsed.data.email,
-    centroId,
-  })
-  if (tutorExistenteId === undefined)
-    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  if (tutorExistenteId) {
-    const vinc = await vincularHijoATutorExistente(service, supabase, {
-      tutorUsuarioId: tutorExistenteId,
-      centroId,
-      aulaId: parsed.data.aulaId,
-      nombreNino: prospecto.nombre_nino,
-      primerApellidoNino: prospecto.primer_apellido_nino ?? '',
-      segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
-      fechaNacimiento,
-      parentescoForm: parsed.data.parentesco,
-      descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
-      locale,
+    // Curso activo del centro (autoritativo server-side; la matrícula va contra él).
+    const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
+      p_centro_id: centroId,
     })
-    if (!vinc.success) return fail(vinc.error)
+    if (!cursoActivoId) return fail('listaEspera.errors.sin_curso_activo')
 
-    // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva). U-4: se
-    // guarda el `nino_id` → la lista pinta el estado de la matrícula y ofrece "Reanudar alta".
+    // El aula elegida debe estar configurada en el curso activo (aulas_curso).
+    const { data: aulaCurso } = await supabase
+      .from('aulas_curso')
+      .select('aula_id')
+      .eq('aula_id', parsed.data.aulaId)
+      .eq('curso_academico_id', cursoActivoId)
+      .maybeSingle()
+    if (!aulaCurso) return fail('listaEspera.errors.aula_invalida')
+
+    // Debe estar en espera. A diferencia de invitar, el email NO sale del prospecto: lo teclea la
+    // Dirección en el diálogo.
+    if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
+
+    // `fecha_nacimiento` es obligatoria para crear el niño (`ninos.fecha_nacimiento` NOT NULL).
+    // Se captura en un const para que el narrowing sobreviva a los `await` posteriores.
+    const fechaNacimiento = prospecto.fecha_nacimiento
+    if (!fechaNacimiento) return fail('listaEspera.errors.sin_fecha_nacimiento')
+
+    const service = createServiceRoleClient()
+
+    // ¿Es el 2.º hijo de una familia de ESTE centro? Entonces se vincula a esa cuenta: no se recrea
+    // ni se le pide contraseña. La regla es la de `invitarAlAlta` (`tutorDeEsteCentro`): primero la
+    // cuenta que guardó el prospecto, si sigue teniendo familia aquí; si no, la del email.
+    const tutorExistenteId = await tutorDeEsteCentro(service, {
+      tutorPrevioId: prospecto.tutor_usuario_id,
+      email: parsed.data.email,
+      centroId,
+    })
+    if (tutorExistenteId === undefined)
+      return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    if (tutorExistenteId) {
+      const vinc = await vincularHijoATutorExistente(service, supabase, {
+        tutorUsuarioId: tutorExistenteId,
+        centroId,
+        aulaId: parsed.data.aulaId,
+        nombreNino: prospecto.nombre_nino,
+        primerApellidoNino: prospecto.primer_apellido_nino ?? '',
+        segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
+        fechaNacimiento,
+        parentescoForm: parsed.data.parentesco,
+        descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
+        locale,
+      })
+      if (!vinc.success) return fail(vinc.error)
+
+      // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva). U-4: se
+      // guarda el `nino_id` → la lista pinta el estado de la matrícula y ofrece "Reanudar alta".
+      const { error: estadoErr } = await supabase
+        .from('lista_espera')
+        .update({ estado: 'invitado', nino_id: vinc.data.ninoId })
+        .eq('id', prospecto.id)
+      if (estadoErr)
+        logger.warn('completarEnDireccion estado update (vinculado)', estadoErr.message)
+
+      revalidatePath('/[locale]/admin/admisiones', 'page')
+      return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, usuarioId: tutorExistenteId })
+    }
+
+    // Cuenta que ya existe y ha operado (de otro centro, del personal, el superusuario): no es de
+    // este centro ni un alta a medias. No se le crea cuenta ni se le toca la contraseña, y nunca se
+    // vincula sin que acepte (PR 1 de la Fase 4): el alta se crea con su perfil sin cuenta, se le
+    // invita, y la Dirección sigue con el wizard igual que con una familia nueva (D4).
+    const cuenta = await detectarCuentaPorEmail(service, parsed.data.email)
+    if (!cuenta) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    if (cuenta.authUserExiste && (cuenta.tieneRoles || cuenta.haOperado)) {
+      return altaInvitandoCuentaExistente(supabase, {
+        prospectoId: prospecto.id,
+        nombreNino: prospecto.nombre_nino,
+        primerApellidoNino: prospecto.primer_apellido_nino ?? '',
+        segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
+        fechaNacimiento,
+        centroId,
+        aulaId: parsed.data.aulaId,
+        email: parsed.data.email,
+        nombreTutor: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
+        locale,
+      })
+    }
+
+    // 1. Cuenta GoTrue PRIMERO (defensiva PR-A vía `crearTutorDirecto`). Si GoTrue falla, no se
+    //    escribe nada en BD. Idempotente en reintento: una cuenta `stub` de un intento previo se
+    //    reutiliza (no se re-crea). NO se crea niño/matrícula/rol/vínculo/perfil aquí: eso es la RPC.
+    //
+    //    D2: la Dirección NO teclea contraseña. La cuenta se crea con una contraseña ALEATORIA que
+    //    NADIE usa ni ve (email_confirm=true la deja usable); el tutor fija la SUYA con «He olvidado
+    //    la contraseña» (recuperación de Supabase). Prefijo `Aa1!` → cumple cualquier política de
+    //    complejidad (mayúscula/minúscula/dígito/símbolo) sin depender del azar; el resto es entropía.
+    const passwordAleatoria = `Aa1!${randomBytes(24).toString('base64url')}`
+    const tutor = await crearTutorDirecto(service, {
+      email: parsed.data.email,
+      password: passwordAleatoria,
+      // Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección).
+      nombreCompleto: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
+      idiomaPreferido: locale,
+    })
+    if (!tutor.success) return fail(tutor.error)
+
+    // 2. RPC transaccional (cliente AUTENTICADO → `es_admin(auth.uid(), p_centro_id)` autoriza
+    //    dentro; `p_centro_id` es server-derivado, no falseable). En UNA transacción crea:
+    //    familia + perfil en familia_tutores + niño (familia_id) + matrícula pendiente + vínculo
+    //    + rol. Todo-o-nada: aquí NO queda ninguna escritura suelta que duplique lo suyo.
+    const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
+      p_nombre_nino: prospecto.nombre_nino,
+      p_primer_apellido_nino: prospecto.primer_apellido_nino ?? '',
+      p_segundo_apellido_nino: prospecto.segundo_apellido_nino ?? '',
+      p_fecha_nacimiento: fechaNacimiento,
+      p_centro_id: centroId,
+      p_aula_id: parsed.data.aulaId,
+      p_tutor_email: parsed.data.email,
+      p_tutor_nombre_completo: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
+      p_parentesco: parsed.data.parentesco,
+      p_descripcion_parentesco: parsed.data.descripcionParentesco ?? '',
+      p_usuario_id: tutor.data.usuarioId,
+      p_permisos: permisosDefault('tutor_legal_principal') as Json,
+    })
+    if (rpcError) {
+      // NO se borra la cuenta (frágil): el reintento es idempotente — la RPC es atómica (no dejó
+      // residuo en BD) y `crearTutorDirecto` reutiliza la cuenta `stub` en el siguiente intento.
+      logger.warn('completarEnDireccion rpc', rpcError.message)
+      // La tabla de motivos de la BD no devuelve el rol a quien tiene en curso el olvido.
+      if (motivoQueNoVuelve(rpcError) === 'solicitud_olvido')
+        return fail('listaEspera.errors.tutor_olvido')
+      return fail('listaEspera.errors.alta_fallo')
+    }
+
+    const res = rpcData as ResultadoCrearFamilia
+    if (res.resultado === 'colision') {
+      // Email ya en el centro con OTRO nombre → avisar a Dirección; NO completar (patrón PR-A).
+      return ok({
+        resultado: 'colision',
+        nombreExistente: res.colision_info?.nombre_existente ?? null,
+      })
+    }
+
+    // 3. El prospecto sale de la cola. Best-effort: si falla, el alta ya está creada; log y
+    //    seguimos (el prospecto queda en_espera y se puede descartar a mano).
     const { error: estadoErr } = await supabase
       .from('lista_espera')
-      .update({ estado: 'invitado', nino_id: vinc.data.ninoId })
+      .update({ estado: 'invitado', nino_id: res.nino_id as string })
       .eq('id', prospecto.id)
-    if (estadoErr) logger.warn('completarEnDireccion estado update (vinculado)', estadoErr.message)
+    if (estadoErr) {
+      logger.warn('completarEnDireccion estado update', estadoErr.message)
+    }
 
     revalidatePath('/[locale]/admin/admisiones', 'page')
-    return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, usuarioId: tutorExistenteId })
+    return ok({ resultado: 'ok', ninoId: res.nino_id as string, usuarioId: tutor.data.usuarioId })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  // Cuenta que ya existe y ha operado (de otro centro, del personal, el superusuario): no es de
-  // este centro ni un alta a medias. No se le crea cuenta ni se le toca la contraseña, y nunca se
-  // vincula sin que acepte (PR 1 de la Fase 4): el alta se crea con su perfil sin cuenta, se le
-  // invita, y la Dirección sigue con el wizard igual que con una familia nueva (D4).
-  const cuenta = await detectarCuentaPorEmail(service, parsed.data.email)
-  if (!cuenta) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  if (cuenta.authUserExiste && (cuenta.tieneRoles || cuenta.haOperado)) {
-    return altaInvitandoCuentaExistente(supabase, {
-      prospectoId: prospecto.id,
-      nombreNino: prospecto.nombre_nino,
-      primerApellidoNino: prospecto.primer_apellido_nino ?? '',
-      segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
-      fechaNacimiento,
-      centroId,
-      aulaId: parsed.data.aulaId,
-      email: parsed.data.email,
-      nombreTutor: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
-      locale,
-    })
-  }
-
-  // 1. Cuenta GoTrue PRIMERO (defensiva PR-A vía `crearTutorDirecto`). Si GoTrue falla, no se
-  //    escribe nada en BD. Idempotente en reintento: una cuenta `stub` de un intento previo se
-  //    reutiliza (no se re-crea). NO se crea niño/matrícula/rol/vínculo/perfil aquí: eso es la RPC.
-  //
-  //    D2: la Dirección NO teclea contraseña. La cuenta se crea con una contraseña ALEATORIA que
-  //    NADIE usa ni ve (email_confirm=true la deja usable); el tutor fija la SUYA con «He olvidado
-  //    la contraseña» (recuperación de Supabase). Prefijo `Aa1!` → cumple cualquier política de
-  //    complejidad (mayúscula/minúscula/dígito/símbolo) sin depender del azar; el resto es entropía.
-  const passwordAleatoria = `Aa1!${randomBytes(24).toString('base64url')}`
-  const tutor = await crearTutorDirecto(service, {
-    email: parsed.data.email,
-    password: passwordAleatoria,
-    // Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección).
-    nombreCompleto: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
-    idiomaPreferido: locale,
-  })
-  if (!tutor.success) return fail(tutor.error)
-
-  // 2. RPC transaccional (cliente AUTENTICADO → `es_admin(auth.uid(), p_centro_id)` autoriza
-  //    dentro; `p_centro_id` es server-derivado, no falseable). En UNA transacción crea:
-  //    familia + perfil en familia_tutores + niño (familia_id) + matrícula pendiente + vínculo
-  //    + rol. Todo-o-nada: aquí NO queda ninguna escritura suelta que duplique lo suyo.
-  const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
-    p_nombre_nino: prospecto.nombre_nino,
-    p_primer_apellido_nino: prospecto.primer_apellido_nino ?? '',
-    p_segundo_apellido_nino: prospecto.segundo_apellido_nino ?? '',
-    p_fecha_nacimiento: fechaNacimiento,
-    p_centro_id: centroId,
-    p_aula_id: parsed.data.aulaId,
-    p_tutor_email: parsed.data.email,
-    p_tutor_nombre_completo: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
-    p_parentesco: parsed.data.parentesco,
-    p_descripcion_parentesco: parsed.data.descripcionParentesco ?? '',
-    p_usuario_id: tutor.data.usuarioId,
-    p_permisos: permisosDefault('tutor_legal_principal') as Json,
-  })
-  if (rpcError) {
-    // NO se borra la cuenta (frágil): el reintento es idempotente — la RPC es atómica (no dejó
-    // residuo en BD) y `crearTutorDirecto` reutiliza la cuenta `stub` en el siguiente intento.
-    logger.warn('completarEnDireccion rpc', rpcError.message)
-    // La tabla de motivos de la BD no devuelve el rol a quien tiene en curso el olvido.
-    if (motivoQueNoVuelve(rpcError) === 'solicitud_olvido')
-      return fail('listaEspera.errors.tutor_olvido')
-    return fail('listaEspera.errors.alta_fallo')
-  }
-
-  const res = rpcData as ResultadoCrearFamilia
-  if (res.resultado === 'colision') {
-    // Email ya en el centro con OTRO nombre → avisar a Dirección; NO completar (patrón PR-A).
-    return ok({
-      resultado: 'colision',
-      nombreExistente: res.colision_info?.nombre_existente ?? null,
-    })
-  }
-
-  // 3. El prospecto sale de la cola. Best-effort: si falla, el alta ya está creada; log y
-  //    seguimos (el prospecto queda en_espera y se puede descartar a mano).
-  const { error: estadoErr } = await supabase
-    .from('lista_espera')
-    .update({ estado: 'invitado', nino_id: res.nino_id as string })
-    .eq('id', prospecto.id)
-  if (estadoErr) {
-    logger.warn('completarEnDireccion estado update', estadoErr.message)
-  }
-
-  revalidatePath('/[locale]/admin/admisiones', 'page')
-  return ok({ resultado: 'ok', ninoId: res.nino_id as string, usuarioId: tutor.data.usuarioId })
 }
 
 /**

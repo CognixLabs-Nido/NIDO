@@ -10,6 +10,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 type Supabase = SupabaseClient<Database>
@@ -31,31 +32,39 @@ export type FijarMetodoPagoFamiliaInput = z.input<typeof inputSchema>
 export async function fijarMetodoPagoFamilia(
   input: FijarMetodoPagoFamiliaInput
 ): Promise<ActionResult<void>> {
-  const parsed = inputSchema.safeParse(input)
-  if (!parsed.success) return fail('admin.familias.metodo_pago.errors.invalido')
+  try {
+    const parsed = inputSchema.safeParse(input)
+    if (!parsed.success) return fail('admin.familias.metodo_pago.errors.invalido')
 
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS solo deja leer a
-  // Dirección las familias de sus centros.
-  const { data: familia, error } = await supabase
-    .from('familias')
-    .select('centro_id')
-    .eq('id', parsed.data.familia_id)
-    .maybeSingle()
-  if (error) return fail('common.lectura_fallida')
-  if (!familia) return fail('admin.familias.errors.no_encontrada')
-  if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
-    return fail('auth.invitation.errors.forbidden')
+    // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS solo deja leer a
+    // Dirección las familias de sus centros.
+    const { data: familia, error } = await supabase
+      .from('familias')
+      .select('centro_id')
+      .eq('id', parsed.data.familia_id)
+      .maybeSingle()
+    if (error) return fail('common.lectura_fallida')
+    if (!familia) return fail('admin.familias.errors.no_encontrada')
+    if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
+      return fail('auth.invitation.errors.forbidden')
 
-  const res = await fijarMetodoPagoFamiliaCore(supabase, parsed.data.familia_id, parsed.data.metodo)
-  if (!res.success) return res
+    const res = await fijarMetodoPagoFamiliaCore(
+      supabase,
+      parsed.data.familia_id,
+      parsed.data.metodo
+    )
+    if (!res.success) return res
 
-  revalidatePath('/[locale]/admin/familias/[id]', 'page')
-  revalidatePath('/[locale]/admin/cuotas', 'page')
-  return res
+    revalidatePath('/[locale]/admin/familias/[id]', 'page')
+    revalidatePath('/[locale]/admin/cuotas', 'page')
+    return res
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /**

@@ -10,6 +10,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Censo C (decisión de Jose del 2026-11-25): el escáner de cadena, en un job PROPIO y en paralelo
+  # con `checks` y los shards de `rls-local.yml` (sin `needs`): «Si añade hasta 25 minutos a cada PR
+  # encima de los que ya tarda, lo vamos a acabar odiando y alguien lo quitará». Pone la CI roja si
+  # una acción o una ruta informa como fallido algo que ya guardó (fuera de su lista, que solo encoge),
+  # o si una acción deja escapar una LecturaFallida. Sin BD: la volatilidad de cada RPC sale de las
+  # migraciones.
+  cadena:
+    name: Cadena — se guardó y te digo que no
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Escáner de cadena
+        run: npm run check:cadena-tras-escritura
+
   # Nombre de job SIN cambiar ("Typecheck, Lint, Test") para no romper el required
   # status check de la protección de rama. Solo corre lo RÁPIDO y sin BD: typecheck,
   # lint, format, UNIT (proyecto vitest `unit`, excluye RLS/audit) y build. Las suites

@@ -90,6 +90,18 @@ export async function POST(
 
   const rutas = rutasConThumb(usuarioId)
 
+  // La foto anterior se lee ANTES de subir (censo C, 2026-11-25): si la lectura falla, no se ha
+  // escrito nada y la respuesta dice la verdad; leída después, dejaba la foto nueva huérfana en el
+  // bucket. El UPDATE de `usuarios.foto_url` va por SERVICE-ROLE: la RLS de `usuarios` no deja al
+  // usuario tocar la columna, y la subida de abajo autoriza (gate real).
+  const service = createServiceRoleClient()
+  const { data: anterior, error: errorLectura } = await service
+    .from('usuarios')
+    .select('foto_url')
+    .eq('id', usuarioId)
+    .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
+
   // 2. Subida con el cliente del usuario → la RLS de storage autoriza (self/admin).
   const subirOriginal = await supabase.storage
     .from(BUCKET_USUARIOS_FOTOS)
@@ -112,16 +124,7 @@ export async function POST(
     return err('fotos.errors.subida_fallo', 500)
   }
 
-  // 3. El UPDATE de `usuarios.foto_url` va por SERVICE-ROLE: la RLS de `usuarios` no
-  //    deja al usuario tocar la columna, y el upload anterior ya autorizó (gate real).
-  const service = createServiceRoleClient()
-  const { data: anterior, error: errorLectura } = await service
-    .from('usuarios')
-    .select('foto_url')
-    .eq('id', usuarioId)
-    .maybeSingle()
-  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
-
+  // 3. El UPDATE de `usuarios.foto_url` (service-role, ver arriba).
   const { error: updErr } = await service
     .from('usuarios')
     .update({ foto_url: rutas.original })

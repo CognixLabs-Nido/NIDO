@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { centroDelConceptoSiResponsable } from '../lib/centro-del-concepto'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 // Activar/desactivar un concepto (flag `activo`): reversible, el concepto sigue en el
 // catálogo. NO confundir con eliminar (soft-delete con deleted_at).
@@ -14,49 +15,57 @@ export async function setActivoConcepto(
   id: string,
   activo: boolean
 ): Promise<ActionResult<{ id: string }>> {
-  const supabase = await createClient()
-  const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
-  if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
-  const { data, error } = await supabase
-    .from('conceptos_cobro')
-    .update({ activo })
-    .eq('id', id)
-    .is('deleted_at', null)
-    .select('id')
-    .maybeSingle()
+  try {
+    const supabase = await createClient()
+    const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
+    if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
+    const { data, error } = await supabase
+      .from('conceptos_cobro')
+      .update({ activo })
+      .eq('id', id)
+      .is('deleted_at', null)
+      .select('id')
+      .maybeSingle()
 
-  if (error) {
-    logger.warn('setActivoConcepto error', error.message)
-    if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
-    return fail('conceptos_cobro.errors.update_failed')
+    if (error) {
+      logger.warn('setActivoConcepto error', error.message)
+      if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
+      return fail('conceptos_cobro.errors.update_failed')
+    }
+    if (!data) return fail('conceptos_cobro.errors.no_encontrado')
+
+    revalidatePath('/[locale]/admin/cuotas', 'page')
+    return ok({ id: data.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  if (!data) return fail('conceptos_cobro.errors.no_encontrado')
-
-  revalidatePath('/[locale]/admin/cuotas', 'page')
-  return ok({ id: data.id })
 }
 
 // Eliminar = soft-delete (deleted_at). Libera el nombre (índice único parcial WHERE
 // deleted_at IS NULL) y conserva la fila por auditoría. No hay DELETE físico (default DENY).
 export async function eliminarConcepto(id: string): Promise<ActionResult<{ id: string }>> {
-  const supabase = await createClient()
-  const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
-  if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
-  const { data, error } = await supabase
-    .from('conceptos_cobro')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-    .is('deleted_at', null)
-    .select('id')
-    .maybeSingle()
+  try {
+    const supabase = await createClient()
+    const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
+    if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
+    const { data, error } = await supabase
+      .from('conceptos_cobro')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('deleted_at', null)
+      .select('id')
+      .maybeSingle()
 
-  if (error) {
-    logger.warn('eliminarConcepto error', error.message)
-    if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
-    return fail('conceptos_cobro.errors.delete_failed')
+    if (error) {
+      logger.warn('eliminarConcepto error', error.message)
+      if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
+      return fail('conceptos_cobro.errors.delete_failed')
+    }
+    if (!data) return fail('conceptos_cobro.errors.no_encontrado')
+
+    revalidatePath('/[locale]/admin/cuotas', 'page')
+    return ok({ id: data.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  if (!data) return fail('conceptos_cobro.errors.no_encontrado')
-
-  revalidatePath('/[locale]/admin/cuotas', 'page')
-  return ok({ id: data.id })
 }

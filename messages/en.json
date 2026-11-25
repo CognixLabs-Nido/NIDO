@@ -198,6 +198,11 @@
       "campo_label": "Profile photo (optional)",
       "campo_ayuda": "JPG or PNG, max 4 MB. You can add it later from your profile.",
       "opcional_fallo": "Couldn’t upload the photo; you can add it later from your profile."
+    },
+    "no_se_pudo_leer": {
+      "title": "Could not be read",
+      "description": "We could not check what you can access. Reload the page in a moment.",
+      "back_to_home": "Back to home"
     }
   },
   "legal": {

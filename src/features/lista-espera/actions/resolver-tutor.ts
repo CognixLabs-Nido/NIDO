@@ -9,6 +9,7 @@ import { resolverTutorPorEmail } from '../lib/resolver-tutor-email'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 import type { DeteccionTutor } from '../lib/deteccion-tutor'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 export interface VistaPreviaTutor {
   deteccion: DeteccionTutor
@@ -31,14 +32,19 @@ export async function resolverTutorParaProspecto(
   email: string,
   cursoId: string
 ): Promise<ActionResult<VistaPreviaTutor>> {
-  const supabase = await createClient()
-  // Centro del registro: el del curso del prospecto.
-  const centroId = await centroDelCurso(supabase, cursoId)
-  if (!centroId) return fail('listaEspera.errors.sin_centro')
-  if (!(await esAdminDelCentro(supabase, centroId))) return fail('auth.invitation.errors.forbidden')
+  try {
+    const supabase = await createClient()
+    // Centro del registro: el del curso del prospecto.
+    const centroId = await centroDelCurso(supabase, cursoId)
+    if (!centroId) return fail('listaEspera.errors.sin_centro')
+    if (!(await esAdminDelCentro(supabase, centroId)))
+      return fail('auth.invitation.errors.forbidden')
 
-  const resuelto = await resolverTutorPorEmail(createServiceRoleClient(), email, centroId)
-  if (!resuelto) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    const resuelto = await resolverTutorPorEmail(createServiceRoleClient(), email, centroId)
+    if (!resuelto) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
 
-  return ok({ deteccion: resuelto.deteccion, familiaEtiqueta: resuelto.familiaEtiqueta })
+    return ok({ deteccion: resuelto.deteccion, familiaEtiqueta: resuelto.familiaEtiqueta })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }

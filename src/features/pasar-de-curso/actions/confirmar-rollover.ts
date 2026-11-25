@@ -10,6 +10,7 @@ import { ninosSinResolver } from '../lib/proponer'
 import { getEstadoRolloverCore } from '../queries/get-estado-rollover'
 import { cursoDestinoSchema, type CursoDestinoInput } from '../schemas/rollover'
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * F11-H-2 + F-3-C-2: confirma el "pasar de curso".
@@ -31,38 +32,43 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  * sigue existiendo para su propio botón de "activar curso" (fuera del rollover).
  */
 export async function confirmarRollover(input: CursoDestinoInput): Promise<ActionResult<void>> {
-  const parsed = cursoDestinoSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'rollover.validation.invalid')
-  const cursoId = parsed.data.curso_destino_id
+  try {
+    const parsed = cursoDestinoSchema.safeParse(input)
+    if (!parsed.success)
+      return fail(parsed.error.issues[0]?.message ?? 'rollover.validation.invalid')
+    const cursoId = parsed.data.curso_destino_id
 
-  const supabase = await createClient()
+    const supabase = await createClient()
 
-  const estado = await getEstadoRolloverCore(supabase, cursoId)
-  if (!estado) return fail('rollover.errors.destino_no_encontrado')
-  // Cerrar el curso es de la admin del centro; preparar el siguiente es de Dirección.
-  if (!(await usuarioResponsableEn(supabase, estado.cursoDestino.centroId)))
-    return fail('rollover.errors.no_autorizado')
-  if (estado.cursoDestino.estado === 'activo') return ok(undefined) // ya confirmado (idempotente)
-  if (estado.cursoDestino.estado !== 'planificado')
-    return fail('rollover.errors.destino_no_planificado')
+    const estado = await getEstadoRolloverCore(supabase, cursoId)
+    if (!estado) return fail('rollover.errors.destino_no_encontrado')
+    // Cerrar el curso es de la admin del centro; preparar el siguiente es de Dirección.
+    if (!(await usuarioResponsableEn(supabase, estado.cursoDestino.centroId)))
+      return fail('rollover.errors.no_autorizado')
+    if (estado.cursoDestino.estado === 'activo') return ok(undefined) // ya confirmado (idempotente)
+    if (estado.cursoDestino.estado !== 'planificado')
+      return fail('rollover.errors.destino_no_planificado')
 
-  // 1) F-3-A — GATE DE COMPLETITUD (pre-chequeo, ANTES de la RPC).
-  const pendSet = new Set(estado.pendientes.map((p) => p.nino_id))
-  const finSet = new Set(estado.finalizados)
-  if (ninosSinResolver(estado.ninosActivos, pendSet, finSet).length > 0) {
-    return fail('rollover.errors.incompletos')
+    // 1) F-3-A — GATE DE COMPLETITUD (pre-chequeo, ANTES de la RPC).
+    const pendSet = new Set(estado.pendientes.map((p) => p.nino_id))
+    const finSet = new Set(estado.finalizados)
+    if (ninosSinResolver(estado.ninosActivos, pendSet, finSet).length > 0) {
+      return fail('rollover.errors.incompletos')
+    }
+
+    // 2) Cierre atómico completo (todo-o-nada) en la RPC.
+    const { error: cierreErr } = await supabase.rpc('cerrar_curso', {
+      p_curso_destino_id: cursoId,
+    })
+    if (cierreErr) {
+      logger.warn('confirmarRollover cerrar_curso', cierreErr.message)
+      return fail('rollover.errors.confirmar_fallo')
+    }
+
+    revalidatePath('/[locale]/admin/pasar-de-curso', 'page')
+    revalidatePath('/[locale]/admin/cursos', 'page')
+    return ok(undefined)
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  // 2) Cierre atómico completo (todo-o-nada) en la RPC.
-  const { error: cierreErr } = await supabase.rpc('cerrar_curso', {
-    p_curso_destino_id: cursoId,
-  })
-  if (cierreErr) {
-    logger.warn('confirmarRollover cerrar_curso', cierreErr.message)
-    return fail('rollover.errors.confirmar_fallo')
-  }
-
-  revalidatePath('/[locale]/admin/pasar-de-curso', 'page')
-  revalidatePath('/[locale]/admin/cursos', 'page')
-  return ok(undefined)
 }

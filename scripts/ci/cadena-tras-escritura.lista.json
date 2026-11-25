@@ -1,0 +1,20 @@
+{
+  "src/app/[locale]/alta/[ninoId]/dni/route.ts#POST": "Falso positivo: la «escritura» es fijar_dni_tutor contestando con el hint cola_validacion (no guardó); la lectura de después es la de la cola.",
+  "src/app/[locale]/alta/[ninoId]/justificante-gastos/route.ts#POST": "Falso positivo: declarar_gastos_gestion contestó alta_validada (no guardó); lo de después es la cola.",
+  "src/app/[locale]/alta/[ninoId]/libro-familia/route.ts#POST": "Fichero huérfano, la base no cambió: la subida se hizo y la autorización de después falla; la pantalla dice «no» con verdad. El fichero lo recoge el barrido de los 8 buckets (#549).",
+  "src/app/[locale]/alta/[ninoId]/mandato-sepa/route.ts#POST": "Falso positivo: la escritura está en la rama presencial, que devuelve antes de la lectura (orden de texto, no de flujo).",
+  "src/app/[locale]/alta/[ninoId]/tarjeta-sanitaria/route.ts#POST": "Falso positivo: fijar_sip_documento_nino contestó cola_validacion (no guardó); lo de después es la cola.",
+  "src/app/[locale]/recogida/dni/route.ts#POST": "Fichero huérfano, la base no cambió (la referencia la guarda la firma, después). Lo recoge el barrido de los 8 buckets (#549).",
+  "src/app/[locale]/usuarios/[id]/avatar/route.ts#POST": "Fichero huérfano, la base no cambió (la lectura de la foto anterior va antes del update de foto_url). Lo recoge el barrido de los 8 buckets (#549).",
+  "src/features/alta/actions/guardar-datos-tutor.ts#guardarDatosTutor": "Falso positivo: el checker resuelve la llamada al núcleo con el mismo nombre a la propia acción.",
+  "src/features/familias/actions/editar-perfil-tutor.ts#editarPerfilTutor": "Falso positivo: la llamada se resuelve a la propia acción (mismo nombre).",
+  "src/features/gastos-gestion/actions/declarar-gastos-gestion.ts#declararGastosGestion": "Falso positivo: la RPC contestó alta_validada (no guardó); lo de después es la cola.",
+  "src/features/lista-espera/actions/completar-direccion.ts#completarEnDireccion": "Tratado: el «no» de sendInvitation llega después de escribir y el llamador lo dice como lo que es, lo guardado sí y el correo no (altaInvitandoCuentaExistente → listaEspera.errors.alta_creada_sin_correo); no cuenta como fallido lo guardado.",
+  "src/features/lista-espera/actions/editar-prospecto.ts#editarProspecto": "Falso positivo: la llamada se resuelve a la propia acción (mismo nombre).",
+  "src/features/lista-espera/actions/invitar-al-alta.ts#invitarAlAlta": "Tratado: el «no» de sendInvitation llega después de escribir y el llamador lo dice como lo que es, lo guardado sí y el correo no (listaEspera.errors.alta_creada_sin_correo: «El alta está creada, pero el correo de invitación no ha salido… No vuelvas a dar el alta»); no cuenta como fallido lo guardado.",
+  "src/features/matriculas/actions/alta-sin-terminar.ts#reinvitarAlta": "Tratado: el «no» de sendInvitation llega después de escribir y el llamador lo dice como lo que es, lo guardado sí y el correo no (matricula.errors.alta_correo_no_salio: «El email está corregido, pero el correo de la invitación no ha salido»); no cuenta como fallido lo guardado.",
+  "src/features/matriculas/actions/invitacion-tutor2.ts#reenviarInvitacionTutor2": "Tratado: el «no» de sendInvitation llega después de escribir y el llamador lo dice como lo que es, lo guardado sí y el correo no (matricula.errors.tutor2_correo_no_salio: «La invitación está lista, pero el correo no ha salido»); no cuenta como fallido lo guardado.",
+  "src/features/menus/actions/batch-registrar-comidas-platos.ts#batchRegistrarComidasPlatos": "Falso positivo: lo «escrito» antes de la parada es la fila padre vacía de la agenda de los niños anteriores del bucle (asegurarAgenda); no se ve, las comidas no se guardan y el reintento la encuentra.",
+  "src/features/ninos/actions/actualizar-nino-tutor.ts#actualizarNinoTutor": "Falso positivo: el update es de la rama de Dirección, que devuelve antes de la lectura.",
+  "src/features/peticion-servicios/actions/guardar-peticion-servicios.ts#guardarPeticionServicios": "Falso positivo: aplicar_peticion_servicios es de la rama de Dirección, que devuelve antes."
+}

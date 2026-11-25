@@ -10,6 +10,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { errorDePlataforma } from '../lib/errores'
 import { crearCentroSchema, type CrearCentroInput } from '../schemas/crear-centro'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Crea un centro desde la plataforma (Fase 5, PR 2): el centro, su curso y la invitación de su
@@ -20,50 +21,54 @@ import { crearCentroSchema, type CrearCentroInput } from '../schemas/crear-centr
 export async function crearCentro(
   input: CrearCentroInput
 ): Promise<ActionResult<{ centroId: string; errorCorreo: string | null }>> {
-  const parsed = crearCentroSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'plataforma.errores.datos_invalidos')
-  }
-  const d = parsed.data
+  try {
+    const parsed = crearCentroSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'plataforma.errores.datos_invalidos')
+    }
+    const d = parsed.data
 
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .rpc('platform_crear_centro', {
-      p_nombre: d.nombre,
-      p_direccion: d.direccion,
-      p_telefono: d.telefono,
-      p_email_contacto: d.email_contacto,
-      p_idioma: d.idioma_default,
-      p_curso_nombre: d.curso_nombre,
-      p_curso_inicio: d.curso_inicio,
-      p_curso_fin: d.curso_fin,
-      p_email_admin: d.email_admin,
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .rpc('platform_crear_centro', {
+        p_nombre: d.nombre,
+        p_direccion: d.direccion,
+        p_telefono: d.telefono,
+        p_email_contacto: d.email_contacto,
+        p_idioma: d.idioma_default,
+        p_curso_nombre: d.curso_nombre,
+        p_curso_inicio: d.curso_inicio,
+        p_curso_fin: d.curso_fin,
+        p_email_admin: d.email_admin,
+      })
+      .single()
+    if (error || !data) {
+      if (error) logger.warn('crearCentro: platform_crear_centro falló', { code: error.code })
+      return fail(error ? errorDePlataforma(error) : 'plataforma.errores.fallo')
+    }
+    // `@/types/db`, NO_DEMOSTRABLES: los dos son variables de plpgsql y la base no demuestra que no sean
+    // NULL. Sin ellos no hay invitación que mandar.
+    const { centro_id: centroId, invitacion_id: invitacionId } = data
+    if (!centroId || !invitacionId) {
+      logger.error('crearCentro: platform_crear_centro sin centro o sin invitación', {
+        centro: !!centroId,
+        invitacion: !!invitacionId,
+      })
+      return fail('plataforma.errores.fallo')
+    }
+
+    const errorCorreo = await enviarCorreoInvitacion(createServiceRoleClient(), {
+      invitationId: invitacionId,
+      // El que guarda la invitación (la RPC lo pasa a minúsculas): el enlace es para ese email.
+      email: d.email_admin.toLowerCase(),
+      rolObjetivo: 'admin',
+      centroId,
+      idioma: d.idioma_default,
     })
-    .single()
-  if (error || !data) {
-    if (error) logger.warn('crearCentro: platform_crear_centro falló', { code: error.code })
-    return fail(error ? errorDePlataforma(error) : 'plataforma.errores.fallo')
-  }
-  // `@/types/db`, NO_DEMOSTRABLES: los dos son variables de plpgsql y la base no demuestra que no sean
-  // NULL. Sin ellos no hay invitación que mandar.
-  const { centro_id: centroId, invitacion_id: invitacionId } = data
-  if (!centroId || !invitacionId) {
-    logger.error('crearCentro: platform_crear_centro sin centro o sin invitación', {
-      centro: !!centroId,
-      invitacion: !!invitacionId,
-    })
-    return fail('plataforma.errores.fallo')
-  }
 
-  const errorCorreo = await enviarCorreoInvitacion(createServiceRoleClient(), {
-    invitationId: invitacionId,
-    // El que guarda la invitación (la RPC lo pasa a minúsculas): el enlace es para ese email.
-    email: d.email_admin.toLowerCase(),
-    rolObjetivo: 'admin',
-    centroId,
-    idioma: d.idioma_default,
-  })
-
-  revalidatePath('/[locale]/plataforma', 'page')
-  return ok({ centroId, errorCorreo })
+    revalidatePath('/[locale]/plataforma', 'page')
+    return ok({ centroId, errorCorreo })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }

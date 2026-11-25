@@ -16,6 +16,7 @@ import {
 } from '../lib/ficha-firmada'
 import { fichaLegible, type SeccionLegible } from '../lib/ficha-legible'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const ninoIdSchema = z.string().uuid()
 
@@ -64,16 +65,20 @@ export type FirmarFichaResult =
 
 /** Firma la ficha (el tutor legal, con el dedo). Con el alta pendiente, firmar es finalizar. */
 export async function firmarFicha(input: unknown): Promise<FirmarFichaResult> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'alta.firma.errors.no_autorizado' }
-  const r = await firmarFichaNino(supabase, user.id, input, await getRequestContext())
-  if (!r.ok) return { success: false, error: r.error, faltan: r.faltan }
-  revalidatePath('/[locale]/alta/[ninoId]', 'page')
-  revalidatePath('/[locale]/family/nino/[id]', 'page')
-  return { success: true, data: r.data }
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'alta.firma.errors.no_autorizado' }
+    const r = await firmarFichaNino(supabase, user.id, input, await getRequestContext())
+    if (!r.ok) return { success: false, error: r.error, faltan: r.faltan }
+    revalidatePath('/[locale]/alta/[ninoId]', 'page')
+    revalidatePath('/[locale]/family/nino/[id]', 'page')
+    return { success: true, data: r.data }
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /**
@@ -81,16 +86,25 @@ export async function firmarFicha(input: unknown): Promise<FirmarFichaResult> {
  * nombre. Con el alta pendiente, registrarla es finalizar.
  */
 export async function registrarFirmaPresencial(input: unknown): Promise<FirmarFichaResult> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'alta.firma.errors.no_autorizado' }
-  const r = await registrarFirmaPresencialFicha(supabase, user.id, input, await getRequestContext())
-  if (!r.ok) return { success: false, error: r.error, faltan: r.faltan }
-  revalidatePath('/[locale]/alta/[ninoId]', 'page')
-  revalidatePath('/[locale]/admin/ninos/[id]', 'page')
-  return { success: true, data: r.data }
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'alta.firma.errors.no_autorizado' }
+    const r = await registrarFirmaPresencialFicha(
+      supabase,
+      user.id,
+      input,
+      await getRequestContext()
+    )
+    if (!r.ok) return { success: false, error: r.error, faltan: r.faltan }
+    revalidatePath('/[locale]/alta/[ninoId]', 'page')
+    revalidatePath('/[locale]/admin/ninos/[id]', 'page')
+    return { success: true, data: r.data }
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /**

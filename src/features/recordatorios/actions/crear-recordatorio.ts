@@ -18,6 +18,7 @@ import {
   type CrearRecordatorioParsed,
 } from '../schemas/recordatorios'
 import { fail, ok, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Crea un recordatorio granular (F6-C). El `centro_id` se resuelve server-side
@@ -34,21 +35,25 @@ import { fail, ok, type ActionResult } from '../types'
 export async function crearRecordatorio(
   input: CrearRecordatorioInput
 ): Promise<ActionResult<{ recordatorio_id: string }>> {
-  const parsed = crearRecordatorioSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'recordatorios.errors.creacion_fallo')
-  }
+  try {
+    const parsed = crearRecordatorioSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'recordatorios.errors.creacion_fallo')
+    }
 
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  const userId = userData.user?.id
-  if (!userId) return fail('recordatorios.errors.no_autorizado')
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+    const userId = userData.user?.id
+    if (!userId) return fail('recordatorios.errors.no_autorizado')
 
-  const result = await crearRecordatorioCore(supabase, userId, parsed.data)
-  if (result.success) {
-    revalidatePath('/[locale]/reminders', 'layout')
+    const result = await crearRecordatorioCore(supabase, userId, parsed.data)
+    if (result.success) {
+      revalidatePath('/[locale]/reminders', 'layout')
+    }
+    return result
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  return result
 }
 
 /**
@@ -61,78 +66,82 @@ export async function crearRecordatorioCore(
   userId: string,
   data: CrearRecordatorioInput
 ): Promise<ActionResult<{ recordatorio_id: string }>> {
-  // Re-parseamos para garantizar defaults/cross-field aunque el caller invoque
-  // el core directamente (los tests pasan datos ya válidos).
-  const reparsed = crearRecordatorioSchema.safeParse(data)
-  if (!reparsed.success) {
-    return fail(reparsed.error.issues[0]?.message ?? 'recordatorios.errors.creacion_fallo')
-  }
-  const d = reparsed.data
-
-  // 1. Resolver centro_id según destino.
-  const centroResult = await resolverCentroId(supabase, userId, d)
-  if (!centroResult.success) return centroResult
-  const centroId = centroResult.data
-
-  // 2. INSERT. RLS WITH CHECK autoriza según destino. `creado_por` y, en
-  //    personal, `usuario_destinatario_id` se fijan al propio usuario.
-  const { data: creado, error: insErr } = await supabase
-    .from('recordatorios')
-    .insert({
-      centro_id: centroId,
-      destinatario: d.destinatario,
-      nino_id: d.destinatario === 'familia_individual' ? d.nino_id! : null,
-      aula_id: d.destinatario === 'familias_aula' ? d.aula_id! : null,
-      usuario_destinatario_id:
-        d.destinatario === 'personal'
-          ? userId
-          : d.destinatario === 'profe_individual'
-            ? d.usuario_destinatario_id!
-            : null,
-      creado_por: userId,
-      titulo: d.titulo,
-      descripcion: d.descripcion ?? null,
-      vencimiento: d.vencimiento ?? null,
-    })
-    .select('id')
-    .single()
-
-  if (insErr || !creado) {
-    logger.warn('crearRecordatorio: insert', insErr?.message)
-    if (insErr?.code === '42501') return fail('recordatorios.errors.no_autorizado')
-    return fail('recordatorios.errors.creacion_fallo')
-  }
-
-  // 3. Push inmediato best-effort (no `personal`). Esperamos la promesa para
-  //    que la lambda de Vercel no termine antes de que `web-push` complete.
   try {
-    const destinatarios = await expandirDestinatariosRecordatorio(
-      {
-        destinatario: d.destinatario,
+    // Re-parseamos para garantizar defaults/cross-field aunque el caller invoque
+    // el core directamente (los tests pasan datos ya válidos).
+    const reparsed = crearRecordatorioSchema.safeParse(data)
+    if (!reparsed.success) {
+      return fail(reparsed.error.issues[0]?.message ?? 'recordatorios.errors.creacion_fallo')
+    }
+    const d = reparsed.data
+
+    // 1. Resolver centro_id según destino.
+    const centroResult = await resolverCentroId(supabase, userId, d)
+    if (!centroResult.success) return centroResult
+    const centroId = centroResult.data
+
+    // 2. INSERT. RLS WITH CHECK autoriza según destino. `creado_por` y, en
+    //    personal, `usuario_destinatario_id` se fijan al propio usuario.
+    const { data: creado, error: insErr } = await supabase
+      .from('recordatorios')
+      .insert({
         centro_id: centroId,
+        destinatario: d.destinatario,
         nino_id: d.destinatario === 'familia_individual' ? d.nino_id! : null,
         aula_id: d.destinatario === 'familias_aula' ? d.aula_id! : null,
         usuario_destinatario_id:
-          d.destinatario === 'profe_individual' ? d.usuario_destinatario_id! : null,
-      },
-      userId
-    )
-    if (destinatarios.length > 0) {
-      const autor = await getAutorPushInfo(userId)
-      const cuerpo = d.titulo.length > 100 ? d.titulo.slice(0, 99) + '…' : d.titulo
-      // En el idioma de cada destinatario: el enlace abre su página en su idioma.
-      await enviarPushPorIdioma(destinatarios, (idioma) => ({
-        titulo: autor.nombre,
-        cuerpo,
-        url: `/${idioma}/reminders`,
-        datos: { tipo: 'recordatorio', recordatorio_id: creado.id },
-      }))
-    }
-  } catch (err) {
-    console.error('[crearRecordatorio] push notifications falló:', err)
-  }
+          d.destinatario === 'personal'
+            ? userId
+            : d.destinatario === 'profe_individual'
+              ? d.usuario_destinatario_id!
+              : null,
+        creado_por: userId,
+        titulo: d.titulo,
+        descripcion: d.descripcion ?? null,
+        vencimiento: d.vencimiento ?? null,
+      })
+      .select('id')
+      .single()
 
-  return ok({ recordatorio_id: creado.id })
+    if (insErr || !creado) {
+      logger.warn('crearRecordatorio: insert', insErr?.message)
+      if (insErr?.code === '42501') return fail('recordatorios.errors.no_autorizado')
+      return fail('recordatorios.errors.creacion_fallo')
+    }
+
+    // 3. Push inmediato best-effort (no `personal`). Esperamos la promesa para
+    //    que la lambda de Vercel no termine antes de que `web-push` complete.
+    try {
+      const destinatarios = await expandirDestinatariosRecordatorio(
+        {
+          destinatario: d.destinatario,
+          centro_id: centroId,
+          nino_id: d.destinatario === 'familia_individual' ? d.nino_id! : null,
+          aula_id: d.destinatario === 'familias_aula' ? d.aula_id! : null,
+          usuario_destinatario_id:
+            d.destinatario === 'profe_individual' ? d.usuario_destinatario_id! : null,
+        },
+        userId
+      )
+      if (destinatarios.length > 0) {
+        const autor = await getAutorPushInfo(userId)
+        const cuerpo = d.titulo.length > 100 ? d.titulo.slice(0, 99) + '…' : d.titulo
+        // En el idioma de cada destinatario: el enlace abre su página en su idioma.
+        await enviarPushPorIdioma(destinatarios, (idioma) => ({
+          titulo: autor.nombre,
+          cuerpo,
+          url: `/${idioma}/reminders`,
+          datos: { tipo: 'recordatorio', recordatorio_id: creado.id },
+        }))
+      }
+    } catch (err) {
+      console.error('[crearRecordatorio] push notifications falló:', err)
+    }
+
+    return ok({ recordatorio_id: creado.id })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /**

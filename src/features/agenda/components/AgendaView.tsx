@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { localeIntl } from '@/shared/lib/locale-intl'
@@ -45,6 +46,7 @@ export function AgendaView({
   profes,
 }: Props) {
   const t = useTranslations('citas')
+  const tRaiz = useTranslations()
   const router = useRouter()
   const pathname = usePathname()
   const esStaff = rol === 'admin' || rol === 'profe'
@@ -75,9 +77,13 @@ export function AgendaView({
 
   function abrirDetalle(citaId: string) {
     startTransition(async () => {
-      const d = await getCitaDetalleAction(citaId)
-      if (!d) return
-      setDetalle(d)
+      const r = await getCitaDetalleAction(citaId)
+      if (!r.success) {
+        toast.error(tRaiz(r.error))
+        return
+      }
+      if (!r.data) return
+      setDetalle(r.data)
       setDetalleOpen(true)
     })
   }
@@ -87,8 +93,12 @@ export function AgendaView({
     if (!detalle) return
     const id = detalle.cita.id
     startTransition(async () => {
-      const d = await getCitaDetalleAction(id)
-      setDetalle(d)
+      const r = await getCitaDetalleAction(id)
+      if (!r.success) {
+        toast.error(tRaiz(r.error))
+        return
+      }
+      setDetalle(r.data)
       router.refresh()
     })
   }

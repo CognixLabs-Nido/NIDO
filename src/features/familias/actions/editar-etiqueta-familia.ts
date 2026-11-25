@@ -11,6 +11,7 @@ import {
   type EditarEtiquetaFamiliaInput,
 } from '../schemas/editar-familia'
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * F-6a — Dirección edita la etiqueta de una familia. UPDATE directo (la RLS `familias_update`
@@ -20,42 +21,46 @@ import { fail, ok, type ActionResult } from '../../centros/types'
 export async function editarEtiquetaFamilia(
   input: EditarEtiquetaFamiliaInput
 ): Promise<ActionResult<{ id: string }>> {
-  const parsed = editarEtiquetaFamiliaSchema.safeParse(input)
-  if (!parsed.success)
-    return fail(parsed.error.issues[0]?.message ?? 'admin.familias.validation.invalid')
+  try {
+    const parsed = editarEtiquetaFamiliaSchema.safeParse(input)
+    if (!parsed.success)
+      return fail(parsed.error.issues[0]?.message ?? 'admin.familias.validation.invalid')
 
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS solo deja leer a
-  // Dirección las familias de sus centros.
-  const { data: familia, error: errorLectura } = await supabase
-    .from('familias')
-    .select('centro_id')
-    .eq('id', parsed.data.familia_id)
-    .maybeSingle()
-  if (errorLectura) return fail('common.lectura_fallida')
-  if (!familia) return fail('admin.familias.errors.no_encontrada')
-  if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
-    return fail('auth.invitation.errors.forbidden')
+    // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS solo deja leer a
+    // Dirección las familias de sus centros.
+    const { data: familia, error: errorLectura } = await supabase
+      .from('familias')
+      .select('centro_id')
+      .eq('id', parsed.data.familia_id)
+      .maybeSingle()
+    if (errorLectura) return fail('common.lectura_fallida')
+    if (!familia) return fail('admin.familias.errors.no_encontrada')
+    if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
+      return fail('auth.invitation.errors.forbidden')
 
-  const { data, error } = await supabase
-    .from('familias')
-    .update({ etiqueta: parsed.data.etiqueta })
-    .eq('id', parsed.data.familia_id)
-    .select('id')
-    .maybeSingle()
+    const { data, error } = await supabase
+      .from('familias')
+      .update({ etiqueta: parsed.data.etiqueta })
+      .eq('id', parsed.data.familia_id)
+      .select('id')
+      .maybeSingle()
 
-  if (error) {
-    logger.warn('editarEtiquetaFamilia', error.message)
-    if (error.code === '42501') return fail('admin.familias.errors.no_autorizado')
-    return fail('admin.familias.errors.guardado')
+    if (error) {
+      logger.warn('editarEtiquetaFamilia', error.message)
+      if (error.code === '42501') return fail('admin.familias.errors.no_autorizado')
+      return fail('admin.familias.errors.guardado')
+    }
+    // RLS USING falso (familia de otro centro) → 0 filas, sin error.
+    if (!data) return fail('admin.familias.errors.no_encontrada')
+
+    revalidatePath('/[locale]/admin/familias', 'page')
+    revalidatePath('/[locale]/admin/familias/[id]', 'page')
+    return ok({ id: data.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  // RLS USING falso (familia de otro centro) → 0 filas, sin error.
-  if (!data) return fail('admin.familias.errors.no_encontrada')
-
-  revalidatePath('/[locale]/admin/familias', 'page')
-  revalidatePath('/[locale]/admin/familias/[id]', 'page')
-  return ok({ id: data.id })
 }

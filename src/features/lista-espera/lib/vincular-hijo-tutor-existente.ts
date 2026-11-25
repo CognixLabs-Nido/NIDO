@@ -8,6 +8,7 @@ import { resolverParentesco, type Parentesco } from '@/features/familias/lib/res
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 import type { Database, Json } from '@/types/db'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
@@ -149,7 +150,9 @@ export async function vincularHijoATutorExistente(
       .select('idioma_preferido')
       .eq('id', params.tutorUsuarioId)
       .maybeSingle()
-    if (errorLectura2) throw new LecturaFallida('vincularHijoATutorExistente', errorLectura2)
+    // El alta ya está hecha (censo C, 2026-11-25): sin el idioma del tutor, el push sale en el de la
+    // página, como antes. Lanzar aquí lo recogía el catch y el push no salía.
+    if (errorLectura2) lecturaFallidaTrasEscritura('vincularHijo: idioma del push', errorLectura2)
     const idioma = perfilUsuario?.idioma_preferido ?? params.locale
     const tPush = await getTranslations({
       locale: idioma,

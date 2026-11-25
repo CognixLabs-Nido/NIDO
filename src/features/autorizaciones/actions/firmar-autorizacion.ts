@@ -30,6 +30,7 @@ import {
   type MedicacionDatos,
   type PersonaAutorizada,
 } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /** Compara nombres de forma laxa: minúsculas, sin acentos, espacios colapsados. */
 function normalizarNombre(s: string): string {
@@ -210,52 +211,59 @@ async function registrarDecision(
 export async function firmarAutorizacion(
   input: FirmarAutorizacionInput
 ): Promise<ActionResult<{ firma_id: string }>> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('autorizaciones.errors.no_autorizado')
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('autorizaciones.errors.no_autorizado')
 
-  const parsed = firmarAutorizacionSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+    const parsed = firmarAutorizacionSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+    }
+    const d = parsed.data
+
+    // El nombre tecleado debe coincidir con el del perfil (acto afirmativo explícito).
+    const { data: perfil } = await supabase
+      .from('usuarios')
+      .select('nombre_completo')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (
+      !perfil ||
+      normalizarNombre(perfil.nombre_completo) !== normalizarNombre(d.nombre_tecleado)
+    ) {
+      return fail('autorizaciones.errors.nombre_no_coincide')
+    }
+
+    return registrarDecision(supabase, user.id, {
+      autorizacion_id: d.autorizacion_id,
+      nino_id: d.nino_id,
+      decision: 'firmado',
+      nombre_tecleado: d.nombre_tecleado.trim(),
+      firma_imagen: d.firma_imagen,
+      comentario: d.comentario ?? null,
+      personas: d.personas?.map((p) => ({
+        nombre: p.nombre.trim(),
+        dni: p.dni.trim(),
+        ...(p.parentesco?.trim() ? { parentesco: p.parentesco.trim() } : {}),
+      })),
+      adjuntos: d.adjuntos,
+      medicacion: d.medicacion
+        ? {
+            medicamento: d.medicacion.medicamento.trim(),
+            dosis: d.medicacion.dosis.trim(),
+            ...(d.medicacion.via?.trim() ? { via: d.medicacion.via.trim() } : {}),
+            pauta: d.medicacion.pauta.trim(),
+            fecha_inicio: d.medicacion.fecha_inicio,
+            fecha_fin: d.medicacion.fecha_fin,
+          }
+        : undefined,
+    })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const d = parsed.data
-
-  // El nombre tecleado debe coincidir con el del perfil (acto afirmativo explícito).
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('nombre_completo')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!perfil || normalizarNombre(perfil.nombre_completo) !== normalizarNombre(d.nombre_tecleado)) {
-    return fail('autorizaciones.errors.nombre_no_coincide')
-  }
-
-  return registrarDecision(supabase, user.id, {
-    autorizacion_id: d.autorizacion_id,
-    nino_id: d.nino_id,
-    decision: 'firmado',
-    nombre_tecleado: d.nombre_tecleado.trim(),
-    firma_imagen: d.firma_imagen,
-    comentario: d.comentario ?? null,
-    personas: d.personas?.map((p) => ({
-      nombre: p.nombre.trim(),
-      dni: p.dni.trim(),
-      ...(p.parentesco?.trim() ? { parentesco: p.parentesco.trim() } : {}),
-    })),
-    adjuntos: d.adjuntos,
-    medicacion: d.medicacion
-      ? {
-          medicamento: d.medicacion.medicamento.trim(),
-          dosis: d.medicacion.dosis.trim(),
-          ...(d.medicacion.via?.trim() ? { via: d.medicacion.via.trim() } : {}),
-          pauta: d.medicacion.pauta.trim(),
-          fecha_inicio: d.medicacion.fecha_inicio,
-          fecha_fin: d.medicacion.fecha_fin,
-        }
-      : undefined,
-  })
 }
 
 /**
@@ -265,33 +273,37 @@ export async function firmarAutorizacion(
 export async function rechazarAutorizacion(
   input: RechazarAutorizacionInput
 ): Promise<ActionResult<{ firma_id: string }>> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('autorizaciones.errors.no_autorizado')
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('autorizaciones.errors.no_autorizado')
 
-  const parsed = rechazarAutorizacionSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+    const parsed = rechazarAutorizacionSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+    }
+    const d = parsed.data
+
+    const { data: perfil } = await supabase
+      .from('usuarios')
+      .select('nombre_completo')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!perfil) return fail('autorizaciones.errors.no_autorizado')
+
+    return registrarDecision(supabase, user.id, {
+      autorizacion_id: d.autorizacion_id,
+      nino_id: d.nino_id,
+      decision: 'rechazado',
+      nombre_tecleado: perfil.nombre_completo,
+      firma_imagen: null,
+      comentario: d.comentario ?? null,
+    })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const d = parsed.data
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('nombre_completo')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!perfil) return fail('autorizaciones.errors.no_autorizado')
-
-  return registrarDecision(supabase, user.id, {
-    autorizacion_id: d.autorizacion_id,
-    nino_id: d.nino_id,
-    decision: 'rechazado',
-    nombre_tecleado: perfil.nombre_completo,
-    firma_imagen: null,
-    comentario: d.comentario ?? null,
-  })
 }
 
 /**
@@ -309,44 +321,48 @@ export async function rechazarAutorizacion(
 export async function revocarFirma(
   input: RevocarFirmaInput
 ): Promise<ActionResult<{ firma_id: string }>> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('autorizaciones.errors.no_autorizado')
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('autorizaciones.errors.no_autorizado')
 
-  const parsed = revocarFirmaSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+    const parsed = revocarFirmaSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+    }
+    const d = parsed.data
+
+    // Solo recogida/medicación/imágenes admiten revocación self-service (F11-A3).
+    const { data: aut } = await supabase
+      .from('autorizaciones')
+      .select('tipo')
+      .eq('id', d.autorizacion_id)
+      .maybeSingle()
+    if (
+      !aut ||
+      (aut.tipo !== 'recogida' && aut.tipo !== 'medicacion' && aut.tipo !== 'autorizacion_imagenes')
+    ) {
+      return fail('autorizaciones.errors.revocar_no_permitido')
+    }
+
+    const { data: perfil } = await supabase
+      .from('usuarios')
+      .select('nombre_completo')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!perfil) return fail('autorizaciones.errors.no_autorizado')
+
+    return registrarDecision(supabase, user.id, {
+      autorizacion_id: d.autorizacion_id,
+      nino_id: d.nino_id,
+      decision: 'revocado',
+      nombre_tecleado: perfil.nombre_completo,
+      firma_imagen: null,
+      comentario: d.comentario ?? null,
+    })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const d = parsed.data
-
-  // Solo recogida/medicación/imágenes admiten revocación self-service (F11-A3).
-  const { data: aut } = await supabase
-    .from('autorizaciones')
-    .select('tipo')
-    .eq('id', d.autorizacion_id)
-    .maybeSingle()
-  if (
-    !aut ||
-    (aut.tipo !== 'recogida' && aut.tipo !== 'medicacion' && aut.tipo !== 'autorizacion_imagenes')
-  ) {
-    return fail('autorizaciones.errors.revocar_no_permitido')
-  }
-
-  const { data: perfil } = await supabase
-    .from('usuarios')
-    .select('nombre_completo')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!perfil) return fail('autorizaciones.errors.no_autorizado')
-
-  return registrarDecision(supabase, user.id, {
-    autorizacion_id: d.autorizacion_id,
-    nino_id: d.nino_id,
-    decision: 'revocado',
-    nombre_tecleado: perfil.nombre_completo,
-    firma_imagen: null,
-    comentario: d.comentario ?? null,
-  })
 }

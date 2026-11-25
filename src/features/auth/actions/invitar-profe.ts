@@ -16,6 +16,7 @@ import {
 
 import { sendInvitation } from './send-invitation'
 import { fail, ok, type ActionResult } from './types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Onboarding de profesor (F11-C-1) — la dirección invita a un profe nuevo
@@ -34,17 +35,21 @@ export async function invitarProfe(
   input: InvitarProfeInput,
   locale: string = 'es'
 ): Promise<ActionResult<{ invitationId: string }>> {
-  const admin = await centrosAdminDelLlamador()
-  if (!admin.success) return fail(admin.error)
+  try {
+    const admin = await centrosAdminDelLlamador()
+    if (!admin.success) return fail(admin.error)
 
-  const service = createServiceRoleClient()
-  const r = await invitarProfeCore(
-    { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
-    input,
-    locale
-  )
-  if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
-  return r
+    const service = createServiceRoleClient()
+    const r = await invitarProfeCore(
+      { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
+      input,
+      locale
+    )
+    if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
+    return r
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /**
@@ -154,15 +159,19 @@ export async function reenviarInvitacionProfe(
   invitationId: string,
   locale: string = 'es'
 ): Promise<ActionResult<void>> {
-  const admin = await centrosAdminDelLlamador()
-  if (!admin.success) return fail(admin.error)
+  try {
+    const admin = await centrosAdminDelLlamador()
+    if (!admin.success) return fail(admin.error)
 
-  const service = createServiceRoleClient()
-  return reenviarInvitacionProfeCore(
-    { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
-    invitationId,
-    locale
-  )
+    const service = createServiceRoleClient()
+    return reenviarInvitacionProfeCore(
+      { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
+      invitationId,
+      locale
+    )
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /** Núcleo testeable del reenvío (cliente/colaboradores/centros admin inyectables). */
@@ -209,13 +218,17 @@ export async function reenviarInvitacionProfeCore(
  * dedup de sendInvitation no la reutiliza (un re-invite crea fila nueva).
  */
 export async function revocarInvitacionProfe(invitationId: string): Promise<ActionResult<void>> {
-  const admin = await centrosAdminDelLlamador()
-  if (!admin.success) return fail(admin.error)
+  try {
+    const admin = await centrosAdminDelLlamador()
+    if (!admin.success) return fail(admin.error)
 
-  const service = createServiceRoleClient()
-  const r = await revocarInvitacionProfeCore(service, invitationId, admin.data)
-  if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
-  return r
+    const service = createServiceRoleClient()
+    const r = await revocarInvitacionProfeCore(service, invitationId, admin.data)
+    if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
+    return r
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /** Núcleo testeable de la revocación (cliente + centros admin de quien llama inyectables). */

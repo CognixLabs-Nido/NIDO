@@ -20,6 +20,7 @@ import {
   type EliminarPublicacionInput,
 } from '../schemas/publicaciones'
 import { fail, ok, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 function revalidarFotos(): void {
   revalidatePath('/[locale]/teacher/aula/[id]/fotos', 'page')
@@ -36,40 +37,44 @@ function revalidarFotos(): void {
 export async function crearPublicacion(
   input: CrearPublicacionInput
 ): Promise<ActionResult<{ publicacion_id: string }>> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('fotos.errors.no_autorizado')
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('fotos.errors.no_autorizado')
 
-  const parsed = crearPublicacionSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'fotos.errors.creacion_fallo')
+    const parsed = crearPublicacionSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'fotos.errors.creacion_fallo')
+    }
+    const { aula_id, texto } = parsed.data
+
+    const aula = await getAulaById(aula_id)
+    if (!aula) return fail('fotos.errors.aula_no_encontrada')
+
+    const { data: creada, error } = await supabase
+      .from('publicaciones')
+      .insert({
+        centro_id: aula.centro_id,
+        aula_id,
+        autor_id: user.id,
+        texto: texto && texto.length > 0 ? texto : null,
+      })
+      .select('id')
+      .maybeSingle()
+
+    if (error || !creada) {
+      logger.warn('crearPublicacion: insert', error?.message)
+      if (error?.code === '42501') return fail('fotos.errors.no_autorizado')
+      return fail('fotos.errors.creacion_fallo')
+    }
+
+    revalidarFotos()
+    return ok({ publicacion_id: creada.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const { aula_id, texto } = parsed.data
-
-  const aula = await getAulaById(aula_id)
-  if (!aula) return fail('fotos.errors.aula_no_encontrada')
-
-  const { data: creada, error } = await supabase
-    .from('publicaciones')
-    .insert({
-      centro_id: aula.centro_id,
-      aula_id,
-      autor_id: user.id,
-      texto: texto && texto.length > 0 ? texto : null,
-    })
-    .select('id')
-    .maybeSingle()
-
-  if (error || !creada) {
-    logger.warn('crearPublicacion: insert', error?.message)
-    if (error?.code === '42501') return fail('fotos.errors.no_autorizado')
-    return fail('fotos.errors.creacion_fallo')
-  }
-
-  revalidarFotos()
-  return ok({ publicacion_id: creada.id })
 }
 
 /**

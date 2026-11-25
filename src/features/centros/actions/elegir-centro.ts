@@ -10,6 +10,7 @@ import { logger } from '@/shared/lib/logger'
 import { COOKIE_CENTRO_ACTIVO, OPCIONES_COOKIE_CENTRO_ACTIVO } from '../contexto/cookie'
 import { contextoEnCentro } from '../contexto/get-contexto-centro'
 import { rutaDeVuelta } from '../contexto/ruta-de-vuelta'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const EntradaSchema = z.object({
   centroId: z.string().uuid(),
@@ -34,27 +35,31 @@ export async function elegirCentro(entrada: {
   locale: string
   returnTo?: string | null
 }): Promise<ResultadoElegirCentro> {
-  const parsed = EntradaSchema.safeParse(entrada)
-  if (!parsed.success) return { success: false, error: 'centros.elegir.errors.invalido' }
+  try {
+    const parsed = EntradaSchema.safeParse(entrada)
+    if (!parsed.success) return { success: false, error: 'centros.elegir.errors.invalido' }
 
-  const contexto = await contextoEnCentro(parsed.data.centroId)
-  if (!contexto) return { success: false, error: 'centros.elegir.errors.no_es_tuyo' }
+    const contexto = await contextoEnCentro(parsed.data.centroId)
+    if (!contexto) return { success: false, error: 'centros.elegir.errors.no_es_tuyo' }
 
-  if (contexto.esSuperusuario) {
-    const supabase = await createClient()
-    const { error } = await supabase.rpc('registrar_entrada_superusuario', {
-      p_centro_id: contexto.centroId,
-    })
-    if (error) {
-      logger.warn('elegirCentro: no se pudo registrar la entrada del superusuario', {
-        code: error.code,
+    if (contexto.esSuperusuario) {
+      const supabase = await createClient()
+      const { error } = await supabase.rpc('registrar_entrada_superusuario', {
+        p_centro_id: contexto.centroId,
       })
-      return { success: false, error: 'centros.elegir.errors.entrada_no_registrada' }
+      if (error) {
+        logger.warn('elegirCentro: no se pudo registrar la entrada del superusuario', {
+          code: error.code,
+        })
+        return { success: false, error: 'centros.elegir.errors.entrada_no_registrada' }
+      }
     }
+    // La del superusuario, de sesión (sin maxAge).
+    const { maxAge, ...deSesion } = OPCIONES_COOKIE_CENTRO_ACTIVO
+    const opciones = contexto.esSuperusuario ? deSesion : { ...deSesion, maxAge }
+    ;(await cookies()).set(COOKIE_CENTRO_ACTIVO, contexto.centroId, opciones)
+    redirect(rutaDeVuelta(parsed.data.locale, parsed.data.returnTo))
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  // La del superusuario, de sesión (sin maxAge).
-  const { maxAge, ...deSesion } = OPCIONES_COOKIE_CENTRO_ACTIVO
-  const opciones = contexto.esSuperusuario ? deSesion : { ...deSesion, maxAge }
-  ;(await cookies()).set(COOKIE_CENTRO_ACTIVO, contexto.centroId, opciones)
-  redirect(rutaDeVuelta(parsed.data.locale, parsed.data.returnTo))
 }

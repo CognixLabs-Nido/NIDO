@@ -6,6 +6,7 @@ import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { idiomaCorreoEnum, type IdiomaCorreo } from '@/features/auth/schemas/invitation'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 import type { Database } from '@/types/db'
 import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
@@ -121,7 +122,12 @@ export async function idiomaDelTitular(
     .select('idioma_preferido')
     .eq('id', principal.usuario_id)
     .maybeSingle()
-  if (error) throw new LecturaFallida('idiomaDelTitular', error)
+  // Se lee después de escribir (validar el alta, o cancelar las invitaciones anteriores al reenviar):
+  // sin el idioma, castellano, como dice este contrato, y el fallo a Sentry (censo C, 2026-11-25).
+  if (error) {
+    lecturaFallidaTrasEscritura('idiomaDelTitular', error)
+    return 'es'
+  }
   const leido = idiomaCorreoEnum.safeParse(perfil?.idioma_preferido)
   return leido.success ? leido.data : 'es'
 }

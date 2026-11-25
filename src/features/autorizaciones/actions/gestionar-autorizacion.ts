@@ -25,6 +25,7 @@ import {
   type PublicarAutorizacionInput,
 } from '../schemas/autorizaciones'
 import { fail, ok, TIPOS_PLANTILLA_DE_LA_ADMIN, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 // Tipos A (la directora ENVÍA a una audiencia). recogida/medicación = tipos B
 // (los inicia la familia) → no son enviables desde aquí. Las normas de régimen interno lo eran hasta
@@ -105,77 +106,83 @@ export async function crearAutorizacionSalida(
 export async function crearAutorizacionExcursion(
   input: CrearAutorizacionExcursionInput
 ): Promise<ActionResult<{ autorizacion_id: string }>> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('autorizaciones.errors.no_autorizado')
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('autorizaciones.errors.no_autorizado')
 
-  const parsed = crearAutorizacionExcursionSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.creacion_fallo')
+    const parsed = crearAutorizacionExcursionSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.creacion_fallo')
+    }
+    const { titulo, texto, borrador, evento_id, nuevo_evento } = parsed.data
+
+    let eventoId = evento_id ?? null
+    if (nuevo_evento) {
+      // Crea el evento de excursión para EL AULA que va (ambito='aula') en el mismo
+      // flujo: su audiencia (familias del aula) recibirá la salida. crearEventoCore
+      // resuelve centro_id server-side y aplica la RLS de eventos.
+      const evRes = await crearEventoCore(supabase, user.id, {
+        ambito: 'aula',
+        aula_id: nuevo_evento.aula_id,
+        tipo: 'excursion',
+        titulo: nuevo_evento.titulo,
+        fecha: nuevo_evento.fecha,
+        requiere_confirmacion: false,
+      })
+      if (!evRes.success) return fail(evRes.error)
+      eventoId = evRes.data.evento_id
+    }
+    if (!eventoId) return fail('autorizaciones.errors.creacion_fallo')
+
+    // centro_id desde el evento (red de seguridad; el trigger BD lo deriva igual).
+    const { data: evento, error: evErr } = await supabase
+      .from('eventos')
+      .select('id, centro_id')
+      .eq('id', eventoId)
+      .maybeSingle()
+    if (evErr) {
+      logger.warn('crearAutorizacionExcursion: eventos.select', evErr.message)
+      return fail('autorizaciones.errors.creacion_fallo')
+    }
+    if (!evento) return fail('autorizaciones.errors.evento_no_encontrado')
+
+    // Publica en un paso con el texto a medida (o borrador si lo pide). La versión se
+    // ata al hash del texto definitivo (igual que editarTextoAutorizacion).
+    const publica = !borrador
+    const { data: creada, error: insErr } = await supabase
+      .from('autorizaciones')
+      .insert({
+        centro_id: evento.centro_id,
+        tipo: 'salida',
+        evento_id: evento.id,
+        titulo,
+        texto,
+        texto_version: publica
+          ? `def-${hashTextoAutorizacion(texto).slice(0, 12)}`
+          : 'v0-pendiente',
+        texto_definitivo: publica,
+        estado: publica ? 'publicada' : 'borrador',
+        firmantes_requeridos: 'uno_principal',
+        vigencia_desde: publica ? hoyMadridYmd() : null,
+        creado_por: user.id,
+      })
+      .select('id')
+      .maybeSingle()
+
+    if (insErr || !creada) {
+      logger.warn('crearAutorizacionExcursion: insert', insErr?.message)
+      if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
+      return fail('autorizaciones.errors.creacion_fallo')
+    }
+
+    revalidarAutorizaciones()
+    return ok({ autorizacion_id: creada.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const { titulo, texto, borrador, evento_id, nuevo_evento } = parsed.data
-
-  let eventoId = evento_id ?? null
-  if (nuevo_evento) {
-    // Crea el evento de excursión para EL AULA que va (ambito='aula') en el mismo
-    // flujo: su audiencia (familias del aula) recibirá la salida. crearEventoCore
-    // resuelve centro_id server-side y aplica la RLS de eventos.
-    const evRes = await crearEventoCore(supabase, user.id, {
-      ambito: 'aula',
-      aula_id: nuevo_evento.aula_id,
-      tipo: 'excursion',
-      titulo: nuevo_evento.titulo,
-      fecha: nuevo_evento.fecha,
-      requiere_confirmacion: false,
-    })
-    if (!evRes.success) return fail(evRes.error)
-    eventoId = evRes.data.evento_id
-  }
-  if (!eventoId) return fail('autorizaciones.errors.creacion_fallo')
-
-  // centro_id desde el evento (red de seguridad; el trigger BD lo deriva igual).
-  const { data: evento, error: evErr } = await supabase
-    .from('eventos')
-    .select('id, centro_id')
-    .eq('id', eventoId)
-    .maybeSingle()
-  if (evErr) {
-    logger.warn('crearAutorizacionExcursion: eventos.select', evErr.message)
-    return fail('autorizaciones.errors.creacion_fallo')
-  }
-  if (!evento) return fail('autorizaciones.errors.evento_no_encontrado')
-
-  // Publica en un paso con el texto a medida (o borrador si lo pide). La versión se
-  // ata al hash del texto definitivo (igual que editarTextoAutorizacion).
-  const publica = !borrador
-  const { data: creada, error: insErr } = await supabase
-    .from('autorizaciones')
-    .insert({
-      centro_id: evento.centro_id,
-      tipo: 'salida',
-      evento_id: evento.id,
-      titulo,
-      texto,
-      texto_version: publica ? `def-${hashTextoAutorizacion(texto).slice(0, 12)}` : 'v0-pendiente',
-      texto_definitivo: publica,
-      estado: publica ? 'publicada' : 'borrador',
-      firmantes_requeridos: 'uno_principal',
-      vigencia_desde: publica ? hoyMadridYmd() : null,
-      creado_por: user.id,
-    })
-    .select('id')
-    .maybeSingle()
-
-  if (insErr || !creada) {
-    logger.warn('crearAutorizacionExcursion: insert', insErr?.message)
-    if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
-    return fail('autorizaciones.errors.creacion_fallo')
-  }
-
-  revalidarAutorizaciones()
-  return ok({ autorizacion_id: creada.id })
 }
 
 /**

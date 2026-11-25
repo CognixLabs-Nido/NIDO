@@ -389,6 +389,21 @@ que el código hace hoy con esa lectura fallida, y no va después de una escritu
 la CI). «Bien que el arreglo final intente el insert igualmente y solo diga «fuera de ventana» con un 42501: eso
 es parar por lo que la base dice, no por lo que suponíamos.»
 
+**El proxy (2026-11-25).** `rolesEnCualquierCentro` (la puerta de `/admin`, `/teacher`…) lanza con la lectura
+caída; en el proxy no la recoge ningún `error.tsx` y sale un 500 crudo (antes, `/forbidden`: «no tienes permiso»
+a quien lo tiene). Jose, literal:
+
+«La (b). Un 500 crudo no le dice nada a nadie y además parece que la app está caída, y el «/forbidden» de antes
+era peor todavía: le decía a una directora que no tiene permiso cuando sí lo tiene. Una página que dice «no se
+ha podido leer, vuelve a intentarlo» es lo único honesto de las tres.
+
+La condición, porque la página va a ser pública: que no revele NADA. Ni si el usuario existe, ni si tiene
+roles, ni el nombre del centro, ni nada que dependa de quién entra. El mismo texto para todo el mundo, sin
+datos dentro, y sin dar acceso a ninguna parte. Con eso una página pública no aporta superficie.»
+
+Y del escáner: «que el escáner enseñe TODAS las paradas de cada función, no solo la primera, porque si no el
+número que da vuelve a ser un suelo sin que lo sepamos.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).

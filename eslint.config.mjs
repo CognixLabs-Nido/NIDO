@@ -3,6 +3,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals'
 import nextTs from 'eslint-config-next/typescript'
 
 import lecturaMiraElError from './eslint-rules/lectura-mira-el-error.mjs'
+import paradaTrasEscritura from './eslint-rules/parada-tras-escritura.mjs'
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -54,8 +55,17 @@ const eslintConfig = defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/test/**', '**/__tests__/**', '**/*.test.{ts,tsx}'],
-    plugins: { nido: { rules: { 'lectura-mira-el-error': lecturaMiraElError } } },
-    rules: { 'nido/lectura-mira-el-error': 'error' },
+    // Y (2026-11-25) una lectura fallida después de una escritura hecha no para: diría «no se guardó» sobre
+    // algo guardado. Esta regla ve la misma función; la cadena entre funciones, el escáner de la CI.
+    plugins: {
+      nido: {
+        rules: {
+          'lectura-mira-el-error': lecturaMiraElError,
+          'parada-tras-escritura': paradaTrasEscritura,
+        },
+      },
+    },
+    rules: { 'nido/lectura-mira-el-error': 'error', 'nido/parada-tras-escritura': 'error' },
   },
   // `src/types/database.ts` es la salida del generador, sin tocar. Lo que el generador no sabe (la
   // nulabilidad de las funciones RETURNS TABLE, los argumentos que aceptan NULL, las columnas

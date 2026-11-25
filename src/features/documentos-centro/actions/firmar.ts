@@ -4,6 +4,7 @@ import { getRequestContext } from '@/features/autorizaciones/lib/request-context
 import { createClient } from '@/lib/supabase/server'
 
 import { firmarDocumentoNino } from '@/features/documentos-centro/lib/firmar-documentos'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 type Result = { success: true; data: { firmaId: string } } | { success: false; error: string }
 
@@ -12,13 +13,17 @@ type Result = { success: true; data: { firmaId: string } } | { success: false; e
  * dedo, o la Dirección en persona. El modo lo decide el servidor (`firmarDocumentoNino`).
  */
 export async function firmarDocumentoCentroAction(input: unknown): Promise<Result> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'firmar_documentos.errors.no_autorizado' }
-  const r = await firmarDocumentoNino(supabase, user.id, input, await getRequestContext())
-  return r.ok
-    ? { success: true, data: { firmaId: r.data.firmaId } }
-    : { success: false, error: r.error }
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'firmar_documentos.errors.no_autorizado' }
+    const r = await firmarDocumentoNino(supabase, user.id, input, await getRequestContext())
+    return r.ok
+      ? { success: true, data: { firmaId: r.data.firmaId } }
+      : { success: false, error: r.error }
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
