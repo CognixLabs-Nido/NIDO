@@ -255,6 +255,28 @@ MarcarCobradoDialog, ConceptoFormDialog, ReciboEsporadicoDialog, EditarReciboDia
 **El troceo:** grupo 1 (lo que se borra o no se borra, y el pase de curso) → 2 (el estado del niño) →
 3 (salud, recogida y avisos) → 4 (forma 4 del niño) → 5 y 6 (dinero) → 7 y 8 (pantalla).
 
+### 2026-11-25 · grupo 1 en cuatro PR; las fotos del blog, orden invertido
+
+«Los cuatro PR cortos e independientes desde main me valen, y el orden dentro del grupo 1 también.»
+(1 · los borrados de Storage; 2 · las dos purgas; 3 · el export del art. 15; 4 · el pase de curso.)
+
+«LO DE LAS FOTOS DEL BLOG TIENE UNA SALIDA MEJOR QUE LAS DOS QUE PLANTEAS, y ya está en la casa:
+INVIERTE EL ORDEN. Borra el fichero primero y la fila después, que es lo que ya hacen las purgas
+precisamente «para no perder la ruta». Así, si el borrado del fichero falla, la fila sigue ahí con su
+ruta y se puede reintentar; nunca llegas al caso de no tener vuelta atrás.
+Y como red, lo mismo que hicimos con el mandato: que esos ficheros entren en el barrido de huérfanos
+que ya corre a diario. Con el orden invertido y el barrido no necesitas ni reintentos ni maquinaria
+nueva.
+Donde no se pueda invertir el orden, entonces sí tu propuesta: error específico en vez de ok y las
+rutas en el log, pero dime en cuántos sitios no se puede y por qué.»
+
+«revocar-imagen-nino SÍ, en el PR 1 y bien distinguido: no es la limpieza del fichero viejo tras
+guardar el nuevo, es que una familia ha RETIRADO el consentimiento y la foto se queda. Eso no es un
+fichero huérfano, es seguir teniendo la imagen de un niño cuyos padres han dicho que no. Que no se
+trague el fallo, y que Dirección vea que esa foto no se pudo borrar.
+Y bien dejar quietos los otros 40 .catch(() => undefined): ahí el fallo solo deja un fichero viejo de
+más, que es lo que recoge el barrido.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
