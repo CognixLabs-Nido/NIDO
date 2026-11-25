@@ -876,6 +876,16 @@
           "confirmar": "Revocar",
           "procesando": "Revocant…",
           "exito": "Autorització d'imatge revocada; el xiquet ja no apareix a les fotos."
+        },
+        "foto_sin_permiso": {
+          "aviso_ficha": "{nombre} no pot aparéixer en fotos i la seua foto de perfil continua guardada. Si es va retirar l'autorització i l'esborrat va fallar, esborra-la ací.",
+          "boton": "Esborrar la foto de perfil",
+          "titulo": "Esborrar la foto de perfil",
+          "aviso": "S'esborrarà la foto de perfil de {nombre}. Si quedava alguna autorització d'imatge, es retira. No afecta altres xiquets. Vols esborrar-la?",
+          "cancelar": "Cancel·lar",
+          "confirmar": "Esborrar",
+          "procesando": "Esborrant…",
+          "exito": "Foto de perfil esborrada."
         }
       },
       "badge": {
@@ -2570,7 +2580,8 @@
         "fallo_otorgar": "No s'ha pogut autoritzar la imatge",
         "no_autorizado_denegar": "No tens permís per a respondre per la imatge d'aquest xiquet",
         "fallo_denegar": "No s'ha pogut guardar el teu «no»",
-        "fallo_retirar_no": "No s'ha pogut retirar el teu «no»"
+        "fallo_retirar_no": "No s'ha pogut retirar el teu «no»",
+        "foto_no_borrada": "S'ha retirat l'autorització d'imatge, però la foto de perfil no s'ha pogut esborrar. Torna-ho a intentar; la Direcció del centre ho veu en la fitxa del xiquet."
       }
     },
     "tarjeta_sanitaria": {
@@ -4274,6 +4285,7 @@
       "creacion_fallo": "No s'ha pogut crear la publicació.",
       "guardado_fallo": "No s'ha pogut guardar.",
       "borrado_fallo": "No s'ha pogut esborrar.",
+      "fotos_no_borradas": "No s'han pogut esborrar les fotos, així que no s'ha esborrat res. Torna-ho a intentar.",
       "etiquetado_fallo": "No s'ha pogut etiquetar.",
       "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
       "subida_fallo": "No s'ha pogut pujar la foto.",

@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 /**
  * La ruta del cron de retención (20261213120000): cada pasada deja su fila en `retencion_pasadas`,
  * encuentre algo o no, con el modo (simulado si `RETENCION_DRY_RUN` no es exactamente 'false') y el
- * recuento de los trece barridos (doce hasta 20261220120000); el mismo resultado sale por `logger.warn`, que en producción sí se
- * escribe (`logger.info` no). Ni la fila ni el log llevan texto de error. Si la fila no entra, 500.
+ * recuento de cada barrido (quince claves desde 20270207120000); el mismo resultado sale por
+ * `logger.warn`, que en producción sí se escribe (`logger.info` no). Ni la fila ni el log llevan texto de error. Si la fila no entra, 500.
  */
 
 const h = vi.hoisted(() => ({
@@ -111,6 +111,12 @@ vi.mock('@/features/retencion/lib/mandatos-huerfanos', () => ({
     return conDryRun({ huerfanos: 0, borrados: 0, fallidos: 0 })(o)
   },
 }))
+vi.mock('@/features/retencion/lib/fotos-blog-huerfanas', () => ({
+  barrerFotosBlogHuerfanas: async (o: { dryRun: boolean }) => {
+    h.orden.push('fotosBlogHuerfanas')
+    return conDryRun({ huerfanas: 0, borradas: 0, fallidas: 0 })(o)
+  },
+}))
 
 const { GET } = await import('../route')
 
@@ -129,6 +135,7 @@ const CLAVES = [
   'cuentasOlvidadas',
   'ficherosRemesa',
   'mandatosHuerfanos',
+  'fotosBlogHuerfanas',
 ]
 
 function peticion(auth = 'Bearer secreto-de-prueba') {
@@ -152,15 +159,15 @@ afterEach(() => {
 })
 
 describe('cron de retención: el registro de cada pasada', () => {
-  it('premisa: sin la variable, los trece barridos con modo reciben dryRun y simulan', async () => {
+  it('premisa: sin la variable, los catorce barridos con modo reciben dryRun y simulan', async () => {
     expect(process.env.RETENCION_DRY_RUN).toBeUndefined()
     const res = await GET(peticion())
     expect(res.status).toBe(200)
-    expect(h.dryRuns).toHaveLength(13)
+    expect(h.dryRuns).toHaveLength(14)
     expect(h.dryRuns.every((d) => d === true)).toBe(true)
   })
 
-  it('sin nada que borrar, deja una fila en retencion_pasadas en modo simulado con las catorce claves', async () => {
+  it('sin nada que borrar, deja una fila en retencion_pasadas en modo simulado con las quince claves', async () => {
     await GET(peticion())
     expect(h.inserts).toHaveLength(1)
     const { tabla, fila } = h.inserts[0]
@@ -209,7 +216,7 @@ describe('cron de retención: el registro de cada pasada', () => {
 
   it('los ficheros de remesa se barren antes que lo fiscal, que espera a ellos (20261220120000)', async () => {
     await GET(peticion())
-    expect(h.orden).toEqual(['ficherosRemesa', 'mandatosHuerfanos', 'fiscal'])
+    expect(h.orden).toEqual(['ficherosRemesa', 'mandatosHuerfanos', 'fotosBlogHuerfanas', 'fiscal'])
   })
 
   it('sin el secreto no corre nada ni deja fila', async () => {

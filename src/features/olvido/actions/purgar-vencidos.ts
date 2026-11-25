@@ -122,7 +122,9 @@ export async function purgarUno(service: Service, p: Pendiente): Promise<void> {
   // 2. Recolectar rutas de Storage mientras siguen siendo resolubles.
   const porBucket = await recolectarAdjuntosDe(service, p, esUltimo)
 
-  // 3. Borrar objetos de Storage (best-effort idempotente).
+  // 3. Borrar objetos de Storage. Si Storage falla, `borrarObjetosBucket` lanza y la purga de este
+  //    sujeto para ANTES de la base: las rutas siguen ahí y la pasada siguiente lo reintenta (censo C).
+  //    Idempotente: una ruta que ya no existe no es un error.
   for (const [bucket, paths] of porBucket) {
     await borrarObjetosBucket(service, bucket, paths)
   }

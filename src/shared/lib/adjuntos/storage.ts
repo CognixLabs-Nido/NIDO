@@ -75,7 +75,18 @@ export async function firmarRuta(
   return m.get(path) ?? null
 }
 
-/** Borra objetos de un bucket sin dejar huérfanos (best-effort). */
+/**
+ * Borra objetos de un bucket. **Si Storage contesta con error, lanza**: el borrado no se da por
+ * hecho (censo C, 2026-11-25). Antes devolvía `void` sin mirar el error, y el olvido, la retención y
+ * el expediente seguían como si los ficheros (fotos, DNI, libro de familia) ya no estuvieran. Esos
+ * tres borran el fichero ANTES que la fila y son reintentables: el que lanza para ese sujeto, y la
+ * pasada siguiente lo vuelve a coger con la ruta todavía en la base.
+ *
+ * Las rutas de subida que sustituyen un fichero viejo la llaman con `.catch(() => undefined)` a
+ * propósito: el nuevo ya está guardado y el fallo solo deja un fichero viejo de más (decisión de
+ * Jose del 2026-11-25; lo que lo recoge es el barrido de huérfanos, `docs/specs/fallos-leidos-c.md`).
+ * Una ruta que no existe no es un error: Storage la ignora, así que reintentar es seguro.
+ */
 export async function borrarObjetosBucket(
   client: Client,
   bucket: string,
@@ -83,7 +94,9 @@ export async function borrarObjetosBucket(
 ): Promise<void> {
   const limpias = paths.filter((p): p is string => typeof p === 'string' && p.length > 0)
   if (limpias.length === 0) return
-  await client.storage.from(bucket).remove(limpias)
+  const { error } = await client.storage.from(bucket).remove(limpias)
+  if (error)
+    throw new Error(`Storage ${bucket}: no se borraron ${limpias.length} objetos: ${error.message}`)
 }
 
 /** URL pública (bucket público) de un objeto. */

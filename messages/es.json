@@ -876,6 +876,16 @@
           "confirmar": "Revocar",
           "procesando": "Revocando…",
           "exito": "Autorización de imagen revocada; el niño ya no aparece en las fotos."
+        },
+        "foto_sin_permiso": {
+          "aviso_ficha": "{nombre} no puede aparecer en fotos y su foto de perfil sigue guardada. Si se retiró la autorización y el borrado falló, bórrala aquí.",
+          "boton": "Borrar la foto de perfil",
+          "titulo": "Borrar la foto de perfil",
+          "aviso": "Se borrará la foto de perfil de {nombre}. Si quedaba alguna autorización de imagen, se retira. No afecta a otros niños. ¿Borrar?",
+          "cancelar": "Cancelar",
+          "confirmar": "Borrar",
+          "procesando": "Borrando…",
+          "exito": "Foto de perfil borrada."
         }
       },
       "badge": {
@@ -2570,7 +2580,8 @@
         "fallo_otorgar": "No se pudo autorizar la imagen",
         "no_autorizado_denegar": "No tienes permiso para responder por la imagen de este niño",
         "fallo_denegar": "No se pudo guardar tu «no»",
-        "fallo_retirar_no": "No se pudo retirar tu «no»"
+        "fallo_retirar_no": "No se pudo retirar tu «no»",
+        "foto_no_borrada": "Se ha retirado la autorización de imagen, pero la foto de perfil no se ha podido borrar. Vuelve a intentarlo; la Dirección del centro lo ve en la ficha del niño."
       }
     },
     "tarjeta_sanitaria": {
@@ -4274,6 +4285,7 @@
       "creacion_fallo": "No se pudo crear la publicación.",
       "guardado_fallo": "No se pudo guardar.",
       "borrado_fallo": "No se pudo borrar.",
+      "fotos_no_borradas": "No se han podido borrar las fotos, así que no se ha borrado nada. Vuelve a intentarlo.",
       "etiquetado_fallo": "No se pudo etiquetar.",
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",

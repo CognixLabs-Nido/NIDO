@@ -8,7 +8,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
 
-import { borrarObjetos, prefijoPublicacion, rutasBorrables } from '../lib/storage'
+import { borrarFotosDelBlog, prefijoPublicacion, rutasBorrables } from '../lib/storage'
 import {
   crearPublicacionSchema,
   editarPublicacionSchema,
@@ -110,10 +110,39 @@ export async function editarPublicacion(
 }
 
 /**
- * Borrado REAL de una publicación (P-borrado): borra la fila (CASCADE elimina
- * `media`/`media_etiquetas`) **y** los objetos de Storage (sin huérfanos). Solo
- * autor o admin (RLS DELETE). Se recogen las rutas ANTES de borrar la fila; los
- * objetos se eliminan con service role tras confirmar el borrado autorizado.
+ * Las fotos del blog se borran ANTES que su fila (decisión de Jose del 2026-11-25, «borra el fichero
+ * primero y la fila después», lo que ya hacen las purgas para no perder la ruta). Con la sesión: la
+ * política de Storage autoriza lo mismo que la de la fila. Si alguna foto sigue en el bucket, la fila
+ * NO se borra: queda con su ruta y se puede reintentar. Antes era al revés y, si Storage fallaba (o
+ * fallaba la lectura de las rutas), la fila se iba, la acción contestaba ok y las fotos de los niños
+ * se quedaban en el bucket sin nada que las nombrara.
+ *
+ * Devuelve el fallo que hay que contestar, o null si las fotos ya no están.
+ */
+async function borrarFotosAntes(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rutas: string[],
+  donde: string
+): Promise<ActionResult<never> | null> {
+  if (rutas.length === 0) return null
+  try {
+    const siguen = await borrarFotosDelBlog(supabase, createServiceRoleClient(), rutas)
+    if (siguen.length === 0) return null
+    // Storage no da error al negar: si quien borra no puede, las fotos siguen. La fila tampoco se
+    // podría borrar; el mensaje dice lo que pasa (no se han borrado), no una causa que no sabemos.
+    logger.error(`${donde}: las fotos siguen en Storage, la fila no se borra`, siguen.length)
+    return fail('fotos.errors.fotos_no_borradas')
+  } catch (e) {
+    logger.error(`${donde}: Storage`, e instanceof Error ? e.message : String(e))
+    return fail('fotos.errors.fotos_no_borradas')
+  }
+}
+
+/**
+ * Borrado REAL de una publicación (P-borrado): primero los objetos de Storage, después la fila
+ * (CASCADE elimina `media`/`media_etiquetas`). Solo autor o admin (las dos políticas, la de Storage
+ * y la de la fila, lo deciden en la base). Si una lectura falla, no se borra nada: sin las rutas, la
+ * fila se iría y las fotos quedarían huérfanas.
  */
 export async function eliminarPublicacion(
   input: EliminarPublicacionInput
@@ -128,17 +157,34 @@ export async function eliminarPublicacion(
   if (!parsed.success) return fail('fotos.errors.borrado_fallo')
   const { publicacion_id } = parsed.data
 
-  // Prefijo de Storage de la publicación (de la FILA) y rutas de los objetos a limpiar
-  // (visibles para el autor/admin vía RLS). Se leen ANTES de borrar la fila (CASCADE).
-  const { data: pub } = await supabase
+  // Prefijo de Storage de la publicación (de la FILA) y rutas de los objetos (visibles para el
+  // autor/admin vía RLS). Un fallo de lectura no es «no hay fotos»: para.
+  const { data: pub, error: pubErr } = await supabase
     .from('publicaciones')
     .select('centro_id, aula_id')
     .eq('id', publicacion_id)
     .maybeSingle()
-  const { data: medias } = await supabase
+  if (pubErr) {
+    logger.error('eliminarPublicacion: leer la publicación', pubErr.message)
+    return fail('fotos.errors.borrado_fallo')
+  }
+  if (!pub) return fail('fotos.errors.no_autorizado')
+  const { data: medias, error: mErr } = await supabase
     .from('media')
     .select('path, path_miniatura')
     .eq('publicacion_id', publicacion_id)
+  if (mErr) {
+    logger.error('eliminarPublicacion: leer las fotos', mErr.message)
+    return fail('fotos.errors.borrado_fallo')
+  }
+
+  // Solo las rutas de esta publicación (R4): una ruta ajena en una fila `media` no se borra.
+  const prefijo = prefijoPublicacion(pub.centro_id, pub.aula_id, publicacion_id)
+  const { rutas, ajenas } = rutasBorrables(medias ?? [], prefijo)
+  if (ajenas > 0)
+    logger.warn('eliminarPublicacion: rutas ajenas a la publicación, no se borran', ajenas)
+  const fallo = await borrarFotosAntes(supabase, rutas, 'eliminarPublicacion')
+  if (fallo) return fallo
 
   const { error, count } = await supabase
     .from('publicaciones')
@@ -152,25 +198,14 @@ export async function eliminarPublicacion(
   }
   if (!count) return fail('fotos.errors.no_autorizado')
 
-  // La fila se borró (CASCADE limpió media/etiquetas). Ahora los objetos: solo los de esta
-  // publicación (R4) — una ruta ajena en una fila `media` NO se borra con service role.
-  const prefijo = pub ? prefijoPublicacion(pub.centro_id, pub.aula_id, publicacion_id) : null
-  const { rutas, ajenas } = rutasBorrables(medias ?? [], prefijo)
-  if (ajenas > 0)
-    logger.warn('eliminarPublicacion: rutas ajenas a la publicación, no se borran', ajenas)
-  if (rutas.length > 0) {
-    const service = createServiceRoleClient()
-    await borrarObjetos(service, rutas)
-  }
-
   revalidarFotos()
   return ok({ publicacion_id })
 }
 
 /**
- * Quita UNA foto de una publicación: borra la fila `media` (CASCADE limpia sus
- * etiquetas) y sus dos objetos en Storage. Solo autor de la publicación o admin
- * (RLS DELETE de `media`).
+ * Quita UNA foto de una publicación: primero sus dos objetos en Storage, después la fila `media`
+ * (CASCADE limpia sus etiquetas). Solo autor de la publicación o admin (RLS DELETE de `media` y la
+ * política de Storage). Si la lectura falla, no se borra nada.
  */
 export async function eliminarMedia(
   input: EliminarMediaInput
@@ -185,11 +220,25 @@ export async function eliminarMedia(
   if (!parsed.success) return fail('fotos.errors.borrado_fallo')
   const { media_id } = parsed.data
 
-  const { data: media } = await supabase
+  const { data: media, error: mErr } = await supabase
     .from('media')
     .select('path, path_miniatura, publicacion_id, publicaciones(centro_id, aula_id)')
     .eq('id', media_id)
     .maybeSingle()
+  if (mErr) {
+    logger.error('eliminarMedia: leer la foto', mErr.message)
+    return fail('fotos.errors.borrado_fallo')
+  }
+  if (!media) return fail('fotos.errors.no_autorizado')
+
+  // Solo las rutas de la publicación de la fila (R4); una ruta ajena NO se borra. Sin la
+  // publicación (no debería: la FK es NOT NULL) no hay prefijo y no se borra ningún objeto.
+  const pub = media.publicaciones
+  const prefijo = pub ? prefijoPublicacion(pub.centro_id, pub.aula_id, media.publicacion_id) : null
+  const { rutas, ajenas } = rutasBorrables([media], prefijo)
+  if (ajenas > 0) logger.warn('eliminarMedia: rutas ajenas a la publicación, no se borran', ajenas)
+  const fallo = await borrarFotosAntes(supabase, rutas, 'eliminarMedia')
+  if (fallo) return fallo
 
   const { error, count } = await supabase
     .from('media')
@@ -202,21 +251,6 @@ export async function eliminarMedia(
     return fail('fotos.errors.borrado_fallo')
   }
   if (!count) return fail('fotos.errors.no_autorizado')
-
-  if (media) {
-    // Solo las rutas de la publicación de la fila (R4); una ruta ajena NO se borra.
-    const pub = media.publicaciones
-    const prefijo = pub
-      ? prefijoPublicacion(pub.centro_id, pub.aula_id, media.publicacion_id)
-      : null
-    const { rutas, ajenas } = rutasBorrables([media], prefijo)
-    if (ajenas > 0)
-      logger.warn('eliminarMedia: rutas ajenas a la publicación, no se borran', ajenas)
-    if (rutas.length > 0) {
-      const service = createServiceRoleClient()
-      await borrarObjetos(service, rutas)
-    }
-  }
 
   revalidarFotos()
   return ok({ media_id })

@@ -22,7 +22,12 @@ interface Props {
   ninoId: string
   nombreCompleto: string
   /** Textos del diálogo: Dirección (por defecto) o el tutor desde el portal de familia. */
-  textos?: 'admin.ninos.fotos.revocar' | 'family.nino.imagen.revocar'
+  textos?:
+    | 'admin.ninos.fotos.revocar'
+    | 'family.nino.imagen.revocar'
+    // La foto de perfil que sigue sin permiso de imagen (un revocar cuyo borrado falló): la misma
+    // acción, que retira lo que quede y borra la foto primero (censo C, 2026-11-25).
+    | 'admin.ninos.fotos.foto_sin_permiso'
 }
 
 /**

@@ -78,9 +78,46 @@ export async function firmarRutas(client: Client, paths: string[]): Promise<Map<
   return out
 }
 
-/** Borra objetos del bucket del blog (original + miniatura) sin dejar huérfanos. */
-export async function borrarObjetos(client: Client, paths: string[]): Promise<void> {
-  const limpias = paths.filter((p): p is string => typeof p === 'string' && p.length > 0)
-  if (limpias.length === 0) return
-  await client.storage.from(BUCKET_AULA_FOTOS).remove(limpias)
+/**
+ * Borra fotos del blog con la SESIÓN de quien borra y devuelve las rutas que **siguen** en el bucket
+ * (vacío = borradas). Se llama ANTES de borrar la fila (decisión de Jose del 2026-11-25: «borra el
+ * fichero primero y la fila después»): si algo queda, la fila sigue con su ruta y se puede reintentar.
+ *
+ * Con la sesión, porque la política `aula_fotos_delete` autoriza lo mismo que la de la fila (admin
+ * del centro o autor de la publicación, medido en producción el 2026-11-25): la base decide quién.
+ * Pero Storage **no da error al negar un borrado**: contesta sin ese objeto. Por eso no se cree la
+ * respuesta: se mira con el servicio si cada ruta sigue ahí. Un error de Storage, o no poder mirarlo,
+ * lanza. Una ruta que ya no existía no cuenta como pendiente: reintentar es seguro.
+ */
+export async function borrarFotosDelBlog(
+  sesion: Client,
+  service: Client,
+  paths: string[]
+): Promise<string[]> {
+  const limpias = [...new Set(paths.filter((p) => typeof p === 'string' && p.length > 0))]
+  if (limpias.length === 0) return []
+  const { error } = await sesion.storage.from(BUCKET_AULA_FOTOS).remove(limpias)
+  if (error) throw new Error(`Storage ${BUCKET_AULA_FOTOS}: ${error.message}`)
+  return rutasQueSiguen(service, limpias)
+}
+
+/** De unas rutas del blog, las que siguen en el bucket (por el listado de su carpeta). */
+async function rutasQueSiguen(service: Client, rutas: string[]): Promise<string[]> {
+  const porCarpeta = new Map<string, string[]>()
+  for (const r of rutas) {
+    const corte = r.lastIndexOf('/')
+    const carpeta = r.slice(0, corte)
+    porCarpeta.set(carpeta, [...(porCarpeta.get(carpeta) ?? []), r.slice(corte + 1)])
+  }
+  const siguen: string[] = []
+  for (const [carpeta, nombres] of porCarpeta) {
+    const { data, error } = await service.storage
+      .from(BUCKET_AULA_FOTOS)
+      .list(carpeta, { limit: 1000 })
+    if (error)
+      throw new Error(`Storage ${BUCKET_AULA_FOTOS}: no se pudo comprobar: ${error.message}`)
+    const hay = new Set((data ?? []).map((o) => o.name))
+    for (const n of nombres) if (hay.has(n)) siguen.push(`${carpeta}/${n}`)
+  }
+  return siguen
 }
