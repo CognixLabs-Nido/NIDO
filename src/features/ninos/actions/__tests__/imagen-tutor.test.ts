@@ -40,11 +40,16 @@ vi.mock('@/lib/supabase/admin', () => ({
 }))
 
 const borrarSpy = vi.fn()
+/** Orden de lo que pasa: `borrar` (el fichero) y las RPC por su nombre. */
+let orden: string[] = []
+/** Si el borrado del fichero falla (borrarObjetosBucket lanza desde el censo C). */
+let borrarFalla = false
 vi.mock('@/shared/lib/adjuntos/storage', () => ({
   BUCKET_NINOS_FOTOS: 'ninos-fotos',
   borrarObjetosBucket: (...args: unknown[]) => {
     borrarSpy(...args)
-    return Promise.resolve()
+    orden.push('borrar')
+    return borrarFalla ? Promise.reject(new Error('Storage ninos-fotos: caído')) : Promise.resolve()
   },
   rutaThumbDe: (p: string) => `${p}.thumb`,
 }))
@@ -108,6 +113,7 @@ function makeFake(s: Setup) {
     from: (table: string) => builder(table),
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcSpy(fn, args)
+      orden.push(fn)
       if (fn === 'es_admin') return Promise.resolve({ data: s.esAdmin ?? false })
       if (fn === 'es_tutor_legal_de') return Promise.resolve({ data: s.esTutorLegal ?? false })
       if (fn === 'quitar_foto_perfil_nino')
@@ -125,6 +131,8 @@ const llamadas = (spy: ReturnType<typeof vi.fn>, fn: string) =>
 
 beforeEach(() => {
   vi.clearAllMocks()
+  orden = []
+  borrarFalla = false
 })
 
 describe('revocarImagenNino — tutor legal y Dirección', () => {
@@ -163,7 +171,10 @@ describe('revocarImagenNino — tutor legal y Dirección', () => {
     expect(serviceUpdateSpy).not.toHaveBeenCalled()
   })
 
-  it('42501 de quitar_foto_perfil_nino → no autorizado, sin borrar blobs', async () => {
+  // Sustituido el 2026-11-25 (censo C, «primero el fichero»): antes decía «sin borrar blobs», porque
+  // la RPC iba antes. Ahora el fichero se borra primero, con el permiso ya mirado arriba (la misma
+  // regla que la RPC), y un 42501 de la RPC solo puede venir de un cambio entre medias.
+  it('42501 de quitar_foto_perfil_nino → no autorizado', async () => {
     const { fake } = makeFake({
       esTutorLegal: true,
       quitarError: { code: '42501', message: 'No autorizado' },
@@ -173,7 +184,37 @@ describe('revocarImagenNino — tutor legal y Dirección', () => {
     const r = await revocarImagenNino({ nino_id: NINO })
 
     expect(r).toEqual({ success: false, error: 'nino.imagen.errors.no_autorizado' })
-    expect(borrarSpy).not.toHaveBeenCalled()
+  })
+
+  // Censo C, grupo 1 (decisión de Jose del 2026-11-25): retirar la imagen y quedarse con la foto no
+  // es un fichero huérfano, es seguir teniendo la imagen de un niño cuyos padres han dicho que no.
+  it('primero se borra el fichero y después se quita foto_url', async () => {
+    const { fake } = makeFake({ esTutorLegal: true })
+    createClientMock.mockReturnValue(fake)
+
+    const r = await revocarImagenNino({ nino_id: NINO })
+
+    expect(r.success, 'premisa: el caso legítimo sale bien').toBe(true)
+    expect(orden.filter((x) => x === 'borrar' || x === 'quitar_foto_perfil_nino')).toEqual([
+      'borrar',
+      'quitar_foto_perfil_nino',
+    ])
+  })
+
+  it('si el fichero no se borra: no contesta ok y foto_url se queda (Dirección lo ve)', async () => {
+    const { fake, rpcSpy } = makeFake({ esTutorLegal: true })
+    createClientMock.mockReturnValue(fake)
+    borrarFalla = true
+
+    const r = await revocarImagenNino({ nino_id: NINO })
+
+    expect(borrarSpy, 'premisa: se intentó borrar el fichero').toHaveBeenCalled()
+    expect(
+      llamadas(rpcSpy, 'revocar_consentimiento_imagen'),
+      'el consentimiento sí se retira'
+    ).toHaveLength(1)
+    expect(r).toEqual({ success: false, error: 'nino.imagen.errors.foto_no_borrada' })
+    expect(llamadas(rpcSpy, 'quitar_foto_perfil_nino')).toHaveLength(0)
   })
 
   it('sin foto de perfil: revoca y no llama a quitar_foto_perfil_nino', async () => {
