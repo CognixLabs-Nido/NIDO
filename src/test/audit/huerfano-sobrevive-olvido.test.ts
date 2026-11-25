@@ -111,7 +111,13 @@ describe('la purga del art. 17 y un fichero huérfano', () => {
         await subirYApuntar(c.bucket, huerfano[c.bucket])
         const { error } = await serviceClient
           .from('ninos')
-          .update({ [c.columna]: vigente[c.bucket] })
+          .update(
+            c.columna === 'foto_url'
+              ? { foto_url: vigente[c.bucket] }
+              : c.columna === 'libro_familia_path'
+                ? { libro_familia_path: vigente[c.bucket] }
+                : { sip_documento_path: vigente[c.bucket] }
+          )
           .eq('id', nino.id)
         if (error) throw new Error(`apuntar ${c.columna}: ${error.message}`)
       }
