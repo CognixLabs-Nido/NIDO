@@ -277,6 +277,44 @@ trague el fallo, y que Dirección vea que esa foto no se pudo borrar.
 Y bien dejar quietos los otros 40 .catch(() => undefined): ahí el fallo solo deja un fichero viejo de
 más, que es lo que recoge el barrido.»
 
+### 2026-11-25 · los 200 de pantalla, de una vez: helper, componente, codemod y lint
+
+Jose: «quiero que lo soluciones ya. De una, los 200 sitios. No vayas de uno en uno perdiendo el tiempo.
+Haz una solución rápida para todo.»
+
+«1 · UN HELPER ÚNICO de lectura que distinga «no hay» de «no se pudo leer», y un componente común que pinte
+eso en pantalla. Una sola pieza, en un sitio.
+2 · UN CAMBIO AUTOMÁTICO que lo aplique a los 200. […] Si algún sitio no encaja en el molde, lo apartas a una
+lista y me dices cuántos son: esos se ven a mano, el resto van de golpe.
+3 · UNA REGLA DE LINT que impida que el patrón vuelva a aparecer, con su control: un sitio nuevo con el patrón
+viejo tiene que poner la CI roja.
+4 · LA VERIFICACIÓN NO ES POR SITIO, es la suite entera: los 9.500 tests, el typecheck y el build. Y mutaciones
+por GRUPOS, no por sitio: una por cada forma de pintar el «no se pudo leer».»
+
+Medido (2026-11-25, `~/nido-logs/16/c/censo/`): 306 sitios en los 200 helpers. Al molde automático, 269 (215
+no miran el error; 54 lo miran, lo loguean y devuelven un vacío). Apartados, 37 (16 lecturas de otra forma, 18
+escrituras, 3 lecturas consumidas de otro modo). El plan, aprobado: dos PR (A: helper, componente, codemod y
+regla de lint con lista blanca temporal; B: los 37 a mano, vaciando la lista blanca). «Y la pieza que lo hace
+seguro es la que no te pedí: que el codemod se compruebe a sí mismo quitando lo que insertó y exigiendo que el
+árbol quede idéntico.»
+
+**Página entera o sección.** Medido: de 160 llamadas a esos helpers desde pantallas, 144 (en 53 ficheros) están
+en la cabecera de la página y 16 (en 9 componentes) dentro de un componente que pinta una sola sección; el
+`error.tsx` de una sección no captura lo de su propio layout. Jose, literal:
+
+«MANTENGO LA DECISIÓN: 13 FICHEROS A MANO […] 13 ficheros a mano no es ir uno por uno, es el 6% de los 200. El
+resto va mecánico.
+
+- Los 16 de los 9 componentes, por sección y con el codemod.
+- Los 7 layouts, por sección y a mano. Obligatorio.
+- Las 6 pantallas diarias —pase de lista, pase de comidas, agenda del aula, ficha del niño, mensajes y la
+  conversación—, por sección y a mano. Son 24 lecturas y son justo las que la profe y la familia abren todos
+  los días: que se caigan por una lectura secundaria sería cambiar un defecto silencioso por una pantalla que no
+  se puede usar.
+- Todo lo demás, regla general: la página dice «no se ha podido leer».»
+
+«en el cuerpo del PR A que quede escrito por qué 13 ficheros van a mano y los demás no.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
