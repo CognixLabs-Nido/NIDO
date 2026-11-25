@@ -83,6 +83,14 @@ export async function publicarAnuncio(
       return fail('messages.errors.envio_fallo')
     }
 
+    // CONTROL DE LA CI (censo C, no se mergea): una parada por lectura fallida DESPUÉS del insert.
+    const { error: errorControl } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle()
+    if (errorControl) return fail('common.lectura_fallida')
+
     // Push notifications (F5.5). Solo a tutores con `puede_recibir_mensajes`
     // del aula (ámbito=aula) o centro (ámbito=centro). Profes y admin ven el
     // anuncio in-app y actúan como puente humano para tutores excluidos.
