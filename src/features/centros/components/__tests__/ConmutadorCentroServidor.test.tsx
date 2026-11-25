@@ -24,7 +24,9 @@ vi.mock('next-intl/server', () => ({ getTranslations: async () => (k: string) =>
 vi.mock('next-intl', () => ({ useTranslations: () => (k: string) => k }))
 vi.mock('../../actions/elegir-centro', () => ({ elegirCentro: vi.fn() }))
 
-const { ConmutadorCentroServidor } = await import('../ConmutadorCentroServidor')
+const { ConmutadorCentroServidor, ConmutadorCentroServidorContenido } =
+  await import('../ConmutadorCentroServidor')
+const { LimiteSeccion } = await import('@/shared/components/LimiteSeccion')
 
 const base = {
   rol: 'admin' as const,
@@ -39,7 +41,7 @@ beforeEach(() => {
 
 describe('ConmutadorCentroServidor', () => {
   it('un centro: no pinta nada ni consulta nombres', async () => {
-    const nodo = await ConmutadorCentroServidor({
+    const nodo = await ConmutadorCentroServidorContenido({
       locale: 'es',
       contexto: {
         ...base,
@@ -52,7 +54,7 @@ describe('ConmutadorCentroServidor', () => {
   })
 
   it('dos centros: el conmutador con los dos nombres y el actual marcado', async () => {
-    const nodo = await ConmutadorCentroServidor({
+    const nodo = await ConmutadorCentroServidorContenido({
       locale: 'es',
       contexto: {
         ...base,
@@ -69,5 +71,16 @@ describe('ConmutadorCentroServidor', () => {
     const actual = screen.getByRole('button', { name: 'Centro Demo B' })
     expect(actual.getAttribute('aria-current')).toBe('true')
     expect((actual as HTMLButtonElement).disabled).toBe(true)
+  })
+  // Censo C (2026-11-25): la exportación pública es la sección, envuelta en su límite. Si su lectura
+  // falla, dice «no se ha podido leer» y el resto de la pantalla sigue. Las pruebas de arriba miden el
+  // contenido (ConmutadorCentroServidorContenido) directamente.
+  it('la exportación envuelve el contenido en LimiteSeccion', () => {
+    const props = {} as Parameters<typeof ConmutadorCentroServidor>[0]
+    const nodo = ConmutadorCentroServidor(props)
+    expect(nodo.type).toBe(LimiteSeccion)
+    expect((nodo.props as { children: { type: unknown } }).children.type).toBe(
+      ConmutadorCentroServidorContenido
+    )
   })
 })

@@ -24,7 +24,7 @@ interface Props {
  * La montan todos los layouts que leen el centro activo; lo vigila
  * `src/test/guards/aviso-superusuario.test.ts`.
  */
-async function AvisoSuperusuarioContenido({ contexto, locale }: Props) {
+export async function AvisoSuperusuarioContenido({ contexto, locale }: Props) {
   if (!contexto.esSuperusuario) return null
   const t = await getTranslations('centros.superusuario')
   const tElegir = await getTranslations('centros.elegir')

@@ -17,7 +17,7 @@ interface Props {
  * Pone nombre a los centros y monta el conmutador, solo si el usuario tiene más de uno. Con un
  * centro no pinta nada (ni consulta): quien tiene uno no ve nunca el conmutador.
  */
-async function ConmutadorCentroServidorContenido({ contexto, locale }: Props) {
+export async function ConmutadorCentroServidorContenido({ contexto, locale }: Props) {
   if (contexto.centros.length < 2) return null
   const t = await getTranslations('centros.elegir')
   const nombres = await getNombresCentros(contexto.centros.map((c) => c.centroId))

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 import { getAulasConPersonalCore } from '../get-aulas-con-personal'
@@ -275,14 +276,15 @@ describe('getAulasConPersonalCore', () => {
     expect(result).toEqual([])
   })
 
-  it('error en aulas → []', async () => {
+  // Censo C (2026-11-25): sustituye a «error en aulas → []». La lista vacía decía «este curso no
+  // tiene aulas»; ahora la página dice «no se ha podido leer».
+  it('error en aulas → LecturaFallida, no una lista vacía', async () => {
     const client = makeClient({
       aulas: [],
       aulasErr: { message: 'boom' },
       matriculas: [],
       profes: [],
     })
-    const result = await getAulasConPersonalCore(client, CURSO_ID)
-    expect(result).toEqual([])
+    await expect(getAulasConPersonalCore(client, CURSO_ID)).rejects.toBeInstanceOf(LecturaFallida)
   })
 })

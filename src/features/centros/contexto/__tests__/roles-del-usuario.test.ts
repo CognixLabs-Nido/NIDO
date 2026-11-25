@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 import {
@@ -109,12 +110,14 @@ describe('roles-del-usuario (cliente inyectado)', () => {
     expect(await centrosDondeEsAdmin(client, USUARIO)).toEqual([A])
   })
 
-  it('un fallo de lectura es null (no «sin roles»), y esAdminEn lo cuenta como «no»', async () => {
+  // Censo C (2026-11-25): sustituye a «un fallo de lectura es null, y esAdminEn lo cuenta como «no»».
+  // Ese «no» era un motivo falso: la Dirección leía «no autorizado» y el contexto mandaba a /forbidden.
+  it('un fallo de lectura lanza LecturaFallida: ni «sin roles» ni «no es Dirección»', async () => {
     const { client } = fake({ data: null, error: { message: 'boom' } })
-    expect(await leerCentrosDe(client, USUARIO)).toBeNull()
-    expect(await centrosDondeEsAdmin(client, USUARIO)).toBeNull()
-    expect(await esAdminEn(client, USUARIO, A)).toBe(false)
-    expect(await esResponsableEn(client, USUARIO, A)).toBe(false)
+    await expect(leerCentrosDe(client, USUARIO)).rejects.toBeInstanceOf(LecturaFallida)
+    await expect(centrosDondeEsAdmin(client, USUARIO)).rejects.toBeInstanceOf(LecturaFallida)
+    await expect(esAdminEn(client, USUARIO, A)).rejects.toBeInstanceOf(LecturaFallida)
+    await expect(esResponsableEn(client, USUARIO, A)).rejects.toBeInstanceOf(LecturaFallida)
   })
 })
 
@@ -180,12 +183,12 @@ describe('superusuario (Fase 3)', () => {
     expect(await esAdminEn(client, USUARIO, C)).toBe(false)
   })
 
-  it('si falla la lectura de los centros, null (como un fallo de roles)', async () => {
+  it('si falla la lectura de los centros, LecturaFallida (como un fallo de roles)', async () => {
     const { client } = fake(DOS_CENTROS, {
       superusuario: SUPER,
       centros: { data: null, error: { message: 'boom' } },
     })
-    expect(await leerCentrosDe(client, USUARIO)).toBeNull()
+    await expect(leerCentrosDe(client, USUARIO)).rejects.toBeInstanceOf(LecturaFallida)
   })
 
   it('rolesEnCualquierCentro (proxy): el superusuario suma admin; el normal, no', async () => {

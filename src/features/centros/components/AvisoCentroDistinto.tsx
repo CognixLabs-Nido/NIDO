@@ -20,7 +20,7 @@ interface Props {
  * Solo para quien tiene más de un centro: con uno, el registro es siempre del suyo y no se pinta
  * nada (ni consulta nombres).
  */
-async function AvisoCentroDistintoContenido({ centroRegistroId }: Props) {
+export async function AvisoCentroDistintoContenido({ centroRegistroId }: Props) {
   const estado = await getEstadoCentro()
   const centros =
     estado.tipo === 'activo'

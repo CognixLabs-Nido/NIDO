@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 import {
@@ -154,14 +155,17 @@ describe('getPersonalActivoCentroCore', () => {
     expect(result).toEqual([])
   })
 
-  it('error en profes_aulas → []', async () => {
+  // Censo C (2026-11-25): sustituye a «error en profes_aulas → []». La lista vacía decía «el centro
+  // no tiene personal»; ahora la página dice «no se ha podido leer».
+  it('error en profes_aulas → LecturaFallida, no una lista vacía', async () => {
     const client = makeClient({
       aulas: [{ id: 'a1', nombre: 'Aula A' }],
       profes: [],
       profesErr: { message: 'boom' },
     })
-    const result = await getPersonalActivoCentroCore(client, CURSO_ID, resolver({}))
-    expect(result).toEqual([])
+    await expect(
+      getPersonalActivoCentroCore(client, CURSO_ID, resolver({}))
+    ).rejects.toBeInstanceOf(LecturaFallida)
   })
 })
 

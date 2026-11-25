@@ -22,7 +22,8 @@ vi.mock('next-intl/server', () => ({
 }))
 vi.mock('../../actions/salir-centro', () => ({ salirDelCentro: vi.fn() }))
 
-const { AvisoSuperusuario } = await import('../AvisoSuperusuario')
+const { AvisoSuperusuario, AvisoSuperusuarioContenido } = await import('../AvisoSuperusuario')
+const { LimiteSeccion } = await import('@/shared/components/LimiteSeccion')
 
 const contexto = {
   centroId: A,
@@ -38,7 +39,7 @@ beforeEach(() => {
 
 describe('AvisoSuperusuario', () => {
   it('quien no es superusuario: no pinta nada ni consulta', async () => {
-    const nodo = await AvisoSuperusuario({
+    const nodo = await AvisoSuperusuarioContenido({
       locale: 'es',
       contexto: { ...contexto, esSuperusuario: false },
     })
@@ -47,7 +48,7 @@ describe('AvisoSuperusuario', () => {
   })
 
   it('el superusuario: la banda con el centro y el botón de salir', async () => {
-    const nodo = await AvisoSuperusuario({
+    const nodo = await AvisoSuperusuarioContenido({
       locale: 'es',
       contexto: { ...contexto, esSuperusuario: true },
     })
@@ -61,7 +62,7 @@ describe('AvisoSuperusuario', () => {
   })
 
   it('el centro sin nombre legible: lo dice, no deja el hueco', async () => {
-    const nodo = await AvisoSuperusuario({
+    const nodo = await AvisoSuperusuarioContenido({
       locale: 'es',
       contexto: {
         ...contexto,
@@ -72,6 +73,17 @@ describe('AvisoSuperusuario', () => {
     render(nodo!)
     expect(screen.getByRole('status')).toHaveTextContent(
       'centros.superusuario.aviso(centros.elegir.sin_nombre)'
+    )
+  })
+  // Censo C (2026-11-25): la exportación pública es la sección, envuelta en su límite. Si su lectura
+  // falla, dice «no se ha podido leer» y el resto de la pantalla sigue. Las pruebas de arriba miden el
+  // contenido (AvisoSuperusuarioContenido) directamente.
+  it('la exportación envuelve el contenido en LimiteSeccion', () => {
+    const props = {} as Parameters<typeof AvisoSuperusuario>[0]
+    const nodo = AvisoSuperusuario(props)
+    expect(nodo.type).toBe(LimiteSeccion)
+    expect((nodo.props as { children: { type: unknown } }).children.type).toBe(
+      AvisoSuperusuarioContenido
     )
   })
 })

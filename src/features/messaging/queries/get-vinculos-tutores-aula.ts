@@ -79,10 +79,9 @@ export async function getVinculosTutoresAulaCore(
     supabase.from('matriculas').select('nino_id').eq('aula_id', aulaId)
   )
 
-  if (matErr) {
-    logger.warn('getVinculosTutoresAula: matriculas', matErr.message)
-    return new Map()
-  }
+  // Censo C (2026-11-25): un Map vacío decía «esta aula no tiene familias». Lo apartó el codemod (la
+  // lectura pasa por `aplicarMatriculaActiva`); va a mano porque es la agenda del aula, diaria.
+  if (matErr) throw new LecturaFallida('getVinculosTutoresAulaCore', matErr)
 
   const ninoIds = (matriculas ?? []).map((m) => m.nino_id)
   if (ninoIds.length === 0) return new Map()

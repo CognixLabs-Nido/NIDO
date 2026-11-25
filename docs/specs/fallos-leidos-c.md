@@ -368,6 +368,27 @@ después de haber guardado. Lo segundo solo se arregla sitio por sitio, no ponie
 función, y dame el NÚMERO, no un suelo. […] Y que el lint cubra la clase, no los casos: una parada por lectura
 fallida después de una escritura en la misma acción tiene que poner la CI roja.»
 
+**El número (2026-11-25).** El escáner de cadena (`cadena.cjs`: checker de TypeScript, grafo de llamadas, RPC
+volátil de producción = escribe, un `catch` que devuelve `fail` = parada) da 28 entradas, revisadas a mano: 13
+reales desde 6 sitios raíz (el correo de invitación tras escribir la invitación: 7 acciones; `invitarAdmin`;
+`activarMatricula`; la aceptación de una invitación de profe, que se salta el rollback de la cuenta: 2; la firma
+del enlace tras guardar la foto: 2 rutas), 3 de ficheros huérfanos sin cambio en la base (libro de familia, DNI
+de recogida, avatar: los recoge el barrido del #549) y 12 falsos positivos. Jose, literal:
+
+«Las tres: la regla de ESLint para el caso de la misma función, el escáner de cadena como paso de CI esperando 0
+reales, y los 15 en una lista con su motivo escrito que solo puede encoger. […] Una condición del paso de CI:
+que vaya como job propio, en paralelo con los shards, no en serie. Si añade hasta 25 minutos a cada PR encima
+de los que ya tarda, lo vamos a acabar odiando y alguien lo quitará.»
+
+**Regla (Jose, 2026-11-25): «¿ESTE ARREGLO CONVIERTE EN FALLO ALGO QUE HOY FUNCIONA?»** El diseño primero de
+`asegurarAgenda` («una lectura fallida para») habría convertido en un «no» un guardado que hoy funciona (la
+lectura falla, el día no tiene agenda, el insert entra); lo cazó la predicción escrita antes de medir. Los 13
+son lo mismo a otra escala. «Antes de hacer que algo pare, comprobar qué hace hoy cuando la lectura falla, no
+qué debería hacer.» Entra en el molde del codemod y de los arreglos a mano: una parada nueva se mide contra lo
+que el código hace hoy con esa lectura fallida, y no va después de una escritura hecha (el escáner de cadena en
+la CI). «Bien que el arreglo final intente el insert igualmente y solo diga «fuera de ventana» con un 42501: eso
+es parar por lo que la base dice, no por lo que suponíamos.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).

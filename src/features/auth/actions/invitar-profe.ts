@@ -59,7 +59,7 @@ async function centrosAdminDelLlamador(): Promise<ActionResult<string[]>> {
   const { data: userRes } = await supabase.auth.getUser()
   if (!userRes.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const centros = (await centrosDondeEsAdmin(supabase, userRes.user.id)) ?? []
+  const centros = await centrosDondeEsAdmin(supabase, userRes.user.id)
   if (centros.length === 0) return fail('auth.invitation.errors.forbidden')
   return ok(centros)
 }
