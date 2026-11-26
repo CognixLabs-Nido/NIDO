@@ -4165,6 +4165,7 @@
         "publicando": "Publicando…"
       },
       "lote_resultado": "{publicados} publicados · {incompletos} sin publicar (faltan ítems)",
+      "lote_fallidos": "{n, plural, one {# informe no se ha podido publicar por un error (no le faltan ítems). Vuelve a intentarlo.} other {# informes no se han podido publicar por un error (no les faltan ítems). Vuelve a intentarlo.}}",
       "lote_vacio": "No había informes que publicar.",
       "seguimiento": {
         "titulo": "Seguimiento",

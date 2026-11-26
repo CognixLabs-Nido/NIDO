@@ -40,12 +40,14 @@ export function PublicarLoteButton({
         toast.error(tRoot(res.error))
         return
       }
-      const { total, publicados, incompletos } = res.data
+      const { total, publicados, incompletos, fallidos } = res.data
       if (total === 0) {
         toast.info(t('campana.lote_vacio'))
       } else {
         toast.success(t('campana.lote_resultado', { publicados, incompletos }))
       }
+      // Censo C: los que no se publicaron por otro motivo se dicen aparte (antes, «faltan ítems»).
+      if (fallidos > 0) toast.error(t('campana.lote_fallidos', { n: fallidos }))
       router.refresh()
     })
   }

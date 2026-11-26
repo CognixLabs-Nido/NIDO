@@ -4165,6 +4165,7 @@
         "publicando": "Publicant…"
       },
       "lote_resultado": "{publicados} publicats · {incompletos} sense publicar (falten ítems)",
+      "lote_fallidos": "{n, plural, one {# informe no s'ha pogut publicar per un error (no li falten ítems). Torna-ho a intentar.} other {# informes no s'han pogut publicar per un error (no els falten ítems). Torna-ho a intentar.}}",
       "lote_vacio": "No hi havia informes per publicar.",
       "seguimiento": {
         "titulo": "Seguiment",

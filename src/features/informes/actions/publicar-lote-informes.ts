@@ -81,14 +81,14 @@ export async function publicarLoteInformes(
       .filter((r) => r.aula && r.aula.deleted_at === null)
       .map((r) => r.aula_id)
   }
-  if (aulaIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
+  if (aulaIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0, fallidos: 0 })
 
   // Niños con matrícula activa en esas aulas (Q3: bajas excluidas).
   const { data: mat } = await aplicarMatriculaActiva(
     supabase.from('matriculas').select('nino_id').in('aula_id', aulaIds)
   )
   const ninoIds = (mat ?? []).map((m) => m.nino_id)
-  if (ninoIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
+  if (ninoIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0, fallidos: 0 })
 
   // Informes en BORRADOR de la terna (curso, período) de esos niños. Los publicados
   // ya están; los "sin empezar" no existen como fila (no se crean — Q5).
@@ -101,7 +101,7 @@ export async function publicarLoteInformes(
     .in('nino_id', ninoIds)
   if (errorLectura) return fail('common.lectura_fallida')
   const lista = borradores ?? []
-  if (lista.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
+  if (lista.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0, fallidos: 0 })
 
   // Best-effort: `publicarInforme` valida "todos valorados" y publica; los
   // incompletos devuelven fail y se quedan en borrador. Secuencial (volumen pequeño).

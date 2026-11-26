@@ -4165,6 +4165,7 @@
         "publicando": "Publishing…"
       },
       "lote_resultado": "{publicados} published · {incompletos} not published (missing items)",
+      "lote_fallidos": "{n, plural, one {# report could not be published because of an error (it is not missing items). Please try again.} other {# reports could not be published because of an error (they are not missing items). Please try again.}}",
       "lote_vacio": "There were no reports to publish.",
       "seguimiento": {
         "titulo": "Progress",
