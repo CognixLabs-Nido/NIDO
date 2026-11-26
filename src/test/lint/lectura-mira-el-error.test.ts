@@ -8,7 +8,8 @@ import regla from '../../../eslint-rules/lectura-mira-el-error.mjs'
 /**
  * La regla `nido/lectura-mira-el-error` (censo C, decisión de Jose del 2026-11-25): «un sitio nuevo con el
  * patrón viejo tiene que poner la CI roja». Estos casos son su control: cada forma del patrón viejo da
- * error, y las formas buenas no. La lista blanca va por fichero real; aquí los ficheros no están en ella.
+ * error, y las formas buenas no. (La lista blanca temporal se retiró el 2026-11-26: no hay excepciones por
+ * fichero.)
  */
 RuleTester.describe = describe
 RuleTester.it = it
