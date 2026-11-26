@@ -520,8 +520,14 @@ describe('censo C: invitar con una lectura caída, y el prospecto que no sale de
   })
 
   it.each([
-    ['ok', () => {}],
-    ['vinculado', () => ((prospectoTutorUsuarioId = 'tutor-uid'), conFamiliaAqui())],
+    ['ok', (): void => {}],
+    [
+      'vinculado',
+      (): void => {
+        prospectoTutorUsuarioId = 'tutor-uid'
+        conFamiliaAqui()
+      },
+    ],
   ] as const)(
     '%s y el prospecto que no sale de la cola: lo dice (sigueEnCola), y va a Sentry',
     async (resultado, montar) => {

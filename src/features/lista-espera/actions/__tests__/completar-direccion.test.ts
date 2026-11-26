@@ -503,12 +503,18 @@ describe('censo C: completar con una lectura caída, y el prospecto que no sale 
   })
 
   it.each([
-    ['ok', 'cuenta nueva', () => {}],
-    ['vinculado', 'vinculado', () => (prospectoTutorUsuarioId = 'tutor-uid-guardado')],
+    ['ok', 'cuenta nueva', (): void => {}],
+    [
+      'vinculado',
+      'vinculado',
+      (): void => {
+        prospectoTutorUsuarioId = 'tutor-uid-guardado'
+      },
+    ],
     [
       'ok',
       'cuenta existente',
-      () => {
+      (): void => {
         cuentaEmail = { id: 'de-otro-centro', email: 'tutor@nido.test' }
         rolesCuenta = [{ usuario_id: 'de-otro-centro' }]
         perfilAqui = null
