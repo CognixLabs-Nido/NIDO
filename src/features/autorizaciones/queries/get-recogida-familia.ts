@@ -1,8 +1,8 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 import { firmaConDatosVigente } from '../lib/estado-firma'
 import type { PersonaAutorizada } from '../types'
@@ -48,14 +48,11 @@ export async function getRecogidaContextoFamilia(
     )
     .is('deleted_at', null)
     .order('nombre', { ascending: true })
-  if (ninosErr) {
-    logger.warn('getRecogidaContextoFamilia: ninos', ninosErr.message)
-    return vacio
-  }
+  if (ninosErr) throw new LecturaFallida('getRecogidaContextoFamilia: niños', ninosErr)
   if (!ninos || ninos.length === 0) return vacio
 
   // ¿Hay plantilla de recogida publicada? (RLS la acota al centro del tutor.)
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: plantillaErr } = await supabase
     .from('autorizaciones')
     .select('id')
     .eq('centro_id', ambito.centroId)
@@ -65,10 +62,12 @@ export async function getRecogidaContextoFamilia(
     .eq('texto_definitivo', true)
     .limit(1)
     .maybeSingle()
+  // Sin leerla, la pantalla diría que el centro no tiene plantilla.
+  if (plantillaErr) throw new LecturaFallida('getRecogidaContextoFamilia: plantilla', plantillaErr)
 
   // Instancias habituales (vigencia abierta) de estos niños → prefill.
   const ninoIds = ninos.map((n) => n.id)
-  const { data: habituales } = await supabase
+  const { data: habituales, error: habitualesErr } = await supabase
     .from('autorizaciones')
     .select('id, nino_id')
     .eq('tipo', 'recogida')
@@ -76,16 +75,19 @@ export async function getRecogidaContextoFamilia(
     .eq('estado', 'publicada')
     .is('vigencia_hasta', null)
     .in('nino_id', ninoIds)
+  if (habitualesErr)
+    throw new LecturaFallida('getRecogidaContextoFamilia: habituales', habitualesErr)
 
   const prefillPorNino: Record<string, PersonaAutorizada[]> = {}
   if (habituales && habituales.length > 0) {
     const instIds = habituales.map((h) => h.id)
     // `datos` sale por `contenido_firmas` (`20270115120000`). Sin él no se rellena nada: el
     // formulario sale vacío, nunca con una lista que no es la vigente.
-    const { data: firmasTabla } = await supabase
+    const { data: firmasTabla, error: firmasErr } = await supabase
       .from('firmas_autorizacion')
       .select('id, autorizacion_id, firmante_id, decision, firmado_at')
       .in('autorizacion_id', instIds)
+    if (firmasErr) throw new LecturaFallida('getRecogidaContextoFamilia: firmas', firmasErr)
     const firmas = (await conDatosDeFirmas(supabase, firmasTabla ?? [])) ?? []
 
     // La lista VIGENTE de cada habitual, no la última `firmado` del histórico: una

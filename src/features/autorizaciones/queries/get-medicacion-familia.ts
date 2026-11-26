@@ -1,8 +1,8 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 export interface MedicacionContextoFamilia {
   /** ¿Existe una plantilla de medicación publicada en el centro? (gatea el botón). */
@@ -37,13 +37,10 @@ export async function getMedicacionContextoFamilia(
     )
     .is('deleted_at', null)
     .order('nombre', { ascending: true })
-  if (ninosErr) {
-    logger.warn('getMedicacionContextoFamilia: ninos', ninosErr.message)
-    return vacio
-  }
+  if (ninosErr) throw new LecturaFallida('getMedicacionContextoFamilia: niños', ninosErr)
   if (!ninos || ninos.length === 0) return vacio
 
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: plantillaErr } = await supabase
     .from('autorizaciones')
     .select('id')
     .eq('centro_id', ambito.centroId)
@@ -53,6 +50,9 @@ export async function getMedicacionContextoFamilia(
     .eq('texto_definitivo', true)
     .limit(1)
     .maybeSingle()
+  // Sin leerla, la pantalla diría que el centro no tiene plantilla.
+  if (plantillaErr)
+    throw new LecturaFallida('getMedicacionContextoFamilia: plantilla', plantillaErr)
 
   // Esqueleto de niño (alta tutor-driven) puede traer apellidos NULL → coalesce.
   return {
