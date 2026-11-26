@@ -4,6 +4,7 @@ import type { Database } from '@/types/db'
 import { columnasDe, type FilaDe } from '@/features/export/lib/columnas-recolectar'
 
 import { rolDeLaApp, type Rol } from './resolver'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Las lecturas de `roles_usuario` que NO son «el centro del usuario actual»: miran a OTRO usuario
@@ -38,11 +39,12 @@ export async function tieneRolesVivos(client: Client, usuarioId: string): Promis
 
 /** Cuántos roles vivos hay en un centro explícito (el resumen del inicio de Dirección). */
 export async function contarRolesDelCentro(client: Client, centroId: string): Promise<number> {
-  const { count } = await client
+  const { count, error } = await client
     .from('roles_usuario')
     .select('usuario_id', { count: 'exact', head: true })
     .eq('centro_id', centroId)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('contarRolesDelCentro', error)
   return count ?? 0
 }
 
@@ -97,12 +99,13 @@ export async function rolesDeAutores(
   centroId: string
 ): Promise<Array<{ usuario_id: string; rol: Rol }>> {
   if (autorIds.length === 0) return []
-  const { data } = await client
+  const { data, error } = await client
     .from('roles_usuario')
     .select('usuario_id, rol')
     .eq('centro_id', centroId)
     .in('usuario_id', autorIds)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('rolesDeAutores', error)
   return (data ?? []).flatMap(({ usuario_id, rol }) => {
     const deLaApp = rolDeLaApp(rol)
     return deLaApp ? [{ usuario_id, rol: deLaApp }] : []
@@ -115,7 +118,7 @@ export async function tieneRolProfeEn(
   usuarioId: string,
   centroId: string
 ): Promise<boolean> {
-  const { data } = await client
+  const { data, error } = await client
     .from('roles_usuario')
     .select('rol')
     .eq('usuario_id', usuarioId)
@@ -124,6 +127,7 @@ export async function tieneRolProfeEn(
     .is('deleted_at', null)
     .limit(1)
     .maybeSingle()
+  if (error) throw new LecturaFallida('tieneRolProfeEn', error)
   return data !== null
 }
 
@@ -133,7 +137,7 @@ export async function tieneRolFamiliarEn(
   usuarioId: string,
   centroId: string
 ): Promise<boolean> {
-  const { data } = await client
+  const { data, error } = await client
     .from('roles_usuario')
     .select('rol')
     .eq('usuario_id', usuarioId)
@@ -142,6 +146,7 @@ export async function tieneRolFamiliarEn(
     .in('rol', ['tutor_legal', 'autorizado'])
     .limit(1)
     .maybeSingle()
+  if (error) throw new LecturaFallida('tieneRolFamiliarEn', error)
   return data !== null
 }
 
@@ -157,12 +162,13 @@ export async function profesDelCentroConNombre(client: Client, centroId: string)
 
 /** Los ids de los profes vivos de un centro explícito (audiencias de citas y recordatorios). */
 export async function profesDelCentro(client: Client, centroId: string): Promise<string[]> {
-  const { data } = await client
+  const { data, error } = await client
     .from('roles_usuario')
     .select('usuario_id')
     .eq('centro_id', centroId)
     .eq('rol', 'profe')
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('profesDelCentro', error)
   return (data ?? []).map((r) => r.usuario_id)
 }
 

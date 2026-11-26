@@ -34,7 +34,8 @@ vi.mock('next-intl/server', () => ({
     v ? `${k}|${Object.values(v).join('|')}` : k,
 }))
 
-const { AvisoCentroDistinto } = await import('../AvisoCentroDistinto')
+const { AvisoCentroDistinto, AvisoCentroDistintoContenido } = await import('../AvisoCentroDistinto')
+const { LimiteSeccion } = await import('@/shared/components/LimiteSeccion')
 
 const centroA = {
   centroId: A,
@@ -71,19 +72,19 @@ describe('AvisoCentroDistinto', () => {
   it('un centro: nada, ni consulta nombres, aunque el registro sea de otro centro', async () => {
     // Registro de B y usuario solo con A: lo que lo calla es tener UN centro, no que coincida.
     estado.actual = activo(A, [centroA])
-    expect(await AvisoCentroDistinto({ centroRegistroId: B })).toBeNull()
+    expect(await AvisoCentroDistintoContenido({ centroRegistroId: B })).toBeNull()
     expect(estado.consultas).toBe(0)
   })
 
   it('dos centros y el registro es del activo: nada', async () => {
     estado.actual = activo(A, [centroA, centroB])
-    expect(await AvisoCentroDistinto({ centroRegistroId: A })).toBeNull()
+    expect(await AvisoCentroDistintoContenido({ centroRegistroId: A })).toBeNull()
     expect(estado.consultas).toBe(0)
   })
 
   it('dos centros y el registro es del OTRO: «estás viendo B, no A»', async () => {
     estado.actual = activo(A, [centroA, centroB])
-    render((await AvisoCentroDistinto({ centroRegistroId: B }))!)
+    render((await AvisoCentroDistintoContenido({ centroRegistroId: B }))!)
     expect(screen.getByRole('status').textContent).toBe(
       'aviso.otro_centro|Centro Demo B|Centro Demo A'
     )
@@ -95,7 +96,18 @@ describe('AvisoCentroDistinto', () => {
       centros: [centroA, centroB],
       esSuperusuario: false,
     } satisfies EstadoCentro
-    render((await AvisoCentroDistinto({ centroRegistroId: B }))!)
+    render((await AvisoCentroDistintoContenido({ centroRegistroId: B }))!)
     expect(screen.getByRole('status').textContent).toBe('aviso.viendo|Centro Demo B')
+  })
+  // Censo C (2026-11-25): la exportación pública es la sección, envuelta en su límite. Si su lectura
+  // falla, dice «no se ha podido leer» y el resto de la pantalla sigue. Las pruebas de arriba miden el
+  // contenido (AvisoCentroDistintoContenido) directamente.
+  it('la exportación envuelve el contenido en LimiteSeccion', () => {
+    const props = {} as Parameters<typeof AvisoCentroDistinto>[0]
+    const nodo = AvisoCentroDistinto(props)
+    expect(nodo.type).toBe(LimiteSeccion)
+    expect((nodo.props as { children: { type: unknown } }).children.type).toBe(
+      AvisoCentroDistintoContenido
+    )
   })
 })

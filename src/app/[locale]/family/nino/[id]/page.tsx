@@ -55,6 +55,8 @@ import { MenuDelDiaWidget } from '@/features/menus/components/MenuDelDiaWidget'
 import { etiquetaIdiomaPrincipal } from '@/shared/lib/idioma-centinela'
 import { DocumentosCentroNino } from '@/features/documentos-centro/components/DocumentosCentroNino'
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
+import { NoSePudoLeer } from '@/shared/components/NoSePudoLeer'
+import { oNoLeido } from '@/shared/lib/en-seccion'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -179,7 +181,11 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
 
   // Ausencias: dependen de `puede_ver_agenda` (compartido con la agenda)
   // para leer; `puede_reportar_ausencias` para reportar/cancelar.
-  const ausencias = permisos.puede_ver_agenda ? await getAusenciasNino(id) : []
+  // Censo C (2026-11-25): pantalla diaria, por sección. Las ausencias, la foto y la imagen de la tarjeta son
+  // secundarias: si no se leen, lo dicen en su sitio y la ficha sigue (`null` = no se pudo leer).
+  const ausencias = permisos.puede_ver_agenda
+    ? await oNoLeido(getAusenciasNino(id), 'ficha del niño: ausencias')
+    : []
   const puedeReportarAusencias = Boolean(permisos.puede_reportar_ausencias)
 
   // F-8 (familia): el recorrido por cursos/aulas solo lo ve el tutor legal (la RPC lo
@@ -189,7 +195,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // Quién ha leído la ficha médica de su hijo: lo ve el tutor legal (la RPC lo vuelve a comprobar).
   const lecturas = esTutorLegal ? await getLecturasFichaMedica(id) : null
 
-  const foto = await firmarFotoNino(nino.foto_url)
+  const foto = await oNoLeido(firmarFotoNino(nino.foto_url), 'ficha del niño: foto')
 
   // Los documentos del centro, para firmarlos fuera del alta (fase 4, 4c): los firma el tutor legal
   // (la base vuelve a mirarlo). El autorizado ni los lee.
@@ -199,9 +205,13 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const camposAlta = await leerCamposAltaFicha(supabase, id, esTutorLegal)
   // Fase 7: la tarjeta sanitaria, al tutor legal (`sip_de_ninos`; el autorizado no recibe filas).
   const tarjeta = esTutorLegal ? ((await leerTarjetaSanitariaDe(supabase, id)) ?? null) : undefined
-  const urlTarjeta = tarjeta?.sip_documento_path
-    ? await firmarRuta(supabase, BUCKET_SIP_NINOS, tarjeta.sip_documento_path)
-    : null
+  const urlTarjetaLeida = tarjeta?.sip_documento_path
+    ? await oNoLeido(
+        firmarRuta(supabase, BUCKET_SIP_NINOS, tarjeta.sip_documento_path).then((url) => ({ url })),
+        'ficha del niño: tarjeta'
+      )
+    : { url: null }
+  const urlTarjeta = urlTarjetaLeida?.url ?? null
   // Fase 9: los gastos de gestión del alta, al tutor legal (`gastos_gestion_nino`; el autorizado,
   // 42501: no se le pregunta). Sin gastos (el curso no tiene importe), no sale nada.
   const gastos = esTutorLegal ? await leerGastosGestion(supabase, id) : null
@@ -226,10 +236,11 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         {/* IU-3: mismo gate que enforza el route handler (`puede_aparecer_en_fotos`).
             Avisado ANTES de subir: si no, el navegador sube la foto entera para recibir
             un 403 (15-20 s con una foto de móvil). */}
+        {foto === null && <NoSePudoLeer alcance="seccion" />}
         <SubirFotoNino
           ninoId={id}
           locale={locale}
-          initialUrl={foto.urlMiniatura ?? foto.url}
+          initialUrl={foto ? (foto.urlMiniatura ?? foto.url) : null}
           alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
           bloqueado={!nino.puede_aparecer_en_fotos}
           motivoBloqueo={tFotos('requiere_autorizacion')}
@@ -310,6 +321,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         </Card>
       </section>
 
+      {tarjeta !== undefined && urlTarjetaLeida === null && <NoSePudoLeer alcance="seccion" />}
       {tarjeta !== undefined && (
         <TarjetaSanitariaCard
           locale={locale}
@@ -428,11 +440,15 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           <CalendarOffIcon className="text-accent-warm-600 size-5" />
           {tAusencia('title')}
         </h2>
-        <AusenciasFamiliaSection
-          ninoId={id}
-          ausencias={ausencias}
-          puedeReportar={puedeReportarAusencias}
-        />
+        {ausencias === null ? (
+          <NoSePudoLeer alcance="seccion" />
+        ) : (
+          <AusenciasFamiliaSection
+            ninoId={id}
+            ausencias={ausencias}
+            puedeReportar={puedeReportarAusencias}
+          />
+        )}
       </section>
 
       {(permisos.puede_ver_info_medica || esTutorLegal) && (

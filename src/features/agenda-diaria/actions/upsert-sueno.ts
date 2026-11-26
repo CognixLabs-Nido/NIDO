@@ -8,7 +8,7 @@ import { logger } from '@/shared/lib/logger'
 import { suenoInputSchema, type SuenoInput } from '../schemas/agenda-diaria'
 import { fail, ok, type ActionResult } from '../types'
 
-import { asegurarAgenda } from './upsert-agenda-cabecera'
+import { asegurarAgenda, claveSinAgenda } from './upsert-agenda-cabecera'
 
 export async function upsertSueno(
   ninoId: string,
@@ -47,8 +47,9 @@ export async function upsertSueno(
     return ok({ id: data.id })
   }
 
-  const agendaId = await asegurarAgenda(ninoId, fecha)
-  if (!agendaId) return fail('agenda.errors.fuera_de_ventana')
+  const agenda = await asegurarAgenda(ninoId, fecha)
+  if ('motivo' in agenda) return fail(await claveSinAgenda(agenda.motivo))
+  const agendaId = agenda.id
 
   const { data, error } = await supabase
     .from('suenos')

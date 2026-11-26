@@ -21,7 +21,15 @@
       "todas": "Totes",
       "buscar": "Busca pel nom",
       "sin_resultados": "Ningú coincidix amb el filtre."
-    }
+    },
+    "lectura": {
+      "pagina": "No s'ha pogut llegir esta pàgina. No és que no hi haja res: la lectura ha fallat.",
+      "seccion": "No s'ha pogut llegir esta part. La resta de la pantalla sí que està al dia.",
+      "reintentar": "Tornar-ho a intentar",
+      "contador": "No s'ha pogut comptar"
+    },
+    "lectura_fallida": "No s'ha pogut llegir el que calia. No s'ha canviat res; torna-ho a intentar.",
+    "guardado_sin_aviso": "Desat; no s'ha pogut enviar l'avís o el correu."
   },
   "nav": {
     "home": "Inici",
@@ -190,6 +198,11 @@
       "campo_label": "Foto de perfil (opcional)",
       "campo_ayuda": "JPG o PNG, màxim 4 MB. Pots afegir-la després des del teu perfil.",
       "opcional_fallo": "No s’ha pogut pujar la foto; pots afegir-la després des del teu perfil."
+    },
+    "no_se_pudo_leer": {
+      "title": "No s'ha pogut llegir",
+      "description": "No s'ha pogut comprovar a què pots entrar. Torna a carregar la pàgina d'ací a un moment.",
+      "back_to_home": "Tornar a l'inici"
     }
   },
   "legal": {

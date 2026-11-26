@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = SupabaseClient<Database>
 
@@ -55,9 +56,10 @@ export async function firmarRutasBucket(
   const out = new Map<string, string>()
   const limpias = paths.filter((p): p is string => typeof p === 'string' && p.length > 0)
   if (limpias.length === 0) return out
-  const { data } = await client.storage
+  const { data, error } = await client.storage
     .from(bucket)
     .createSignedUrls(limpias, SIGNED_URL_TTL_SEGUNDOS)
+  if (error) throw new LecturaFallida('firmarRutasBucket', error)
   for (const item of data ?? []) {
     if (item.signedUrl && item.path) out.set(item.path, item.signedUrl)
   }

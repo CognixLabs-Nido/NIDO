@@ -43,9 +43,16 @@ export async function crearVinculoProfeAula(
     .maybeSingle()
   if (!aulaRow) return { error: 'auth.invitation.errors.profe_aula_failed' }
 
-  const { data: cursoActivoId } = await service.rpc('curso_activo_de_centro', {
+  const { data: cursoActivoId, error: errorLectura } = await service.rpc('curso_activo_de_centro', {
     p_centro_id: aulaRow.centro_id,
   })
+  // Censo C (2026-11-25): este helper contesta sus errores en `{ error }`, y el llamador deshace la
+  // cuenta recién creada con cualquiera de ellos. Lanzar se saltaba ese rollback; antes decía «sin
+  // curso activo», que era falso.
+  if (errorLectura) {
+    logger.warn('crearVinculoProfeAula: curso activo', errorLectura.code ?? 'sin_codigo')
+    return { error: 'common.lectura_fallida' }
+  }
   if (!cursoActivoId) return { error: 'auth.invitation.errors.sin_curso_activo' }
 
   const { error } = await service.from('profes_aulas').insert({

@@ -13,6 +13,7 @@ import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-au
 import { ambitoFamiliar, esDelAmbito } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>
@@ -30,11 +31,12 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect(`/${locale}/login`)
-  const { data: perfil } = await supabase
+  const { data: perfil, error } = await supabase
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', user.id)
     .maybeSingle()
+  if (error) throw new LecturaFallida('FamilyAutorizacionDetallePage', error)
 
   // Sin acceso (instancia fuera de su ámbito, p. ej. desde una notificación ajena):
   // mensaje en la misma página, nunca cerrar sesión ni mandar a una página aparte.

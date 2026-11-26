@@ -11,6 +11,7 @@ import { logger } from '@/shared/lib/logger'
 import { titularRespuestaImagen } from '../lib/titular-respuesta-imagen'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * El «no» de la imagen en el alta (fase 10, 10a-2): el tutor legal contesta que no autoriza el uso de
@@ -31,39 +32,43 @@ const denegarImagenAltaSchema = z.object({
 export async function denegarConsentimientoImagenAlta(
   input: z.infer<typeof denegarImagenAltaSchema>
 ): Promise<ActionResult<{ ok: true }>> {
-  const parsed = denegarImagenAltaSchema.safeParse(input)
-  if (!parsed.success) return fail('alta.errors.acuse_fallo')
+  try {
+    const parsed = denegarImagenAltaSchema.safeParse(input)
+    if (!parsed.success) return fail('alta.errors.acuse_fallo')
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('alta.errors.no_autorizado')
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('alta.errors.no_autorizado')
 
-  const titular = await titularRespuestaImagen(
-    supabase,
-    parsed.data.nino_id,
-    user.id,
-    parsed.data.tutor_id
-  )
-  if (!titular.ok) return fail(titular.error)
+    const titular = await titularRespuestaImagen(
+      supabase,
+      parsed.data.nino_id,
+      user.id,
+      parsed.data.tutor_id
+    )
+    if (!titular.ok) return fail(titular.error)
 
-  const { ip, userAgent } = await getRequestContext()
-  const { error } = await supabase.rpc('denegar_consentimiento_imagen', {
-    p_nino_id: parsed.data.nino_id,
-    p_tutor: titular.tutor,
-    p_version: CONSENT_VERSIONS.imagen_denegada,
-    p_ip: ip ?? undefined,
-    p_user_agent: userAgent ?? undefined,
-    p_metodo: titular.metodo,
-  })
-  if (error) {
-    logger.warn('denegarConsentimientoImagenAlta', error.message)
-    if (error.code === '42501' || error.hint === 'no_es_tutor_legal')
-      return fail('alta.errors.no_autorizado')
-    return fail('alta.errors.acuse_fallo')
+    const { ip, userAgent } = await getRequestContext()
+    const { error } = await supabase.rpc('denegar_consentimiento_imagen', {
+      p_nino_id: parsed.data.nino_id,
+      p_tutor: titular.tutor,
+      p_version: CONSENT_VERSIONS.imagen_denegada,
+      p_ip: ip ?? undefined,
+      p_user_agent: userAgent ?? undefined,
+      p_metodo: titular.metodo,
+    })
+    if (error) {
+      logger.warn('denegarConsentimientoImagenAlta', error.message)
+      if (error.code === '42501' || error.hint === 'no_es_tutor_legal')
+        return fail('alta.errors.no_autorizado')
+      return fail('alta.errors.acuse_fallo')
+    }
+
+    revalidatePath('/[locale]/alta/[ninoId]', 'page')
+    return ok({ ok: true })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  revalidatePath('/[locale]/alta/[ninoId]', 'page')
-  return ok({ ok: true })
 }

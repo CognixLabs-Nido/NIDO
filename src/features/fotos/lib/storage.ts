@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 
 import { BUCKET_AULA_FOTOS, SIGNED_URL_TTL_SEGUNDOS } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = SupabaseClient<Database>
 
@@ -69,9 +70,10 @@ export function rutasFotoNueva(prefijo: string): { original: string; miniatura: 
 export async function firmarRutas(client: Client, paths: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   if (paths.length === 0) return out
-  const { data } = await client.storage
+  const { data, error } = await client.storage
     .from(BUCKET_AULA_FOTOS)
     .createSignedUrls(paths, SIGNED_URL_TTL_SEGUNDOS)
+  if (error) throw new LecturaFallida('firmarRutas', error)
   for (const item of data ?? []) {
     if (item.signedUrl && item.path) out.set(item.path, item.signedUrl)
   }

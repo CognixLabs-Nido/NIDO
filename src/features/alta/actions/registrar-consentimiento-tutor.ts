@@ -9,6 +9,7 @@ import { CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { esAdminDeCentroDeNino } from '../lib/authz-tutor'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Pieza 3b-2a — el TUTOR registra su acuse dentro del wizard de alta. Hoy solo
@@ -51,28 +52,32 @@ export type RegistrarConsentimientoTutorInput = z.infer<typeof registrarConsenti
 export async function registrarConsentimientoTutor(
   input: RegistrarConsentimientoTutorInput
 ): Promise<ActionResult<{ id: string }>> {
-  const parsed = registrarConsentimientoTutorSchema.safeParse(input)
-  if (!parsed.success) return fail('alta.errors.consentimiento_fallo')
+  try {
+    const parsed = registrarConsentimientoTutorSchema.safeParse(input)
+    if (!parsed.success) return fail('alta.errors.consentimiento_fallo')
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('alta.errors.no_autorizado')
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('alta.errors.no_autorizado')
 
-  const esDireccion = await esAdminDeCentroDeNino(supabase, parsed.data.nino_id, user.id)
+    const esDireccion = await esAdminDeCentroDeNino(supabase, parsed.data.nino_id, user.id)
 
-  const { data, error } = await supabase.rpc('registrar_consentimiento', {
-    p_usuario_id: user.id,
-    p_tipo: parsed.data.tipo,
-    p_version: CONSENT_VERSIONS[parsed.data.tipo],
-    p_metodo: esDireccion ? 'presencial' : 'digital',
-    p_nino_id: parsed.data.nino_id,
-  })
-  if (error || !data) {
-    logger.warn('registrarConsentimientoTutor', error?.message)
-    return fail('alta.errors.consentimiento_fallo')
+    const { data, error } = await supabase.rpc('registrar_consentimiento', {
+      p_usuario_id: user.id,
+      p_tipo: parsed.data.tipo,
+      p_version: CONSENT_VERSIONS[parsed.data.tipo],
+      p_metodo: esDireccion ? 'presencial' : 'digital',
+      p_nino_id: parsed.data.nino_id,
+    })
+    if (error || !data) {
+      logger.warn('registrarConsentimientoTutor', error?.message)
+      return fail('alta.errors.consentimiento_fallo')
+    }
+
+    return ok({ id: data as string })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  return ok({ id: data as string })
 }

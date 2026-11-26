@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { EventoCalendario } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 const COLS =
   'id, ambito, tipo, titulo, descripcion, lugar, fecha, fecha_fin, hora_inicio, hora_fin, requiere_confirmacion, estado, aula_id, nino_id'
@@ -45,7 +46,7 @@ export async function getEventosMes(
 
   if (error) {
     logger.warn('getEventosMes failed', error.message)
-    return []
+    throw new LecturaFallida('getEventosMes', error)
   }
 
   return (data ?? []) as EventoCalendario[]

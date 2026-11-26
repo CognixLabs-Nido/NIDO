@@ -116,9 +116,13 @@ export function CalendarioConEventos({
 
   function abrirDetalle(eventoId: string) {
     startTransition(async () => {
-      const d = await getEventoDetalleAction(eventoId)
-      if (!d) return
-      setDetalle(d)
+      const r = await getEventoDetalleAction(eventoId)
+      if (!r.success) {
+        toast.error(tToast(r.error))
+        return
+      }
+      if (!r.data) return
+      setDetalle(r.data)
       setDialogOpen(true)
     })
   }
@@ -127,8 +131,12 @@ export function CalendarioConEventos({
     if (!detalle) return
     const id = detalle.evento.id
     startTransition(async () => {
-      const d = await getEventoDetalleAction(id)
-      setDetalle(d)
+      const r = await getEventoDetalleAction(id)
+      if (!r.success) {
+        toast.error(tToast(r.error))
+        return
+      }
+      setDetalle(r.data)
       router.refresh()
     })
   }

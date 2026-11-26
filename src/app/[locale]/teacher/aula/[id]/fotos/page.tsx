@@ -10,6 +10,7 @@ import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centr
 import { BlogAulaCliente } from '@/features/fotos/components/BlogAulaCliente'
 import { getNinosAulaParaFotos } from '@/features/fotos/queries/get-ninos-etiquetables'
 import { getPublicacionesAula } from '@/features/fotos/queries/get-publicaciones-aula'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -42,7 +43,7 @@ export default async function FotosAulaPage({ params }: PageProps) {
   const rol = (await contextoEnCentro(aula.centro_id))?.rol ?? null
   let puedePublicar = rol === 'admin'
   if (!puedePublicar) {
-    const { data: pa } = await supabase
+    const { data: pa, error } = await supabase
       .from('profes_aulas')
       .select('tipo_personal_aula')
       .eq('profe_id', user.id)
@@ -50,6 +51,7 @@ export default async function FotosAulaPage({ params }: PageProps) {
       .is('fecha_fin', null)
       .is('deleted_at', null)
       .maybeSingle()
+    if (error) throw new LecturaFallida('FotosAulaPage', error)
     puedePublicar = REDACTORES.has(pa?.tipo_personal_aula ?? '')
   }
 

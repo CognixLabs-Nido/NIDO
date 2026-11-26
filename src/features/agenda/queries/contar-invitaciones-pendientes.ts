@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Cuenta las invitaciones PENDIENTES del usuario actual (RSVP sin responder de
@@ -21,7 +22,7 @@ export async function contarInvitacionesPendientes(centroId: string): Promise<nu
   })
   if (error) {
     logger.warn('contarInvitacionesPendientes', error.message)
-    return 0
+    throw new LecturaFallida('contarInvitacionesPendientes', error)
   }
   return data ?? 0
 }

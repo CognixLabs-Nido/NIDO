@@ -8,6 +8,7 @@ import { SubirLogoCentro } from '@/features/centros/components/SubirLogoCentro'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export default async function AdminCentroPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -17,11 +18,12 @@ export default async function AdminCentroPage({ params }: { params: Promise<{ lo
   // Los datos y el logo del centro son de la admin; una directora no tiene esta página.
   if (!esResponsable) redirect(`/${locale}/forbidden`)
 
-  const { data: centro } = await supabase
+  const { data: centro, error } = await supabase
     .from('centros')
     .select('id, nombre, direccion, telefono, email_contacto, web, idioma_default, logo_url')
     .eq('id', centroId)
     .single()
+  if (error) throw new LecturaFallida('AdminCentroPage', error)
 
   if (!centro) {
     return <EmptyState icon={<Building2Icon strokeWidth={1.75} />} title={t('not_found')} />

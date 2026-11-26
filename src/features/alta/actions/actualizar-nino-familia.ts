@@ -14,6 +14,7 @@ import {
 } from '../schemas/alta-documentos'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * F11-G — el TUTOR LEGAL escribe la dirección del menor + el estado civil de la familia
@@ -30,70 +31,75 @@ import { fail, ok, type ActionResult } from '../../centros/types'
 export async function actualizarNinoFamilia(
   input: ActualizarNinoFamiliaInput
 ): Promise<ActionResult<{ id: string; pendienteValidacion?: boolean }>> {
-  const parsed = actualizarNinoFamiliaSchema.safeParse(input)
-  if (!parsed.success) return fail('alta.documentos.errors.datos_invalidos')
+  try {
+    const parsed = actualizarNinoFamiliaSchema.safeParse(input)
+    if (!parsed.success) return fail('alta.documentos.errors.datos_invalidos')
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('alta.errors.no_autorizado')
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('alta.errors.no_autorizado')
 
-  // Modo Dirección (B2): la Directora del centro del niño también carga estos datos (papel).
-  // Se AMPLÍA el gate a admin del centro; el camino tutor queda intacto (OR, no sustitución).
-  const autorizado =
-    (await esTutorLegalDe(supabase, parsed.data.nino_id, user.id)) ||
-    (await esAdminDeCentroDeNino(supabase, parsed.data.nino_id, user.id))
-  if (!autorizado) return fail('alta.errors.no_autorizado')
+    // Modo Dirección (B2): la Directora del centro del niño también carga estos datos (papel).
+    // Se AMPLÍA el gate a admin del centro; el camino tutor queda intacto (OR, no sustitución).
+    const autorizado =
+      (await esTutorLegalDe(supabase, parsed.data.nino_id, user.id)) ||
+      (await esAdminDeCentroDeNino(supabase, parsed.data.nino_id, user.id))
+    if (!autorizado) return fail('alta.errors.no_autorizado')
 
-  // Construye el patch solo con las claves presentes (preserva lo no enviado).
-  const { nino_id, ...resto } = parsed.data
-  const patch: {
-    direccion_calle?: string | null
-    direccion_numero?: string | null
-    direccion_cp?: string | null
-    direccion_ciudad?: string | null
-    direccion_provincia?: string | null
-    estado_civil_familia?: EstadoCivil | null
-  } = {}
-  if (resto.direccion_calle !== undefined) patch.direccion_calle = resto.direccion_calle
-  if (resto.direccion_numero !== undefined) patch.direccion_numero = resto.direccion_numero
-  if (resto.direccion_cp !== undefined) patch.direccion_cp = resto.direccion_cp
-  if (resto.direccion_ciudad !== undefined) patch.direccion_ciudad = resto.direccion_ciudad
-  if (resto.direccion_provincia !== undefined) patch.direccion_provincia = resto.direccion_provincia
-  if (resto.estado_civil_familia !== undefined)
-    patch.estado_civil_familia = resto.estado_civil_familia
-  if (Object.keys(patch).length === 0) return ok({ id: nino_id })
+    // Construye el patch solo con las claves presentes (preserva lo no enviado).
+    const { nino_id, ...resto } = parsed.data
+    const patch: {
+      direccion_calle?: string | null
+      direccion_numero?: string | null
+      direccion_cp?: string | null
+      direccion_ciudad?: string | null
+      direccion_provincia?: string | null
+      estado_civil_familia?: EstadoCivil | null
+    } = {}
+    if (resto.direccion_calle !== undefined) patch.direccion_calle = resto.direccion_calle
+    if (resto.direccion_numero !== undefined) patch.direccion_numero = resto.direccion_numero
+    if (resto.direccion_cp !== undefined) patch.direccion_cp = resto.direccion_cp
+    if (resto.direccion_ciudad !== undefined) patch.direccion_ciudad = resto.direccion_ciudad
+    if (resto.direccion_provincia !== undefined)
+      patch.direccion_provincia = resto.direccion_provincia
+    if (resto.estado_civil_familia !== undefined)
+      patch.estado_civil_familia = resto.estado_civil_familia
+    if (Object.keys(patch).length === 0) return ok({ id: nino_id })
 
-  // Decisión J: con el alta YA validada, la edición no se aplica directa → cola de validación.
-  // Solo lo que CAMBIA respecto a lo guardado (2026-11-08): el paso del menor manda siempre los
-  // cuatro campos de la dirección, y sin comparar, cada vez que se guardaba encolaba un cambio
-  // aunque no se hubiera tocado nada. Si no cambia nada, no hay entrada.
-  if (await altaValidada(supabase, nino_id)) {
-    // La dirección y el estado civil guardados son de gestión: salen por `ficha_gestion_ninos`
-    // (`20270115120000`), que al tutor legal le contesta siempre.
-    const guardado = await leerFichaGestionDe(supabase, nino_id)
-    if (!guardado) return fail('alta.errors.no_autorizado')
-    const cambios = clavesQueCambian(patch, guardado)
-    if (Object.keys(cambios).length === 0) return ok({ id: nino_id })
-    const r = await registrarCambioPendiente(supabase, {
-      ninoId: nino_id,
-      usuarioId: user.id,
-      entidad: 'ninos_familia',
-      payload: cambios,
+    // Decisión J: con el alta YA validada, la edición no se aplica directa → cola de validación.
+    // Solo lo que CAMBIA respecto a lo guardado (2026-11-08): el paso del menor manda siempre los
+    // cuatro campos de la dirección, y sin comparar, cada vez que se guardaba encolaba un cambio
+    // aunque no se hubiera tocado nada. Si no cambia nada, no hay entrada.
+    if (await altaValidada(supabase, nino_id)) {
+      // La dirección y el estado civil guardados son de gestión: salen por `ficha_gestion_ninos`
+      // (`20270115120000`), que al tutor legal le contesta siempre.
+      const guardado = await leerFichaGestionDe(supabase, nino_id)
+      if (!guardado) return fail('alta.errors.no_autorizado')
+      const cambios = clavesQueCambian(patch, guardado)
+      if (Object.keys(cambios).length === 0) return ok({ id: nino_id })
+      const r = await registrarCambioPendiente(supabase, {
+        ninoId: nino_id,
+        usuarioId: user.id,
+        entidad: 'ninos_familia',
+        payload: cambios,
+      })
+      if (!r.ok) return fail(r.error)
+      return ok({ id: nino_id, pendienteValidacion: true })
+    }
+
+    const { error } = await supabase.rpc('actualizar_familia_nino', {
+      p_nino_id: nino_id,
+      p_patch: patch,
     })
-    if (!r.ok) return fail(r.error)
-    return ok({ id: nino_id, pendienteValidacion: true })
+    if (error) {
+      if (error.code === '42501') return fail('alta.errors.no_autorizado')
+      logger.warn('actualizarNinoFamilia: rpc', error.message)
+      return fail('alta.documentos.errors.guardado')
+    }
+    return ok({ id: nino_id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  const { error } = await supabase.rpc('actualizar_familia_nino', {
-    p_nino_id: nino_id,
-    p_patch: patch,
-  })
-  if (error) {
-    if (error.code === '42501') return fail('alta.errors.no_autorizado')
-    logger.warn('actualizarNinoFamilia: rpc', error.message)
-    return fail('alta.documentos.errors.guardado')
-  }
-  return ok({ id: nino_id })
 }

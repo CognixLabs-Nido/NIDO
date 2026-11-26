@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { ConversacionAdminFamiliaHeader, MensajeView } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface ConversacionAdminFamiliaDetalle {
   header: ConversacionAdminFamiliaHeader
@@ -55,7 +56,7 @@ export async function getAdminFamiliaDetalle(
 
   if (convErr) {
     logger.warn('getAdminFamiliaDetalle: conversacion', convErr.message)
-    return null
+    throw new LecturaFallida('getAdminFamiliaDetalle', convErr)
   }
   if (!conv) return null
   if (conv.tipo_conversacion !== 'admin_familia') return null
@@ -85,7 +86,7 @@ export async function getAdminFamiliaDetalle(
 
   if (msgErr) {
     logger.warn('getAdminFamiliaDetalle: mensajes', msgErr.message)
-    return null
+    throw new LecturaFallida('getAdminFamiliaDetalle', msgErr)
   }
 
   // Mapeo de rol del autor. En admin_familia solo hay dos autores posibles:

@@ -4,6 +4,7 @@ import type { Database } from '@/types/db'
 import { logger } from '@/shared/lib/logger'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * F-3-A — núcleos testeables de las mutaciones de rollover (cliente inyectable, patrón
@@ -25,12 +26,13 @@ async function destinoPlanificado(
   supabase: DB,
   cursoDestinoId: string
 ): Promise<ActionResult<{ centroId: string }>> {
-  const { data: destino } = await supabase
+  const { data: destino, error } = await supabase
     .from('cursos_academicos')
     .select('estado, centro_id')
     .eq('id', cursoDestinoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (error) throw new LecturaFallida('destinoPlanificado', error)
   if (!destino) return fail('rollover.errors.destino_no_encontrado')
   if (destino.estado !== 'planificado') return fail('rollover.errors.destino_no_planificado')
   return ok({ centroId: destino.centro_id })
@@ -89,12 +91,13 @@ export async function asignarAulaPropuestaCore(
   if (!g.success) return fail(g.error)
 
   // La sala debe estar configurada en el curso destino (error claro; la FK lo exigiría).
-  const { data: aulaCfg } = await supabase
+  const { data: aulaCfg, error: errorLectura } = await supabase
     .from('aulas_curso')
     .select('aula_id')
     .eq('aula_id', aulaId)
     .eq('curso_academico_id', cursoDestinoId)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('asignarAulaPropuestaCore', errorLectura)
   if (!aulaCfg) return fail('rollover.errors.aula_no_en_destino')
 
   // Exclusión mutua: sacar de "Finaliza" si estaba.

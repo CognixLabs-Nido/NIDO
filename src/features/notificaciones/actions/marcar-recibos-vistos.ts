@@ -22,11 +22,12 @@ export async function marcarRecibosVistos(reciboIds: string[]): Promise<ActionRe
   } = await supabase.auth.getUser()
   if (!user) return fail('notificaciones.errors.no_autorizado')
 
-  const { data: pref } = await supabase
+  const { data: pref, error: errorLectura } = await supabase
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_RECIBOS_VISTOS)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   let mapa: Record<string, string> = {}
   if (pref?.valor) {

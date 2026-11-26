@@ -40,11 +40,12 @@ export async function etiquetarNino(
   const { media_id, nino_id } = parsed.data
 
   // `centro_id` del media (visible al autor/admin vía RLS de media).
-  const { data: media } = await supabase
+  const { data: media, error: errorLectura } = await supabase
     .from('media')
     .select('centro_id')
     .eq('id', media_id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!media) return fail('fotos.errors.no_autorizado')
 
   const { error } = await supabase

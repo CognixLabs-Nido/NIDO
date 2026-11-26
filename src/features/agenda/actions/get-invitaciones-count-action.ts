@@ -1,5 +1,7 @@
 'use server'
 
+import { contadorNoLeido } from '@/shared/lib/frontera-lectura'
+
 import { contarInvitacionesPendientes } from '../queries/contar-invitaciones-pendientes'
 
 /**
@@ -10,7 +12,11 @@ import { contarInvitacionesPendientes } from '../queries/contar-invitaciones-pen
  */
 export async function getInvitacionesPendientesCountAction(
   centroId: string
-): Promise<{ total: number }> {
-  const total = await contarInvitacionesPendientes(centroId)
-  return { total }
+): Promise<{ total: number | null }> {
+  try {
+    const total = await contarInvitacionesPendientes(centroId)
+    return { total }
+  } catch (e) {
+    return contadorNoLeido(e)
+  }
 }

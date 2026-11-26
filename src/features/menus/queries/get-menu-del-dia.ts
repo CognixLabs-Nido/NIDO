@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { MenuDelDiaParaFamilia, MenuDiaRow } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Wrapper sobre el helper SQL `menu_del_dia(centro, fecha)`.
@@ -26,7 +27,7 @@ export async function getMenuDelDia(
 
   if (error) {
     logger.warn('getMenuDelDia failed', error.message)
-    return null
+    throw new LecturaFallida('getMenuDelDia', error)
   }
 
   // PG composite type que puede llegar como objeto (PostgREST) o null.

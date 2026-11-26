@@ -1,5 +1,7 @@
 'use server'
 
+import { contadorNoLeido } from '@/shared/lib/frontera-lectura'
+
 import { contarRecordatoriosPendientes } from '../queries/contar-pendientes'
 
 /**
@@ -10,9 +12,13 @@ import { contarRecordatoriosPendientes } from '../queries/contar-pendientes'
  */
 export async function getRecordatoriosPendientesCountAction(
   centroId: string
-): Promise<{ total: number }> {
+): Promise<{ total: number | null }> {
   // El centro llega del badge. La RPC solo cuenta lo del propio usuario (auth.uid()), así que
-  // otro centro no enseña nada ajeno: como mucho, 0.
-  const total = await contarRecordatoriosPendientes(centroId)
-  return { total }
+  // otro centro no enseña nada ajeno: como mucho, 0. Con la lectura caída, «?» (censo C).
+  try {
+    const total = await contarRecordatoriosPendientes(centroId)
+    return { total }
+  } catch (e) {
+    return contadorNoLeido(e)
+  }
 }

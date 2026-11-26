@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { ConversacionListItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Devuelve las conversaciones que el usuario puede leer (RLS filtra):
@@ -61,7 +62,7 @@ export async function getConversacionesDelUsuario(
 
   if (convErr) {
     logger.warn('getConversacionesDelUsuario: conversaciones', convErr.message)
-    return []
+    throw new LecturaFallida('getConversacionesDelUsuario', convErr)
   }
 
   const conversaciones = convs ?? []
@@ -73,12 +74,13 @@ export async function getConversacionesDelUsuario(
   // PostgREST no permite GROUP BY desde el cliente sin RPC; recogemos hasta
   // 100 mensajes recientes y los agrupamos en JS. Con ~50 conversaciones es
   // suficiente; si el volumen creciera, se convertiría en RPC SQL.
-  const { data: msgs } = await supabase
+  const { data: msgs, error: errorLectura } = await supabase
     .from('mensajes')
     .select('id, conversacion_id, contenido, erroneo, created_at, autor_id')
     .in('conversacion_id', convIds)
     .order('created_at', { ascending: false })
     .limit(500)
+  if (errorLectura) throw new LecturaFallida('getConversacionesDelUsuario', errorLectura)
 
   const lastByConv = new Map<string, { contenido: string; erroneo: boolean; created_at: string }>()
   for (const m of msgs ?? []) {
@@ -92,11 +94,12 @@ export async function getConversacionesDelUsuario(
   }
 
   // 3. Lecturas del usuario para esas conversaciones.
-  const { data: lecturas } = await supabase
+  const { data: lecturas, error: errorLectura2 } = await supabase
     .from('lectura_conversacion')
     .select('conversacion_id, last_read_at')
     .eq('usuario_id', userId)
     .in('conversacion_id', convIds)
+  if (errorLectura2) throw new LecturaFallida('getConversacionesDelUsuario', errorLectura2)
 
   const lastReadByConv = new Map(lecturas?.map((l) => [l.conversacion_id, l.last_read_at]) ?? [])
 

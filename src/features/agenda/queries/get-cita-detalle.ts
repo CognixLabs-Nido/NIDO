@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { CitaDetalle, InvitadoRoster, RsvpEstado } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Detalle de una cita + su roster, filtrado por RLS:
@@ -30,7 +31,7 @@ export async function getCitaDetalle(citaId: string): Promise<CitaDetalle | null
     .maybeSingle()
   if (error) {
     logger.warn('getCitaDetalle: cita', error.message)
-    return null
+    throw new LecturaFallida('getCitaDetalle', error)
   }
   if (!cita) return null
 
@@ -41,7 +42,7 @@ export async function getCitaDetalle(citaId: string): Promise<CitaDetalle | null
     .order('created_at', { ascending: true })
   if (invErr) {
     logger.warn('getCitaDetalle: invitados', invErr.message)
-    return null
+    throw new LecturaFallida('getCitaDetalle', invErr)
   }
 
   // Nombres de los invitados internos (display) vía service role.
@@ -51,10 +52,11 @@ export async function getCitaDetalle(citaId: string): Promise<CitaDetalle | null
   const nombres = new Map<string, string>()
   if (usuarioIds.length > 0) {
     const service = createServiceRoleClient()
-    const { data: usuarios } = await service
+    const { data: usuarios, error: errorLectura } = await service
       .from('usuarios')
       .select('id, nombre_completo')
       .in('id', usuarioIds)
+    if (errorLectura) throw new LecturaFallida('getCitaDetalle', errorLectura)
     for (const u of usuarios ?? []) nombres.set(u.id, u.nombre_completo)
   }
 

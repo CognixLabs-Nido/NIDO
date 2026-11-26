@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { AnuncioListItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Devuelve los anuncios que el usuario puede leer (RLS filtra vía
@@ -51,7 +52,7 @@ export async function getAnunciosDelUsuario(centroId: string): Promise<AnuncioLi
 
   if (error) {
     logger.warn('getAnunciosDelUsuario', error.message)
-    return []
+    throw new LecturaFallida('getAnunciosDelUsuario', error)
   }
 
   if (!anuncios || anuncios.length === 0) return []
@@ -59,11 +60,12 @@ export async function getAnunciosDelUsuario(centroId: string): Promise<AnuncioLi
   const anuncioIds = anuncios.map((a) => a.id)
 
   // Lecturas del usuario (existe fila → leído).
-  const { data: lecturas } = await supabase
+  const { data: lecturas, error: errorLectura } = await supabase
     .from('lectura_anuncio')
     .select('anuncio_id')
     .eq('usuario_id', userId)
     .in('anuncio_id', anuncioIds)
+  if (errorLectura) throw new LecturaFallida('getAnunciosDelUsuario', errorLectura)
 
   const leidoSet = new Set(lecturas?.map((l) => l.anuncio_id) ?? [])
 

@@ -277,6 +277,133 @@ trague el fallo, y que Dirección vea que esa foto no se pudo borrar.
 Y bien dejar quietos los otros 40 .catch(() => undefined): ahí el fallo solo deja un fichero viejo de
 más, que es lo que recoge el barrido.»
 
+### 2026-11-25 · los 200 de pantalla, de una vez: helper, componente, codemod y lint
+
+Jose: «quiero que lo soluciones ya. De una, los 200 sitios. No vayas de uno en uno perdiendo el tiempo.
+Haz una solución rápida para todo.»
+
+«1 · UN HELPER ÚNICO de lectura que distinga «no hay» de «no se pudo leer», y un componente común que pinte
+eso en pantalla. Una sola pieza, en un sitio.
+2 · UN CAMBIO AUTOMÁTICO que lo aplique a los 200. […] Si algún sitio no encaja en el molde, lo apartas a una
+lista y me dices cuántos son: esos se ven a mano, el resto van de golpe.
+3 · UNA REGLA DE LINT que impida que el patrón vuelva a aparecer, con su control: un sitio nuevo con el patrón
+viejo tiene que poner la CI roja.
+4 · LA VERIFICACIÓN NO ES POR SITIO, es la suite entera: los 9.500 tests, el typecheck y el build. Y mutaciones
+por GRUPOS, no por sitio: una por cada forma de pintar el «no se pudo leer».»
+
+Medido (2026-11-25, `~/nido-logs/16/c/censo/`): 306 sitios en los 200 helpers. Al molde automático, 269 (215
+no miran el error; 54 lo miran, lo loguean y devuelven un vacío). Apartados, 37 (16 lecturas de otra forma, 18
+escrituras, 3 lecturas consumidas de otro modo). El plan, aprobado: dos PR (A: helper, componente, codemod y
+regla de lint con lista blanca temporal; B: los 37 a mano, vaciando la lista blanca). «Y la pieza que lo hace
+seguro es la que no te pedí: que el codemod se compruebe a sí mismo quitando lo que insertó y exigiendo que el
+árbol quede idéntico.»
+
+**Página entera o sección.** Medido: de 160 llamadas a esos helpers desde pantallas, 144 (en 53 ficheros) están
+en la cabecera de la página y 16 (en 9 componentes) dentro de un componente que pinta una sola sección; el
+`error.tsx` de una sección no captura lo de su propio layout. Jose, literal:
+
+«MANTENGO LA DECISIÓN: 13 FICHEROS A MANO […] 13 ficheros a mano no es ir uno por uno, es el 6% de los 200. El
+resto va mecánico.
+
+- Los 16 de los 9 componentes, por sección y con el codemod.
+- Los 7 layouts, por sección y a mano. Obligatorio.
+- Las 6 pantallas diarias —pase de lista, pase de comidas, agenda del aula, ficha del niño, mensajes y la
+  conversación—, por sección y a mano. Son 24 lecturas y son justo las que la profe y la familia abren todos
+  los días: que se caigan por una lectura secundaria sería cambiar un defecto silencioso por una pantalla que no
+  se puede usar.
+- Todo lo demás, regla general: la página dice «no se ha podido leer».»
+
+«en el cuerpo del PR A que quede escrito por qué 13 ficheros van a mano y los demás no.»
+
+**El cruce del lint con el censo (2026-11-25).** El lint completo, tras el codemod, ve 241 sitios en 94 ficheros
+(la lista blanca temporal). De ellos, 20 sitios en 17 ficheros el censo los dio por NO_DEFECTO; leídos uno a
+uno: 3 son falso positivo del lint (`leer-panel-becas`, el error se mira en un bucle sobre la lista), 1 es un
+hueco del censo (`asegurarAgenda`: la profe lee «Ya no puedes editar este día» cuando no se pudo leer; el
+clasificador lo escribió y lo dejó en NO_DEFECTO) y 16 son los dos a la vez (el lint mira la forma; el censo,
+el daño de hoy: 4 helpers sin llamadores, 5 que para un UNIQUE de la base, 7 que fallan con un mensaje que
+nombra el síntoma). De las tres pantallas diarias que van por la regla general (pase de lista, pase de comidas,
+conversación), Jose:
+
+«Bien el razonamiento de las tres pantallas: si la única lectura que toca el codemod es la principal, no hay
+nada secundario que aislar y la regla general es la correcta. Eso en el cuerpo del PR, con esa frase.»
+
+Jose, literal:
+
+«En el PR A. Es la pantalla que la profe usa todos los días para escribir lo que ha pasado, y el efecto es que
+le dice «Ya no puedes editar este día» cuando lo que ha pasado es que no se pudo leer. […] Que el helper y sus
+5 llamadores distingan «no se pudo leer» de «fuera de la ventana de edición».»
+
+«Los 16 a PR B mecánicamente y los 4 helpers muertos borrados: de acuerdo […] el daño ausente por casualidad
+vuelve el día que alguien toca la otra punta. Y el falso positivo del lint, arreglado con su caso en la regla.»
+
+«Lo del segundo motivo falso de asegurarAgenda —que cualquier error de insert diga «Ya no puedes editar este
+día»— entra en el mismo arreglo, de acuerdo.»
+
+**Regla (Jose, 2026-11-25): CUANDO SE UNIFICA UN CRITERIO A MITAD DE UNA CLASIFICACIÓN, HAY QUE VOLVER A PASAR
+LO YA CLASIFICADO CON EL CRITERIO NUEVO.** Aquí: el criterio «para con un motivo falso = F2» se unificó al
+juntar las tandas y no se aplicó a las 201 filas NO_DEFECTO. Buscar la redacción en esas 201 dio 1 (es un
+suelo: caza al clasificador que lo escribió, no al que lo vio y no lo escribió). «La re-clasificación de las
+201 va DESPUÉS del PR A […] Lo que salga de ahí entra en el PR B, que viene pegado detrás.»
+
+**El defecto inverso que trae el PR A (2026-11-25).** El codemod hace lanzar a 132 helpers; 33 acciones los
+llaman directo (más por cadena, p. ej. `esAdminEn` → `leerCentrosDe`), contra la convención «Server Actions:
+patrón Result, nunca `throw` visible al cliente». Y en sitios donde la lectura va DESPUÉS de una escritura
+hecha, la parada informa como fallida una escritura que sí ocurrió (6 medidos dentro de una función:
+activar-matricula, invitar-admin, actualizar-nino-tutor, vincular-hijo-tutor-existente, la ruta del avatar; y
+por helper, el correo de invitación en send-invitation y crear-centro). Jose, literal:
+
+«Lo que has encontrado es que nuestro arreglo introduce el defecto inverso: una escritura que SÍ ocurrió
+informada como fallida. Y eso es peor que lo que arreglábamos, porque quien reintente puede duplicar una
+invitación o un centro, y porque una directora a la que la pantalla le dice que el alta no se validó cuando
+sí, va a validarla otra vez.»
+
+«1 · MENSAJE VISIBLE, el tuyo: «Guardado; no se ha podido enviar el aviso o el correo». […] Un log en Sentry lo
+ve quien mira Sentry, y ella no lo mira. Con eso puede reenviarlo, que es justo lo que no puede hacer hoy.»
+
+«2 · LA FRONTERA ÚNICA PARA LAS ACCIONES, sí, con su regla de lint. Pero que quede claro que eso resuelve la
+mitad: convertir el throw en un fail evita el spinner colgado, y NO evita que la pantalla diga «no se guardó»
+después de haber guardado. Lo segundo solo se arregla sitio por sitio, no poniendo una frontera.»
+
+«3 · Y EL 6 ES UN SUELO, QUE NO ME VALE. […] que el escaneo siga la cadena de llamadas, no solo el cuerpo de la
+función, y dame el NÚMERO, no un suelo. […] Y que el lint cubra la clase, no los casos: una parada por lectura
+fallida después de una escritura en la misma acción tiene que poner la CI roja.»
+
+**El número (2026-11-25).** El escáner de cadena (`cadena.cjs`: checker de TypeScript, grafo de llamadas, RPC
+volátil de producción = escribe, un `catch` que devuelve `fail` = parada) da 28 entradas, revisadas a mano: 13
+reales desde 6 sitios raíz (el correo de invitación tras escribir la invitación: 7 acciones; `invitarAdmin`;
+`activarMatricula`; la aceptación de una invitación de profe, que se salta el rollback de la cuenta: 2; la firma
+del enlace tras guardar la foto: 2 rutas), 3 de ficheros huérfanos sin cambio en la base (libro de familia, DNI
+de recogida, avatar: los recoge el barrido del #549) y 12 falsos positivos. Jose, literal:
+
+«Las tres: la regla de ESLint para el caso de la misma función, el escáner de cadena como paso de CI esperando 0
+reales, y los 15 en una lista con su motivo escrito que solo puede encoger. […] Una condición del paso de CI:
+que vaya como job propio, en paralelo con los shards, no en serie. Si añade hasta 25 minutos a cada PR encima
+de los que ya tarda, lo vamos a acabar odiando y alguien lo quitará.»
+
+**Regla (Jose, 2026-11-25): «¿ESTE ARREGLO CONVIERTE EN FALLO ALGO QUE HOY FUNCIONA?»** El diseño primero de
+`asegurarAgenda` («una lectura fallida para») habría convertido en un «no» un guardado que hoy funciona (la
+lectura falla, el día no tiene agenda, el insert entra); lo cazó la predicción escrita antes de medir. Los 13
+son lo mismo a otra escala. «Antes de hacer que algo pare, comprobar qué hace hoy cuando la lectura falla, no
+qué debería hacer.» Entra en el molde del codemod y de los arreglos a mano: una parada nueva se mide contra lo
+que el código hace hoy con esa lectura fallida, y no va después de una escritura hecha (el escáner de cadena en
+la CI). «Bien que el arreglo final intente el insert igualmente y solo diga «fuera de ventana» con un 42501: eso
+es parar por lo que la base dice, no por lo que suponíamos.»
+
+**El proxy (2026-11-25).** `rolesEnCualquierCentro` (la puerta de `/admin`, `/teacher`…) lanza con la lectura
+caída; en el proxy no la recoge ningún `error.tsx` y sale un 500 crudo (antes, `/forbidden`: «no tienes permiso»
+a quien lo tiene). Jose, literal:
+
+«La (b). Un 500 crudo no le dice nada a nadie y además parece que la app está caída, y el «/forbidden» de antes
+era peor todavía: le decía a una directora que no tiene permiso cuando sí lo tiene. Una página que dice «no se
+ha podido leer, vuelve a intentarlo» es lo único honesto de las tres.
+
+La condición, porque la página va a ser pública: que no revele NADA. Ni si el usuario existe, ni si tiene
+roles, ni el nombre del centro, ni nada que dependa de quién entra. El mismo texto para todo el mundo, sin
+datos dentro, y sin dar acceso a ninguna parte. Con eso una página pública no aporta superficie.»
+
+Y del escáner: «que el escáner enseñe TODAS las paradas de cada función, no solo la primera, porque si no el
+número que da vuelve a ser un suelo sin que lo sepamos.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).

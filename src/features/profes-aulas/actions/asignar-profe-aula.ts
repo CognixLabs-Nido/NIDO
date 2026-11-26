@@ -8,60 +8,70 @@ import { logger } from '@/shared/lib/logger'
 
 import { asignarProfeAulaSchema, type AsignarProfeAulaInput } from '../schemas/profe-aula'
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 export async function asignarProfeAula(
   aulaId: string,
   input: AsignarProfeAulaInput
 ): Promise<ActionResult<{ id: string }>> {
-  const parsed = asignarProfeAulaSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'profeAula.validation.invalid')
+  try {
+    const parsed = asignarProfeAulaSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'profeAula.validation.invalid')
+    }
+
+    const supabase = await createClient()
+
+    // El usuario debe tener rol profe en el centro del aula.
+    const { data: aula, error: errorLectura } = await supabase
+      .from('aulas')
+      .select('centro_id')
+      .eq('id', aulaId)
+      .is('deleted_at', null)
+      .maybeSingle()
+    if (errorLectura) return fail('common.lectura_fallida')
+    if (!aula) return fail('aula.errors.no_encontrada')
+
+    // F11-H: la asignación de personal es por curso. Se asigna al curso ACTIVO
+    // del centro (el único operativo). Sin curso activo no hay dónde asignar.
+    const { data: cursoActivoId, error: errorLectura2 } = await supabase.rpc(
+      'curso_activo_de_centro',
+      {
+        p_centro_id: aula.centro_id,
+      }
+    )
+    if (errorLectura2) return fail('common.lectura_fallida')
+    if (!cursoActivoId) return fail('profeAula.errors.sin_curso_activo')
+
+    if (!(await tieneRolProfeEn(supabase, parsed.data.profe_id, aula.centro_id)))
+      return fail('profeAula.errors.usuario_sin_rol_profe')
+
+    // F5B-#34: insertamos tipo_personal_aula en lugar de es_profe_principal.
+    // El default del schema es 'profesora'; la action no decide coordinadora
+    // por su cuenta (la UI lo elige explícitamente). El índice único parcial
+    // en BD garantiza 1 coordinadora activa por aula y devuelve 23505 si se
+    // duplica — preservamos el mismo error i18n que en la era del booleano.
+    const { data, error } = await supabase
+      .from('profes_aulas')
+      .insert({
+        profe_id: parsed.data.profe_id,
+        aula_id: aulaId,
+        curso_academico_id: cursoActivoId,
+        fecha_inicio: parsed.data.fecha_inicio,
+        tipo_personal_aula: parsed.data.tipo_personal_aula,
+      })
+      .select('id')
+      .single()
+
+    if (error || !data) {
+      logger.warn('asignarProfeAula error', error?.message)
+      if (error?.code === '23505') return fail('profeAula.errors.ya_principal')
+      return fail('profeAula.errors.create_failed')
+    }
+
+    revalidatePath('/[locale]/admin/aulas', 'page')
+    return ok({ id: data.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  const supabase = await createClient()
-
-  // El usuario debe tener rol profe en el centro del aula.
-  const { data: aula } = await supabase
-    .from('aulas')
-    .select('centro_id')
-    .eq('id', aulaId)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (!aula) return fail('aula.errors.no_encontrada')
-
-  // F11-H: la asignación de personal es por curso. Se asigna al curso ACTIVO
-  // del centro (el único operativo). Sin curso activo no hay dónde asignar.
-  const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
-    p_centro_id: aula.centro_id,
-  })
-  if (!cursoActivoId) return fail('profeAula.errors.sin_curso_activo')
-
-  if (!(await tieneRolProfeEn(supabase, parsed.data.profe_id, aula.centro_id)))
-    return fail('profeAula.errors.usuario_sin_rol_profe')
-
-  // F5B-#34: insertamos tipo_personal_aula en lugar de es_profe_principal.
-  // El default del schema es 'profesora'; la action no decide coordinadora
-  // por su cuenta (la UI lo elige explícitamente). El índice único parcial
-  // en BD garantiza 1 coordinadora activa por aula y devuelve 23505 si se
-  // duplica — preservamos el mismo error i18n que en la era del booleano.
-  const { data, error } = await supabase
-    .from('profes_aulas')
-    .insert({
-      profe_id: parsed.data.profe_id,
-      aula_id: aulaId,
-      curso_academico_id: cursoActivoId,
-      fecha_inicio: parsed.data.fecha_inicio,
-      tipo_personal_aula: parsed.data.tipo_personal_aula,
-    })
-    .select('id')
-    .single()
-
-  if (error || !data) {
-    logger.warn('asignarProfeAula error', error?.message)
-    if (error?.code === '23505') return fail('profeAula.errors.ya_principal')
-    return fail('profeAula.errors.create_failed')
-  }
-
-  revalidatePath('/[locale]/admin/aulas', 'page')
-  return ok({ id: data.id })
 }

@@ -6,6 +6,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { BUCKET_SIP_NINOS, borrarObjetosBucket, firmarRuta } from '@/shared/lib/adjuntos/storage'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -46,12 +47,13 @@ export async function POST(
   } = await supabase.auth.getUser()
   if (!user) return err('alta.errors.no_autorizado', 401)
 
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, centro_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
   if (!nino) return err('alta.errors.no_autorizado', 403)
 
   let form: FormData

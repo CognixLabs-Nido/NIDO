@@ -8,11 +8,13 @@ import { resolverParentesco, type Parentesco } from '@/features/familias/lib/res
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 import type { Database, Json } from '@/types/db'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 import { buscarVinculoPrevio } from './vinculo-previo-tutor'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type ServiceClient = SupabaseClient<Database>
 
@@ -63,7 +65,7 @@ export async function vincularHijoATutorExistente(
 ): Promise<ActionResult<{ ninoId: string }>> {
   // 1. Perfil del tutor en ESTE centro → nombre EXACTO + email guardados.
   //    `familias!inner(centro_id)` acota por centro; no leemos el embed (solo filtra).
-  const { data: perfil } = await service
+  const { data: perfil, error: errorLectura } = await service
     .from('familia_tutores')
     .select('nombre_completo, email, familias!inner(centro_id)')
     .eq('usuario_id', params.tutorUsuarioId)
@@ -71,6 +73,7 @@ export async function vincularHijoATutorExistente(
     .is('deleted_at', null)
     .limit(1)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('vincularHijoATutorExistente', errorLectura)
   if (!perfil) return fail('admin.admisiones.anadirHijo.errors.no_autorizado')
 
   let nombreExacto = perfil.nombre_completo
@@ -142,11 +145,14 @@ export async function vincularHijoATutorExistente(
   //    el tutor tiene que hacer. Antes iba a la ficha (`/family/nino/{ninoId}`) y solo llegaba
   //    al wizard de rebote, por la redirección de "alta pendiente" — un salto de más.
   try {
-    const { data: perfilUsuario } = await service
+    const { data: perfilUsuario, error: errorLectura2 } = await service
       .from('usuarios')
       .select('idioma_preferido')
       .eq('id', params.tutorUsuarioId)
       .maybeSingle()
+    // El alta ya está hecha (censo C, 2026-11-25): sin el idioma del tutor, el push sale en el de la
+    // página, como antes. Lanzar aquí lo recogía el catch y el push no salía.
+    if (errorLectura2) lecturaFallidaTrasEscritura('vincularHijo: idioma del push', errorLectura2)
     const idioma = perfilUsuario?.idioma_preferido ?? params.locale
     const tPush = await getTranslations({
       locale: idioma,

@@ -8,6 +8,7 @@ import type { Database } from '@/types/db'
 import type { IdiomaCorreo } from '../schemas/invitation'
 
 import { llamarGoTrue } from './llamar-gotrue'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 /**
  * Idioma del correo de invitación (y de la página a la que lleva su enlace). La plantilla lo lee
@@ -35,11 +36,14 @@ export async function prepararIdiomaInvitacion(
   if (buscarErr) logger.warn('prepararIdiomaInvitacion: buscar cuenta', buscarErr.message)
   if (!cuenta) return elegido ?? 'es'
 
-  const { data: usuario } = await service
+  const { data: usuario, error: errorLectura } = await service
     .from('usuarios')
     .select('idioma_preferido')
     .eq('id', cuenta.id)
     .maybeSingle()
+  // La invitación ya está escrita y este paso «nunca falla la invitación» (censo C, 2026-11-25): sin el
+  // idioma leído se sigue como antes (castellano como actual), y el fallo va a Sentry.
+  if (errorLectura) lecturaFallidaTrasEscritura('idioma de la invitación: la cuenta', errorLectura)
   const actual = (usuario?.idioma_preferido ?? 'es') as IdiomaCorreo
   if (!elegido || elegido === actual) return elegido ?? actual
 

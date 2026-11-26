@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { getMenuDelDia } from '../queries/get-menu-del-dia'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 interface Props {
   centroId: string
@@ -19,7 +20,7 @@ interface Props {
  * Empty state amable si no hay plantilla publicada para el mes o si la
  * plantilla no tiene fila para esa fecha (B56).
  */
-export async function MenuDelDiaWidget({ centroId, fecha }: Props) {
+async function MenuDelDiaWidgetContenido({ centroId, fecha }: Props) {
   const t = await getTranslations('menus.widget_familia')
   const tEmpty = await getTranslations('menus.empty')
 
@@ -90,5 +91,17 @@ function ComidaLinea({
       <Linea label={labelSegundo} valor={segundo} />
       <Linea label={labelPostre} valor={postre} />
     </div>
+  )
+}
+
+/**
+ * Una SECCIÓN (censo C, 2026-11-25): si su lectura falla, esta parte dice «no se ha podido leer» y el
+ * resto de la pantalla sigue (`LimiteSeccion`). El contenido es `MenuDelDiaWidgetContenido`.
+ */
+export function MenuDelDiaWidget(props: Props) {
+  return (
+    <LimiteSeccion>
+      <MenuDelDiaWidgetContenido {...props} />
+    </LimiteSeccion>
   )
 }

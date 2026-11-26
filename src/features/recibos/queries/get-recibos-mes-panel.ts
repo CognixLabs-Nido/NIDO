@@ -13,6 +13,7 @@ import {
   type PanelRecibosMes,
   type ReciboPanelInput,
 } from '../lib/panel-familia'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']
@@ -305,12 +306,13 @@ async function soloCierre(
   anio: number,
   mes: number
 ): Promise<{ cerrado: boolean; cerradoAt: string | null }> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('cierre_mensual')
     .select('cerrado_at')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
     .maybeSingle()
+  if (error) throw new LecturaFallida('soloCierre', error)
   return { cerrado: data != null, cerradoAt: data?.cerrado_at ?? null }
 }

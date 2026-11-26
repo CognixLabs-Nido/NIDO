@@ -8,6 +8,7 @@ import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-acti
 
 import { consolidarAvisoCampana, type CampanaPendienteEntry } from '../lib/aviso-campana'
 import type { CampanaPendientesAviso, PeriodoInforme } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /** Solo coordinadora/profesora redactan informes (Q5); técnico/apoyo no. */
 const REDACTORES = new Set(['coordinadora', 'profesora'])
@@ -45,24 +46,26 @@ export async function getPendientesCampanaProfe(
   if (!curso) return null
 
   // 1. Campañas ABIERTAS del curso activo.
-  const { data: campData } = await supabase
+  const { data: campData, error } = await supabase
     .from('campanas_informe')
     .select('periodo, fecha_limite, estado')
     .eq('centro_id', centroId)
     .eq('curso_academico_id', curso.id)
     .eq('estado', 'abierta')
+  if (error) throw new LecturaFallida('getPendientesCampanaProfe', error)
   const abiertas = (campData ?? []) as { periodo: PeriodoInforme; fecha_limite: string }[]
   if (abiertas.length === 0) return null
 
   // 2. Aulas de REDACCIÓN de la profe (coordinadora/profesora) en este centro: los niños de
   // un aula de otro centro no tienen informe en este curso y saldrían pendientes para siempre.
-  const { data: paData } = await supabase
+  const { data: paData, error: errorLectura } = await supabase
     .from('profes_aulas')
     .select('aula_id, tipo_personal_aula, aula:aulas!inner(centro_id)')
     .eq('aula.centro_id', centroId)
     .eq('profe_id', user.id)
     .is('fecha_fin', null)
     .is('deleted_at', null)
+  if (errorLectura) throw new LecturaFallida('getPendientesCampanaProfe', errorLectura)
   const aulaIds = ((paData ?? []) as ProfeAulaRow[])
     .filter((p) => REDACTORES.has(p.tipo_personal_aula ?? ''))
     .map((p) => p.aula_id)
@@ -80,13 +83,14 @@ export async function getPendientesCampanaProfe(
   // 4. Informes publicados de la terna (curso, períodos abiertos) para esos niños.
   const periodos = abiertas.map((c) => c.periodo)
   const publicadosPorPeriodo = new Map<PeriodoInforme, Set<string>>()
-  const { data: informes } = await supabase
+  const { data: informes, error: errorLectura2 } = await supabase
     .from('informes_evolucion')
     .select('nino_id, periodo')
     .eq('curso_academico_id', curso.id)
     .eq('estado', 'publicado')
     .in('periodo', periodos)
     .in('nino_id', ninoIds)
+  if (errorLectura2) throw new LecturaFallida('getPendientesCampanaProfe', errorLectura2)
   for (const row of informes ?? []) {
     const set = publicadosPorPeriodo.get(row.periodo) ?? new Set<string>()
     set.add(row.nino_id)

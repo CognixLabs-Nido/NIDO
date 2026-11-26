@@ -67,10 +67,11 @@ export async function publicarLoteInformes(
     if (!aula) return fail(`${E}.lote_fallo`)
     aulaIds = [aula_id]
   } else {
-    const { data: aulas } = await supabase
+    const { data: aulas, error } = await supabase
       .from('aulas_curso')
       .select('aula_id, aula:aulas!inner(deleted_at)')
       .eq('curso_academico_id', campana.curso_academico_id)
+    if (error) return fail('common.lectura_fallida')
     aulaIds = (
       (aulas ?? []) as unknown as Array<{
         aula_id: string
@@ -91,13 +92,14 @@ export async function publicarLoteInformes(
 
   // Informes en BORRADOR de la terna (curso, período) de esos niños. Los publicados
   // ya están; los "sin empezar" no existen como fila (no se crean — Q5).
-  const { data: borradores } = await supabase
+  const { data: borradores, error: errorLectura } = await supabase
     .from('informes_evolucion')
     .select('id, respuestas, observaciones_generales')
     .eq('curso_academico_id', campana.curso_academico_id)
     .eq('periodo', campana.periodo)
     .eq('estado', 'borrador')
     .in('nino_id', ninoIds)
+  if (errorLectura) return fail('common.lectura_fallida')
   const lista = borradores ?? []
   if (lista.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
 

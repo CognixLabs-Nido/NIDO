@@ -10,6 +10,7 @@ import {
   rolesEnCualquierCentro,
 } from '@/features/centros/contexto/roles-del-usuario'
 
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 const intlMiddleware = createIntlMiddleware(routing)
@@ -24,6 +25,8 @@ const PUBLIC_PATTERNS: RegExp[] = [
   /^\/privacy\/?$/,
   /^\/terms\/?$/,
   /^\/forbidden\/?$/,
+  // Censo C (2026-11-25): el aviso de «no se ha podido leer» del proxy. Sin datos de nadie.
+  /^\/no-se-pudo-leer\/?$/,
 ]
 
 function stripLocale(pathname: string): { locale: string; rest: string } {
@@ -126,7 +129,21 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
 
   const required = requiredRolesFor(rest)
   if (required) {
-    const userRoles = await rolesEnCualquierCentro(supabase, user.id)
+    // Con la lectura caída, ni «no tienes acceso» (falso) ni un 500 crudo: la página pública de «no se
+    // ha podido leer», por rewrite (la dirección no cambia y recargar es reintentar). No da acceso a
+    // nada y no dice nada de quién entra (decisión de Jose del 2026-11-25). Otro error, sigue subiendo.
+    let userRoles: Awaited<ReturnType<typeof rolesEnCualquierCentro>>
+    try {
+      userRoles = await rolesEnCualquierCentro(supabase, user.id)
+    } catch (e) {
+      if (!esLecturaFallida(e)) throw e
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/no-se-pudo-leer`
+      url.search = ''
+      const rewrite = NextResponse.rewrite(url)
+      for (const cookie of response.cookies.getAll()) rewrite.cookies.set(cookie)
+      return rewrite
+    }
     const hasAny = required.some((r) =>
       userRoles.includes(r as Database['public']['Enums']['user_role'])
     )

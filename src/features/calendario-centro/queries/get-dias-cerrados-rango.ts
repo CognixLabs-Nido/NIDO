@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { DiaCerradoProximo } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 const TIPOS_CERRADOS = ['festivo', 'vacaciones', 'cerrado'] as const
 
@@ -32,7 +33,7 @@ export async function getDiasCerradosRango(
 
   if (error) {
     logger.warn('getDiasCerradosRango failed', error.message)
-    return []
+    throw new LecturaFallida('getDiasCerradosRango', error)
   }
 
   return (data ?? []).map((d) => ({

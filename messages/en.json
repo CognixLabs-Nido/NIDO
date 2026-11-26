@@ -21,7 +21,15 @@
       "todas": "All",
       "buscar": "Search by name",
       "sin_resultados": "No one matches the filter."
-    }
+    },
+    "lectura": {
+      "pagina": "This page could not be read. It isn't that there is nothing: the read failed.",
+      "seccion": "This part could not be read. The rest of the screen is up to date.",
+      "reintentar": "Try again",
+      "contador": "Could not be counted"
+    },
+    "lectura_fallida": "What was needed could not be read. Nothing has been changed; please try again.",
+    "guardado_sin_aviso": "Saved; the notice or email could not be sent."
   },
   "nav": {
     "home": "Home",
@@ -190,6 +198,11 @@
       "campo_label": "Profile photo (optional)",
       "campo_ayuda": "JPG or PNG, max 4 MB. You can add it later from your profile.",
       "opcional_fallo": "Couldn’t upload the photo; you can add it later from your profile."
+    },
+    "no_se_pudo_leer": {
+      "title": "Could not be read",
+      "description": "We could not check what you can access. Reload the page in a moment.",
+      "back_to_home": "Back to home"
     }
   },
   "legal": {

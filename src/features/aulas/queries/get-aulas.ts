@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface AulaListItem {
   id: string
@@ -57,10 +58,11 @@ export async function getAulasPorCursoCore(
   supabase: SupabaseClient<Database>,
   cursoAcademicoId: string
 ): Promise<AulaListItem[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('aulas_curso')
     .select(AULA_CURSO_SELECT)
     .eq('curso_academico_id', cursoAcademicoId)
+  if (error) throw new LecturaFallida('getAulasPorCursoCore', error)
 
   return ((data ?? []) as unknown as AulaCursoJoinRow[])
     .map(mapAulaCurso)
@@ -75,7 +77,7 @@ export async function getAulasPorCursoCore(
  */
 export async function getAulaById(aulaId: string): Promise<AulaListItem | null> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('aulas_curso')
     .select(
       'aula_id, tramo_edad, capacidad, aula:aulas!inner(centro_id, nombre, descripcion, deleted_at), curso:cursos_academicos!inner(estado, deleted_at)'
@@ -84,6 +86,7 @@ export async function getAulaById(aulaId: string): Promise<AulaListItem | null> 
     .eq('curso.estado', 'activo')
     .is('curso.deleted_at', null)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getAulaById', error)
 
   if (!data) return null
   return mapAulaCurso(data as unknown as AulaCursoJoinRow)

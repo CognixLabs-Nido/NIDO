@@ -9,6 +9,7 @@ import {
   firmarRutasBucket,
   rutasConThumb,
 } from '@/shared/lib/adjuntos/storage'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -62,12 +63,13 @@ export async function POST(request: Request): Promise<Response> {
   if (file.size > MAX_BYTES_ADJUNTO) return err('fotos.validation.tamano_max')
 
   // Ficha del niño (RLS: el tutor la ve) → centro_id para la ruta.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, centro_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
   if (!nino) return err('autorizaciones.errors.no_es_tutor', 403)
 
   // 1. Procesado (sharp). Lanza FotoInvalidaError con clave i18n.

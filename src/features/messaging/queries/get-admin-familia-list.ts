@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { AdminFamiliaListItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Lista de hilos admin_familia del usuario actual.
@@ -68,7 +69,7 @@ export async function getAdminFamiliaList(
 
   if (convErr) {
     logger.warn('getAdminFamiliaList: conversaciones', convErr.message)
-    return []
+    throw new LecturaFallida('getAdminFamiliaList', convErr)
   }
 
   const conversaciones = convs ?? []
@@ -79,12 +80,13 @@ export async function getAdminFamiliaList(
   // Último mensaje (no anulado) por hilo. Mismo patrón que `get-conversaciones.ts`:
   // recogemos los 500 más recientes y agrupamos en JS. Volumen esperado bajo
   // (un admin tendrá pocos hilos activos).
-  const { data: msgs } = await supabase
+  const { data: msgs, error: errorLectura } = await supabase
     .from('mensajes')
     .select('id, conversacion_id, contenido, erroneo, created_at, autor_id')
     .in('conversacion_id', convIds)
     .order('created_at', { ascending: false })
     .limit(500)
+  if (errorLectura) throw new LecturaFallida('getAdminFamiliaList', errorLectura)
 
   const lastByConv = new Map<string, { contenido: string; erroneo: boolean; created_at: string }>()
   for (const m of msgs ?? []) {
@@ -98,11 +100,12 @@ export async function getAdminFamiliaList(
   }
 
   // Lecturas del usuario para esos hilos.
-  const { data: lecturas } = await supabase
+  const { data: lecturas, error: errorLectura2 } = await supabase
     .from('lectura_conversacion')
     .select('conversacion_id, last_read_at')
     .eq('usuario_id', userId)
     .in('conversacion_id', convIds)
+  if (errorLectura2) throw new LecturaFallida('getAdminFamiliaList', errorLectura2)
 
   const lastReadByConv = new Map(lecturas?.map((l) => [l.conversacion_id, l.last_read_at]) ?? [])
 

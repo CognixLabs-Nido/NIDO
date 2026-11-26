@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Cuenta los recordatorios PENDIENTES donde el usuario actual es DESTINATARIO
@@ -22,7 +23,7 @@ export async function contarRecordatoriosPendientes(centroId: string): Promise<n
   })
   if (error) {
     logger.warn('contarRecordatoriosPendientes', error.message)
-    return 0
+    throw new LecturaFallida('contarRecordatoriosPendientes', error)
   }
   return data ?? 0
 }

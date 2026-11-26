@@ -9,6 +9,7 @@ import { altaEnProceso, type SenalMatricula } from '@/features/matriculas/lib/es
 
 import type { EstadoMatricula } from '../lib/acciones-prospecto'
 import { tutoresConVinculoPrevio } from '../lib/vinculo-previo-tutor'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface ProspectoListItem {
   id: string
@@ -61,7 +62,7 @@ export async function getListaEsperaCore(
   cursoAcademicoId: string,
   service: SupabaseClient<Database>
 ): Promise<ProspectoListItem[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('lista_espera')
     .select(
       'id, nombre_nino, apellidos_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado, tutor_usuario_id, nino_id'
@@ -69,6 +70,7 @@ export async function getListaEsperaCore(
     .eq('curso_academico_id', cursoAcademicoId)
     .neq('estado', 'descartado')
     .order('posicion', { ascending: true })
+  if (error) throw new LecturaFallida('getListaEsperaCore', error)
 
   const filas = (data ?? []) as Omit<
     ProspectoListItem,
@@ -87,11 +89,12 @@ export async function getListaEsperaCore(
     // Sin el filtro `fecha_baja IS NULL`: una matrícula de BAJA lo está (tiene fecha_baja) y
     // hay que verla para saber que el alta ya se resolvió. Con el filtro, un niño dado de
     // baja parecía "sin matrícula" y se quedaba en la lista como si siguiera en proceso.
-    const { data: matriculas } = await supabase
+    const { data: matriculas, error: errorLectura } = await supabase
       .from('matriculas')
       .select('nino_id, estado, activada_at, fecha_baja')
       .in('nino_id', ninoIds)
       .is('deleted_at', null)
+    if (errorLectura) throw new LecturaFallida('getListaEsperaCore', errorLectura)
     for (const m of matriculas ?? []) {
       const previas = matriculasPorNino.get(m.nino_id) ?? []
       previas.push({ estado: m.estado, activada_at: m.activada_at })

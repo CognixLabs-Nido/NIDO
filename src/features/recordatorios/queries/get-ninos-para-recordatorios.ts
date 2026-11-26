@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface NinoParaRecordatorio {
   id: string
@@ -30,7 +31,7 @@ export async function getNinosParaRecordatorios(centroId: string): Promise<NinoP
 
   if (error) {
     logger.warn('getNinosParaRecordatorios', error.message)
-    return []
+    throw new LecturaFallida('getNinosParaRecordatorios', error)
   }
   // Esqueleto de niño (alta tutor-driven) puede traer apellidos NULL → coalesce.
   return (data ?? []).map((n) => ({ ...n, apellidos: n.apellidos ?? '' }))

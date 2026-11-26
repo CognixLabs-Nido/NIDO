@@ -15,6 +15,7 @@ import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
 import { RecordatoriosBadge } from '@/features/recordatorios/components/RecordatoriosBadge'
 import { contarRecordatoriosPendientes } from '@/features/recordatorios/queries/contar-pendientes'
 import { SidebarNav } from '@/shared/components/SidebarNav'
+import { oNoLeido } from '@/shared/lib/en-seccion'
 import { buildSidebarItems } from '@/shared/lib/sidebar-items'
 
 interface LayoutProps {
@@ -22,6 +23,10 @@ interface LayoutProps {
   params: Promise<{ locale: string }>
 }
 
+// Censo C (2026-11-25): lo que lee este layout va POR SECCIÓN (`oNoLeido`): un contador o el logo que
+// no se pudieron leer lo dicen en su sitio, y el área sigue. El error.tsx de esta sección no captura lo de su
+// propio layout: sin esto, un contador de no leídos tiraba el área entera, con el pase de lista dentro.
+// El contexto del centro (el rol) sí sigue lanzando: sin él no se sabe qué puede ver quien entra.
 export default async function AdminLayout({ children, params }: LayoutProps) {
   const { locale } = await params
   const t = await getTranslations('admin.nav')
@@ -32,12 +37,21 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   const rol = contexto.rol
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
-  const user = await getCurrentUser()
-  const centroLogo = await getCentroLogo(centroId)
-  const { total: unread } = await countNoLeidos(centroId)
-  const recordatoriosPendientes = await contarRecordatoriosPendientes(centroId)
-  const invitacionesPendientes = await contarInvitacionesPendientes(centroId)
-  const cambiosPendientes = await contarCambiosPendientes(centroId)
+  const user = await oNoLeido(getCurrentUser(), 'layout: usuario')
+  const centroLogo = await oNoLeido(getCentroLogo(centroId), 'layout: logo')
+  const unread = (await oNoLeido(countNoLeidos(centroId), 'layout: no leídos'))?.total ?? null
+  const recordatoriosPendientes = await oNoLeido(
+    contarRecordatoriosPendientes(centroId),
+    'layout: recordatorios'
+  )
+  const invitacionesPendientes = await oNoLeido(
+    contarInvitacionesPendientes(centroId),
+    'layout: citas'
+  )
+  const cambiosPendientes = await oNoLeido(
+    contarCambiosPendientes(centroId),
+    'layout: cambios pendientes'
+  )
 
   const items = await buildSidebarItems(
     'admin',

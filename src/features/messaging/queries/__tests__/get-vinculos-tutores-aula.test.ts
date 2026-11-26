@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 import { getVinculosTutoresAulaCore } from '../get-vinculos-tutores-aula'
@@ -141,24 +142,25 @@ describe('getVinculosTutoresAulaCore', () => {
     expect(map.get('c')![0]!.tipo_vinculo).toBe('autorizado')
   })
 
-  it('error en matriculas → Map vacío (no throw)', async () => {
+  // Censo C (2026-11-25): sustituyen a «error en matriculas / vinculos → Map vacío (no throw)». El Map
+  // vacío era «esta aula no tiene familias» en el selector «Escribir a la familia» de la agenda del
+  // aula; la página lo pinta como «no se ha podido leer» en esa sección (`oNoLeido`).
+  it('error en matriculas → LecturaFallida, no un Map vacío', async () => {
     const client = makeClient({
       matriculas: [],
       matriculasErr: { message: 'boom' },
       vinculos: [],
     })
-    const map = await getVinculosTutoresAulaCore(client, AULA_ID)
-    expect(map.size).toBe(0)
+    await expect(getVinculosTutoresAulaCore(client, AULA_ID)).rejects.toBeInstanceOf(LecturaFallida)
   })
 
-  it('error en vinculos → Map vacío (no throw)', async () => {
+  it('error en vinculos → LecturaFallida, no un Map vacío', async () => {
     const client = makeClient({
       matriculas: [{ nino_id: 'n1' }],
       vinculos: [],
       vinculosErr: { message: 'rls denied' },
     })
-    const map = await getVinculosTutoresAulaCore(client, AULA_ID)
-    expect(map.size).toBe(0)
+    await expect(getVinculosTutoresAulaCore(client, AULA_ID)).rejects.toBeInstanceOf(LecturaFallida)
   })
 
   it('nombre_completo NULL fallbacks a string vacío', async () => {

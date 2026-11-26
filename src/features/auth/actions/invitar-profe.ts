@@ -16,6 +16,7 @@ import {
 
 import { sendInvitation } from './send-invitation'
 import { fail, ok, type ActionResult } from './types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Onboarding de profesor (F11-C-1) — la dirección invita a un profe nuevo
@@ -34,17 +35,21 @@ export async function invitarProfe(
   input: InvitarProfeInput,
   locale: string = 'es'
 ): Promise<ActionResult<{ invitationId: string }>> {
-  const admin = await centrosAdminDelLlamador()
-  if (!admin.success) return fail(admin.error)
+  try {
+    const admin = await centrosAdminDelLlamador()
+    if (!admin.success) return fail(admin.error)
 
-  const service = createServiceRoleClient()
-  const r = await invitarProfeCore(
-    { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
-    input,
-    locale
-  )
-  if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
-  return r
+    const service = createServiceRoleClient()
+    const r = await invitarProfeCore(
+      { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
+      input,
+      locale
+    )
+    if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
+    return r
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /**
@@ -59,7 +64,7 @@ async function centrosAdminDelLlamador(): Promise<ActionResult<string[]>> {
   const { data: userRes } = await supabase.auth.getUser()
   if (!userRes.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const centros = (await centrosDondeEsAdmin(supabase, userRes.user.id)) ?? []
+  const centros = await centrosDondeEsAdmin(supabase, userRes.user.id)
   if (centros.length === 0) return fail('auth.invitation.errors.forbidden')
   return ok(centros)
 }
@@ -90,19 +95,20 @@ export async function invitarProfeCore(
   // 1. Derivar el centro del aula (y verificar que existe). No se pide centro en
   //    el input: se deriva del aula para no fiarse del cliente. Acotado a los centros
   //    donde quien llama es admin (R5): un aula ajena = inexistente.
-  const { data: aula } = await serviceClient
+  const { data: aula, error: errorLectura } = await serviceClient
     .from('aulas')
     .select('centro_id')
     .eq('id', parsed.data.aulaId)
     .in('centro_id', centrosAdmin)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!aula) return fail('aula.errors.no_encontrada')
 
   // 2. Coordinadora-única AL INVITAR (decisión E): si el aula ya tiene
   //    coordinadora activa, no creamos la invitación.
   if (parsed.data.tipoPersonalAula === 'coordinadora') {
-    const { data: coord } = await serviceClient
+    const { data: coord, error: errorLectura2 } = await serviceClient
       .from('profes_aulas')
       .select('id')
       .eq('aula_id', parsed.data.aulaId)
@@ -111,6 +117,7 @@ export async function invitarProfeCore(
       .is('deleted_at', null)
       .limit(1)
       .maybeSingle()
+    if (errorLectura2) return fail('common.lectura_fallida')
     if (coord) return fail('auth.invitation.errors.coordinadora_ocupada')
   }
 
@@ -152,15 +159,19 @@ export async function reenviarInvitacionProfe(
   invitationId: string,
   locale: string = 'es'
 ): Promise<ActionResult<void>> {
-  const admin = await centrosAdminDelLlamador()
-  if (!admin.success) return fail(admin.error)
+  try {
+    const admin = await centrosAdminDelLlamador()
+    if (!admin.success) return fail(admin.error)
 
-  const service = createServiceRoleClient()
-  return reenviarInvitacionProfeCore(
-    { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
-    invitationId,
-    locale
-  )
+    const service = createServiceRoleClient()
+    return reenviarInvitacionProfeCore(
+      { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
+      invitationId,
+      locale
+    )
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /** Núcleo testeable del reenvío (cliente/colaboradores/centros admin inyectables). */
@@ -173,12 +184,13 @@ export async function reenviarInvitacionProfeCore(
   if (centrosAdmin.length === 0) return fail('auth.invitation.errors.forbidden')
 
   // Acotado a los centros donde quien llama es admin (R5): una invitación ajena = inexistente.
-  const { data: inv } = await serviceClient
+  const { data: inv, error } = await serviceClient
     .from('invitaciones')
     .select('email, centro_id, aula_id, rol_objetivo, accepted_at, rejected_at')
     .eq('id', invitationId)
     .in('centro_id', centrosAdmin)
     .maybeSingle()
+  if (error) return fail('common.lectura_fallida')
 
   if (!inv || inv.rol_objetivo !== 'profe' || inv.accepted_at || inv.rejected_at) {
     return fail('auth.invitation.errors.invalid')
@@ -206,13 +218,17 @@ export async function reenviarInvitacionProfeCore(
  * dedup de sendInvitation no la reutiliza (un re-invite crea fila nueva).
  */
 export async function revocarInvitacionProfe(invitationId: string): Promise<ActionResult<void>> {
-  const admin = await centrosAdminDelLlamador()
-  if (!admin.success) return fail(admin.error)
+  try {
+    const admin = await centrosAdminDelLlamador()
+    if (!admin.success) return fail(admin.error)
 
-  const service = createServiceRoleClient()
-  const r = await revocarInvitacionProfeCore(service, invitationId, admin.data)
-  if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
-  return r
+    const service = createServiceRoleClient()
+    const r = await revocarInvitacionProfeCore(service, invitationId, admin.data)
+    if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
+    return r
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }
 
 /** Núcleo testeable de la revocación (cliente + centros admin de quien llama inyectables). */

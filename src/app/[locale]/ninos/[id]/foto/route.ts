@@ -11,6 +11,8 @@ import {
   rutaThumbDe,
   rutasConThumb,
 } from '@/shared/lib/adjuntos/storage'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
+import { siFallaTrasEscribir } from '@/shared/lib/tras-escritura'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -58,12 +60,13 @@ export async function POST(
   if (!user) return err('fotos.errors.no_autorizado', 401)
 
   // Ficha visible para el usuario (RLS de `ninos`) → nos da centro_id para la ruta.
-  const { data: nino } = await supabase
+  const { data: nino, error: errorLectura } = await supabase
     .from('ninos')
     .select('id, centro_id, foto_url, puede_aparecer_en_fotos')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('POST', errorLectura)
   if (!nino) return err('fotos.errors.no_autorizado', 403)
 
   // IU-3: sin consentimiento de imagen vigente (flag derivado por-niño) no se sube la
@@ -144,10 +147,13 @@ export async function POST(
     ]).catch(() => undefined)
   }
 
-  const firmadas = await firmarRutasBucket(service, BUCKET_NINOS_FOTOS, [
-    rutas.original,
-    rutas.miniatura,
-  ])
+  // La foto ya está puesta (censo C, 2026-11-25): si no se puede firmar la vista previa, la respuesta
+  // va sin ella (como antes) y no con un 500 que diría que no se cambió.
+  const firmadas = await siFallaTrasEscribir(
+    'ninos/foto: la vista previa',
+    firmarRutasBucket(service, BUCKET_NINOS_FOTOS, [rutas.original, rutas.miniatura]),
+    new Map<string, string>()
+  )
   return Response.json({
     success: true,
     foto: {

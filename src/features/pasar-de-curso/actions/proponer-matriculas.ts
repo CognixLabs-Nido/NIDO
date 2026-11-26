@@ -9,6 +9,7 @@ import { computarPropuesta, type ResultadoPropuesta } from '../lib/proponer'
 import { getEstadoRolloverCore } from '../queries/get-estado-rollover'
 import { proponerMatriculasSchema, type ProponerMatriculasInput } from '../schemas/rollover'
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * F11-H-2: auto-propone matrículas para el curso destino a partir de los niños
@@ -24,38 +25,46 @@ import { fail, ok, type ActionResult } from '../../centros/types'
 export async function proponerMatriculas(
   input: ProponerMatriculasInput
 ): Promise<ActionResult<ResultadoPropuesta & { insertadas: number }>> {
-  const parsed = proponerMatriculasSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'rollover.validation.invalid')
+  try {
+    const parsed = proponerMatriculasSchema.safeParse(input)
+    if (!parsed.success)
+      return fail(parsed.error.issues[0]?.message ?? 'rollover.validation.invalid')
 
-  const supabase = await createClient()
-  const estado = await getEstadoRolloverCore(supabase, parsed.data.curso_destino_id)
-  if (!estado) return fail('rollover.errors.destino_no_encontrado')
-  if (estado.cursoDestino.estado !== 'planificado')
-    return fail('rollover.errors.destino_no_planificado')
-  if (!estado.cursoOrigen) return fail('rollover.errors.sin_curso_activo')
-  if (estado.aulasDestino.length === 0) return fail('rollover.errors.sin_aulas_destino')
+    const supabase = await createClient()
+    const estado = await getEstadoRolloverCore(supabase, parsed.data.curso_destino_id)
+    if (!estado) return fail('rollover.errors.destino_no_encontrado')
+    if (estado.cursoDestino.estado !== 'planificado')
+      return fail('rollover.errors.destino_no_planificado')
+    if (!estado.cursoOrigen) return fail('rollover.errors.sin_curso_activo')
+    if (estado.aulasDestino.length === 0) return fail('rollover.errors.sin_aulas_destino')
 
-  // F-3-A: los ya decididos = con matrícula pendiente (aula) O marcados "Finaliza".
-  // A ninguno se le auto-propone aula (idempotencia + no pisar la decisión de Finaliza).
-  const yaConDestino = new Set([...estado.pendientes.map((p) => p.nino_id), ...estado.finalizados])
-  const resultado = computarPropuesta(estado.ninosActivos, estado.aulasDestino, yaConDestino)
+    // F-3-A: los ya decididos = con matrícula pendiente (aula) O marcados "Finaliza".
+    // A ninguno se le auto-propone aula (idempotencia + no pisar la decisión de Finaliza).
+    const yaConDestino = new Set([
+      ...estado.pendientes.map((p) => p.nino_id),
+      ...estado.finalizados,
+    ])
+    const resultado = computarPropuesta(estado.ninosActivos, estado.aulasDestino, yaConDestino)
 
-  let insertadas = 0
-  if (resultado.propuestas.length > 0) {
-    const filas = resultado.propuestas.map((p) => ({
-      nino_id: p.nino_id,
-      aula_id: p.aula_destino_id,
-      curso_academico_id: parsed.data.curso_destino_id,
-      estado: 'pendiente' as const,
-    }))
-    const { error } = await supabase.from('matriculas').insert(filas)
-    if (error) {
-      logger.warn('proponerMatriculas insert', error.message)
-      return fail('rollover.errors.proponer_fallo')
+    let insertadas = 0
+    if (resultado.propuestas.length > 0) {
+      const filas = resultado.propuestas.map((p) => ({
+        nino_id: p.nino_id,
+        aula_id: p.aula_destino_id,
+        curso_academico_id: parsed.data.curso_destino_id,
+        estado: 'pendiente' as const,
+      }))
+      const { error } = await supabase.from('matriculas').insert(filas)
+      if (error) {
+        logger.warn('proponerMatriculas insert', error.message)
+        return fail('rollover.errors.proponer_fallo')
+      }
+      insertadas = filas.length
     }
-    insertadas = filas.length
-  }
 
-  revalidatePath('/[locale]/admin/pasar-de-curso', 'page')
-  return ok({ ...resultado, insertadas })
+    revalidatePath('/[locale]/admin/pasar-de-curso', 'page')
+    return ok({ ...resultado, insertadas })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }

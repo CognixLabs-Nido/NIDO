@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { PlantillaMenuRow } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Devuelve la lista de plantillas del centro ordenadas por (anio DESC,
@@ -23,7 +24,7 @@ export async function getPlantillasCentro(centroId: string): Promise<PlantillaMe
 
   if (error) {
     logger.warn('getPlantillasCentro failed', error.message)
-    return []
+    throw new LecturaFallida('getPlantillasCentro', error)
   }
   return data ?? []
 }

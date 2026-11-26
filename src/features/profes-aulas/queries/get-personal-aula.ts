@@ -7,6 +7,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Personal ACTIVO de un aula con el `id` de la asignación, que el
@@ -43,7 +44,7 @@ export async function getPersonalAulaCore(
 
   if (error) {
     logger.warn('getPersonalAula error', error.message)
-    return []
+    throw new LecturaFallida('getPersonalAulaCore', error)
   }
 
   const items: PersonalAulaItem[] = []

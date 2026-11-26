@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { profesDelCentro } from '@/features/centros/contexto/roles-de-otros'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = SupabaseClient<Database>
 
@@ -31,11 +32,12 @@ export async function ninosActivosDeAula(client: Client, aulaId: string): Promis
 
 /** Todos los niños no borrados de un centro. */
 export async function ninosDeCentro(client: Client, centroId: string): Promise<string[]> {
-  const { data } = await client
+  const { data, error } = await client
     .from('ninos')
     .select('id')
     .eq('centro_id', centroId)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('ninosDeCentro', error)
   return (data ?? []).map((n) => n.id)
 }
 
@@ -51,11 +53,12 @@ export async function tutoresDeNinos(
   opts: { soloConFlag: boolean }
 ): Promise<string[]> {
   if (ninoIds.length === 0) return []
-  const { data } = await client
+  const { data, error } = await client
     .from('vinculos_familiares')
     .select('usuario_id, permisos')
     .in('nino_id', ninoIds)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('tutoresDeNinos', error)
   const out = new Set<string>()
   for (const v of data ?? []) {
     if (opts.soloConFlag) {
@@ -74,11 +77,12 @@ export async function profesDeCentro(client: Client, centroId: string): Promise<
 
 /** Profes con asignación activa a un aula (`profes_aulas`). Nuevo en F7b. */
 export async function profesDeAula(client: Client, aulaId: string): Promise<string[]> {
-  const { data } = await client
+  const { data, error } = await client
     .from('profes_aulas')
     .select('profe_id')
     .eq('aula_id', aulaId)
     .is('fecha_fin', null)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('profesDeAula', error)
   return (data ?? []).map((r) => r.profe_id)
 }

@@ -11,6 +11,7 @@ import type { Database } from '@/types/db'
 
 import { abrirConversacionAdminFamiliaSchema } from '../schemas/messaging'
 import { fail, ok, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Abre (o reabre) la conversación admin ↔ familia entre el admin autenticado
@@ -43,29 +44,33 @@ export async function abrirConversacionAdminFamilia(
   tutorId: string,
   centroId: string
 ): Promise<ActionResult<{ conversacion_id: string }>> {
-  const parsed = abrirConversacionAdminFamiliaSchema.safeParse({
-    tutor_id: tutorId,
-    centro_id: centroId,
-  })
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'messages.errors.apertura_fallo')
-  }
+  try {
+    const parsed = abrirConversacionAdminFamiliaSchema.safeParse({
+      tutor_id: tutorId,
+      centro_id: centroId,
+    })
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'messages.errors.apertura_fallo')
+    }
 
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  const userId = userData.user?.id
-  if (!userId) return fail('messages.errors.no_autorizado')
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+    const userId = userData.user?.id
+    if (!userId) return fail('messages.errors.no_autorizado')
 
-  const result = await abrirConversacionAdminFamiliaCore(
-    supabase,
-    userId,
-    parsed.data.tutor_id,
-    parsed.data.centro_id
-  )
-  if (result.success) {
-    revalidatePath('/[locale]/messages', 'layout')
+    const result = await abrirConversacionAdminFamiliaCore(
+      supabase,
+      userId,
+      parsed.data.tutor_id,
+      parsed.data.centro_id
+    )
+    if (result.success) {
+      revalidatePath('/[locale]/messages', 'layout')
+    }
+    return result
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  return result
 }
 
 /**
@@ -83,111 +88,118 @@ export async function abrirConversacionAdminFamiliaCore(
   tutorId: string,
   centroId: string
 ): Promise<ActionResult<{ conversacion_id: string }>> {
-  // 1. El usuario es admin de ESTE centro (multicentro: el hilo es por centro; antes se tomaba
-  //    el primer centro donde coincidían admin y tutor).
-  const centrosAdmin = await centrosDondeEsAdmin(supabase, userId)
+  try {
+    // 1. El usuario es admin de ESTE centro (multicentro: el hilo es por centro; antes se tomaba
+    //    el primer centro donde coincidían admin y tutor).
+    const centrosAdmin = await centrosDondeEsAdmin(supabase, userId)
 
-  if (!centrosAdmin) {
-    logger.warn('abrirConversacionAdminFamilia: roles fetch falló')
-    return fail('messages.errors.apertura_fallo')
-  }
-  if (!centrosAdmin.includes(centroId)) {
-    return fail('messages.errors.solo_admin')
-  }
-
-  // 2. El tutor tiene vínculo activo en este centro. RPC `es_tutor_en_centro` es SECURITY
-  //    DEFINER, así que no atraviesa RLS — es la fuente autoritativa de la pertenencia.
-  const { data: esTutor, error: rpcErr } = await supabase.rpc('es_tutor_en_centro', {
-    p_tutor_id: tutorId,
-    p_centro_id: centroId,
-  })
-  if (rpcErr) {
-    logger.warn('abrirConversacionAdminFamilia: rpc es_tutor_en_centro falló', rpcErr.message)
-    return fail('messages.errors.apertura_fallo')
-  }
-  if (!esTutor) return fail('messages.errors.tutor_no_pertenece_centro')
-
-  // 3. Lookup del hilo (admin=auth.uid(), tutor=tutorId, centro=centroId, admin_familia).
-  const { data: existente, error: selErr } = await supabase
-    .from('conversaciones')
-    .select('id')
-    .eq('tipo_conversacion', 'admin_familia')
-    .eq('admin_id', userId)
-    .eq('tutor_id', tutorId)
-    .eq('centro_id', centroId)
-    .maybeSingle()
-  if (selErr) {
-    logger.warn('abrirConversacionAdminFamilia: select hilo falló', selErr.message)
-    return fail('messages.errors.apertura_fallo')
-  }
-
-  const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-
-  // 4a. Reapertura — mutación restringida a `expires_at`. Aunque la RLS
-  //     UPDATE de admin_familia permite cambiar cualquier columna al admin
-  //     dueño, este action es la única vía pública y solo toca este campo.
-  if (existente) {
-    const { error: updErr } = await supabase
-      .from('conversaciones')
-      .update({ expires_at: expiresAt })
-      .eq('id', existente.id)
-    if (updErr) {
-      if (updErr.code === '42501') return fail('messages.errors.no_autorizado')
-      logger.warn('abrirConversacionAdminFamilia: update hilo falló', updErr.message)
+    if (!centrosAdmin) {
+      logger.warn('abrirConversacionAdminFamilia: roles fetch falló')
       return fail('messages.errors.apertura_fallo')
     }
-    return ok({ conversacion_id: existente.id })
-  }
+    if (!centrosAdmin.includes(centroId)) {
+      return fail('messages.errors.solo_admin')
+    }
 
-  // 4b. Creación. `centro_id` explícito: el trigger
-  //     `conversaciones_set_centro_id` solo deriva desde `nino_id` si lo
-  //     hay; admin_familia tiene `nino_id NULL` y haría RAISE sin nuestro
-  //     valor explícito.
-  const { data: nueva, error: insErr } = await supabase
-    .from('conversaciones')
-    .insert({
-      tipo_conversacion: 'admin_familia',
-      admin_id: userId,
-      tutor_id: tutorId,
-      centro_id: centroId,
-      expires_at: expiresAt,
+    // 2. El tutor tiene vínculo activo en este centro. RPC `es_tutor_en_centro` es SECURITY
+    //    DEFINER, así que no atraviesa RLS — es la fuente autoritativa de la pertenencia.
+    const { data: esTutor, error: rpcErr } = await supabase.rpc('es_tutor_en_centro', {
+      p_tutor_id: tutorId,
+      p_centro_id: centroId,
     })
-    .select('id')
-    .single()
+    if (rpcErr) {
+      logger.warn('abrirConversacionAdminFamilia: rpc es_tutor_en_centro falló', rpcErr.message)
+      return fail('messages.errors.apertura_fallo')
+    }
+    if (!esTutor) return fail('messages.errors.tutor_no_pertenece_centro')
 
-  if (insErr || !nueva) {
-    if (insErr?.code === '42501') return fail('messages.errors.no_autorizado')
-    if (insErr?.code === '23505') {
-      // Race de doble clic: alguien insertó entre el SELECT y este INSERT.
-      // Recuperamos vía SELECT + UPDATE — semánticamente equivalente a reapertura.
-      const { data: rec, error: recErr } = await supabase
-        .from('conversaciones')
-        .select('id')
-        .eq('tipo_conversacion', 'admin_familia')
-        .eq('admin_id', userId)
-        .eq('tutor_id', tutorId)
-        .eq('centro_id', centroId)
-        .single()
-      if (recErr || !rec) {
-        logger.warn(
-          'abrirConversacionAdminFamilia: race recovery select falló',
-          recErr?.message ?? 'sin fila'
-        )
-        return fail('messages.errors.apertura_fallo')
-      }
-      const { error: updRaceErr } = await supabase
+    // 3. Lookup del hilo (admin=auth.uid(), tutor=tutorId, centro=centroId, admin_familia).
+    const { data: existente, error: selErr } = await supabase
+      .from('conversaciones')
+      .select('id')
+      .eq('tipo_conversacion', 'admin_familia')
+      .eq('admin_id', userId)
+      .eq('tutor_id', tutorId)
+      .eq('centro_id', centroId)
+      .maybeSingle()
+    if (selErr) {
+      logger.warn('abrirConversacionAdminFamilia: select hilo falló', selErr.message)
+      return fail('messages.errors.apertura_fallo')
+    }
+
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+
+    // 4a. Reapertura — mutación restringida a `expires_at`. Aunque la RLS
+    //     UPDATE de admin_familia permite cambiar cualquier columna al admin
+    //     dueño, este action es la única vía pública y solo toca este campo.
+    if (existente) {
+      const { error: updErr } = await supabase
         .from('conversaciones')
         .update({ expires_at: expiresAt })
-        .eq('id', rec.id)
-      if (updRaceErr) {
-        logger.warn('abrirConversacionAdminFamilia: race recovery update falló', updRaceErr.message)
+        .eq('id', existente.id)
+      if (updErr) {
+        if (updErr.code === '42501') return fail('messages.errors.no_autorizado')
+        logger.warn('abrirConversacionAdminFamilia: update hilo falló', updErr.message)
         return fail('messages.errors.apertura_fallo')
       }
-      return ok({ conversacion_id: rec.id })
+      return ok({ conversacion_id: existente.id })
     }
-    logger.warn('abrirConversacionAdminFamilia: insert hilo falló', insErr?.message)
-    return fail('messages.errors.apertura_fallo')
-  }
 
-  return ok({ conversacion_id: nueva.id })
+    // 4b. Creación. `centro_id` explícito: el trigger
+    //     `conversaciones_set_centro_id` solo deriva desde `nino_id` si lo
+    //     hay; admin_familia tiene `nino_id NULL` y haría RAISE sin nuestro
+    //     valor explícito.
+    const { data: nueva, error: insErr } = await supabase
+      .from('conversaciones')
+      .insert({
+        tipo_conversacion: 'admin_familia',
+        admin_id: userId,
+        tutor_id: tutorId,
+        centro_id: centroId,
+        expires_at: expiresAt,
+      })
+      .select('id')
+      .single()
+
+    if (insErr || !nueva) {
+      if (insErr?.code === '42501') return fail('messages.errors.no_autorizado')
+      if (insErr?.code === '23505') {
+        // Race de doble clic: alguien insertó entre el SELECT y este INSERT.
+        // Recuperamos vía SELECT + UPDATE — semánticamente equivalente a reapertura.
+        const { data: rec, error: recErr } = await supabase
+          .from('conversaciones')
+          .select('id')
+          .eq('tipo_conversacion', 'admin_familia')
+          .eq('admin_id', userId)
+          .eq('tutor_id', tutorId)
+          .eq('centro_id', centroId)
+          .single()
+        if (recErr || !rec) {
+          logger.warn(
+            'abrirConversacionAdminFamilia: race recovery select falló',
+            recErr?.message ?? 'sin fila'
+          )
+          return fail('messages.errors.apertura_fallo')
+        }
+        const { error: updRaceErr } = await supabase
+          .from('conversaciones')
+          .update({ expires_at: expiresAt })
+          .eq('id', rec.id)
+        if (updRaceErr) {
+          logger.warn(
+            'abrirConversacionAdminFamilia: race recovery update falló',
+            updRaceErr.message
+          )
+          return fail('messages.errors.apertura_fallo')
+        }
+        return ok({ conversacion_id: rec.id })
+      }
+      logger.warn('abrirConversacionAdminFamilia: insert hilo falló', insErr?.message)
+      return fail('messages.errors.apertura_fallo')
+    }
+
+    return ok({ conversacion_id: nueva.id })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }

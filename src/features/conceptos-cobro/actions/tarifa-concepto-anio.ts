@@ -12,6 +12,7 @@ import {
   tarifaConceptoAnioSchema,
   type TarifaConceptoAnioInput,
 } from '../schemas/tarifa-concepto-anio'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const RUTA = '/[locale]/admin/cuotas'
 
@@ -26,38 +27,44 @@ const RUTA = '/[locale]/admin/cuotas'
 export async function guardarTarifaConceptoAnio(
   input: TarifaConceptoAnioInput
 ): Promise<ActionResult<{ id: string }>> {
-  const parsed = tarifaConceptoAnioSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'conceptos_cobro.tarifa_anio.validation.invalid')
+  try {
+    const parsed = tarifaConceptoAnioSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(
+        parsed.error.issues[0]?.message ?? 'conceptos_cobro.tarifa_anio.validation.invalid'
+      )
+    }
+
+    const supabase = await createClient()
+    const delConcepto = await centroDelConceptoSiResponsable(supabase, parsed.data.concepto_id)
+    if ('error' in delConcepto) return fail('conceptos_cobro.errors.no_autorizado')
+    const { centroId } = delConcepto
+
+    const { data, error } = await supabase
+      .from('tarifa_concepto_anio')
+      .upsert(
+        {
+          centro_id: centroId,
+          concepto_id: parsed.data.concepto_id,
+          anio_nacimiento: parsed.data.anio_nacimiento,
+          importe_centimos: eurosACentimos(parsed.data.importe_euros),
+        },
+        { onConflict: 'concepto_id,anio_nacimiento' }
+      )
+      .select('id')
+      .single()
+
+    if (error || !data) {
+      logger.warn('guardarTarifaConceptoAnio error', error?.message)
+      if (error?.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
+      return fail('conceptos_cobro.tarifa_anio.errors.save_failed')
+    }
+
+    revalidatePath(RUTA, 'page')
+    return ok({ id: data.id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  const supabase = await createClient()
-  const delConcepto = await centroDelConceptoSiResponsable(supabase, parsed.data.concepto_id)
-  if ('error' in delConcepto) return fail('conceptos_cobro.errors.no_autorizado')
-  const { centroId } = delConcepto
-
-  const { data, error } = await supabase
-    .from('tarifa_concepto_anio')
-    .upsert(
-      {
-        centro_id: centroId,
-        concepto_id: parsed.data.concepto_id,
-        anio_nacimiento: parsed.data.anio_nacimiento,
-        importe_centimos: eurosACentimos(parsed.data.importe_euros),
-      },
-      { onConflict: 'concepto_id,anio_nacimiento' }
-    )
-    .select('id')
-    .single()
-
-  if (error || !data) {
-    logger.warn('guardarTarifaConceptoAnio error', error?.message)
-    if (error?.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
-    return fail('conceptos_cobro.tarifa_anio.errors.save_failed')
-  }
-
-  revalidatePath(RUTA, 'page')
-  return ok({ id: data.id })
 }
 
 /**
@@ -68,24 +75,28 @@ export async function eliminarTarifaConceptoAnio(input: {
   concepto_id: string
   anio_nacimiento: number
 }): Promise<ActionResult<void>> {
-  const supabase = await createClient()
-  const delConcepto = await centroDelConceptoSiResponsable(supabase, input.concepto_id)
-  if ('error' in delConcepto) return fail('conceptos_cobro.errors.no_autorizado')
-  const { centroId } = delConcepto
+  try {
+    const supabase = await createClient()
+    const delConcepto = await centroDelConceptoSiResponsable(supabase, input.concepto_id)
+    if ('error' in delConcepto) return fail('conceptos_cobro.errors.no_autorizado')
+    const { centroId } = delConcepto
 
-  const { error } = await supabase
-    .from('tarifa_concepto_anio')
-    .delete()
-    .eq('centro_id', centroId)
-    .eq('concepto_id', input.concepto_id)
-    .eq('anio_nacimiento', input.anio_nacimiento)
+    const { error } = await supabase
+      .from('tarifa_concepto_anio')
+      .delete()
+      .eq('centro_id', centroId)
+      .eq('concepto_id', input.concepto_id)
+      .eq('anio_nacimiento', input.anio_nacimiento)
 
-  if (error) {
-    logger.warn('eliminarTarifaConceptoAnio error', error.message)
-    if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
-    return fail('conceptos_cobro.tarifa_anio.errors.delete_failed')
+    if (error) {
+      logger.warn('eliminarTarifaConceptoAnio error', error.message)
+      if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
+      return fail('conceptos_cobro.tarifa_anio.errors.delete_failed')
+    }
+
+    revalidatePath(RUTA, 'page')
+    return ok(undefined)
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  revalidatePath(RUTA, 'page')
-  return ok(undefined)
 }

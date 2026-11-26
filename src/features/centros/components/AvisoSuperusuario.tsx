@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { salirDelCentro } from '../actions/salir-centro'
 import type { ContextoCentro } from '../contexto/get-contexto-centro'
 import { getNombresCentros } from '../queries/get-nombres-centros'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 interface Props {
   contexto: ContextoCentro
@@ -23,7 +24,7 @@ interface Props {
  * La montan todos los layouts que leen el centro activo; lo vigila
  * `src/test/guards/aviso-superusuario.test.ts`.
  */
-export async function AvisoSuperusuario({ contexto, locale }: Props) {
+export async function AvisoSuperusuarioContenido({ contexto, locale }: Props) {
   if (!contexto.esSuperusuario) return null
   const t = await getTranslations('centros.superusuario')
   const tElegir = await getTranslations('centros.elegir')
@@ -46,5 +47,17 @@ export async function AvisoSuperusuario({ contexto, locale }: Props) {
         </Button>
       </form>
     </div>
+  )
+}
+
+/**
+ * Una SECCIÓN (censo C, 2026-11-25): si su lectura falla, esta parte dice «no se ha podido leer» y el
+ * resto de la pantalla sigue (`LimiteSeccion`). El contenido es `AvisoSuperusuarioContenido`.
+ */
+export function AvisoSuperusuario(props: Props) {
+  return (
+    <LimiteSeccion>
+      <AvisoSuperusuarioContenido {...props} />
+    </LimiteSeccion>
   )
 }

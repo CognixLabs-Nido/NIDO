@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 
 import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Aulas configuradas en el curso ACTIVO de un centro. Resuelve el curso activo
@@ -13,9 +14,10 @@ import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
  */
 export async function getAulasCursoActivo(centroId: string): Promise<AulaListItem[]> {
   const supabase = await createClient()
-  const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
+  const { data: cursoActivoId, error } = await supabase.rpc('curso_activo_de_centro', {
     p_centro_id: centroId,
   })
+  if (error) throw new LecturaFallida('getAulasCursoActivo', error)
   if (!cursoActivoId) return []
   return getAulasPorCursoCore(supabase, cursoActivoId)
 }

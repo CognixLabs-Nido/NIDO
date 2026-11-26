@@ -9,6 +9,7 @@ import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/prof
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Personal ACTIVO del centro para `/admin/personal` (Fallo 1 — el listado de
@@ -94,7 +95,7 @@ export async function getPersonalActivoCentroCore(
 
   if (aulasErr) {
     logger.warn('getPersonalActivoCentro: aulas', aulasErr.message)
-    return []
+    throw new LecturaFallida('getPersonalActivoCentroCore', aulasErr)
   }
   const aulasList = ((aulasCurso ?? []) as unknown as AulaCursoNombreRow[])
     .filter((r) => r.aula && r.aula.deleted_at === null)
@@ -113,7 +114,7 @@ export async function getPersonalActivoCentroCore(
 
   if (profesErr) {
     logger.warn('getPersonalActivoCentro: profes_aulas', profesErr.message)
-    return []
+    throw new LecturaFallida('getPersonalActivoCentroCore', profesErr)
   }
 
   // Agrupar por profe_id → una fila por persona, varias asignaciones posibles.

@@ -6,6 +6,7 @@ import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-acti
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * F5B-#33 — Vínculos activos (tutor/autorizado) por niño matriculado en
@@ -78,10 +79,9 @@ export async function getVinculosTutoresAulaCore(
     supabase.from('matriculas').select('nino_id').eq('aula_id', aulaId)
   )
 
-  if (matErr) {
-    logger.warn('getVinculosTutoresAula: matriculas', matErr.message)
-    return new Map()
-  }
+  // Censo C (2026-11-25): un Map vacío decía «esta aula no tiene familias». Lo apartó el codemod (la
+  // lectura pasa por `aplicarMatriculaActiva`); va a mano porque es la agenda del aula, diaria.
+  if (matErr) throw new LecturaFallida('getVinculosTutoresAulaCore', matErr)
 
   const ninoIds = (matriculas ?? []).map((m) => m.nino_id)
   if (ninoIds.length === 0) return new Map()
@@ -103,7 +103,7 @@ export async function getVinculosTutoresAulaCore(
 
   if (vErr) {
     logger.warn('getVinculosTutoresAula: vinculos', vErr.message)
-    return new Map()
+    throw new LecturaFallida('getVinculosTutoresAulaCore', vErr)
   }
 
   const map = new Map<string, VinculoTutorMin[]>()

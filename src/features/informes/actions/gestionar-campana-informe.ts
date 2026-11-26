@@ -52,13 +52,14 @@ export async function abrirCampanaInforme(
   if (!curso) return fail(`${E}.sin_curso_activo`)
 
   // ¿Existe ya una campaña de esta terna? (UNIQUE centro/curso/período).
-  const { data: existente } = await supabase
+  const { data: existente, error: errorLectura } = await supabase
     .from('campanas_informe')
     .select('id')
     .eq('centro_id', centroId)
     .eq('curso_academico_id', curso.id)
     .eq('periodo', parsed.data.periodo)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
 
   if (existente) {
     // Reabrir + actualizar fecha (no duplicar).

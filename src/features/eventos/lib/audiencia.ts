@@ -4,6 +4,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { expandirDestinatariosRecordatorio } from '@/features/recordatorios/lib/audiencia'
 
 import type { AmbitoEvento } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Audiencia push de un evento. **Cero duplicación**: mapea el ámbito del evento
@@ -59,20 +60,22 @@ export async function tutoresDeNinosConfirmados(
 ): Promise<string[]> {
   const supabase = createServiceRoleClient()
 
-  const { data: confs } = await supabase
+  const { data: confs, error } = await supabase
     .from('confirmaciones_evento')
     .select('nino_id')
     .eq('evento_id', eventoId)
     .eq('estado', 'confirmado')
+  if (error) throw new LecturaFallida('tutoresDeNinosConfirmados', error)
 
   const ninoIds = (confs ?? []).map((c) => c.nino_id)
   if (ninoIds.length === 0) return []
 
-  const { data: vinculos } = await supabase
+  const { data: vinculos, error: errorLectura } = await supabase
     .from('vinculos_familiares')
     .select('usuario_id, permisos')
     .in('nino_id', ninoIds)
     .is('deleted_at', null)
+  if (errorLectura) throw new LecturaFallida('tutoresDeNinosConfirmados', errorLectura)
 
   const out = new Set<string>()
   for (const v of vinculos ?? []) {

@@ -16,6 +16,7 @@ import {
   reinvitarAltaCore,
   type ResultadoAnular,
 } from '../lib/alta-sin-terminar'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const ninoIdSchema = z.string().uuid()
 const reinvitarSchema = z.object({
@@ -110,39 +111,43 @@ export async function reinvitarAlta(input: {
   email: string
   idioma?: 'es' | 'en' | 'va'
 }): Promise<ActionResult<{ email: string }>> {
-  const parsed = reinvitarSchema.safeParse(input)
-  if (!parsed.success)
-    return fail(parsed.error.issues[0]?.message ?? 'matricula.validation.invalid')
-  const p = await puerta(parsed.data.ninoId)
-  if (!p.ok) return fail(p.error)
-  if (p.estado === 'iniciada') return fail('matricula.errors.alta_iniciada')
-
-  let tipoVinculo: 'tutor_legal_principal' | 'tutor_legal_secundario'
   try {
-    const r = await reinvitarAltaCore(
-      createServiceRoleClient(),
-      parsed.data.ninoId,
-      parsed.data.email,
-      p.actorId
-    )
-    if (!r) return fail('matricula.errors.alta_ya_no')
-    tipoVinculo = r.tipoVinculo
-  } catch (e) {
-    logger.error('alta sin terminar: reinvitar', e instanceof Error ? e.message : String(e))
-    return fail(claveError(e))
-  }
+    const parsed = reinvitarSchema.safeParse(input)
+    if (!parsed.success)
+      return fail(parsed.error.issues[0]?.message ?? 'matricula.validation.invalid')
+    const p = await puerta(parsed.data.ninoId)
+    if (!p.ok) return fail(p.error)
+    if (p.estado === 'iniciada') return fail('matricula.errors.alta_iniciada')
 
-  const inv = await sendInvitation({
-    email: parsed.data.email,
-    rolObjetivo: 'tutor_legal',
-    centroId: p.centroId,
-    ninoId: parsed.data.ninoId,
-    tipoVinculo,
-    idioma: parsed.data.idioma,
-  })
-  revalidatePath('/[locale]/admin/ninos', 'page')
-  revalidatePath('/[locale]/admin/altas', 'page')
-  // El email ya está corregido: si el correo no sale, se dice, y se puede volver a enviar.
-  if (!inv.success) return fail('matricula.errors.alta_correo_no_salio')
-  return ok({ email: parsed.data.email })
+    let tipoVinculo: 'tutor_legal_principal' | 'tutor_legal_secundario'
+    try {
+      const r = await reinvitarAltaCore(
+        createServiceRoleClient(),
+        parsed.data.ninoId,
+        parsed.data.email,
+        p.actorId
+      )
+      if (!r) return fail('matricula.errors.alta_ya_no')
+      tipoVinculo = r.tipoVinculo
+    } catch (e) {
+      logger.error('alta sin terminar: reinvitar', e instanceof Error ? e.message : String(e))
+      return fail(claveError(e))
+    }
+
+    const inv = await sendInvitation({
+      email: parsed.data.email,
+      rolObjetivo: 'tutor_legal',
+      centroId: p.centroId,
+      ninoId: parsed.data.ninoId,
+      tipoVinculo,
+      idioma: parsed.data.idioma,
+    })
+    revalidatePath('/[locale]/admin/ninos', 'page')
+    revalidatePath('/[locale]/admin/altas', 'page')
+    // El email ya está corregido: si el correo no sale, se dice, y se puede volver a enviar.
+    if (!inv.success) return fail('matricula.errors.alta_correo_no_salio')
+    return ok({ email: parsed.data.email })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }

@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { localeIntl } from '@/shared/lib/locale-intl'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Accion = 'INSERT' | 'UPDATE' | 'DELETE'
 
@@ -34,12 +35,13 @@ export default async function AdminAuditPage() {
   if (!esResponsable) redirect(`/${locale}/forbidden`)
   const supabase = await createClient()
 
-  const { data: entries } = await supabase
+  const { data: entries, error } = await supabase
     .from('audit_log')
     .select('id, tabla, accion, usuario_id, ts')
     .eq('centro_id', centroId)
     .order('ts', { ascending: false })
     .limit(100)
+  if (error) throw new LecturaFallida('AdminAuditPage', error)
 
   // Lookup de nombres: una sola query para los usuarios distintos del lote.
   const usuarioIds = Array.from(
@@ -48,10 +50,11 @@ export default async function AdminAuditPage() {
 
   let nombrePorUsuario = new Map<string, string>()
   if (usuarioIds.length > 0) {
-    const { data: usuarios } = await supabase
+    const { data: usuarios, error: errorLectura } = await supabase
       .from('usuarios')
       .select('id, nombre_completo')
       .in('id', usuarioIds)
+    if (errorLectura) throw new LecturaFallida('AdminAuditPage', errorLectura)
     nombrePorUsuario = new Map(
       (usuarios ?? []).map((u) => [u.id, u.nombre_completo?.trim() || u.id.slice(0, 8)])
     )

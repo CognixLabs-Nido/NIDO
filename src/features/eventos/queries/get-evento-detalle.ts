@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { EventoCalendario, EventoDetalle, RosterConfirmacion } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 const COLS =
   'id, ambito, tipo, titulo, descripcion, lugar, fecha, fecha_fin, hora_inicio, hora_fin, requiere_confirmacion, estado, aula_id, nino_id, centro_id, creado_por'
@@ -36,7 +37,7 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
 
   if (error) {
     logger.warn('getEventoDetalle: eventos.select', error.message)
-    return null
+    throw new LecturaFallida('getEventoDetalle', error)
   }
   if (!ev) return null
 
@@ -50,36 +51,40 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
     )
     ninoIds = (mats ?? []).map((m) => m.nino_id)
   } else if (ev.ambito === 'centro') {
-    const { data: ns } = await supabase
+    const { data: ns, error: errorLectura } = await supabase
       .from('ninos')
       .select('id')
       .eq('centro_id', ev.centro_id)
       .is('deleted_at', null)
+    if (errorLectura) throw new LecturaFallida('getEventoDetalle', errorLectura)
     ninoIds = (ns ?? []).map((n) => n.id)
   }
 
   let roster: RosterConfirmacion[] = []
   if (ninoIds.length > 0) {
-    const [{ data: ninos }, { data: confs }, legales] = await Promise.all([
-      supabase
-        .from('ninos')
-        .select('id, nombre, apellidos')
-        .in('id', ninoIds)
-        .is('deleted_at', null),
-      supabase
-        .from('confirmaciones_evento')
-        .select('nino_id, estado, comentario, confirmado_at')
-        .eq('evento_id', eventoId),
-      user
-        ? supabase
-            .from('vinculos_familiares')
-            .select('nino_id')
-            .eq('usuario_id', user.id)
-            .in('nino_id', ninoIds)
-            .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario'])
-            .is('deleted_at', null)
-        : Promise.resolve({ data: [], error: null }),
-    ])
+    const [{ data: ninos, error: errorLectura2 }, { data: confs, error: errorLectura3 }, legales] =
+      await Promise.all([
+        supabase
+          .from('ninos')
+          .select('id, nombre, apellidos')
+          .in('id', ninoIds)
+          .is('deleted_at', null),
+        supabase
+          .from('confirmaciones_evento')
+          .select('nino_id, estado, comentario, confirmado_at')
+          .eq('evento_id', eventoId),
+        user
+          ? supabase
+              .from('vinculos_familiares')
+              .select('nino_id')
+              .eq('usuario_id', user.id)
+              .in('nino_id', ninoIds)
+              .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario'])
+              .is('deleted_at', null)
+          : Promise.resolve({ data: [], error: null }),
+      ])
+    if (errorLectura2) throw new LecturaFallida('getEventoDetalle', errorLectura2)
+    if (errorLectura3) throw new LecturaFallida('getEventoDetalle', errorLectura3)
     if (legales.error) {
       logger.warn('getEventoDetalle: vinculos_familiares.select', legales.error.message)
     }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getNombresCentros } from '../queries/get-nombres-centros'
 
 import { SelectorCentro } from './SelectorCentro'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 interface Props {
   locale: string
@@ -24,7 +25,7 @@ interface Props {
  * centro, la escribe y vuelve a `returnTo`. Hermano de `AvisoCentroDistinto`, que avisa sin
  * bloquear en las páginas que se enseñan desde cualquier centro.
  */
-export async function ConfirmarCentroDelAviso({
+async function ConfirmarCentroDelAvisoContenido({
   locale,
   centroDelAvisoId,
   centroActivoId,
@@ -61,5 +62,17 @@ export async function ConfirmarCentroDelAviso({
         />
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Una SECCIÓN (censo C, 2026-11-25): si su lectura falla, esta parte dice «no se ha podido leer» y el
+ * resto de la pantalla sigue (`LimiteSeccion`). El contenido es `ConfirmarCentroDelAvisoContenido`.
+ */
+export function ConfirmarCentroDelAviso(props: Props) {
+  return (
+    <LimiteSeccion>
+      <ConfirmarCentroDelAvisoContenido {...props} />
+    </LimiteSeccion>
   )
 }

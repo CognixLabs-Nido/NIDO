@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * F11-H: resuelve el nombre del aula (físico) por id. Necesario porque
@@ -16,7 +17,8 @@ export async function getAulaNombresPorIds(
 ): Promise<Map<string, string>> {
   const ids = [...new Set(aulaIds.filter((x): x is string => Boolean(x)))]
   if (ids.length === 0) return new Map()
-  const { data } = await supabase.from('aulas').select('id, nombre').in('id', ids)
+  const { data, error } = await supabase.from('aulas').select('id, nombre').in('id', ids)
+  if (error) throw new LecturaFallida('getAulaNombresPorIds', error)
   return new Map(
     ((data ?? []) as Array<{ id: string; nombre: string }>).map((a) => [a.id, a.nombre])
   )

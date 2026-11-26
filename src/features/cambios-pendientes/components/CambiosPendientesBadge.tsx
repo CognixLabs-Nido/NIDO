@@ -3,10 +3,12 @@
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
+import { ContadorNoLeido } from '@/shared/components/ContadorNoLeido'
 
 interface Props {
   /** Conteo de cambios pendientes calculado server-side (RLS limita al centro del admin). */
-  total: number
+  /** `null`: no se pudo contar (censo C): pinta «?», nunca un 0. */
+  total: number | null
 }
 
 /**
@@ -16,6 +18,7 @@ interface Props {
  */
 export function CambiosPendientesBadge({ total }: Props) {
   const t = useTranslations('admin.pendientes')
+  if (total === null) return <ContadorNoLeido />
   if (total <= 0) return null
   const label = t('badge_aria', { n: total })
   return (

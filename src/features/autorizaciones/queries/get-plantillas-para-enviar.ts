@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { PlantillaEnviableItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Plantillas **publicadas y definitivas de tipo A** (imágenes) listas
@@ -26,7 +27,7 @@ export async function getPlantillasParaEnviar(centroId: string): Promise<Plantil
 
   if (error) {
     logger.warn('getPlantillasParaEnviar', error.message)
-    return []
+    throw new LecturaFallida('getPlantillasParaEnviar', error)
   }
   return (data ?? []) as PlantillaEnviableItem[]
 }

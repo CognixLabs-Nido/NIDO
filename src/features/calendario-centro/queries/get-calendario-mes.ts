@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { OverrideMes } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Devuelve los overrides persistidos en `dias_centro` para el mes
@@ -45,7 +46,7 @@ export async function getCalendarioMes(
 
   if (error) {
     logger.warn('getCalendarioMes failed', error.message)
-    return []
+    throw new LecturaFallida('getCalendarioMes', error)
   }
 
   return (data ?? []).map((d) => ({

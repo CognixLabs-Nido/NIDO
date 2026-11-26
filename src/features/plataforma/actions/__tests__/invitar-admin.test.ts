@@ -78,4 +78,22 @@ describe('invitarAdmin', () => {
       error: 'auth.invitation.errors.email_no_enviado',
     })
   })
+
+  // Censo C (2026-11-25): la invitación YA está escrita cuando se lee el idioma del centro. Antes del
+  // PR A, sin idioma el correo salía en el idioma por defecto; el codemod lo convirtió en «no se ha
+  // podido leer» sobre una invitación guardada. Vuelve a salir, y el fallo queda en Sentry.
+  it('no se puede leer el idioma del centro: el correo sale igual (idioma por defecto)', async () => {
+    const antes = filas.centros
+    filas.centros = { data: null, error: { message: 'timeout' } } as unknown as typeof filas.centros
+    try {
+      expect(await invitarAdmin({ centroId: CENTRO })).toEqual({
+        success: true,
+        data: { invitationId: 'i9' },
+      })
+      expect(enviarCorreo).toHaveBeenCalledTimes(1)
+      expect(enviarCorreo.mock.calls[0]![1]).toMatchObject({ idioma: undefined })
+    } finally {
+      filas.centros = antes
+    }
+  })
 })

@@ -27,11 +27,12 @@ export async function marcarTransferenciaRealizada(
 
   // Centro DE LA TRANSFERENCIA (multicentro · Fase 1): admin en él, no en el centro activo. La RLS
   // solo deja leer a Dirección las de sus centros.
-  const { data: transferencia } = await supabase
+  const { data: transferencia, error: errorLectura } = await supabase
     .from('beca_comedor_transferencia')
     .select('centro_id')
     .eq('id', parsed.data.id)
     .maybeSingle()
+  if (errorLectura) return fail('common.lectura_fallida')
   if (!transferencia) return fail(`${ERR}.no_pendiente`)
   const centroId = transferencia.centro_id
   const usuarioId = await usuarioAdminEn(supabase, centroId)

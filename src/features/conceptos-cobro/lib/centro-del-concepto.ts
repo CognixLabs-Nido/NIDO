@@ -1,5 +1,6 @@
 import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import type { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = Awaited<ReturnType<typeof createClient>>
 
@@ -12,11 +13,12 @@ export async function centroDelConceptoSiResponsable(
   supabase: Client,
   conceptoId: string
 ): Promise<{ centroId: string } | { error: 'no_encontrado' | 'no_autorizado' }> {
-  const { data: concepto } = await supabase
+  const { data: concepto, error: errorLectura } = await supabase
     .from('conceptos_cobro')
     .select('centro_id')
     .eq('id', conceptoId)
     .maybeSingle()
+  if (errorLectura) throw new LecturaFallida('centroDelConceptoSiResponsable', errorLectura)
   if (!concepto) return { error: 'no_encontrado' }
   return (await usuarioResponsableEn(supabase, concepto.centro_id))
     ? { centroId: concepto.centro_id }

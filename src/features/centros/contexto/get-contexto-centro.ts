@@ -58,12 +58,13 @@ const leerCentrosDelUsuario = cache(
     const { data: userData } = await supabase.auth.getUser()
     if (!userData.user) return null
 
-    // Un fallo de lectura cuenta como «sin roles» (→ forbidden), como antes.
+    // Un fallo de lectura lanza `LecturaFallida` (censo C, 2026-11-25): la página dice «no se ha
+    // podido leer». Antes contaba como «sin roles» y mandaba a /forbidden a un usuario con roles.
     const [centros, esSuper] = await Promise.all([
       leerCentrosDe(supabase, userData.user.id),
       esSuperusuario(supabase),
     ])
-    return { centros: centros ?? [], esSuperusuario: esSuper }
+    return { centros, esSuperusuario: esSuper }
   }
 )
 

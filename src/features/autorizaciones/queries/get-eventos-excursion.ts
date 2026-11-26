@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface EventoExcursionOption {
   id: string
@@ -26,7 +27,7 @@ export async function getEventosExcursion(centroId: string): Promise<EventoExcur
 
   if (error) {
     logger.warn('getEventosExcursion', error.message)
-    return []
+    throw new LecturaFallida('getEventosExcursion', error)
   }
   return (data ?? []).map((e) => ({ id: e.id, titulo: e.titulo, fecha: e.fecha }))
 }

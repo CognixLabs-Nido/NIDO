@@ -14,6 +14,7 @@ import {
   type NinoInformes,
   type PeriodoInforme,
 } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 const REDACTORES = new Set(['coordinadora', 'profesora'])
 
@@ -53,13 +54,14 @@ export async function getInformesDeMisAulas(centroId: string): Promise<AulaInfor
 
   // 1. Aulas activas del profe en este centro + su tipo de personal (con aula en dos
   // centros, la RLS devuelve las de los dos).
-  const { data: pa } = await supabase
+  const { data: pa, error } = await supabase
     .from('profes_aulas')
     .select('aula_id, tipo_personal_aula, aulas!inner(id, nombre)')
     .eq('aulas.centro_id', centroId)
     .eq('profe_id', user.id)
     .is('fecha_fin', null)
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('getInformesDeMisAulas', error)
 
   const aulas = (pa ?? []) as ProfeAulaRow[]
   if (aulas.length === 0) return []
@@ -82,11 +84,12 @@ export async function getInformesDeMisAulas(centroId: string): Promise<AulaInfor
   // 3. Informes existentes de esos niños en el curso activo.
   const informesByNino = new Map<string, Map<PeriodoInforme, InformePeriodoEstado>>()
   if (ninoIds.length > 0) {
-    const { data: informes } = await supabase
+    const { data: informes, error: errorLectura } = await supabase
       .from('informes_evolucion')
       .select('id, nino_id, periodo, estado')
       .eq('curso_academico_id', curso.id)
       .in('nino_id', ninoIds)
+    if (errorLectura) throw new LecturaFallida('getInformesDeMisAulas', errorLectura)
     for (const row of informes ?? []) {
       let m = informesByNino.get(row.nino_id)
       if (!m) {
@@ -161,7 +164,10 @@ export async function getInformeEvolucionDetalle(
   if (error || !data) return null
   const row = data as unknown as InformeDetalleRow
 
-  const { data: puede } = await supabase.rpc('es_redactor_de_nino', { p_nino_id: row.nino_id })
+  const { data: puede, error: errorLectura } = await supabase.rpc('es_redactor_de_nino', {
+    p_nino_id: row.nino_id,
+  })
+  if (errorLectura) throw new LecturaFallida('getInformeEvolucionDetalle', errorLectura)
 
   return {
     id: row.id,

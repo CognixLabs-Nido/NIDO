@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { PlantillaCatalogoItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Catálogo de **plantillas durables** del centro (`es_plantilla=true`): los
@@ -24,7 +25,7 @@ export async function getPlantillasCatalogo(centroId: string): Promise<Plantilla
 
   if (error) {
     logger.warn('getPlantillasCatalogo', error.message)
-    return []
+    throw new LecturaFallida('getPlantillasCatalogo', error)
   }
   return (data ?? []) as PlantillaCatalogoItem[]
 }

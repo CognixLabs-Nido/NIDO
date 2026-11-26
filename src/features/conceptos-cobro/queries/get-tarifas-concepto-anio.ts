@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface TarifaAnioItem {
   id: string
@@ -17,10 +18,11 @@ export async function getTarifasConceptoAnioDeCentro(
   centroId: string
 ): Promise<Record<string, TarifaAnioItem[]>> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('tarifa_concepto_anio')
     .select('id, concepto_id, anio_nacimiento, importe_centimos')
     .eq('centro_id', centroId)
+  if (error) throw new LecturaFallida('getTarifasConceptoAnioDeCentro', error)
 
   const porConcepto: Record<string, TarifaAnioItem[]> = {}
   for (const t of data ?? []) {

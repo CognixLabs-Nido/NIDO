@@ -12,6 +12,7 @@ import {
   payloadPeticionServiciosSchema,
   type EntidadCambio,
 } from '../schemas'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /** Un campo que cambia: lo guardado hoy y lo que se propone. */
 export interface LineaCambio {
@@ -94,7 +95,7 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
     .order('created_at', { ascending: true })
   if (error) {
     logger.warn('listarCambiosPendientes', error.code ?? 'sin_codigo')
-    return []
+    throw new LecturaFallida('listarCambiosPendientes', error)
   }
   const filas = data ?? []
 
@@ -415,7 +416,7 @@ export async function contarCambiosPendientes(centroId: string): Promise<number>
     .eq('estado', 'pendiente')
   if (error) {
     logger.warn('contarCambiosPendientes', error.message)
-    return 0
+    throw new LecturaFallida('contarCambiosPendientes', error)
   }
   return count ?? 0
 }

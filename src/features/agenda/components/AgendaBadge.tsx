@@ -3,10 +3,12 @@
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
+import { ContadorNoLeido } from '@/shared/components/ContadorNoLeido'
 
 interface Props {
   /** Conteo de invitaciones pendientes, calculado server-side (AG-14). */
-  initialTotal: number
+  /** `null`: no se pudo contar (censo C): pinta «?», nunca un 0. */
+  initialTotal: number | null
 }
 
 /**
@@ -19,6 +21,7 @@ interface Props {
  */
 export function AgendaBadge({ initialTotal }: Props) {
   const t = useTranslations('citas')
+  if (initialTotal === null) return <ContadorNoLeido />
   if (initialTotal <= 0) return null
 
   const label = t('badge_aria', { n: initialTotal })

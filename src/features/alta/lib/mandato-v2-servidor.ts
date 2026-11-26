@@ -7,6 +7,7 @@ import type { Database } from '@/types/db'
 
 import { documentoValido } from './documento-identidad'
 import { textoCanonicoMandatoV2 } from './mandato-sepa'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Lo común de los tres caminos que crean un mandato (0c-2): el alta
@@ -32,11 +33,12 @@ export async function acreedorDelCentro(
   supabase: SupabaseClient<Database>,
   centroId: string
 ): Promise<AcreedorMandato | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('centros')
     .select('nombre, identificador_acreedor, direccion')
     .eq('id', centroId)
     .maybeSingle()
+  if (error) throw new LecturaFallida('acreedorDelCentro', error)
   if (!data) return null
   const cid = data.identificador_acreedor?.trim() ?? ''
   return {

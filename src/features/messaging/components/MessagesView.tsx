@@ -31,6 +31,7 @@ import { AdminDireccionSplitView } from './AdminDireccionSplitView'
 import { AdminFamiliaSection } from './AdminFamiliaSection'
 import { AdminSupervisionSplitView } from './AdminSupervisionSplitView'
 import { ConversacionesSplitView } from './ConversacionesSplitView'
+import { NoSePudoLeer } from '@/shared/components/NoSePudoLeer'
 
 interface Props {
   locale: string
@@ -75,6 +76,13 @@ interface Props {
   /** Tab "Dirección" (supervisión, solo admin): TODAS las conversaciones
    *  profe↔familia del centro en SOLO LECTURA. RLS de admin las deja leer. */
   supervisionConversaciones: ConversacionListItem[]
+  /**
+   * Censo C (2026-11-25): pantalla diaria, por sección. Lo que no se pudo leer (`true`) lo dice su
+   * pestaña, y las demás siguen. Una lista vacía de verdad no lleva marca.
+   */
+  noLeidas?: Partial<
+    Record<'ninos' | 'anuncios' | 'adminFamilia' | 'direccion' | 'supervision' | 'detalle', boolean>
+  >
   /** `?conv=<id>` resuelto en SSR para la supervisión; `null` si no aplica. */
   supervisionConvSeleccionadaId: string | null
   supervisionDetalleHeader: ConversacionHeader | null
@@ -110,6 +118,7 @@ export function MessagesView({
   adminDireccionDetalleHeader,
   adminDireccionDetalleMensajes,
   supervisionConversaciones,
+  noLeidas = {},
   supervisionConvSeleccionadaId,
   supervisionDetalleHeader,
   supervisionDetalleMensajes,
@@ -232,10 +241,15 @@ export function MessagesView({
           </div>
 
           <TabsContent value={MESSAGES_TAB.anuncios} className="pt-3">
-            <AnunciosList anuncios={anuncios} locale={locale} />
+            {noLeidas.anuncios ? (
+              <NoSePudoLeer alcance="seccion" />
+            ) : (
+              <AnunciosList anuncios={anuncios} locale={locale} />
+            )}
           </TabsContent>
 
           <TabsContent value={MESSAGES_TAB.mensajeria} className="pt-3">
+            {(noLeidas.direccion || noLeidas.detalle) && <NoSePudoLeer alcance="seccion" />}
             {/* Lazy-mount: el componente solo se monta cuando el tab está
                 activo, para no mantener suscripciones Realtime abiertas
                 mientras el usuario está en otra pestaña. */}
@@ -252,6 +266,7 @@ export function MessagesView({
           </TabsContent>
 
           <TabsContent value={MESSAGES_TAB.supervision} className="pt-3">
+            {(noLeidas.supervision || noLeidas.detalle) && <NoSePudoLeer alcance="seccion" />}
             {tabActual === MESSAGES_TAB.supervision && (
               <AdminSupervisionSplitView
                 locale={locale}
@@ -306,6 +321,9 @@ export function MessagesView({
         </div>
 
         <TabsContent value={MESSAGES_TAB.conversaciones} className="space-y-4 pt-3">
+          {(noLeidas.ninos || noLeidas.adminFamilia || noLeidas.detalle) && (
+            <NoSePudoLeer alcance="seccion" />
+          )}
           <AdminFamiliaSection locale={locale} items={adminFamiliaItems} />
           {/* Lazy-mount: shadcn Tabs no es lazy por defecto y monta el
               contenido de todas las tabs aunque estén ocultas, manteniendo
@@ -327,7 +345,11 @@ export function MessagesView({
         </TabsContent>
 
         <TabsContent value={MESSAGES_TAB.anuncios} className="pt-3">
-          <AnunciosList anuncios={anuncios} locale={locale} />
+          {noLeidas.anuncios ? (
+            <NoSePudoLeer alcance="seccion" />
+          ) : (
+            <AnunciosList anuncios={anuncios} locale={locale} />
+          )}
         </TabsContent>
       </Tabs>
     </div>

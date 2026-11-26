@@ -12,6 +12,7 @@ import { SeguimientoCampana } from '@/features/informes/components/SeguimientoCa
 import { getCampanasInformeCursoActivo } from '@/features/informes/queries/get-campanas-informe'
 import { getSeguimientoCampana } from '@/features/informes/queries/get-seguimiento-campana'
 import type { PeriodoInforme } from '@/features/informes/types'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -58,12 +59,15 @@ export default async function AdminCampanasPage({ params, searchParams }: PagePr
       {!data ? (
         <p className="text-muted-foreground text-sm">{t('campana.sin_curso_activo')}</p>
       ) : (
-        <CampanasContenido
-          centroId={centroId}
-          data={data}
-          locale={locale}
-          periodoParam={periodoParam}
-        />
+        // Una SECCIÓN (censo C): si sus lecturas fallan, lo dice aquí y la cabecera sigue.
+        <LimiteSeccion>
+          <CampanasContenido
+            centroId={centroId}
+            data={data}
+            locale={locale}
+            periodoParam={periodoParam}
+          />
+        </LimiteSeccion>
       )}
     </div>
   )

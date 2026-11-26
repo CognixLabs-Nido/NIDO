@@ -10,6 +10,7 @@ import { modoFirmaDocumento } from '@/features/documentos-centro/lib/firmar-docu
 import { comprobarAlta, faltanDeHint, type BloqueAlta } from '../lib/gate-alta'
 
 import { fail, ok } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /** Resultado de `finalizarAlta`: en fallo por completitud viaja `faltan` (bloques). */
 export type FinalizarAltaResult =
@@ -34,38 +35,42 @@ const ninoIdSchema = z.string().uuid()
  * éxito.
  */
 export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult> {
-  const parsed = ninoIdSchema.safeParse(ninoId)
-  if (!parsed.success) return fail('alta.errors.finalizar_fallo')
-  const id = parsed.data
+  try {
+    const parsed = ninoIdSchema.safeParse(ninoId)
+    if (!parsed.success) return fail('alta.errors.finalizar_fallo')
+    const id = parsed.data
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('alta.errors.no_autorizado')
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('alta.errors.no_autorizado')
 
-  const modo = await modoFirmaDocumento(supabase, id, user.id)
-  if (!modo) return fail('alta.errors.no_autorizado')
+    const modo = await modoFirmaDocumento(supabase, id, user.id)
+    if (!modo) return fail('alta.errors.no_autorizado')
 
-  const gate = await comprobarAlta(supabase, id, user.id, modo === 'presencial')
-  if (!gate.ok) return fail('alta.errors.finalizar_fallo')
-  if (gate.faltan.length > 0) {
-    return { success: false, error: 'alta.errors.incompleto', faltan: gate.faltan }
+    const gate = await comprobarAlta(supabase, id, user.id, modo === 'presencial')
+    if (!gate.ok) return fail('alta.errors.finalizar_fallo')
+    if (gate.faltan.length > 0) {
+      return { success: false, error: 'alta.errors.incompleto', faltan: gate.faltan }
+    }
+
+    // Gate OK → finalizar. `null` (no había 'pendiente') = idempotente: ya estaba.
+    const { error } = await supabase.rpc('marcar_matricula_lista', { p_nino_id: id })
+    if (error) {
+      // La base frena con la misma regla: un dato que se vació entre el gate y aquí se dice.
+      const faltan = faltanDeHint(error.hint)
+      if (faltan) return { success: false, error: 'alta.errors.incompleto', faltan }
+      logger.warn('finalizarAlta', error.message)
+      if (error.code === '42501') return fail('alta.errors.no_autorizado')
+      return fail('alta.errors.finalizar_fallo')
+    }
+
+    // Revalida la ruta del alta (todas las locales) para que el RSC sirva la pantalla
+    // "completado, pendiente de validación" tras una única navegación del cliente.
+    revalidatePath('/[locale]/alta/[ninoId]', 'page')
+    return ok({ id })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  // Gate OK → finalizar. `null` (no había 'pendiente') = idempotente: ya estaba.
-  const { error } = await supabase.rpc('marcar_matricula_lista', { p_nino_id: id })
-  if (error) {
-    // La base frena con la misma regla: un dato que se vació entre el gate y aquí se dice.
-    const faltan = faltanDeHint(error.hint)
-    if (faltan) return { success: false, error: 'alta.errors.incompleto', faltan }
-    logger.warn('finalizarAlta', error.message)
-    if (error.code === '42501') return fail('alta.errors.no_autorizado')
-    return fail('alta.errors.finalizar_fallo')
-  }
-
-  // Revalida la ruta del alta (todas las locales) para que el RSC sirva la pantalla
-  // "completado, pendiente de validación" tras una única navegación del cliente.
-  revalidatePath('/[locale]/alta/[ninoId]', 'page')
-  return ok({ id })
 }

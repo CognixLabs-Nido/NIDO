@@ -35,7 +35,9 @@ export function ActivarMatriculaButton({ matriculaId }: Props) {
     startTransition(async () => {
       const r = await activarMatricula(matriculaId, fecha)
       if (r.success) {
-        toast.success(t('activar_matricula.ok'))
+        // Validada, pero sin la invitación al segundo tutor: se dice, para que se reenvíe.
+        if (r.data.aviso) toast.warning(tErrors(r.data.aviso))
+        else toast.success(t('activar_matricula.ok'))
         router.refresh()
       } else {
         toast.error(tErrors(r.error))

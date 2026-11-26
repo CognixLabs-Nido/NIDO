@@ -5,6 +5,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { parseEstructura } from '../lib/estructura'
 import type { PlantillaInformeItem } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Plantillas de informe del centro de la página, filtradas por estado. La RLS
@@ -27,7 +28,7 @@ export async function getPlantillasInforme(
 
   if (error) {
     logger.warn('getPlantillasInforme', error.message)
-    return []
+    throw new LecturaFallida('getPlantillasInforme', error)
   }
 
   return (data ?? []).map((row) => ({

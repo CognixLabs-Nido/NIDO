@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { invitarDirectoraSchema, type InvitarDirectoraInput } from '../schemas/direccion'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const RUTA = '/[locale]/admin/direccion'
 
@@ -33,23 +34,27 @@ export async function invitarDirectora(
   input: InvitarDirectoraInput,
   centroId: string
 ): Promise<ActionResult<void>> {
-  const parsed = invitarDirectoraSchema.safeParse(input)
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'direccion.errors.fallo')
+  try {
+    const parsed = invitarDirectoraSchema.safeParse(input)
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'direccion.errors.fallo')
 
-  const supabase = await createClient()
-  if (!(await usuarioResponsableEn(supabase, centroId))) {
-    return fail('direccion.errors.no_autorizado')
+    const supabase = await createClient()
+    if (!(await usuarioResponsableEn(supabase, centroId))) {
+      return fail('direccion.errors.no_autorizado')
+    }
+    const r = await sendInvitation({
+      email: parsed.data.email,
+      rolObjetivo: 'directora',
+      centroId,
+      idioma: parsed.data.idioma,
+    })
+    if (!r.success) return fail(r.error)
+
+    revalidatePath(RUTA, 'page')
+    return ok(undefined)
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const r = await sendInvitation({
-    email: parsed.data.email,
-    rolObjetivo: 'directora',
-    centroId,
-    idioma: parsed.data.idioma,
-  })
-  if (!r.success) return fail(r.error)
-
-  revalidatePath(RUTA, 'page')
-  return ok(undefined)
 }
 
 export async function cancelarInvitacionDirectora(

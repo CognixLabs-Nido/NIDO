@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getEstadoCentro } from '../contexto/get-contexto-centro'
 import { getNombresCentros } from '../queries/get-nombres-centros'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 interface Props {
   /** Centro del registro que enseña la página (el del aula o el del niño). */
@@ -19,7 +20,7 @@ interface Props {
  * Solo para quien tiene más de un centro: con uno, el registro es siempre del suyo y no se pinta
  * nada (ni consulta nombres).
  */
-export async function AvisoCentroDistinto({ centroRegistroId }: Props) {
+export async function AvisoCentroDistintoContenido({ centroRegistroId }: Props) {
   const estado = await getEstadoCentro()
   const centros =
     estado.tipo === 'activo'
@@ -48,5 +49,17 @@ export async function AvisoCentroDistinto({ centroRegistroId }: Props) {
         ? t('aviso.otro_centro', { centro: nombre(centroRegistroId), activo: nombre(activoId) })
         : t('aviso.viendo', { centro: nombre(centroRegistroId) })}
     </p>
+  )
+}
+
+/**
+ * Una SECCIÓN (censo C, 2026-11-25): si su lectura falla, esta parte dice «no se ha podido leer» y el
+ * resto de la pantalla sigue (`LimiteSeccion`). El contenido es `AvisoCentroDistintoContenido`.
+ */
+export function AvisoCentroDistinto(props: Props) {
+  return (
+    <LimiteSeccion>
+      <AvisoCentroDistintoContenido {...props} />
+    </LimiteSeccion>
   )
 }

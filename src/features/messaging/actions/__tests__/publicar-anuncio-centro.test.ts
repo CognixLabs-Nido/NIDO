@@ -18,6 +18,8 @@ const OTRO_CENTRO = '22222222-2222-4222-8222-222222222222'
 let roles: { centro_id: string; rol: string }[]
 
 let inserts: unknown[]
+// Censo C: la lectura del aula, caída.
+let aulasError: { message: string; code: string } | null = null
 const destinatariosPushDeAnuncio = vi.fn(async () => [] as string[])
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -46,6 +48,7 @@ vi.mock('@/lib/supabase/server', () => ({
         if (tabla === 'roles_usuario') return resolve({ data: roles, error: null })
         if (tabla === 'aulas') {
           const ok = st.id === AULA_PROPIA && st.centro === CENTRO
+          if (aulasError) return resolve({ data: null, error: aulasError })
           return resolve({ data: ok ? { id: st.id } : null, error: null })
         }
         return resolve({ data: { id: 'anuncio-1' }, error: null })
@@ -87,6 +90,7 @@ const base = { titulo: 'Excursión', contenido: 'Mañana salimos al parque.' }
 beforeEach(() => {
   vi.clearAllMocks()
   inserts = []
+  aulasError = null
   roles = [{ centro_id: CENTRO, rol: 'admin' }]
 })
 
@@ -94,6 +98,16 @@ describe('R3 — publicarAnuncio: aula del centro de la página', () => {
   it('admin con aula de OTRO centro → no_autorizado, sin insertar ni push', async () => {
     const r = await publicarAnuncio({ ...base, ambito: 'aula', aula_id: AULA_AJENA }, CENTRO)
     expect(r).toEqual({ success: false, error: 'messages.errors.no_autorizado' })
+    expect(inserts).toEqual([])
+    expect(destinatariosPushDeAnuncio).not.toHaveBeenCalled()
+  })
+
+  // Censo C (2026-11-25): la mutación del grupo «acción, molde A» sobrevivía sin este caso. Antes,
+  // con la lectura caída, el aula salía «de otro centro» (no_autorizado): el motivo era falso.
+  it('la lectura del aula falla → «no se ha podido leer», sin insertar ni push (no «no autorizado»)', async () => {
+    aulasError = { message: 'timeout', code: '57014' }
+    const r = await publicarAnuncio({ ...base, ambito: 'aula', aula_id: AULA_PROPIA }, CENTRO)
+    expect(r).toEqual({ success: false, error: 'common.lectura_fallida' })
     expect(inserts).toEqual([])
     expect(destinatariosPushDeAnuncio).not.toHaveBeenCalled()
   })

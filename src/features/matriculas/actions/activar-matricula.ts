@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
 import { invitarTutor2AlValidar } from '../lib/invitar-tutor-2'
@@ -31,7 +32,7 @@ const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 export async function activarMatricula(
   matriculaId: string,
   fechaIncorporacion: string
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; aviso?: 'common.guardado_sin_aviso' }>> {
   const parsed = matriculaIdSchema.safeParse(matriculaId)
   if (!parsed.success) return fail('matricula.validation.invalid')
   // Fase 8a: sin el día en que empieza a venir no se valida (decide desde cuándo se le cobra).
@@ -57,16 +58,24 @@ export async function activarMatricula(
   }
   if (!data) return fail('matricula.errors.no_lista')
 
-  const { data: m } = await supabase
+  const { data: m, error: errorLectura } = await supabase
     .from('matriculas')
     .select('nino_id')
     .eq('id', data)
     .maybeSingle()
+  // El alta YA está validada (censo C, 2026-11-25): una lectura fallida aquí no la cuenta como
+  // fallida —la directora la volvería a validar—. Se dice, visible, que la invitación al segundo
+  // tutor no ha salido (decisión de Jose: «Guardado; no se ha podido enviar el aviso o el correo»).
+  if (errorLectura)
+    lecturaFallidaTrasEscritura('activarMatricula: la matrícula validada', errorLectura)
   // Decisión D-a: al validar el alta, invitar al tutor 2 con el email del wizard
-  // (best-effort, idempotente; un fallo no revierte la activación ya hecha).
-  if (m) await invitarTutor2AlValidar(supabase, m.nino_id)
+  // (best-effort, idempotente; un fallo no revierte la activación ya hecha, pero se dice).
+  const invitacion = m && !errorLectura ? await invitarTutor2AlValidar(supabase, m.nino_id) : null
 
   revalidatePath('/[locale]/admin/ninos', 'page')
   revalidatePath('/[locale]/admin/altas', 'page')
+  if (errorLectura || invitacion === 'no_enviada') {
+    return ok({ id: data, aviso: 'common.guardado_sin_aviso' })
+  }
   return ok({ id: data })
 }

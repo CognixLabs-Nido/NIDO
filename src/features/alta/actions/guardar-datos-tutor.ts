@@ -13,6 +13,7 @@ import {
 } from '../schemas/alta-documentos'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /** Lo que la base devuelve al rechazar un dato, a su mensaje (los CHECK y el rango de la fecha). */
 function errorDeDato(e: { code?: string; hint?: string; message?: string }): string | null {
@@ -41,74 +42,79 @@ function errorDeDato(e: { code?: string; hint?: string; message?: string }): str
 export async function guardarDatosTutor(
   input: GuardarDatosTutorInput
 ): Promise<ActionResult<{ id?: string; pendienteValidacion?: boolean }>> {
-  const parsed = guardarDatosTutorSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'alta.documentos.errors.datos_invalidos')
+  try {
+    const parsed = guardarDatosTutorSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'alta.documentos.errors.datos_invalidos')
+    }
+
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('alta.errors.no_autorizado')
+
+    const { nino_id, tipo_vinculo, ...campos } = parsed.data
+    const vacio = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null)
+    const propuesto = {
+      email: vacio(campos.email),
+      nombre_completo: vacio(campos.nombre_completo),
+      direccion_calle: vacio(campos.direccion_calle),
+      direccion_numero: vacio(campos.direccion_numero),
+      direccion_cp: vacio(campos.direccion_cp),
+      direccion_ciudad: vacio(campos.direccion_ciudad),
+      telefono: campos.telefono ? normalizarTelefono(campos.telefono) : null,
+      fecha_nacimiento: vacio(campos.fecha_nacimiento),
+      dni_numero: vacio(campos.dni_numero)?.toUpperCase() ?? null,
+      estudios: vacio(campos.estudios),
+      empresa: vacio(campos.empresa),
+    }
+
+    // Niño → familia. Con `ninos.familia_id` NOT NULL esto no falla salvo niño inexistente o sin acceso.
+    const { data: nino, error: errorLectura } = await supabase
+      .from('ninos')
+      .select('familia_id')
+      .eq('id', nino_id)
+      .maybeSingle()
+    if (errorLectura) return fail('common.lectura_fallida')
+    if (!nino?.familia_id) return fail('alta.errors.no_autorizado')
+    const rolFamilia = rolFamiliaDeVinculo(tipo_vinculo)
+
+    const { data: id, error } = await supabase.rpc('guardar_tutor', {
+      p_familia_id: nino.familia_id,
+      p_rol_familia: rolFamilia,
+      p_datos: propuesto,
+    })
+    if (!error) return ok(id ? { id } : {})
+
+    if (error.hint !== 'cola_validacion') {
+      logger.warn('guardarDatosTutor: guardar_tutor', error.code ?? 'sin_codigo')
+      const dato = errorDeDato(error)
+      if (dato) return fail(dato)
+      if (error.code === '42501') return fail('alta.errors.no_autorizado')
+      if (error.hint === 'titular_sin_fila') return fail('alta.documentos.errors.tutor_duplicado')
+      return fail('alta.documentos.errors.guardado')
+    }
+
+    // Alta de la familia validada: a la cola, solo si algo cambia respecto a lo guardado.
+    const { data: guardados, error: gErr } = await supabase.rpc('tutores_de_familia', {
+      p_familia_id: nino.familia_id,
+    })
+    const guardado = guardados?.find((t) => t.rol_familia === rolFamilia) ?? null
+    if (gErr || (guardado && !guardado.ve_personales)) {
+      logger.warn('guardarDatosTutor: leer lo guardado', gErr?.code ?? 'sin_permiso')
+      return fail('alta.documentos.errors.guardado')
+    }
+    if (Object.keys(clavesQueCambian(propuesto, guardado)).length === 0) return ok({})
+    const r = await registrarCambioPendiente(supabase, {
+      ninoId: nino_id,
+      usuarioId: user.id,
+      entidad: 'datos_tutor',
+      payload: { tipo_vinculo, ...propuesto },
+    })
+    if (!r.ok) return fail(r.error)
+    return ok({ pendienteValidacion: true })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('alta.errors.no_autorizado')
-
-  const { nino_id, tipo_vinculo, ...campos } = parsed.data
-  const vacio = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null)
-  const propuesto = {
-    email: vacio(campos.email),
-    nombre_completo: vacio(campos.nombre_completo),
-    direccion_calle: vacio(campos.direccion_calle),
-    direccion_numero: vacio(campos.direccion_numero),
-    direccion_cp: vacio(campos.direccion_cp),
-    direccion_ciudad: vacio(campos.direccion_ciudad),
-    telefono: campos.telefono ? normalizarTelefono(campos.telefono) : null,
-    fecha_nacimiento: vacio(campos.fecha_nacimiento),
-    dni_numero: vacio(campos.dni_numero)?.toUpperCase() ?? null,
-    estudios: vacio(campos.estudios),
-    empresa: vacio(campos.empresa),
-  }
-
-  // Niño → familia. Con `ninos.familia_id` NOT NULL esto no falla salvo niño inexistente o sin acceso.
-  const { data: nino } = await supabase
-    .from('ninos')
-    .select('familia_id')
-    .eq('id', nino_id)
-    .maybeSingle()
-  if (!nino?.familia_id) return fail('alta.errors.no_autorizado')
-  const rolFamilia = rolFamiliaDeVinculo(tipo_vinculo)
-
-  const { data: id, error } = await supabase.rpc('guardar_tutor', {
-    p_familia_id: nino.familia_id,
-    p_rol_familia: rolFamilia,
-    p_datos: propuesto,
-  })
-  if (!error) return ok(id ? { id } : {})
-
-  if (error.hint !== 'cola_validacion') {
-    logger.warn('guardarDatosTutor: guardar_tutor', error.code ?? 'sin_codigo')
-    const dato = errorDeDato(error)
-    if (dato) return fail(dato)
-    if (error.code === '42501') return fail('alta.errors.no_autorizado')
-    if (error.hint === 'titular_sin_fila') return fail('alta.documentos.errors.tutor_duplicado')
-    return fail('alta.documentos.errors.guardado')
-  }
-
-  // Alta de la familia validada: a la cola, solo si algo cambia respecto a lo guardado.
-  const { data: guardados, error: gErr } = await supabase.rpc('tutores_de_familia', {
-    p_familia_id: nino.familia_id,
-  })
-  const guardado = guardados?.find((t) => t.rol_familia === rolFamilia) ?? null
-  if (gErr || (guardado && !guardado.ve_personales)) {
-    logger.warn('guardarDatosTutor: leer lo guardado', gErr?.code ?? 'sin_permiso')
-    return fail('alta.documentos.errors.guardado')
-  }
-  if (Object.keys(clavesQueCambian(propuesto, guardado)).length === 0) return ok({})
-  const r = await registrarCambioPendiente(supabase, {
-    ninoId: nino_id,
-    usuarioId: user.id,
-    entidad: 'datos_tutor',
-    payload: { tipo_vinculo, ...propuesto },
-  })
-  if (!r.ok) return fail(r.error)
-  return ok({ pendienteValidacion: true })
 }

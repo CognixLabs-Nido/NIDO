@@ -12,6 +12,7 @@ import { logger } from '@/shared/lib/logger'
 import { titularRespuestaImagen } from '../lib/titular-respuesta-imagen'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Vía B (IU-2) — el checkbox "autorizo imagen" del alta OTORGA el consentimiento de
@@ -35,43 +36,47 @@ export type OtorgarImagenAltaInput = z.infer<typeof otorgarImagenAltaSchema>
 export async function otorgarConsentimientoImagenAlta(
   input: OtorgarImagenAltaInput
 ): Promise<ActionResult<{ ok: true }>> {
-  const parsed = otorgarImagenAltaSchema.safeParse(input)
-  if (!parsed.success) return fail('alta.errors.acuse_fallo')
+  try {
+    const parsed = otorgarImagenAltaSchema.safeParse(input)
+    if (!parsed.success) return fail('alta.errors.acuse_fallo')
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('alta.errors.no_autorizado')
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('alta.errors.no_autorizado')
 
-  const titular = await titularRespuestaImagen(
-    supabase,
-    parsed.data.nino_id,
-    user.id,
-    parsed.data.tutor_id
-  )
-  if (!titular.ok) return fail(titular.error)
+    const titular = await titularRespuestaImagen(
+      supabase,
+      parsed.data.nino_id,
+      user.id,
+      parsed.data.tutor_id
+    )
+    if (!titular.ok) return fail(titular.error)
 
-  const { ip, userAgent } = await getRequestContext()
-  const { error } = await supabase.rpc('otorgar_consentimiento_imagen', {
-    p_nino_id: parsed.data.nino_id,
-    p_tutor: titular.tutor,
-    p_version: CONSENT_VERSIONS.imagen,
-    p_ip: ip ?? undefined,
-    p_user_agent: userAgent ?? undefined,
-    p_metodo: titular.metodo,
-  })
-  if (error) {
-    logger.warn('otorgarConsentimientoImagenAlta', error.message)
-    if (error.code === '42501') {
-      // El superusuario no consiente en nombre de la familia (ADR-0061): lo decide la RPC (le
-      // deja solo si es tutor legal del niño); aquí solo se da el motivo.
-      if (await esSuperusuario(supabase)) return fail('alta.errors.presencial_solo_direccion')
-      return fail('alta.errors.no_autorizado')
+    const { ip, userAgent } = await getRequestContext()
+    const { error } = await supabase.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: parsed.data.nino_id,
+      p_tutor: titular.tutor,
+      p_version: CONSENT_VERSIONS.imagen,
+      p_ip: ip ?? undefined,
+      p_user_agent: userAgent ?? undefined,
+      p_metodo: titular.metodo,
+    })
+    if (error) {
+      logger.warn('otorgarConsentimientoImagenAlta', error.message)
+      if (error.code === '42501') {
+        // El superusuario no consiente en nombre de la familia (ADR-0061): lo decide la RPC (le
+        // deja solo si es tutor legal del niño); aquí solo se da el motivo.
+        if (await esSuperusuario(supabase)) return fail('alta.errors.presencial_solo_direccion')
+        return fail('alta.errors.no_autorizado')
+      }
+      return fail('alta.errors.acuse_fallo')
     }
-    return fail('alta.errors.acuse_fallo')
-  }
 
-  revalidatePath('/[locale]/alta/[ninoId]', 'page')
-  return ok({ ok: true })
+    revalidatePath('/[locale]/alta/[ninoId]', 'page')
+    return ok({ ok: true })
+  } catch (e) {
+    return falloDeLectura(e)
+  }
 }

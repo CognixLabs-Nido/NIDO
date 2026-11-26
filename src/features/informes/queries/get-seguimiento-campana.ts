@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { derivarSeguimiento, type AulaSeed, type MatriculaSeed } from '../lib/seguimiento'
 import type { PeriodoInforme, SeguimientoAula } from '../types'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface MatriculaNinoRow {
   aula_id: string
@@ -28,10 +29,11 @@ export async function getSeguimientoCampana(
   const supabase = await createClient()
 
   // 1. Aulas del curso (F11-H: la pertenencia aula↔curso vive en aulas_curso).
-  const { data: aulasData } = await supabase
+  const { data: aulasData, error } = await supabase
     .from('aulas_curso')
     .select('aula_id, aula:aulas!inner(nombre, deleted_at)')
     .eq('curso_academico_id', cursoId)
+  if (error) throw new LecturaFallida('getSeguimientoCampana', error)
 
   const aulas = (
     (aulasData ?? []) as unknown as Array<{
@@ -63,13 +65,14 @@ export async function getSeguimientoCampana(
   // 3. Informes publicados de la terna (curso, período) para esos niños.
   const publicados = new Set<string>()
   if (ninoIds.length > 0) {
-    const { data: informes } = await supabase
+    const { data: informes, error: errorLectura } = await supabase
       .from('informes_evolucion')
       .select('nino_id')
       .eq('curso_academico_id', cursoId)
       .eq('periodo', periodo)
       .eq('estado', 'publicado')
       .in('nino_id', ninoIds)
+    if (errorLectura) throw new LecturaFallida('getSeguimientoCampana', errorLectura)
     for (const row of informes ?? []) publicados.add(row.nino_id)
   }
 

@@ -2,10 +2,21 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import nextVitals from 'eslint-config-next/core-web-vitals'
 import nextTs from 'eslint-config-next/typescript'
 
+import lecturaMiraElError from './eslint-rules/lectura-mira-el-error.mjs'
+import paradaTrasEscritura from './eslint-rules/parada-tras-escritura.mjs'
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'src/types/database.ts']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    'src/types/database.ts',
+    // Los casos del codemod de lecturas: su texto exacto ES el caso (entrada y salida esperada).
+    'scripts/codemods/casos-lectura/**',
+  ]),
   {
     rules: {
       // TypeScript strict — sin any
@@ -14,6 +25,12 @@ const eslintConfig = defineConfig([
       // Sin console.log en producción
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
+  },
+  // Un fichero CommonJS (`.cjs`: el escáner de cadena de la CI y los codemods del censo C) carga con
+  // `require`: es la única forma que tiene. La regla de los imports es para los módulos ES.
+  {
+    files: ['**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   // Lint-guard F11-D fase 2: el cliente service-role (que bypassa TODA la RLS) vive
   // en UN solo módulo, `src/lib/supabase/admin.ts`. Nadie más puede tocar la
@@ -38,6 +55,23 @@ const eslintConfig = defineConfig([
         },
       ],
     },
+  },
+  // Censo C (decisión de Jose del 2026-11-25): una llamada a Supabase mira su `error`. Un sitio nuevo con el
+  // patrón viejo pone la CI roja; los que quedan hoy, en la lista blanca temporal, que solo baja.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/test/**', '**/__tests__/**', '**/*.test.{ts,tsx}'],
+    // Y (2026-11-25) una lectura fallida después de una escritura hecha no para: diría «no se guardó» sobre
+    // algo guardado. Esta regla ve la misma función; la cadena entre funciones, el escáner de la CI.
+    plugins: {
+      nido: {
+        rules: {
+          'lectura-mira-el-error': lecturaMiraElError,
+          'parada-tras-escritura': paradaTrasEscritura,
+        },
+      },
+    },
+    rules: { 'nido/lectura-mira-el-error': 'error', 'nido/parada-tras-escritura': 'error' },
   },
   // `src/types/database.ts` es la salida del generador, sin tocar. Lo que el generador no sabe (la
   // nulabilidad de las funciones RETURNS TABLE, los argumentos que aceptan NULL, las columnas

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/db'
 
 import { getNinosDeFamilia, type NinoDeFamiliaItem } from './get-ninos-de-familia'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface TutorDetalle {
   id: string
@@ -49,24 +50,28 @@ export async function getFamiliaDetalle(
 ): Promise<FamiliaDetalle | null> {
   const supabase = await createClient()
 
-  const { data: familia } = await supabase
+  const { data: familia, error } = await supabase
     .from('familias')
     .select('id, etiqueta, deleted_at, centro_id, metodo_pago')
     .eq('id', familiaId)
     .maybeSingle()
+  if (error) throw new LecturaFallida('getFamiliaDetalle', error)
   if (!familia || familia.centro_id !== centroId) return null
 
-  const [{ data: rows }, { data: nuevos }, hijos] = await Promise.all([
-    supabase
-      .from('familia_tutores')
-      .select(
-        'id, rol_familia, nombre_completo, email, dni_documento_path, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, usuario_id'
-      )
-      .eq('familia_id', familiaId)
-      .is('deleted_at', null),
-    supabase.rpc('tutores_de_familia', { p_familia_id: familiaId }),
-    getNinosDeFamilia(familiaId),
-  ])
+  const [{ data: rows, error: errorLectura }, { data: nuevos, error: errorLectura2 }, hijos] =
+    await Promise.all([
+      supabase
+        .from('familia_tutores')
+        .select(
+          'id, rol_familia, nombre_completo, email, dni_documento_path, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, usuario_id'
+        )
+        .eq('familia_id', familiaId)
+        .is('deleted_at', null),
+      supabase.rpc('tutores_de_familia', { p_familia_id: familiaId }),
+      getNinosDeFamilia(familiaId),
+    ])
+  if (errorLectura) throw new LecturaFallida('getFamiliaDetalle', errorLectura)
+  if (errorLectura2) throw new LecturaFallida('getFamiliaDetalle', errorLectura2)
 
   const nuevoDe = new Map((nuevos ?? []).map((n) => [n.id, n]))
   const tutores: TutorDetalle[] = (rows ?? [])

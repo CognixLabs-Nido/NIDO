@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Nombres de los centros dados (para el selector y el conmutador de centro). La RLS
@@ -11,10 +12,11 @@ export async function getNombresCentros(
 ): Promise<Map<string, string>> {
   if (centroIds.length === 0) return new Map()
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('centros')
     .select('id, nombre')
     .in('id', [...centroIds])
     .is('deleted_at', null)
+  if (error) throw new LecturaFallida('getNombresCentros', error)
   return new Map((data ?? []).map((c) => [c.id, c.nombre]))
 }

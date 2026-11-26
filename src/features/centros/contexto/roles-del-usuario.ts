@@ -4,6 +4,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { centrosDelSuperusuario, centrosDelUsuario, type CentroDelUsuario } from './resolver'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Los roles de un usuario, con el cliente y el usuario que pasa quien llama (multicentro · Fase 1).
@@ -34,12 +35,14 @@ export async function esSuperusuario(supabase: Client): Promise<boolean> {
 
 /**
  * Los centros del usuario con sus roles activos, ordenados por id. El superusuario tiene además
- * todos los centros que existen, como admin. `null` si alguna lectura falla.
+ * todos los centros que existen, como admin. Si una lectura falla, lanza `LecturaFallida` (censo C,
+ * 2026-11-25): antes devolvía `null`, y quien la llamaba lo leía como «sin roles» (→ /forbidden a
+ * un usuario con roles) o como «no es Dirección».
  */
 export async function leerCentrosDe(
   supabase: Client,
   usuarioId: string
-): Promise<CentroDelUsuario[] | null> {
+): Promise<CentroDelUsuario[]> {
   const [{ data, error }, esSuper] = await Promise.all([
     // entre-centros: los centros del usuario, para elegir en cuál entra.
     supabase
@@ -49,7 +52,7 @@ export async function leerCentrosDe(
       .is('deleted_at', null),
     esSuperusuario(supabase),
   ])
-  if (error) return null
+  if (error) throw new LecturaFallida('leerCentrosDe', error)
   const propios = centrosDelUsuario(data ?? [])
   if (!esSuper) return propios
   // entre-centros: el superusuario es admin de todos los centros que existen.
@@ -57,7 +60,7 @@ export async function leerCentrosDe(
     .from('centros')
     .select('id')
     .is('deleted_at', null)
-  if (errorCentros) return null
+  if (errorCentros) throw new LecturaFallida('leerCentrosDe', errorCentros)
   return centrosDelSuperusuario(
     propios,
     (centros ?? []).map((c) => c.id)
@@ -71,31 +74,34 @@ export async function rolesEnCentro(
   centroId: string
 ): Promise<CentroDelUsuario | null> {
   const centros = await leerCentrosDe(supabase, usuarioId)
-  return centros?.find((c) => c.centroId === centroId) ?? null
+  return centros.find((c) => c.centroId === centroId) ?? null
 }
 
 /**
  * Los roles vivos del usuario en CUALQUIER centro, sin agrupar. Solo para el proxy, que gatea el
  * prefijo de ruta (`/admin`, `/teacher`…) antes de que haya contexto de centro. El superusuario
  * suma `admin` (Fase 3): pasa a `/admin`, y la página le pide elegir centro.
- * Un fallo de lectura es lista vacía (el proxy manda a `/forbidden`), como antes.
+ * Un fallo de lectura lanza `LecturaFallida` (antes, lista vacía: el proxy mandaba a `/forbidden` a
+ * un usuario con roles).
  */
 export async function rolesEnCualquierCentro(
   supabase: Client,
   usuarioId: string
 ): Promise<Database['public']['Enums']['user_role'][]> {
-  const [{ data }, esSuper] = await Promise.all([
+  const [{ data, error }, esSuper] = await Promise.all([
     // entre-centros: el proxy gatea la ruta antes de que haya centro (lo dice el comentario).
     supabase.from('roles_usuario').select('rol').eq('usuario_id', usuarioId).is('deleted_at', null),
     esSuperusuario(supabase),
   ])
+  if (error) throw new LecturaFallida('rolesEnCualquierCentro', error)
   const roles = (data ?? []).map((r) => r.rol)
   return esSuper && !roles.includes('admin') ? [...roles, 'admin'] : roles
 }
 
 /**
  * ¿Es Dirección en ese centro (la admin o una directora, como `es_admin`)? Un fallo de lectura
- * cuenta como «no». Para lo exclusivo de la admin, `esResponsableEn`.
+ * lanza `LecturaFallida` (antes contaba como «no», y la Dirección leía «no autorizado»). Para lo
+ * exclusivo de la admin, `esResponsableEn`.
  */
 export async function esAdminEn(
   supabase: Client,
@@ -109,7 +115,7 @@ export async function esAdminEn(
  * ¿Es la admin de ese centro, o el superusuario (como `privado.es_responsable`)? Lo exclusivo de
  * la admin: los datos y el logo del centro, las cuotas, los datos de acreedor, las plantillas
  * legales, cerrar el curso, la auditoría, los derechos RGPD y nombrar admins o directoras. Un
- * fallo de lectura cuenta como «no».
+ * fallo de lectura lanza `LecturaFallida` (antes contaba como «no»).
  */
 export async function esResponsableEn(
   supabase: Client,
@@ -119,13 +125,9 @@ export async function esResponsableEn(
   return (await rolesEnCentro(supabase, usuarioId, centroId))?.esResponsable ?? false
 }
 
-/** Los centros donde es Dirección, ordenados por id. `null` si la lectura falla. */
-export async function centrosDondeEsAdmin(
-  supabase: Client,
-  usuarioId: string
-): Promise<string[] | null> {
+/** Los centros donde es Dirección, ordenados por id. Si la lectura falla, `LecturaFallida`. */
+export async function centrosDondeEsAdmin(supabase: Client, usuarioId: string): Promise<string[]> {
   const centros = await leerCentrosDe(supabase, usuarioId)
-  if (!centros) return null
   return centros.filter((c) => c.roles.includes('admin')).map((c) => c.centroId)
 }
 
@@ -133,8 +135,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * El usuario de la sesión de `supabase`, si es Dirección en ese centro (explícito: de la página o
- * del registro que se toca). `null` si no hay sesión, el id no es un uuid, la lectura falla o no
- * es Dirección allí. Para las acciones de Dirección; la RLS o la RPC siguen autorizando la
+ * del registro que se toca). `null` si no hay sesión, el id no es un uuid o no es Dirección allí;
+ * si la lectura de los roles falla, `LecturaFallida`. Para las acciones de Dirección; la RLS o la RPC siguen autorizando la
  * escritura.
  */
 export async function usuarioAdminEn(supabase: Client, centroId: string): Promise<string | null> {

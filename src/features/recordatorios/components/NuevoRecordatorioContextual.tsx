@@ -3,6 +3,7 @@ import { getAulasParaRecordatorios } from '../queries/get-aulas-para-recordatori
 import { getNinosParaRecordatorios } from '../queries/get-ninos-para-recordatorios'
 import { getProfesParaRecordatorios } from '../queries/get-profes-para-recordatorios'
 import { RecordatorioFormDialog } from './RecordatorioFormDialog'
+import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
 
 interface Props {
   locale: string
@@ -23,7 +24,7 @@ interface Props {
  * `/teacher/aula/[id]` (preset `familias_aula` + aula). El preselect es
  * conveniencia: el usuario puede cambiar el destino tras abrir.
  */
-export async function NuevoRecordatorioContextual({ locale, rol, centroId, preset }: Props) {
+async function NuevoRecordatorioContextualContenido({ locale, rol, centroId, preset }: Props) {
   const destinos = destinosParaRol(rol)
   if (destinos.length === 0) return null
 
@@ -43,5 +44,17 @@ export async function NuevoRecordatorioContextual({ locale, rol, centroId, prese
       profes={profes}
       preset={preset}
     />
+  )
+}
+
+/**
+ * Una SECCIÓN (censo C, 2026-11-25): si su lectura falla, esta parte dice «no se ha podido leer» y el
+ * resto de la pantalla sigue (`LimiteSeccion`). El contenido es `NuevoRecordatorioContextualContenido`.
+ */
+export function NuevoRecordatorioContextual(props: Props) {
+  return (
+    <LimiteSeccion>
+      <NuevoRecordatorioContextualContenido {...props} />
+    </LimiteSeccion>
   )
 }

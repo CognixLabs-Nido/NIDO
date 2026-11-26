@@ -75,6 +75,7 @@ import {
   modoFirmaDocumento,
 } from '@/features/documentos-centro/lib/firmar-documentos'
 import { etiquetaIdiomaPrincipal, idiomasVisibles } from '@/shared/lib/idioma-centinela'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -123,7 +124,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
       ? `${tMenor('como_nos_conocio_opciones.otro')}: ${campos5b.como_nos_conocio_otro ?? ''}`
       : tMenor(`como_nos_conocio_opciones.${campos5b.como_nos_conocio}`)
     : '—'
-  const [{ data: vinculos }, info, matriculas, historico, lecturaPed, altaDoc, retencion] =
+  const [{ data: vinculos, error }, info, matriculas, historico, lecturaPed, altaDoc, retencion] =
     await Promise.all([
       supabase
         .from('vinculos_familiares')
@@ -140,6 +141,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
       // Qué pasa con cada dato y cuándo (20261211120000): lo decide la BD; sin respuesta, no sale.
       getEstadoRetencionNino(id),
     ])
+  if (error) throw new LecturaFallida('NinoDetallePage', error)
   // Sin leerlos no se ofrece el formulario, que guarda el estado entero: abriría con los valores por
   // defecto y pisaría lo guardado (2026-11-12, medido). Se dice.
   const pedNoLeidos = !lecturaPed.leidos

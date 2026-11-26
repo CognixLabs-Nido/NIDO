@@ -12,6 +12,7 @@ import { parcheNinoDireccion } from '../lib/parche-nino'
 import { actualizarNinoTutorSchema, type ActualizarNinoTutorInput } from '../schemas/nino'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 /**
  * Pieza 3a — el TUTOR LEGAL escribe la identidad de su hijo vía la RPC
@@ -36,131 +37,149 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  * sí misma. Quién es lo decide AQUÍ el servidor (`esAdminDeCentroDeNino`), nunca el cliente; a una
  * tutora la RLS no le deja escribir la tabla (0 filas), así que este camino no le sirve de nada.
  */
+/**
+ * La rama de Dirección: escribe la ficha con su sesión y devuelve. Va en su función (censo C,
+ * 2026-11-25) para que la regla `nido/parada-tras-escritura`, que lee en orden de texto, no tome este
+ * update por una escritura anterior a las lecturas de la rama del tutor, que no se cruzan con él.
+ */
+async function escribirComoDireccion(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  d: ActualizarNinoTutorInput
+): Promise<ActionResult<{ id: string; pendienteValidacion: boolean }>> {
+  const { data: escrita, error: errDireccion } = await supabase
+    .from('ninos')
+    .update(parcheNinoDireccion(d))
+    .eq('id', d.nino_id)
+    .select('id')
+    .maybeSingle()
+  if (errDireccion) {
+    logger.warn('actualizarNinoTutor.direccion', errDireccion.code ?? 'sin_codigo')
+    if (errDireccion.code === '23514') return fail('nino.validation.invalid')
+    return fail('nino.errors.guardar_fallo')
+  }
+  // USING falso → 0 filas sin error: la RLS no la dejó escribir.
+  if (!escrita) return fail('nino.errors.no_autorizado')
+  return ok({ id: escrita.id, pendienteValidacion: false })
+}
+
 export async function actualizarNinoTutor(
   input: ActualizarNinoTutorInput
 ): Promise<ActionResult<{ id: string; pendienteValidacion: boolean }>> {
-  const parsed = actualizarNinoTutorSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'nino.validation.invalid')
-  }
+  try {
+    const parsed = actualizarNinoTutorSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'nino.validation.invalid')
+    }
 
-  const d = parsed.data
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return fail('nino.errors.no_autorizado')
+    const d = parsed.data
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail('nino.errors.no_autorizado')
 
-  if (await esAdminDeCentroDeNino(supabase, d.nino_id, user.id)) {
-    const { data: escrita, error: errDireccion } = await supabase
-      .from('ninos')
-      .update(parcheNinoDireccion(d))
-      .eq('id', d.nino_id)
-      .select('id')
-      .maybeSingle()
-    if (errDireccion) {
-      logger.warn('actualizarNinoTutor.direccion', errDireccion.code ?? 'sin_codigo')
-      if (errDireccion.code === '23514') return fail('nino.validation.invalid')
+    if (await esAdminDeCentroDeNino(supabase, d.nino_id, user.id)) {
+      return await escribirComoDireccion(supabase, d)
+    }
+
+    const propuesta = {
+      nombre: d.nombre,
+      primer_apellido: d.primer_apellido,
+      // Los dos apellidos van en pareja: el segundo llega siempre con el primero, y vacío es «no
+      // tiene» (así se puede quitar). La RPC rechaza el segundo sin el primero.
+      segundo_apellido: d.segundo_apellido ?? '',
+      fecha_nacimiento: d.fecha_nacimiento,
+      sexo: d.sexo ?? null,
+      nacionalidad: d.nacionalidad,
+      lugar_nacimiento: d.lugar_nacimiento,
+      // Vacío = «no tiene» (así se puede quitar); NULL lo dejaría como está.
+      dni: d.dni ?? '',
+      // Fase 7: la tarjeta sanitaria, identidad como el DNI (con el alta validada, a la cola).
+      sip: d.sip,
+    }
+
+    let pendienteValidacion = false
+    let identidadDirecta: typeof propuesta | null = propuesta
+    if (await altaValidada(supabase, d.nino_id)) {
+      // El DNI es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), no de la tabla; la
+      // tarjeta, por `sip_de_ninos` (fase 7).
+      const [{ data: identidad, error: errorLectura }, gestion, tarjeta] = await Promise.all([
+        supabase
+          .from('ninos')
+          .select(
+            'nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento'
+          )
+          .eq('id', d.nino_id)
+          .maybeSingle(),
+        leerFichaGestionDe(supabase, d.nino_id),
+        leerTarjetaSanitariaDe(supabase, d.nino_id),
+      ])
+      if (errorLectura) return fail('common.lectura_fallida')
+      if (!identidad || !gestion || !tarjeta) return fail('nino.errors.no_autorizado')
+      const guardada = { ...identidad, dni: gestion.dni, sip: tarjeta.sip }
+      const cambios = cambiosIdentidad(propuesta, guardada)
+      if (Object.keys(cambios).length > 0) {
+        const r = await registrarCambioPendiente(supabase, {
+          ninoId: d.nino_id,
+          usuarioId: user.id,
+          entidad: 'ninos_identidad',
+          payload: cambios,
+        })
+        if (!r.ok) return fail(r.error)
+        pendienteValidacion = true
+      }
+      identidadDirecta = null
+    }
+
+    // El tipo generado declara los args como no-nullable, pero la RPC acepta NULL
+    // (contrato "NULL = preservar" del setter médico).
+    const rpcArgs = {
+      p_nino_id: d.nino_id,
+      p_nombre: identidadDirecta?.nombre ?? null,
+      p_primer_apellido: identidadDirecta?.primer_apellido ?? null,
+      p_segundo_apellido: identidadDirecta?.segundo_apellido ?? null,
+      p_fecha_nacimiento: identidadDirecta?.fecha_nacimiento ?? null,
+      p_sexo: identidadDirecta?.sexo ?? null,
+      p_nacionalidad: identidadDirecta?.nacionalidad ?? null,
+      p_lugar_nacimiento: identidadDirecta?.lugar_nacimiento ?? null,
+      p_dni: identidadDirecta?.dni ?? null,
+      p_sip: identidadDirecta?.sip ?? null,
+      // Los directos: nunca a la cola (decidido el 2026-11-07).
+      p_idioma_principal: d.idioma_principal,
+      p_hermanos_total: d.hermanos_total,
+      p_hermanos_lugar: d.hermanos_lugar,
+      p_observaciones_familia: d.observaciones_familia ?? null,
+      p_como_nos_conocio: d.como_nos_conocio ?? null,
+      p_como_nos_conocio_otro:
+        d.como_nos_conocio === 'otro' ? (d.como_nos_conocio_otro ?? '') : null,
+    } as unknown as {
+      p_nino_id: string
+      p_nombre: string
+      p_primer_apellido: string
+      p_segundo_apellido: string
+      p_fecha_nacimiento: string
+      p_sexo: 'F' | 'M' | 'X'
+      p_nacionalidad: string
+      p_idioma_principal: string
+      p_lugar_nacimiento: string
+      p_dni: string
+      p_sip: string
+      p_hermanos_total: number
+      p_hermanos_lugar: number
+      p_observaciones_familia: string
+      p_como_nos_conocio: string
+      p_como_nos_conocio_otro: string
+    }
+
+    const { data, error } = await supabase.rpc('actualizar_identidad_nino_tutor', rpcArgs)
+    if (error) {
+      logger.warn('actualizarNinoTutor', error.message)
+      if (error.code === '42501') return fail('nino.errors.no_autorizado')
       return fail('nino.errors.guardar_fallo')
     }
-    // USING falso → 0 filas sin error: la RLS no la dejó escribir.
-    if (!escrita) return fail('nino.errors.no_autorizado')
-    return ok({ id: escrita.id, pendienteValidacion: false })
+    if (!data) return fail('nino.errors.guardar_fallo')
+    return ok({ id: data as string, pendienteValidacion })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  const propuesta = {
-    nombre: d.nombre,
-    primer_apellido: d.primer_apellido,
-    // Los dos apellidos van en pareja: el segundo llega siempre con el primero, y vacío es «no
-    // tiene» (así se puede quitar). La RPC rechaza el segundo sin el primero.
-    segundo_apellido: d.segundo_apellido ?? '',
-    fecha_nacimiento: d.fecha_nacimiento,
-    sexo: d.sexo ?? null,
-    nacionalidad: d.nacionalidad,
-    lugar_nacimiento: d.lugar_nacimiento,
-    // Vacío = «no tiene» (así se puede quitar); NULL lo dejaría como está.
-    dni: d.dni ?? '',
-    // Fase 7: la tarjeta sanitaria, identidad como el DNI (con el alta validada, a la cola).
-    sip: d.sip,
-  }
-
-  let pendienteValidacion = false
-  let identidadDirecta: typeof propuesta | null = propuesta
-  if (await altaValidada(supabase, d.nino_id)) {
-    // El DNI es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), no de la tabla; la
-    // tarjeta, por `sip_de_ninos` (fase 7).
-    const [{ data: identidad }, gestion, tarjeta] = await Promise.all([
-      supabase
-        .from('ninos')
-        .select(
-          'nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento'
-        )
-        .eq('id', d.nino_id)
-        .maybeSingle(),
-      leerFichaGestionDe(supabase, d.nino_id),
-      leerTarjetaSanitariaDe(supabase, d.nino_id),
-    ])
-    if (!identidad || !gestion || !tarjeta) return fail('nino.errors.no_autorizado')
-    const guardada = { ...identidad, dni: gestion.dni, sip: tarjeta.sip }
-    const cambios = cambiosIdentidad(propuesta, guardada)
-    if (Object.keys(cambios).length > 0) {
-      const r = await registrarCambioPendiente(supabase, {
-        ninoId: d.nino_id,
-        usuarioId: user.id,
-        entidad: 'ninos_identidad',
-        payload: cambios,
-      })
-      if (!r.ok) return fail(r.error)
-      pendienteValidacion = true
-    }
-    identidadDirecta = null
-  }
-
-  // El tipo generado declara los args como no-nullable, pero la RPC acepta NULL
-  // (contrato "NULL = preservar" del setter médico).
-  const rpcArgs = {
-    p_nino_id: d.nino_id,
-    p_nombre: identidadDirecta?.nombre ?? null,
-    p_primer_apellido: identidadDirecta?.primer_apellido ?? null,
-    p_segundo_apellido: identidadDirecta?.segundo_apellido ?? null,
-    p_fecha_nacimiento: identidadDirecta?.fecha_nacimiento ?? null,
-    p_sexo: identidadDirecta?.sexo ?? null,
-    p_nacionalidad: identidadDirecta?.nacionalidad ?? null,
-    p_lugar_nacimiento: identidadDirecta?.lugar_nacimiento ?? null,
-    p_dni: identidadDirecta?.dni ?? null,
-    p_sip: identidadDirecta?.sip ?? null,
-    // Los directos: nunca a la cola (decidido el 2026-11-07).
-    p_idioma_principal: d.idioma_principal,
-    p_hermanos_total: d.hermanos_total,
-    p_hermanos_lugar: d.hermanos_lugar,
-    p_observaciones_familia: d.observaciones_familia ?? null,
-    p_como_nos_conocio: d.como_nos_conocio ?? null,
-    p_como_nos_conocio_otro: d.como_nos_conocio === 'otro' ? (d.como_nos_conocio_otro ?? '') : null,
-  } as unknown as {
-    p_nino_id: string
-    p_nombre: string
-    p_primer_apellido: string
-    p_segundo_apellido: string
-    p_fecha_nacimiento: string
-    p_sexo: 'F' | 'M' | 'X'
-    p_nacionalidad: string
-    p_idioma_principal: string
-    p_lugar_nacimiento: string
-    p_dni: string
-    p_sip: string
-    p_hermanos_total: number
-    p_hermanos_lugar: number
-    p_observaciones_familia: string
-    p_como_nos_conocio: string
-    p_como_nos_conocio_otro: string
-  }
-
-  const { data, error } = await supabase.rpc('actualizar_identidad_nino_tutor', rpcArgs)
-  if (error) {
-    logger.warn('actualizarNinoTutor', error.message)
-    if (error.code === '42501') return fail('nino.errors.no_autorizado')
-    return fail('nino.errors.guardar_fallo')
-  }
-  if (!data) return fail('nino.errors.guardar_fallo')
-  return ok({ id: data as string, pendienteValidacion })
 }
