@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
 
-import type { SesionConFallos } from './lectura-fallida'
+import { propsDe, type SesionConFallos } from './lectura-fallida'
 import {
   asignarRol,
   clientFor,
@@ -66,6 +66,8 @@ vi.mock('next-intl', () => ({
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 const { default: FamilyNinoPage } = await import('@/app/[locale]/family/nino/[id]/page')
+const { AgendaFamiliaView } = await import('@/features/agenda-diaria/components/AgendaFamiliaView')
+const { NoSePudoLeer } = await import('@/shared/components/NoSePudoLeer')
 const { default: FamilyRecibosPage } = await import('@/app/[locale]/family/recibos/page')
 
 describe('las páginas de la familia no deciden con una lectura caída', () => {
@@ -82,7 +84,11 @@ describe('las páginas de la familia no deciden con una lectura caída', () => {
     legal = await createTestUser({ nombre: 'Legal Familia Lecturas Caidas' })
     await asignarRol(legal.id, c.id, 'tutor_legal')
     await crearFamiliaTutor(nino.familia_id, legal.id)
-    await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', { puede_ver_info_medica: true })
+    // Los permisos que la app da al tutor legal principal que hacen falta aquí (`permisosDefault`).
+    await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', {
+      puede_ver_info_medica: true,
+      puede_ver_agenda: true,
+    })
     sesion.actual = await clientFor(legal)
   })
 
@@ -138,5 +144,22 @@ describe('las páginas de la familia no deciden con una lectura caída', () => {
       if (esLecturaFallida(e)) dondes.push(e.donde)
     }
     expect(dondes).toContain(donde)
+  })
+
+  // La agenda del día es una SECCIÓN de la ficha (pantalla diaria, «por sección y a mano»): si no se lee,
+  // lo dice en su sitio y la ficha sigue. Antes salía vacía («hoy no hay nada apuntado»).
+  it('la ficha con la agenda del día caída: la sección lo dice y la ficha sigue', async () => {
+    const bien = await pintar('nino')
+    expect(bien, 'premisa: la ficha sale').not.toBeInstanceOf(Error)
+    expect(propsDe(bien, AgendaFamiliaView), 'premisa: con permiso, pinta la agenda').not.toBeNull()
+    expect(propsDe(bien, NoSePudoLeer), 'premisa: sin nada caído, ningún aviso').toBeNull()
+
+    sesion.fallaTabla = 'agendas_diarias'
+    sesion.vistas = 0
+    const arbol = await pintar('nino')
+    expect(sesion.vistas, 'premisa: la página leyó la agenda').toBeGreaterThan(0)
+    expect(arbol, 'la ficha sigue').not.toBeInstanceOf(Error)
+    expect(propsDe(arbol, AgendaFamiliaView)).toBeNull()
+    expect(propsDe<{ alcance: string }>(arbol, NoSePudoLeer)?.alcance).toBe('seccion')
   })
 })

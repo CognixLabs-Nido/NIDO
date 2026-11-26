@@ -180,7 +180,10 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
 
   // Agenda del día: cargamos siempre la estructura (RLS filtra si no hay
   // permiso); el render decide qué mostrar.
-  const agendaDelDia = permisos.puede_ver_agenda ? await getAgendaDelDia(id, fecha) : null
+  // Censo C (B1): la agenda es una sección de esta pantalla diaria; si no se lee, lo dice ahí y la ficha sigue.
+  const agendaDelDia = permisos.puede_ver_agenda
+    ? await oNoLeido(getAgendaDelDia(id, fecha), 'ficha del niño: agenda del día')
+    : null
 
   // Ausencias: dependen de `puede_ver_agenda` (compartido con la agenda)
   // para leer; `puede_reportar_ausencias` para reportar/cancelar.
@@ -429,7 +432,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         {permisos.puede_ver_agenda ? (
           <>
             <MenuDelDiaWidget centroId={nino.centro_id} fecha={fecha} />
-            {agendaDelDia && (
+            {agendaDelDia === null ? (
+              <NoSePudoLeer alcance="seccion" />
+            ) : (
               <AgendaFamiliaView ninoId={id} locale={locale} fecha={fecha} agenda={agendaDelDia} />
             )}
           </>

@@ -2,6 +2,7 @@ import 'server-only'
 
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 import type { NinoAgendaResumen } from '../types'
 
@@ -27,12 +28,15 @@ export async function getAgendasAulaDelDia(
   const supabase = await createClient()
 
   // 1. Niños matriculados activos en el aula.
-  const { data: matriculas } = await aplicarMatriculaActiva(
+  const { data: matriculas, error: errMatriculas } = await aplicarMatriculaActiva(
     supabase
       .from('matriculas')
       .select('ninos(id, nombre, apellidos, fecha_nacimiento, foto_url)')
       .eq('aula_id', aulaId)
   )
+  // Censo C: la lectura principal de la agenda del aula. Sin ella, «no hay niños en el aula» (la regla de
+  // lint no la ve: va por un helper que devuelve el builder).
+  if (errMatriculas) throw new LecturaFallida('agenda del aula: niños', errMatriculas)
 
   const ninos = ((matriculas ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)
@@ -43,11 +47,12 @@ export async function getAgendasAulaDelDia(
   const ninoIds = ninos.map((n) => n.id)
 
   // 2. Cabeceras del día (sólo las que existen).
-  const { data: cabeceras } = await supabase
+  const { data: cabeceras, error: errCabeceras } = await supabase
     .from('agendas_diarias')
     .select('id, nino_id')
     .in('nino_id', ninoIds)
     .eq('fecha', fecha)
+  if (errCabeceras) throw new LecturaFallida('agenda del aula: cabeceras', errCabeceras)
 
   const cabeceraByNino = new Map<string, string>((cabeceras ?? []).map((c) => [c.nino_id, c.id]))
   const agendaIds = Array.from(cabeceraByNino.values())
@@ -65,6 +70,14 @@ export async function getAgendasAulaDelDia(
       supabase.from('suenos').select('agenda_id').in('agenda_id', agendaIds),
       supabase.from('deposiciones').select('agenda_id').in('agenda_id', agendaIds),
     ])
+    // Sin ellas, los contadores salían a 0 («nada apuntado hoy»).
+    for (const [donde, r] of [
+      ['comidas', c],
+      ['biberones', b],
+      ['sueños', s],
+      ['deposiciones', d],
+    ] as const)
+      if (r.error) throw new LecturaFallida(`agenda del aula: ${donde}`, r.error)
     for (const row of c.data ?? []) {
       const k = (row as { agenda_id: string }).agenda_id
       const v = counts.get(k)

@@ -19,7 +19,9 @@ vi.mock('../../actions/otorgar-imagen-nino', () => ({
 
 import { AutorizarImagenNinoButton } from '../AutorizarImagenNinoButton'
 
-beforeEach(() => toastSuccess.mockClear())
+beforeEach(() => {
+  toastSuccess.mockClear()
+})
 
 async function autorizar() {
   render(<AutorizarImagenNinoButton ninoId="n-1" nombreCompleto="Niño Demo" />)

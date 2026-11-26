@@ -1,6 +1,4 @@
 {
-  "src/features/agenda-diaria/queries/get-agenda-del-dia.ts": 5,
-  "src/features/agenda-diaria/queries/get-agendas-aula-del-dia.ts": 4,
   "src/features/agenda/actions/agregar-invitados.ts": 1,
   "src/features/agenda/actions/crear-cita.ts": 1,
   "src/features/alta/lib/authz-tutor.ts": 2,
