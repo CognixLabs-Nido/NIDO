@@ -488,6 +488,71 @@ del instrumento, que es lo que evita que el próximo los cuente como defectos.
 
 Adelante con B1.»
 
+### 2026-11-26 · recalcularTotal: ¿cómo se pone al día? (Jose, literal)
+
+«El arreglo es el correcto: no escribir el total cuando no se pudo leer, y decirlo en vez de responder ok.
+Pero el aviso dice «el que ves no está al día», y eso deja una pregunta que hay que resolver en el mismo PR:
+¿CÓMO SE PONE AL DÍA? Si Dirección no tiene forma de volver a recalcularlo, ese recibo se queda con un total
+desfasado para siempre y el aviso solo le dice que tiene un problema sin salida.
+Mira si ya existe algo que lo recalcule —regenerar el mes, confirmar el recibo, lo que sea— y si existe, que el
+aviso lo diga. Si no existe, hace falta la forma de reintentarlo, y entonces dime si eso cabe en B1 o se va a B2
+con lo de diseño.
+Y de paso: un recibo con el total desfasado, ¿se puede confirmar y acabar en una remesa? Porque si se puede,
+ahí sí se cobraría un importe equivocado, y eso cambia la prioridad.»
+
+Leído en el código (rama fix/c-pantalla-b sobre main 1a84aac6), pendiente de su decisión:
+
+- Lo que ya recalcula: volver a guardar cualquier línea de ese recibo, y regenerar / recalcular el mes
+  (`generar_recibos_mes`, que reescribe el total de TODOS los borradores regulares del mes con la suma de sus
+  líneas). Solo se editan líneas de borradores regulares (lineas-recibo.ts:309), así que los dos caminos cubren
+  todo recibo que pueda quedar desfasado. Confirmar NO recalcula (`confirmar_recibo`, 20261223120000).
+- Sí se puede confirmar y acabar en una remesa: `confirmar_recibo` no mira las líneas, la remesa cobra
+  `total_centimos` (get-recibos-sepa-remesables, preparar-remesa) y `marcar_remesa_enviada` compara el fichero
+  con `total_centimos`, no con las líneas. Hoy el 0 se queda FUERA de la remesa (`total_centimos > 0`); con el
+  arreglo tal cual, el total desfasado es > 0 y entra: el arreglo solo convierte «no se cobra» en «se cobra mal»
+  si el aviso se pierde.
+
+### 2026-11-26 · El bloqueo de confirmar_recibo, en B1 (Jose, literal)
+
+«1 · EL BLOQUEO DE confirmar_recibo VA EN B1, contigo. Tu propio argumento lo decide: sin él, el arreglo de
+recalcularTotal es peor que no arreglar, y mandarlo a B2 abre una ventana en la que se cobra mal. Que B1 lleve
+una migración no es un problema: «mecánico» era una descripción de lo que había dentro, no una regla.
+Con su guarda de md5, su ensayo terminado en RAISE y su control negativo: un recibo con el total desfasado no se
+confirma y lo dice con el HINT.
+Y mídelo abierto antes: hoy ese recibo se confirma y entra en la remesa, y quiero el número y el camino copiados
+del log.
+
+2 · EL AVISO NOMBRA LOS DOS CAMINOS: volver a guardar una línea o recalcular el mes. Un aviso que dice que algo
+no está al día sin decir cómo ponerlo al día es dejar a la directora con un problema y sin salida.
+
+Y LA ALTERNATIVA DE FONDO ANÓTALA COMO LA BUENA, aunque no sea ahora: que la base mantenga el total con un
+trigger sobre las líneas hace desaparecer la clase entera —ni relectura, ni segunda escritura, ni avisos—.
+Déjalo escrito así, con lo que haría falta leer antes (las funciones que insertan la cabecera con su total),
+para que cuando alguien lo retome no empiece de cero. No lo hagas ahora.»
+
+### La solución buena, para después: el total lo mantiene la base (NO se hace ahora)
+
+Un trigger `AFTER INSERT OR UPDATE OF importe_centimos OR DELETE` sobre `lineas_recibo` que reescriba
+`recibos.total_centimos` con la suma de las líneas del recibo, en la misma transacción. Hace desaparecer la clase
+entera: la app no relee las líneas, no hay segunda escritura que pueda fallar, no hay aviso, y un total no puede
+quedar desfasado. `recalcularTotal` y su aviso se borran, y el bloqueo de `confirmar_recibo` queda como red.
+Antes de escribirlo hay que leer, desde su definición VIVA, cada función que escribe `total_centimos` o inserta
+una cabecera con su total antes (o sin) sus líneas, y decidir en cada una si el total es siempre la suma:
+
+- `generar_recibos_mes` (última: 20270121120000): pone el total al final del bucle y en el barrido final; con el
+  trigger sería redundante, y hay que medir el coste de un UPDATE por línea en la regeneración de un mes entero.
+- el cargo puntual (`anadir_cargo_puntual`, 20261116120000:178), que crea el borrador con su total.
+- la devolución (`resolver_devolucion`, 20261118120000:143-174): el re-giro nace con `total_centimos` del original
+  más gastos, y una línea «Re-giro de recibo devuelto»; y la línea de arrastre al recibo del mes siguiente.
+- `crear_recibo_esporadico`, el cheque (`cobrar_recibo_con_cheque`, la diferencia; `resolver_sobrante_cheque`,
+  la línea negativa), `anular_alta` (20270203120000:672, que ya recalcula) y la facturación desde la
+  incorporación (20270120130000:228 y 577).
+- Los recibos que no son borrador: las líneas de un recibo confirmado o enviado no se tocan (freeze por estado),
+  pero el trigger no debe intentar reescribir el total de un recibo en `enviado_banco` (lo protege
+  `recibos_dinero_solo_por_funcion` solo por estado; el total no). Hay que decidir qué hace con ellos.
+- Los datos: antes de aplicarlo, contar en producción los recibos cuyo total ya no es la suma de sus líneas
+  (de cualquier estado), porque el trigger los dejaría como están hasta que se toque una línea.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
