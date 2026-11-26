@@ -438,6 +438,9 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // Fase 5b: «cómo nos has conocido» solo a familias nuevas en el centro (decidido el 2026-11-10),
   // o si ya está contestado (que se pueda corregir). Se cuenta después de autorizar (arriba).
+  // Sin poder contar (`null`) no se pregunta: degradación DELIBERADA (decidido el 2026-11-26, spec
+  // fallos-leidos-c.md): es una pregunta opcional, y preguntarla «por si acaso» molesta a una familia que
+  // ya está en el centro, justo lo que se decidió que no pasara.
   const familiaNueva = ninoExtra?.familia_id
     ? await esFamiliaNuevaEnCentro(ninoId, ninoExtra.familia_id)
     : null

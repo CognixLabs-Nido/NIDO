@@ -553,6 +553,18 @@ una cabecera con su total antes (o sin) sus líneas, y decidir en cada una si el
 - Los datos: antes de aplicarlo, contar en producción los recibos cuyo total ya no es la suma de sus líneas
   (de cualquier estado), porque el trigger los dejaría como están hasta que se toque una línea.
 
+### «Cómo nos has conocido» con la lectura caída: no se pregunta (reclasificación 161, 2026-11-26)
+
+Decisión del 2026-11-26, literal: «La (a). «Cómo nos has conocido» es una pregunta opcional de marketing: no
+preguntarla no cuesta nada, y preguntarla por si acaso significa molestar con ella a una familia que ya está en
+el centro, que es justo lo que decidió Jose que no pasara. Documentada como degradación deliberada, con el
+motivo, y no la toques.»
+
+`esFamiliaNuevaEnCentro` (src/features/alta/queries/familia-nueva-en-centro.ts) devuelve `null` si no puede
+contar, y la página del alta no pregunta. Es una degradación DELIBERADA, no un F1: lo que se pierde es una
+respuesta opcional de marketing; lo que se evitaría preguntando «por si acaso» es justo lo que se decidió el
+2026-11-10 que no pasara (preguntarla a una familia que ya está en el centro). No se cambia.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
