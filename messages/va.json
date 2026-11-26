@@ -4281,7 +4281,8 @@
       "quitar_foto": "Llevar foto",
       "publicar": "Publicar",
       "cerrar": "Tancar",
-      "publicada": "Publicació guardada."
+      "publicada": "Publicació guardada.",
+      "vacia_no_borrada": "No s'ha pogut descartar la publicació buida: continua al blog sense fotos ni text. Esborra-la des de la llista."
     },
     "etiquetar": {
       "titulo": "Qui apareix?",

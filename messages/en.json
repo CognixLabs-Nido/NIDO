@@ -4281,7 +4281,8 @@
       "quitar_foto": "Remove photo",
       "publicar": "Publish",
       "cerrar": "Close",
-      "publicada": "Post saved."
+      "publicada": "Post saved.",
+      "vacia_no_borrada": "The empty post could not be discarded: it is still in the blog with no photos or text. Delete it from the list."
     },
     "etiquetar": {
       "titulo": "Who appears?",

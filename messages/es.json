@@ -4281,7 +4281,8 @@
       "quitar_foto": "Quitar foto",
       "publicar": "Publicar",
       "cerrar": "Cerrar",
-      "publicada": "Publicación guardada."
+      "publicada": "Publicación guardada.",
+      "vacia_no_borrada": "No se ha podido descartar la publicación vacía: sigue en el blog sin fotos ni texto. Bórrala desde la lista."
     },
     "etiquetar": {
       "titulo": "¿Quién aparece?",
