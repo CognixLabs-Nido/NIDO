@@ -12,7 +12,9 @@
 //
 // LISTA BLANCA TEMPORAL (`lectura-mira-el-error.lista-blanca.json`): fichero → cuántos sitios tiene hoy.
 // Un fichero con MÁS sitios que los de su lista se pone rojo entero: un sitio nuevo con el patrón viejo
-// no se cuela por estar en un fichero que ya tenía alguno. La lista solo puede bajar.
+// no se cuela por estar en un fichero que ya tenía alguno. La lista solo puede bajar, y BAJA (2026-11-26): un
+// fichero con MENOS sitios que los de su lista también se pone rojo, con el número al que hay que bajarla. Sin
+// esto, el arreglo de un sitio dejaba hueco para que otro con el patrón viejo entrara sin que nadie lo viera.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -157,6 +159,7 @@ export default {
       tirada: 'Llamada a Supabase esperada y tirada: si falla, nadie se entera.',
       lista:
         'Este fichero tiene {{hay}} sitios sin mirar el error y su lista blanca temporal admite {{admite}}: hay uno nuevo con el patrón viejo.',
+      baja: 'La lista blanca temporal admite {{admite}} sitios en este fichero y ya solo tiene {{hay}}: bájala a {{hay}} en lectura-mira-el-error.lista-blanca.json (o quítalo si es 0).',
     },
   },
   create(context) {
@@ -245,6 +248,14 @@ export default {
       },
       'Program:exit'() {
         const admite = LISTA[rel] ?? 0
+        if (hallados.length < admite) {
+          context.report({
+            loc: { line: 1, column: 0 },
+            messageId: 'baja',
+            data: { hay: String(hallados.length), admite: String(admite) },
+          })
+          return
+        }
         if (hallados.length === 0) return
         if (hallados.length <= admite) return
         if (admite > 0) {
