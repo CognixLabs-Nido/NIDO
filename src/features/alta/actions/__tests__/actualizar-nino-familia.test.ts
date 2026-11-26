@@ -54,7 +54,10 @@ const GUARDADO = {
   estado_civil_familia: 'casados',
 }
 
-function makeFake(rpcError: { code?: string; message: string } | null = null) {
+function makeFake(
+  rpcError: { code?: string; message: string } | null = null,
+  gestion: 'ok' | 'falla' | 'sin_fila' = 'ok'
+) {
   const rpcSpy = vi.fn()
   const fake = {
     auth: { getUser: () => Promise.resolve({ data: { user: { id: USER } } }) },
@@ -69,7 +72,11 @@ function makeFake(rpcError: { code?: string; message: string } | null = null) {
     rpc: (fn: string, args: Record<string, unknown>) => {
       // Lo guardado (dirección, estado civil) es de gestión: sale por su función (`20270115120000`).
       if (fn === 'ficha_gestion_ninos')
-        return Promise.resolve({ data: [{ nino_id: NINO, ...GUARDADO }], error: null })
+        return Promise.resolve(
+          gestion === 'falla'
+            ? { data: null, error: { code: 'XX000', message: 'caída' } }
+            : { data: gestion === 'ok' ? [{ nino_id: NINO, ...GUARDADO }] : [], error: null }
+        )
       rpcSpy(fn, args)
       return Promise.resolve({ data: NINO, error: rpcError })
     },
@@ -195,6 +202,31 @@ describe('actualizarNinoFamilia — escribe por RPC de sesión (D2)', () => {
     expect(r).toEqual({ success: true, data: { id: NINO } })
     expect(registrarSpy).not.toHaveBeenCalled()
     expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('censo C: alta validada y la lectura de lo guardado falla → «no se pudo leer», no «no autorizado»', async () => {
+    authz.tutor = true
+    gate.validada = true
+    const { fake, rpcSpy } = makeFake(null, 'falla')
+    createClientMock.mockReturnValue(fake)
+
+    const r = await actualizarNinoFamilia({ nino_id: NINO, direccion_calle: 'X' })
+
+    expect(r).toEqual({ success: false, error: 'common.lectura_fallida' })
+    expect(registrarSpy).not.toHaveBeenCalled()
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('censo C: alta validada y la función no le devuelve el niño (no le toca) → no autorizado', async () => {
+    authz.tutor = true
+    gate.validada = true
+    const { fake } = makeFake(null, 'sin_fila')
+    createClientMock.mockReturnValue(fake)
+
+    const r = await actualizarNinoFamilia({ nino_id: NINO, direccion_calle: 'X' })
+
+    expect(r).toEqual({ success: false, error: 'alta.errors.no_autorizado' })
+    expect(registrarSpy).not.toHaveBeenCalled()
   })
 
   it('ni tutor legal ni admin → no autorizado sin RPC', async () => {

@@ -76,6 +76,8 @@ export async function actualizarNinoFamilia(
       // La dirección y el estado civil guardados son de gestión: salen por `ficha_gestion_ninos`
       // (`20270115120000`), que al tutor legal le contesta siempre.
       const guardado = await leerFichaGestionDe(supabase, nino_id)
+      // Censo C (re-clasificación 130, 2026-11-26): `null` = la lectura falló, no «no tienes permiso».
+      if (guardado === null) return fail('common.lectura_fallida')
       if (!guardado) return fail('alta.errors.no_autorizado')
       const cambios = clavesQueCambian(patch, guardado)
       if (Object.keys(cambios).length === 0) return ok({ id: nino_id })
