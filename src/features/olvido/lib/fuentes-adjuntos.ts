@@ -204,6 +204,8 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
         .from('media_etiquetas')
         .select('media_id, nino_id')
         .in('media_id', mediaIds)
+      // Esta caída era peor que «nada que borrar»: sin «quién más sale», `[].every(…)` es TRUE y TODAS sus
+      // fotos contaban como exclusivas: se borraban también las compartidas con otros niños.
       if (tErr) throw new Error(`media_etiquetas (de sus fotos): ${tErr.message}`)
       const exclusivos = mediaIds.filter((mid) =>
         (todas ?? []).filter((t) => t.media_id === mid).every((t) => t.nino_id === ninoId)

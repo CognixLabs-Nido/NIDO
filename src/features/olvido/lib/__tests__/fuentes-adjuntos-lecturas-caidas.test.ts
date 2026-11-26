@@ -8,8 +8,10 @@ import type { Database } from '@/types/db'
  * Censo C (B1, lista blanca, 2026-11-26): el manifiesto de adjuntos del olvido, con una lectura caída. Se
  * recorre ANTES de la purga SQL. Antes, en la foto de perfil, el libro de familia y las fotos del blog, una
  * lectura caída era «no hay nada que borrar»: la purga seguía y los ficheros del niño se quedaban en el
- * bucket sin ninguna fila que los nombrara. Ahora lanza y para la purga, como ya hacían la tarjeta sanitaria
- * y el justificante. Fixtures ficticios.
+ * bucket sin ninguna fila que los nombrara. Y una, peor: sin «quién más sale en sus fotos», `[].every(…)`
+ * es TRUE y todas contaban como exclusivas: se borraban también las compartidas con otros niños (el caso
+ * de abajo lo mide con una foto compartida). Ahora lanza y para la purga, como ya hacían la tarjeta
+ * sanitaria y el justificante. Fixtures ficticios.
  */
 vi.mock('server-only', () => ({}))
 
@@ -85,4 +87,26 @@ describe('recolectarAdjuntosDe (niño)', () => {
       expect(estado.vistas[clave], 'premisa: llegó a esa lectura').toBeGreaterThanOrEqual(n)
     }
   )
+})
+
+// La lectura de «quién más sale» caída, medida por su efecto: con una foto COMPARTIDA, antes salía entre lo
+// que se borra. Premisa: con todo leído, la compartida no sale.
+describe('la foto compartida con otro niño', () => {
+  beforeEach(() => {
+    estado.filas.media_etiquetas = [
+      { media_id: 'm-1', nino_id: 'n-1' },
+      { media_id: 'm-1', nino_id: 'n-2' },
+    ]
+  })
+
+  it('premisa: con todo leído, la compartida no se borra', async () => {
+    const todo = [...(await recolectarAdjuntosDe(service, NINO, true)).values()].flat()
+    expect(todo).toContain('c-1/n-1/perfil.jpg')
+    expect(todo).not.toContain('c-1/a-1/p-1/foto.jpg')
+  })
+
+  it('sin leer quién más sale: no la da por exclusiva, para', async () => {
+    estado.falla = { clave: 'media_etiquetas', n: 2 }
+    await expect(recolectarAdjuntosDe(service, NINO, true)).rejects.toThrow(/de sus fotos/)
+  })
 })
