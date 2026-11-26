@@ -14,7 +14,7 @@
 //   HUECO     cualquier otra forma de consumir (argumento de otra función, `.then`, una variable que se
 //             reasigna fuera de un encadenado…): se cuenta y se lista, no se clasifica.
 //
-// Uso:  node scripts/ci/fallo-que-se-pierde.cjs [--informe f.json]
+// Uso:  node scripts/ci/fallo-que-se-pierde.cjs [--informe f.json] [--check]
 const path = require('path')
 const fs = require('fs')
 const ts = require('typescript')
@@ -655,7 +655,33 @@ function analizar(raiz) {
   }
 }
 
-module.exports = { analizar }
+/**
+ * Lo que la CI exige (censo C, 2026-11-26): ningún NO_MIRA (clase 2) ni NO_USA (clase 1) fuera de la lista
+ * (`fallo-que-se-pierde.lista.json`, cada clave con su número y su motivo). Clave `fichero|helper|clase`, no la
+ * línea, que se mueve con cualquier cambio. Como la de cadena, la lista solo encoge: si un fichero tiene MENOS
+ * de los que admite, también es rojo, para bajarla (y que no quede hueco para uno nuevo con el patrón viejo).
+ */
+function clave(s) {
+  return `${s.donde.replace(/:\d+$/, '')}|${s.helper}|${s.clase}`
+}
+function comprobar(r, lista) {
+  const hay = {}
+  for (const s of [...r.sitios, ...r.clase1.sitios])
+    if (s.clase === 'NO_MIRA' || s.clase === 'NO_USA') hay[clave(s)] = (hay[clave(s)] ?? 0) + 1
+  const nuevas = []
+  const sobran = []
+  for (const [k, n] of Object.entries(hay)) {
+    const admite = lista[k]?.n ?? 0
+    if (n > admite) nuevas.push({ clave: k, hay: n, admite })
+  }
+  for (const [k, v] of Object.entries(lista)) {
+    const n = hay[k] ?? 0
+    if (n < v.n) sobran.push({ clave: k, hay: n, admite: v.n })
+  }
+  return { nuevas, sobran }
+}
+
+module.exports = { analizar, comprobar, clave }
 
 if (require.main === module) {
   const raiz = path.resolve(__dirname, '..', '..')
@@ -684,4 +710,20 @@ if (require.main === module) {
     )
   const i = process.argv.indexOf('--informe')
   if (i > 0) fs.writeFileSync(process.argv[i + 1], JSON.stringify(r, null, 1))
+  if (process.argv.includes('--check')) {
+    const lista = JSON.parse(
+      fs.readFileSync(path.join(__dirname, 'fallo-que-se-pierde.lista.json'), 'utf8')
+    )
+    const { nuevas, sobran } = comprobar(r, lista)
+    for (const x of nuevas)
+      console.log(
+        `  NUEVO (un fallo que se pierde): ${x.clave} · hay ${x.hay}, la lista admite ${x.admite}`
+      )
+    for (const x of sobran)
+      console.log(
+        `  SOBRA en la lista (hay ${x.hay}, admite ${x.admite}: bájala, la lista solo encoge): ${x.clave}`
+      )
+    if (nuevas.length || sobran.length) process.exit(1)
+    console.log('OK')
+  }
 }

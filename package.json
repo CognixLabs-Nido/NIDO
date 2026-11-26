@@ -21,7 +21,8 @@
     "prepare": "husky",
     "check:centro-activo": "node scripts/check-centro-activo.mjs",
     "check:lecturas-por-centro": "node scripts/check-lecturas-por-centro.mjs",
-    "check:cadena-tras-escritura": "node --max-old-space-size=4096 scripts/ci/cadena-tras-escritura.cjs"
+    "check:cadena-tras-escritura": "node --max-old-space-size=4096 scripts/ci/cadena-tras-escritura.cjs",
+    "check:fallo-que-se-pierde": "node --max-old-space-size=4096 scripts/ci/fallo-que-se-pierde.cjs --check"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
