@@ -1,7 +1,6 @@
 {
   "src/features/agenda-diaria/queries/get-agenda-del-dia.ts": 5,
   "src/features/agenda-diaria/queries/get-agendas-aula-del-dia.ts": 4,
-  "src/features/agenda-diaria/queries/get-permiso-agenda.ts": 1,
   "src/features/agenda/actions/agregar-invitados.ts": 1,
   "src/features/agenda/actions/crear-cita.ts": 1,
   "src/features/alta/lib/authz-tutor.ts": 2,
@@ -15,7 +14,6 @@
   "src/features/cambios-pendientes/lib/aplicar.ts": 1,
   "src/features/centros/contexto/ambito-familiar.ts": 2,
   "src/features/cuotas-config/queries/get-asignacion-permanente.ts": 6,
-  "src/features/cuotas-config/queries/get-conceptos-asignables.ts": 1,
   "src/features/cursos/queries/get-cursos.ts": 1,
   "src/features/export/lib/recolectar.ts": 4,
   "src/features/export/lib/registrar.ts": 1,
@@ -29,7 +27,6 @@
   "src/features/matriculas/actions/invitacion-tutor2.ts": 1,
   "src/features/matriculas/lib/alta-sin-terminar.ts": 1,
   "src/features/messaging/queries/count-no-leidos.ts": 1,
-  "src/features/messaging/queries/get-conversacion-by-nino.ts": 1,
   "src/features/messaging/queries/get-lectores-anuncio.ts": 1,
   "src/features/olvido/actions/peticiones.ts": 1,
   "src/features/olvido/lib/avisar.ts": 1,
