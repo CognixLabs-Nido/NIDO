@@ -548,7 +548,8 @@
             "descuadre": "The split doesn’t match the excess; nothing was applied.",
             "save_failed": "Couldn’t resolve.",
             "sin_hijos_cheque": "The family has no active children any more: refund the surplus by transfer.",
-            "recibo_siguiente_cerrado": "The family’s receipt for next month is already validated: it can’t be deducted there. Refund it by transfer, or set that receipt back to draft if there is still time."
+            "recibo_siguiente_cerrado": "The family’s receipt for next month is already validated: it can’t be deducted there. Refund it by transfer, or set that receipt back to draft if there is still time.",
+            "resuelto_sin_aplicar": "It could not be applied, and the overflow has been left marked as resolved when it is not. Contact support before trying again."
           },
           "aviso_validar": "This receipt cannot be confirmed with an unresolved grant excess of {importe}. Check that it is correct: if the grant is wrong, fix it and recalculate the month. If it is right, choose what to do with it.",
           "cheque": {

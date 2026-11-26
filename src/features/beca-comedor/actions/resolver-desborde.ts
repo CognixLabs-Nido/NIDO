@@ -28,20 +28,24 @@ const POR_HINT_CHEQUE: Record<string, string> = {
 
 type Supa = SupabaseClient<Database>
 
-/** ¿El mes (año, mes) del centro está CERRADO? (fila en cierre_mensual). */
+/**
+ * ¿El mes (año, mes) del centro está CERRADO? (fila en cierre_mensual). `null`: no se pudo leer (censo C):
+ * antes era «abierto», y se difería a un mes cerrado.
+ */
 async function mesEstaCerrado(
   supabase: Supa,
   centroId: string,
   anio: number,
   mes: number
-): Promise<boolean> {
-  const { data } = await supabase
+): Promise<boolean | null> {
+  const { data, error } = await supabase
     .from('cierre_mensual')
     .select('id')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
     .maybeSingle()
+  if (error) return null
   return data != null
 }
 
@@ -74,30 +78,21 @@ export async function resolverDesborde(
   // tener el de su beca y el sobrante de su cheque (PR-1c). `*` para leer el origen también antes
   // de que exista la columna. Su centro es el de la acción (multicentro · Fase 1), no el centro
   // activo, y se exige ser admin en él.
-  const { data: desbordes } = await supabase
+  const { data: desbordes, error: errDesbordes } = await supabase
     .from('beca_comedor_desborde')
     .select('*')
     .eq('recibo_id', recibo_id)
+  // Censo C: una lectura caída no es «no hay un desborde pendiente».
+  if (errDesbordes) return fail('common.lectura_fallida')
   const desborde = (desbordes ?? []).find((d) => origenExceso(d) === origen)
   if (!desborde) return fail(`${ERR}.no_existe`)
   const centroId = desborde.centro_id
   if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${ERR}.no_autorizado`)
   if (desborde.estado !== 'pendiente') return fail(`${ERR}.ya_resuelto`)
 
-  if (origen === 'cheque') {
-    const { error } = await supabase.rpc('resolver_sobrante_cheque', {
-      p_recibo_id: recibo_id,
-      p_via: via,
-    })
-    if (error) {
-      logger.warn('resolverDesborde cheque', error.message)
-      if (error.code === '42501') return fail(`${ERR}.no_autorizado`)
-      const clave = error.hint ? POR_HINT_CHEQUE[error.hint] : undefined
-      return fail(clave ?? `${ERR}.save_failed`)
-    }
-    revalidatePath(RUTA, 'page')
-    return ok({ via, n: 1 })
-  }
+  // El del cheque lo resuelve la BD entera; aparte, para que su escritura no quede «antes» de las
+  // lecturas de la beca (son caminos distintos: `nido/parada-tras-escritura` lee el cuerpo en orden).
+  if (origen === 'cheque') return resolverSobranteCheque(supabase, recibo_id, via)
 
   // ── Preparar el efecto ANTES del claim (para validar sin dejar el desborde a medias) ──
   let restoRows: Database['public']['Tables']['beca_comedor_tramo']['Insert'][] = []
@@ -109,12 +104,12 @@ export async function resolverDesborde(
 
   if (via === 'diferir') {
     sig = mesSiguiente(desborde.anio, desborde.mes)
-    if (await mesEstaCerrado(supabase, centroId, sig.anio, sig.mes)) {
-      return fail(`${ERR}.mes_siguiente_cerrado`)
-    }
+    const cerrado = await mesEstaCerrado(supabase, centroId, sig.anio, sig.mes)
+    if (cerrado === null) return fail('common.lectura_fallida')
+    if (cerrado) return fail(`${ERR}.mes_siguiente_cerrado`)
 
     // Hijos ACTIVOS de la familia.
-    const { data: ninos } = await supabase
+    const { data: ninos, error: errNinos } = await supabase
       .from('ninos')
       .select('id, matriculas!inner(estado, fecha_baja, deleted_at)')
       .eq('familia_id', desborde.familia_id)
@@ -122,6 +117,8 @@ export async function resolverDesborde(
       .is('matriculas.fecha_baja', null)
       .is('matriculas.deleted_at', null)
       .is('deleted_at', null)
+    // Censo C: sin leerlos no es «la familia no tiene hijos activos».
+    if (errNinos) return fail('common.lectura_fallida')
     const ninoIds = [...new Set((ninos ?? []).map((n) => n.id))]
     if (ninoIds.length === 0) return fail(`${ERR}.sin_hijos`)
     familiaNinoIds = ninoIds
@@ -130,24 +127,28 @@ export async function resolverDesborde(
     // líneas de beca (PR-5, `lineas_recibo.beca_tramo_id`), que es lo que sumó el motor. No
     // «los pendientes del mes»: un tramo pasa a `aplicada` al validarse su recibo, y una carga
     // creada después de generar el borrador está pendiente pero no está en él.
-    const { data: lineasBeca } = await supabase
+    const { data: lineasBeca, error: errLineas } = await supabase
       .from('lineas_recibo')
       .select('beca_tramo_id')
       .eq('centro_id', centroId)
       .eq('recibo_id', desborde.recibo_id)
       .not('beca_tramo_id', 'is', null)
+    // Censo C: sin las líneas no es «no hay becas que repartir».
+    if (errLineas) return fail('common.lectura_fallida')
     const tramoIds = [
       ...new Set((lineasBeca ?? []).flatMap((l) => (l.beca_tramo_id ? [l.beca_tramo_id] : []))),
     ]
-    const { data: tramos } =
+    const { data: tramos, error: errTramos } =
       tramoIds.length === 0
-        ? { data: [] }
+        ? { data: [], error: null }
         : await supabase
             .from('beca_comedor_tramo')
             .select('nino_id, importe_centimos, curso_academico_id')
             .eq('centro_id', centroId)
             .in('id', tramoIds)
             .in('nino_id', ninoIds)
+    // Censo C: sin los tramos, el reparto dejaba fuera a quien no se leyó (o decía «sin becas»).
+    if (errTramos) return fail('common.lectura_fallida')
 
     const becaPorNino = new Map<string, number>()
     const cursoPorNino = new Map<string, string>()
@@ -216,16 +217,44 @@ export async function resolverDesborde(
       : await aplicarDiferir(supabase, centroId, desborde, sig!, restoRows, familiaNinoIds)
 
   if (efecto.error) {
-    await supabase
+    const { error: errRevertir } = await supabase
       .from('beca_comedor_desborde')
       .update({ estado: 'pendiente', via: null, resuelto_por: null, resuelto_at: null })
       .eq('id', desborde.id)
     logger.warn('resolverDesborde efecto', efecto.error)
+    // Censo C: si tampoco se revierte, el desborde queda «resuelto» sin aplicar, y reintentar diría «ya
+    // se resolvió». No se puede arreglar desde aquí: se dice, y va a Sentry.
+    if (errRevertir) {
+      logger.error('resolverDesborde: el efecto falló y el desborde quedó resuelto', {
+        code: errRevertir.code ?? null,
+      })
+      return fail(`${ERR}.resuelto_sin_aplicar`)
+    }
     return fail(efecto.key ?? `${ERR}.save_failed`)
   }
 
   revalidatePath(RUTA, 'page')
   return ok({ via, n: efecto.n })
+}
+
+/** PR-1c: el sobrante de un cheque, entero en la BD (`resolver_sobrante_cheque`), en una transacción. */
+async function resolverSobranteCheque(
+  supabase: Supa,
+  reciboId: string,
+  via: 'diferir' | 'transferencia'
+): Promise<ActionResult<{ via: 'diferir' | 'transferencia'; n: number }>> {
+  const { error } = await supabase.rpc('resolver_sobrante_cheque', {
+    p_recibo_id: reciboId,
+    p_via: via,
+  })
+  if (error) {
+    logger.warn('resolverDesborde cheque', error.message)
+    if (error.code === '42501') return fail(`${ERR}.no_autorizado`)
+    const clave = error.hint ? POR_HINT_CHEQUE[error.hint] : undefined
+    return fail(clave ?? `${ERR}.save_failed`)
+  }
+  revalidatePath(RUTA, 'page')
+  return ok({ via, n: 1 })
 }
 
 /**
@@ -275,7 +304,7 @@ async function aplicarDiferir(
   // re-resolución tras regenerar. Se barre por TODOS los hijos activos de la familia (no solo
   // los del reparto actual): así el resto de un hijo que perdió la beca entre resoluciones no
   // queda colgado en M+1.
-  await supabase
+  const { error: errBorrar } = await supabase
     .from('beca_comedor_tramo')
     .delete()
     .eq('centro_id', centroId)
@@ -285,6 +314,14 @@ async function aplicarDiferir(
     .eq('anio_aplicacion', sig.anio)
     .eq('mes_aplicacion', sig.mes)
     .in('nino_id', familiaNinoIds)
+  // Censo C: si los restos previos no se borran, insertar los nuevos descontaría dos veces.
+  if (errBorrar) {
+    return {
+      error: errBorrar.message,
+      key: errBorrar.code === '42501' ? `${ERR}.no_autorizado` : undefined,
+      n: 0,
+    }
+  }
 
   const { error } = await supabase.from('beca_comedor_tramo').insert(restoRows)
   if (error) {

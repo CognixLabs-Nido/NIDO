@@ -548,7 +548,8 @@
             "descuadre": "El reparto no cuadra con el exceso; no se ha aplicado.",
             "save_failed": "No se pudo resolver.",
             "sin_hijos_cheque": "La familia ya no tiene niños activos: el sobrante se devuelve por transferencia.",
-            "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede descontar ahí. Devuélvelo por transferencia, o devuelve ese recibo a borrador si aún estás a tiempo."
+            "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede descontar ahí. Devuélvelo por transferencia, o devuelve ese recibo a borrador si aún estás a tiempo.",
+            "resuelto_sin_aplicar": "No se pudo aplicar, y el desborde ha quedado marcado como resuelto sin estarlo. Avisa a soporte antes de volver a intentarlo."
           },
           "aviso_validar": "Este recibo no se puede confirmar con un exceso de beca de {importe} sin resolver. Comprueba que es correcto: si la beca está mal puesta, corrígela y recalcula el mes. Si lo es, elige qué hacer con él.",
           "cheque": {

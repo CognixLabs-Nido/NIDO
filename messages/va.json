@@ -548,7 +548,8 @@
             "descuadre": "El repartiment no quadra amb l’excés; no s’ha aplicat.",
             "save_failed": "No s’ha pogut resoldre.",
             "sin_hijos_cheque": "La família ja no té xiquets actius: el sobrant es torna per transferència.",
-            "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot descomptar allí. Torna’l per transferència, o torna eixe rebut a esborrany si encara estàs a temps."
+            "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot descomptar allí. Torna’l per transferència, o torna eixe rebut a esborrany si encara estàs a temps.",
+            "resuelto_sin_aplicar": "No s'ha pogut aplicar, i el desbordament ha quedat marcat com a resolt sense estar-ho. Avisa el suport abans de tornar-ho a intentar."
           },
           "aviso_validar": "Aquest rebut no es pot confirmar amb un excés de beca de {importe} sense resoldre. Comprova que és correcte: si la beca està mal posada, corregeix-la i recalcula el mes. Si ho és, tria què fer amb ell.",
           "cheque": {
