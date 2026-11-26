@@ -9,6 +9,7 @@ import { logger } from '@/shared/lib/logger'
 import type { DatosDialogo } from '../components/DialogoOlvido'
 import { avisarFamilia, avisarTitular, type EventoOlvido } from '../lib/avisar'
 import { fail, ok, type ActionResult } from '../types'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 /**
  * Las peticiones de olvido (docs/specs/olvido-peticiones.md). Cada acción llama a su función de
@@ -57,11 +58,14 @@ async function avisar(solicitudId: string, evento: EventoOlvido): Promise<void> 
 async function avisarNueva(solicitudId: string): Promise<void> {
   const service = createServiceRoleClient()
   await avisarFamilia(service, solicitudId, 'pedida')
-  const { data } = await service
+  const { data, error } = await service
     .from('olvido_solicitudes')
     .select('centro_id, pedida_por_centro')
     .eq('id', solicitudId)
     .maybeSingle()
+  // Censo C: la petición ya está creada; sin leerla no se sabe a qué titular avisar. No se para, y va a
+  // Sentry en vez de no avisar en silencio.
+  if (error) lecturaFallidaTrasEscritura('olvido: aviso a la titular', error)
   if (data && !data.pedida_por_centro) await avisarTitular(service, data.centro_id)
 }
 

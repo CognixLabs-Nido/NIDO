@@ -12,6 +12,7 @@ import { getAppUrl } from '@/shared/lib/app-url'
 import { enviarCorreo } from '@/shared/lib/correo/enviar-correo'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 type Service = SupabaseClient<Database>
 
@@ -59,21 +60,27 @@ export async function prepararAvisoFamilia(
     const { data: destinos, error } = await service.rpc('olvido_destinatarios', {
       p_solicitud_id: solicitudId,
     })
+    // Censo C: el aviso sigue a un cambio ya hecho (pedida, confirmada, purgada). Sin destinatarios no se
+    // puede mandar, y antes era un `warn` que no lee nadie: ahora va a Sentry.
     if (error) {
-      logger.warn('olvido: destinatarios del aviso', error.message)
+      lecturaFallidaTrasEscritura('olvido: destinatarios del aviso', error)
       return []
     }
     const ids = (destinos ?? []).map((d) => d.usuario_id)
     if (ids.length === 0) return []
 
-    const { data: solicitud } = await service
+    // Sin la solicitud o el centro, el correo sale sin el nombre del centro: no se para (el cambio ya está
+    // hecho y el correo sigue diciendo qué pasó), pero va a Sentry.
+    const { data: solicitud, error: errSolicitud } = await service
       .from('olvido_solicitudes')
       .select('centro_id')
       .eq('id', solicitudId)
       .maybeSingle()
-    const { data: centro } = solicitud
+    if (errSolicitud) lecturaFallidaTrasEscritura('olvido: solicitud del aviso', errSolicitud)
+    const { data: centro, error: errCentro } = solicitud
       ? await service.from('centros').select('nombre').eq('id', solicitud.centro_id).maybeSingle()
-      : { data: null }
+      : { data: null, error: null }
+    if (errCentro) lecturaFallidaTrasEscritura('olvido: centro del aviso', errCentro)
     const idiomas = await idiomasDeUsuarios(ids)
 
     const correos: CorreoAviso[] = []

@@ -10,6 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const h = vi.hoisted(() => ({
   rpc: vi.fn(),
   pedidaPorCentro: false,
+  /** Censo C: la lectura de la solicitud para el aviso a la titular, caída. */
+  solicitudCaida: false,
   avisarFamilia: vi.fn(async () => 1),
   avisarTitular: vi.fn(async () => undefined),
 }))
@@ -21,10 +23,10 @@ vi.mock('@/lib/supabase/admin', () => ({
     from: () => {
       const b: Record<string, unknown> = {}
       for (const m of ['select', 'eq']) b[m] = () => b
-      b.maybeSingle = async () => ({
-        data: { centro_id: 'c-1', pedida_por_centro: h.pedidaPorCentro },
-        error: null,
-      })
+      b.maybeSingle = async () =>
+        h.solicitudCaida
+          ? { data: null, error: { code: 'XX000', message: 'caída' } }
+          : { data: { centro_id: 'c-1', pedida_por_centro: h.pedidaPorCentro }, error: null }
       return b
     },
   }),
@@ -35,10 +37,12 @@ vi.mock('../../lib/avisar', () => ({
 }))
 
 const acciones = await import('../peticiones')
+const { logger } = await import('@/shared/lib/logger')
 
 beforeEach(() => {
   vi.clearAllMocks()
   h.pedidaPorCentro = false
+  h.solicitudCaida = false
 })
 
 describe('pedir', () => {
@@ -125,5 +129,22 @@ describe('la titular', () => {
       success: false,
       error: 'olvido.errores.no_autorizado',
     })
+  })
+})
+
+// Censo C (B1, 2026-11-26): la petición ya está creada cuando se lee para avisar a la titular. Sin esa
+// lectura no se sabe a quién avisar: no se para (la familia ya tiene su acuse) y va a Sentry; antes, nada.
+describe('pedir, con la lectura del aviso a la titular caída', () => {
+  it('la petición queda pedida, la familia avisada, y el fallo va a Sentry', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    h.solicitudCaida = true
+    h.rpc.mockResolvedValueOnce({ data: 'sol-3', error: null })
+    expect(await acciones.pedirOlvidoNino('nino-1')).toEqual({ success: true, data: 'sol-3' })
+    expect(h.avisarFamilia).toHaveBeenCalledWith(expect.anything(), 'sol-3', 'pedida')
+    expect(h.avisarTitular).not.toHaveBeenCalled()
+    expect(error.mock.calls.map((c) => String(c[0]))).toContainEqual(
+      expect.stringContaining('aviso a la titular')
+    )
+    error.mockRestore()
   })
 })
