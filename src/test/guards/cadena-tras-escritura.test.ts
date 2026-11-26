@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const cadena = require('../../../scripts/ci/cadena-tras-escritura.cjs')
-const { analizar, volatilidadDeMigraciones } = cadena
+const { analizar, volatilidadDeMigraciones, leerLista } = cadena
 
 /**
  * El escáner de cadena del censo C (decisiones de Jose del 2026-11-25): sus casos, con la respuesta
@@ -140,3 +140,34 @@ describe(
     })
   }
 )
+
+describe('la lista y su norma (Jose, 2026-11-27): un pendiente entra con destino y fecha; una excusa, nunca', () => {
+  // La respuesta, escrita antes de correrlo.
+  const lista = {
+    _norma: 'texto de la norma: no es una entrada',
+    'a.ts#explicada': 'Falso positivo: la escritura está en una rama que devuelve antes.',
+    'b.ts#tratada': 'Tratado: el llamador dice lo guardado y lo que no.',
+    'c.ts#huerfano': 'Fichero huérfano, la base no cambió.',
+    'd.ts#pendiente': 'Pendiente · Destino: PR B2 · 2026-11-27: el doble fallo, con su diseño.',
+    'e.ts#sinFecha': 'Pendiente · Destino: PR B2: sin fecha.',
+    'f.ts#sinDestino': 'Pendiente · 2026-11-27: sin PR destino.',
+    'g.ts#excusa': 'Se arreglará más adelante.',
+  }
+  it('premisa: _norma no cuenta como entrada, y las demás sí', () => {
+    expect(leerLista(lista).entradas).toHaveLength(7)
+    expect(leerLista(lista).entradas).not.toContain('_norma')
+  })
+  it('sin destino, sin fecha o sin clase: fuera (la CI roja); con clase o con destino y fecha: dentro', () => {
+    expect(leerLista(lista).sinClase).toEqual(['e.ts#sinFecha', 'f.ts#sinDestino', 'g.ts#excusa'])
+  })
+  it('la lista de verdad la cumple entera', () => {
+    const real = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, '../../../scripts/ci/cadena-tras-escritura.lista.json'),
+        'utf8'
+      )
+    )
+    expect(leerLista(real).entradas.length).toBeGreaterThan(0)
+    expect(leerLista(real).sinClase).toEqual([])
+  })
+})

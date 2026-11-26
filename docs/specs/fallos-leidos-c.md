@@ -585,6 +585,30 @@ cubre el escáner `fallo-que-se-pierde`, ahora paso propio de la CI con su lista
 (`scripts/ci/fallo-que-se-pierde.lista.json`), que tiene la misma propiedad que la de arriba: rojo con uno
 más, y rojo con uno menos («la lista solo encoge»).
 
+### 2026-11-27 · aprobarCambio en la lista de Cadena, y qué puede entrar en una lista que encoge (Jose, literal)
+
+El escáner de cadena marcó `aprobarCambio` en la CI de B1: `familiaDeNino` (aplicar.ts) ya lanzaba antes con
+la lectura caída, y el `catch` ya deshacía la aprobación (`revertir()`); B1 solo la hizo `LecturaFallida`, y el
+escáner la ve. Opciones: (a) a la lista con destino B2, (b) leer la familia antes de aprobar en B1, (c) volver
+al `Error` desnudo. Jose, literal:
+
+«La (a). El comportamiento no cambia —ya lanzaba antes y el catch ya deshacía la aprobación—, así que no hay
+defecto nuevo: lo único que ha cambiado es que el escáner ahora lo ve. La (b) traería a B1 justo el flujo que
+decidimos tratar con diseño en B2, y la (c) es esconderlo, que es lo que no hacemos.
+
+Y el matiz de la norma, que es mío y lo aclaro: «la lista solo puede encoger» iba contra acumular excusas, no
+contra anotar un pendiente trazado. Una entrada con su PR DESTINO nombrado y su fecha no es una excusa, es un
+pendiente con dueño. Lo que no puede entrar nunca es una entrada sin destino ni fecha. Escríbelo así en la
+propia lista, para que el que venga detrás sepa cuál es la diferencia.
+Y en el cuerpo del PR que quede claro que esa entrada se va con B2, y que B2 la vacía.
+
+Y LO DEL EXPORT ES OTRO CASO DE LA REGLA, el tercero en dos días: tu arreglo dejaba a una persona sin su copia
+entera del art. 15 porque faltaba un fichero. Un dato que no está no puede impedir entregar todos los demás.»
+
+Hecho: la norma va en la propia lista (`_norma` en `scripts/ci/cadena-tras-escritura.lista.json`) y el escáner
+la hace cumplir: cada entrada es de una clase ya explicada (falso positivo, tratado, fichero huérfano) o un
+pendiente con `Destino: PR <x> · <AAAA-MM-DD>`; una entrada sin eso pone la CI roja.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
