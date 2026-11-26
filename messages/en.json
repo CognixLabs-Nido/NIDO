@@ -4126,6 +4126,7 @@
     "errors": {
       "no_autorizado": "You don't have permission to manage report templates.",
       "creacion_fallo": "The template could not be created.",
+      "ya_existe_recarga": "The report already exists: someone else has just created it. Reload the page to open it.",
       "edicion_fallo": "Changes could not be saved.",
       "archivar_fallo": "The template could not be archived.",
       "sin_curso_activo": "There is no active academic year.",

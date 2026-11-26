@@ -4126,6 +4126,7 @@
     "errors": {
       "no_autorizado": "No tienes permiso para gestionar plantillas de informe.",
       "creacion_fallo": "No se pudo crear la plantilla.",
+      "ya_existe_recarga": "El informe ya existe: lo acaba de crear otra persona. Recarga la página para abrirlo.",
       "edicion_fallo": "No se pudieron guardar los cambios.",
       "archivar_fallo": "No se pudo archivar la plantilla.",
       "sin_curso_activo": "No hay un curso académico activo.",

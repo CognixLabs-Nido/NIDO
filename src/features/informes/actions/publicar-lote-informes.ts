@@ -46,11 +46,13 @@ export async function publicarLoteInformes(
   // Centro del registro: el de la campaña. Tiene que existir y estar ABIERTA (no se publica en
   // lote sobre una cerrada); la RLS de `campanas_informe` ya restringe al staff de su centro.
   // Las aulas indicadas tienen que ser de ese centro.
-  const { data: campana } = await supabase
+  const { data: campana, error: errCampana } = await supabase
     .from('campanas_informe')
     .select('curso_academico_id, periodo, estado, centro_id')
     .eq('id', campana_id)
     .maybeSingle()
+  // Censo C: una lectura caída no es «no se pudo publicar el lote» ni «0 informes».
+  if (errCampana) return fail('common.lectura_fallida')
   if (!campana || campana.estado !== 'abierta') {
     return fail(`${E}.lote_fallo`)
   }
@@ -58,12 +60,13 @@ export async function publicarLoteInformes(
   // Aulas objetivo: la indicada, o todas las del curso (dirección "por centro").
   let aulaIds: string[]
   if (aula_id) {
-    const { data: aula } = await supabase
+    const { data: aula, error: errAula } = await supabase
       .from('aulas')
       .select('id')
       .eq('id', aula_id)
       .eq('centro_id', campana.centro_id)
       .maybeSingle()
+    if (errAula) return fail('common.lectura_fallida')
     if (!aula) return fail(`${E}.lote_fallo`)
     aulaIds = [aula_id]
   } else {
@@ -84,9 +87,11 @@ export async function publicarLoteInformes(
   if (aulaIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0, fallidos: 0 })
 
   // Niños con matrícula activa en esas aulas (Q3: bajas excluidas).
-  const { data: mat } = await aplicarMatriculaActiva(
+  const { data: mat, error: errMat } = await aplicarMatriculaActiva(
     supabase.from('matriculas').select('nino_id').in('aula_id', aulaIds)
   )
+  // Va por un helper que devuelve el builder (la regla de lint no la ve): sin ella, «0 niños» y ok.
+  if (errMat) return fail('common.lectura_fallida')
   const ninoIds = (mat ?? []).map((m) => m.nino_id)
   if (ninoIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0, fallidos: 0 })
 

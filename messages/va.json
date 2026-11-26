@@ -4126,6 +4126,7 @@
     "errors": {
       "no_autorizado": "No tens permís per a gestionar plantilles d'informe.",
       "creacion_fallo": "No s'ha pogut crear la plantilla.",
+      "ya_existe_recarga": "L'informe ja existeix: l'acaba de crear una altra persona. Recarrega la pàgina per a obrir-lo.",
       "edicion_fallo": "No s'han pogut guardar els canvis.",
       "archivar_fallo": "No s'ha pogut arxivar la plantilla.",
       "sin_curso_activo": "No hi ha cap curs acadèmic actiu.",
