@@ -2,7 +2,6 @@ import 'server-only'
 
 import { origenExceso } from '@/features/beca-comedor/lib/origen-exceso'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import {
@@ -84,10 +83,8 @@ export async function getRecibosMesPanel(
     .is('matriculas.deleted_at', null)
     .is('deleted_at', null)
 
-  if (ninosErr) {
-    logger.warn('getRecibosMesPanel: ninos', ninosErr.message)
-    return VACIO
-  }
+  // Censo C: una lectura caída no es «sin familias» (el panel diría que no hay nada que cobrar).
+  if (ninosErr) throw new LecturaFallida('getRecibosMesPanel: niños', ninosErr)
   const ninos = ninosRows ?? []
   if (ninos.length === 0) {
     return { ...VACIO, ...(await soloCierre(supabase, centroId, anio, mes)) }
@@ -135,6 +132,16 @@ export async function getRecibosMesPanel(
         .eq('estado', 'activo')
         .is('deleted_at', null),
     ])
+  // Sin cualquiera de ellas el panel mentiría: sin recibos, «sin recibo»; sin el cierre, el mes abierto;
+  // sin los mandatos, «sin mandato»; sin los métodos, el de la ficha.
+  const errPanel =
+    familiasRes.error ??
+    tutoresRes.error ??
+    recibosRes.error ??
+    cierreRes.error ??
+    metodosRes.error ??
+    mandatosRes.error
+  if (errPanel) throw new LecturaFallida('getRecibosMesPanel', errPanel)
 
   const metodoPreferencia: Record<string, MetodoPago> = {}
   for (const m of metodosRes.data ?? []) metodoPreferencia[m.familia_id] = m.metodo
@@ -199,7 +206,7 @@ export async function getRecibosMesPanel(
   }))
 
   const reciboRegularIds = recibosInput.map((r) => r.id)
-  const { data: lineasRows } =
+  const { data: lineasRows, error: errLineas } =
     reciboRegularIds.length > 0
       ? await supabase
           .from('lineas_recibo')
@@ -208,7 +215,8 @@ export async function getRecibosMesPanel(
           // entre el despliegue y la migración. Con `*`, sin la columna no hay arrastres.
           .select('*')
           .in('recibo_id', reciboRegularIds)
-      : { data: [] }
+      : { data: [], error: null }
+  if (errLineas) throw new LecturaFallida('getRecibosMesPanel: líneas', errLineas)
 
   const lineasInput: LineaPanelInput[] = (lineasRows ?? []).map((l) => ({
     id: l.id,
@@ -230,13 +238,14 @@ export async function getRecibosMesPanel(
   // resolución en la fila). RLS admin del centro. Se cuelgan de la fila por familia/recibo. Solo
   // los de beca: el sobrante de un cheque (PR-1c) cuelga de un recibo ya cobrado y se resuelve en
   // la gestión de cobros. `*` para leer el origen también antes de que exista la columna.
-  const { data: desbordesRows } = await supabase
+  const { data: desbordesRows, error: errDesbordes } = await supabase
     .from('beca_comedor_desborde')
     .select('*')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
     .eq('estado', 'pendiente')
+  if (errDesbordes) throw new LecturaFallida('getRecibosMesPanel: desbordes', errDesbordes)
 
   const desbordesInput: DesbordePanelInput[] = (desbordesRows ?? [])
     .filter((d) => origenExceso(d) === 'beca')
@@ -293,10 +302,7 @@ async function getReciboIdsRemesados(
     .in('recibo_id', reciboIds)
     .is('remesa.deleted_at', null)
 
-  if (error) {
-    logger.warn('getRecibosMesPanel: recibos_remesa', error.message)
-    return new Set(reciboIds)
-  }
+  if (error) throw new LecturaFallida('getReciboIdsRemesados', error)
   return new Set((data ?? []).map((r) => r.recibo_id))
 }
 

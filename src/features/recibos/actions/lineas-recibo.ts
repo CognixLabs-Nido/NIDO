@@ -7,6 +7,8 @@ import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
@@ -59,7 +61,12 @@ export async function anadirLineaRecibo(
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
   const supabase = await createClient()
-  const recibo = await reciboBorradorRegular(supabase, parsed.data.reciboId)
+  let recibo: ReciboBorrador | null
+  try {
+    recibo = await reciboBorradorRegular(supabase, parsed.data.reciboId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!recibo) return fail('recibos_panel.errors.no_borrador')
 
   const importe = parsed.data.precioUnitarioCentimos * parsed.data.cantidad
@@ -103,7 +110,12 @@ export async function editarLineaRecibo(
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
   const supabase = await createClient()
-  const linea = await lineaDeBorrador(supabase, parsed.data.lineaId)
+  let linea: { recibo_id: string } | null
+  try {
+    linea = await lineaDeBorrador(supabase, parsed.data.lineaId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!linea) return fail('recibos_panel.errors.no_borrador')
 
   const importe = parsed.data.precioUnitarioCentimos * parsed.data.cantidad
@@ -180,7 +192,7 @@ export async function crearReciboConLineaManual(
 
   // Hay UNIQUE(familia_id, anio, mes) para regulares: si alguien regeneró entre que se pintó
   // el panel y este clic, ya existe recibo y hay que editar ese, no crear otro.
-  const { data: yaExiste } = await supabase
+  const { data: yaExiste, error: errorYaExiste } = await supabase
     .from('recibos')
     .select('id')
     .eq('familia_id', parsed.data.familiaId)
@@ -190,6 +202,7 @@ export async function crearReciboConLineaManual(
     .is('devuelto_de_recibo_id', null)
     .is('deleted_at', null)
     .maybeSingle()
+  if (errorYaExiste) return fail('common.lectura_fallida')
   if (yaExiste) return fail('recibos_panel.errors.recibo_ya_existe')
 
   // Método CONGELADO, igual que hace el motor al crear la carcasa: la excepción del mes si la
@@ -248,7 +261,14 @@ export async function crearReciboConLineaManual(
     logger.warn('crearReciboConLineaManual linea', errorLinea.message)
     // Sin la línea, la carcasa queda a 0 € y el panel volvería a decir "Sin cargos" con un
     // recibo vacío detrás. Se retira para no dejar basura a medias.
-    await supabase.from('recibos').delete().eq('id', recibo.id)
+    const { error: errorRetirar } = await supabase.from('recibos').delete().eq('id', recibo.id)
+    // Censo C: si tampoco se retira, el recibo queda creado y sin líneas. Se dice, para que no se cree otro.
+    if (errorRetirar) {
+      logger.error('crearReciboConLineaManual: la carcasa no se retiró', {
+        code: errorRetirar.code,
+      })
+      return fail('recibos_panel.errors.recibo_vacio_creado')
+    }
     if (errorLinea.code === '42501') return fail('recibos_panel.errors.no_autorizado')
     return fail('recibos_panel.errors.linea_failed')
   }
@@ -266,7 +286,12 @@ export async function borrarLineaRecibo(
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
   const supabase = await createClient()
-  const linea = await lineaDeBorrador(supabase, parsed.data.lineaId)
+  let linea: { recibo_id: string } | null
+  try {
+    linea = await lineaDeBorrador(supabase, parsed.data.lineaId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!linea) return fail('recibos_panel.errors.no_borrador')
 
   const { error } = await supabase.from('lineas_recibo').delete().eq('id', parsed.data.lineaId)
@@ -298,12 +323,14 @@ async function reciboBorradorRegular(
   supabase: Supabase,
   reciboId: string
 ): Promise<ReciboBorrador | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('recibos')
     .select('id, centro_id, estado, es_esporadico, devuelto_de_recibo_id')
     .eq('id', reciboId)
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C: una lectura caída no es «no es un borrador».
+  if (error) throw new LecturaFallida('reciboBorradorRegular', error)
   if (
     !data ||
     data.estado !== 'borrador' ||
@@ -320,11 +347,12 @@ async function lineaDeBorrador(
   supabase: Supabase,
   lineaId: string
 ): Promise<{ recibo_id: string } | null> {
-  const { data: linea } = await supabase
+  const { data: linea, error } = await supabase
     .from('lineas_recibo')
     .select('recibo_id')
     .eq('id', lineaId)
     .maybeSingle()
+  if (error) throw new LecturaFallida('lineaDeBorrador', error)
   if (!linea) return null
   const recibo = await reciboBorradorRegular(supabase, linea.recibo_id)
   return recibo ? { recibo_id: linea.recibo_id } : null

@@ -2144,6 +2144,7 @@
       "no_borrador": "El recibo no está en borrador.",
       "linea_failed": "No se pudo guardar la línea.",
       "recibo_ya_existe": "Esta familia ya tiene recibo este mes; edítalo desde su fila.",
+      "recibo_vacio_creado": "La línea no se guardó y el recibo se quedó creado sin líneas: vuelve a añadirla en ese recibo.",
       "no_encontrado": "No se ha encontrado el recibo.",
       "no_regular": "Los recibos esporádicos y las devoluciones no se modifican por aquí.",
       "no_confirmado": "Este recibo es un borrador: edítalo directamente.",

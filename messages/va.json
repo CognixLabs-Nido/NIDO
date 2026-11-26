@@ -2144,6 +2144,7 @@
       "no_borrador": "El rebut no està en esborrany.",
       "linea_failed": "No s'ha pogut guardar la línia.",
       "recibo_ya_existe": "Esta família ja té rebut este mes; edita'l des de la seua fila.",
+      "recibo_vacio_creado": "La línia no s'ha guardat i el rebut s'ha quedat creat sense línies: torna a afegir-la en eixe rebut.",
       "no_encontrado": "No s’ha trobat el rebut.",
       "no_regular": "Els rebuts esporàdics i les devolucions no es modifiquen des d’ací.",
       "no_confirmado": "Este rebut és un esborrany: edita’l directament.",

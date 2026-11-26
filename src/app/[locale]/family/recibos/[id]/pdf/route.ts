@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
 import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { formatPeriodo } from '@/features/recibos/lib/formato'
@@ -23,7 +24,14 @@ export async function GET(
 
   const estado = await getEstadoCentro()
   if (estado.tipo !== 'activo') return new Response('Not found', { status: 404 })
-  const recibo = await getReciboParaPdf(await ambitoFamiliar(estado.contexto.centroId), id)
+  let recibo: Awaited<ReturnType<typeof getReciboParaPdf>>
+  try {
+    recibo = await getReciboParaPdf(await ambitoFamiliar(estado.contexto.centroId), id)
+  } catch (e) {
+    // Censo C: un recibo sin sus líneas o sin el nombre del centro no se entrega.
+    if (esLecturaFallida(e)) return new Response('No se pudo leer', { status: 500 })
+    throw e
+  }
   if (!recibo) return new Response('Not found', { status: 404 })
 
   const t = await getTranslations('recibos')

@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { limpiarNombreEmbebido } from '@/features/recibos/lib/limpiar-nombre-embebido'
 import {
@@ -8,7 +9,6 @@ import {
 } from '@/features/recibos/lib/recibo-familia-detalle'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
@@ -62,19 +62,18 @@ export async function getReciboParaPdf(
     .is('deleted_at', null)
     .maybeSingle()
 
-  if (error) {
-    logger.warn('getReciboParaPdf: recibo', error.message)
-    return null
-  }
+  if (error) throw new LecturaFallida('getReciboParaPdf: recibo', error)
   if (!recibo) return null
 
-  const { data: lineas } = await supabase
+  const { data: lineas, error: errLineas } = await supabase
     .from('lineas_recibo')
     .select(
       'id, nino_id, concepto_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos'
     )
     .eq('recibo_id', reciboId)
     .order('created_at', { ascending: true })
+  // Sin las líneas, el recibo saldría con su total y sin desglose.
+  if (errLineas) throw new LecturaFallida('getReciboParaPdf: líneas', errLineas)
 
   // Nombres de los hijos con línea (RLS del usuario: ve a sus hijos).
   const ninoIds = [
@@ -82,10 +81,11 @@ export async function getReciboParaPdf(
   ]
   const nombrePorNino = new Map<string, string>()
   if (ninoIds.length > 0) {
-    const { data: ninos } = await supabase
+    const { data: ninos, error: errNinos } = await supabase
       .from('ninos')
       .select('id, nombre, apellidos')
       .in('id', ninoIds)
+    if (errNinos) throw new LecturaFallida('getReciboParaPdf: niños', errNinos)
     for (const n of ninos ?? []) {
       nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }
@@ -98,17 +98,20 @@ export async function getReciboParaPdf(
   ]
   const nombreConcepto = new Map<string, string>()
   if (conceptoIds.length > 0) {
-    const { data: conceptos } = await service
+    const { data: conceptos, error: errConceptos } = await service
       .from('conceptos_cobro')
       .select('id, nombre')
       .in('id', conceptoIds)
+    if (errConceptos) throw new LecturaFallida('getReciboParaPdf: conceptos', errConceptos)
     for (const c of conceptos ?? []) nombreConcepto.set(c.id, c.nombre)
   }
-  const { data: centro } = await service
+  const { data: centro, error: errCentro } = await service
     .from('centros')
     .select('nombre, logo_url')
     .eq('id', recibo.centro_id)
     .maybeSingle()
+  // Sin el centro, el PDF saldría sin su nombre.
+  if (errCentro) throw new LecturaFallida('getReciboParaPdf: centro', errCentro)
 
   // Etiqueta limpia por línea: concepto del catálogo si hay concepto_id; si no, la
   // descripción cruda sin el nombre del niño embebido (becas / saldo).

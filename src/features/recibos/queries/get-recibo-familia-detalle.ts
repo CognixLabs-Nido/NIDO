@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import {
   agruparLineasPorHijo,
   type DesgloseReciboFamilia,
@@ -7,7 +8,6 @@ import {
 } from '@/features/recibos/lib/recibo-familia-detalle'
 import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
@@ -55,17 +55,16 @@ export async function getReciboFamiliaDetalle(
     .is('deleted_at', null)
     .maybeSingle()
 
-  if (error) {
-    logger.warn('getReciboFamiliaDetalle: recibo', error.message)
-    return null
-  }
+  if (error) throw new LecturaFallida('getReciboFamiliaDetalle: recibo', error)
   if (!recibo) return null
 
-  const { data: lineas } = await supabase
+  const { data: lineas, error: errLineas } = await supabase
     .from('lineas_recibo')
     .select('id, nino_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos')
     .eq('recibo_id', reciboId)
     .order('created_at', { ascending: true })
+  // Sin las líneas, el recibo saldría con su total y sin desglose.
+  if (errLineas) throw new LecturaFallida('getReciboFamiliaDetalle: líneas', errLineas)
 
   // Nombres de los hijos con línea (nino_id NOT NULL). La RLS de `ninos` deja al tutor leer
   // los hijos de su familia; los que no resuelvan caen al ninoId en el agrupado.
@@ -74,10 +73,11 @@ export async function getReciboFamiliaDetalle(
   ]
   const nombrePorNino = new Map<string, string>()
   if (ninoIds.length > 0) {
-    const { data: ninos } = await supabase
+    const { data: ninos, error: errNinos } = await supabase
       .from('ninos')
       .select('id, nombre, apellidos')
       .in('id', ninoIds)
+    if (errNinos) throw new LecturaFallida('getReciboFamiliaDetalle: niños', errNinos)
     for (const n of ninos ?? []) {
       nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }

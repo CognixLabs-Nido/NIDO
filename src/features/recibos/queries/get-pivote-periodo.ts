@@ -1,7 +1,7 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 import {
   construirPivote,
@@ -41,10 +41,8 @@ export async function getPivotePeriodo(
     .eq('mes', mes)
     .is('deleted_at', null)
 
-  if (error) {
-    logger.warn('getPivotePeriodo: recibos', error.message)
-    return PIVOTE_VACIA
-  }
+  // Censo C: una lectura caída no es «sin recibos» (el panel y el CSV saldrían vacíos).
+  if (error) throw new LecturaFallida('getPivotePeriodo: recibos', error)
   if (!recibos || recibos.length === 0) return PIVOTE_VACIA
 
   const recibosConFamilia = recibos.filter(
@@ -68,6 +66,9 @@ export async function getPivotePeriodo(
       .is('deleted_at', null),
     supabase.from('conceptos_cobro').select('id, nombre').eq('centro_id', centroId),
   ])
+  // Sin las líneas, los importes por concepto saldrían a 0; sin los demás, filas sin nombre.
+  const errPivote = lineasRes.error ?? familiasRes.error ?? tutoresRes.error ?? conceptosRes.error
+  if (errPivote) throw new LecturaFallida('getPivotePeriodo', errPivote)
 
   // Reusamos el slot `ninoId` del builder como `familia_id`. La columna «tutor» = etiqueta
   // de familia; la columna «niño» = tutores de la familia (una sola cadena por familia).

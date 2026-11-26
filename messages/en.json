@@ -2144,6 +2144,7 @@
       "no_borrador": "The receipt is not a draft.",
       "linea_failed": "Could not save the line.",
       "recibo_ya_existe": "This family already has a receipt this month; edit it from its row.",
+      "recibo_vacio_creado": "The line was not saved and the receipt was left created with no lines: add it again to that receipt.",
       "no_encontrado": "Receipt not found.",
       "no_regular": "One-off receipts and returns are not modified from here.",
       "no_confirmado": "This receipt is a draft: edit it directly.",
