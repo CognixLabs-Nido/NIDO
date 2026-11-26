@@ -14,7 +14,8 @@
 //         a una función que ESCRIBE.
 //       PARA: `throw new LecturaFallida`, `return fail('common.lectura_fallida')`, o una llamada a una
 //         función que PARA, fuera de un `try` cuyo `catch` se lo trague (un `catch` que devuelve fail/err o
-//         lanza es otra forma de decir «no»). Una llamada pasada a `siFallaTrasEscribir(…)` no para.
+//         lanza es otra forma de decir «no»). Una llamada pasada a `siFallaTrasEscribir(…)` u `oNoLeido(…)`
+//         no para ni lanza: las dos la recogen.
 //     Esperado: 0 fuera de la lista (`cadena-tras-escritura.lista.json`, cada una con su motivo).
 //
 //  2. LA FRONTERA DE LAS ACCIONES: una acción exportada de un 'use server' no deja escapar una
@@ -227,6 +228,9 @@ function analizar(raiz, vol) {
       t.catchClause.getText()
     )
   const catchRelanza = (t) => /\bthrow\b/.test(t.catchClause.getText())
+  // Envoltorios que recogen la LecturaFallida de la llamada que reciben: `siFallaTrasEscribir` (devuelve el
+  // valor de repuesto) y `oNoLeido` (devuelve null y la sección lo dice: PR A). Por el nombre.
+  const ENVUELVEN = new Set(['siFallaTrasEscribir', 'oNoLeido'])
   const dentroDeSiFalla = (n, fn) => {
     let c = n
     while (c && c !== fn) {
@@ -235,7 +239,7 @@ function analizar(raiz, vol) {
         p &&
         ts.isCallExpression(p) &&
         p.arguments.includes(c) &&
-        p.expression.getText() === 'siFallaTrasEscribir'
+        ENVUELVEN.has(p.expression.getText())
       )
         return true
       c = p

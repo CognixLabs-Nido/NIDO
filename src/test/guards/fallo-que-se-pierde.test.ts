@@ -62,7 +62,10 @@ let r: {
 }
 
 beforeAll(() => {
-  dir = fs.mkdtempSync(path.join(RAIZ, 'node_modules', '.cache', 'fallo-que-se-pierde-'))
+  // En la CI `node_modules/.cache` no existe hasta que algo lo crea (medido: ENOENT en el run 45906436408).
+  const cache = path.join(RAIZ, 'node_modules', '.cache')
+  fs.mkdirSync(cache, { recursive: true })
+  dir = fs.mkdtempSync(path.join(cache, 'fallo-que-se-pierde-'))
   fs.mkdirSync(path.join(dir, 'src'))
   fs.writeFileSync(path.join(dir, 'src', 'casos.ts'), FUENTE)
   fs.writeFileSync(

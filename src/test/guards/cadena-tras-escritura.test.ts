@@ -26,9 +26,11 @@ export async function leeOLanza() { const { data, error } = await db.from('t').s
 export async function escribeYLanza() { await db.from('t').insert({}); const { error } = await db.from('u').select(); if (error) throw new LecturaFallida('escribeYLanza', error) }
 export async function otraQueLanza() { const { error } = await db.from('v').select(); if (error) throw new LecturaFallida('otraQueLanza', error) }
 export async function lanzaYEscribe() { const { error } = await db.from('u').select(); if (error) throw new LecturaFallida('x', error); await db.from('t').insert({}) }
+export async function oNoLeido<T>(p: Promise<T>, _d: string): Promise<T | null> { try { return await p } catch { return null } }
+export async function envuelveSinMirar<T>(p: Promise<T>): Promise<T> { return await p }
 `
 const ACCIONES = `'use server'
-import { leeOLanza, escribeYLanza, otraQueLanza, fail, ok, siFallaTrasEscribir, falloDeLectura } from '../lib/base'
+import { leeOLanza, escribeYLanza, otraQueLanza, fail, ok, siFallaTrasEscribir, falloDeLectura, oNoLeido, envuelveSinMirar } from '../lib/base'
 declare const db: any
 export async function accion1() { await db.from('t').update({}).eq('id', 1); await leeOLanza(); return ok(1) }
 export async function accion2() { try { await leeOLanza(); await db.from('t').insert({}); return ok(1) } catch (e) { return falloDeLectura(e) } }
@@ -41,10 +43,14 @@ export async function accion8() { await db.from('t').insert({}); try { await lee
 export async function accion9() { await db.from('t').insert({}); const v = await siFallaTrasEscribir('x', leeOLanza(), null); return ok(v) }
 export async function accion11() { await db.from('t').insert({}); await leeOLanza(); await otraQueLanza(); return ok(1) }
 export async function accion10() { try { await db.from('t').insert({}); await leeOLanza(); return ok(1) } catch (e) { return falloDeLectura(e) } }
+// oNoLeido recoge la LecturaFallida y devuelve null: no deja escapar nada (fetchAgendaDelDia, censo C B1).
+export async function accion12() { return oNoLeido(leeOLanza(), 'x') }
+// El control: un envoltorio que no la recoge sí la deja escapar. Cuenta el NOMBRE, no la forma.
+export async function accion13() { return envuelveSinMirar(leeOLanza()) }
 `
 // La respuesta, escrita antes de correrlo.
 const ENTRADAS = ['accion1', 'accion10', 'accion11', 'accion4', 'accion5', 'accion7', 'accion8']
-const LANZAN = ['accion1', 'accion11', 'accion4', 'accion7']
+const LANZAN = ['accion1', 'accion11', 'accion13', 'accion4', 'accion7']
 
 let dir = ''
 beforeAll(() => {

@@ -90,10 +90,20 @@ export async function resolverDesborde(
   if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${ERR}.no_autorizado`)
   if (desborde.estado !== 'pendiente') return fail(`${ERR}.ya_resuelto`)
 
-  // El del cheque lo resuelve la BD entera; aparte, para que su escritura no quede «antes» de las
-  // lecturas de la beca (son caminos distintos: `nido/parada-tras-escritura` lee el cuerpo en orden).
-  if (origen === 'cheque') return resolverSobranteCheque(supabase, recibo_id, via)
+  // Dos caminos, cada uno en su función, y el de la beca escrito PRIMERO: el del cheque escribe (la BD
+  // lo resuelve entero) y las lecturas de la beca no pueden quedar «detrás» de esa escritura en el texto.
+  // `nido/parada-tras-escritura` y el escáner de cadena leen en orden, no por caminos (run 45906436408).
+  if (origen !== 'cheque') return resolverDesbordeBeca(supabase, desborde, centroId, via)
+  return resolverSobranteCheque(supabase, recibo_id, via)
+}
 
+/** El desborde de una beca: preparar el efecto, reclamarlo (pendiente → resuelto) y aplicarlo. */
+async function resolverDesbordeBeca(
+  supabase: Supa,
+  desborde: Database['public']['Tables']['beca_comedor_desborde']['Row'],
+  centroId: string,
+  via: 'diferir' | 'transferencia'
+): Promise<ActionResult<{ via: 'diferir' | 'transferencia'; n: number }>> {
   // ── Preparar el efecto ANTES del claim (para validar sin dejar el desborde a medias) ──
   let restoRows: Database['public']['Tables']['beca_comedor_tramo']['Insert'][] = []
   let sig: { anio: number; mes: number } | null = null
