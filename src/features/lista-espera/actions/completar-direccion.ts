@@ -169,7 +169,7 @@ export async function completarEnDireccion(
     const cuenta = await detectarCuentaPorEmail(service, parsed.data.email)
     if (!cuenta) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
     if (cuenta.authUserExiste && (cuenta.tieneRoles || cuenta.haOperado)) {
-      return altaInvitandoCuentaExistente(supabase, {
+      return await altaInvitandoCuentaExistente(supabase, {
         prospectoId: prospecto.id,
         nombreNino: prospecto.nombre_nino,
         primerApellidoNino: prospecto.primer_apellido_nino ?? '',

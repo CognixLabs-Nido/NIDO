@@ -164,7 +164,7 @@ export async function reenviarInvitacionProfe(
     if (!admin.success) return fail(admin.error)
 
     const service = createServiceRoleClient()
-    return reenviarInvitacionProfeCore(
+    return await reenviarInvitacionProfeCore(
       { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
       invitationId,
       locale

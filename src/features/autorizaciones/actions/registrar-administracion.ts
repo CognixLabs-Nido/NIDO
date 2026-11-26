@@ -42,11 +42,12 @@ export async function registrarAdministracion(
 
   // Instancia de medicación (centro + niño). RLS ya filtra: si el staff no es
   // audiencia del niño, no la ve.
-  const { data: aut } = await supabase
+  const { data: aut, error: autErr } = await supabase
     .from('autorizaciones')
     .select('id, tipo, es_plantilla, centro_id, nino_id')
     .eq('id', d.autorizacion_id)
     .maybeSingle()
+  if (autErr) return fail('common.lectura_fallida')
   if (!aut || aut.es_plantilla || aut.tipo !== 'medicacion' || !aut.nino_id) {
     return fail('autorizaciones.errors.adm_no_medicacion')
   }

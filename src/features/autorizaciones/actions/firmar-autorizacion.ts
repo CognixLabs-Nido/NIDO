@@ -1,5 +1,6 @@
 'use server'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
@@ -80,7 +81,8 @@ async function registrarDecision(
     )
     .eq('id', d.autorizacion_id)
     .maybeSingle()
-  if (autErr || !aut) return fail('autorizaciones.errors.no_encontrada')
+  if (autErr) throw new LecturaFallida('registrarDecision: autorización', autErr)
+  if (!aut) return fail('autorizaciones.errors.no_encontrada')
 
   // Recogida: al firmar es obligatoria la lista de personas autorizadas.
   if (
@@ -110,13 +112,14 @@ async function registrarDecision(
   //    => rol_firmante='admin', firma PRESENCIAL (respaldo en papel, sin trazo). Se
   //    RE-DERIVA server-side con `esAdminDeCentroDeNino` (nunca del cliente). La RLS
   //    `firmas_insert` (#180) ya acepta `es_admin(centro_de_nino(...))` además del tutor.
-  const { data: vinculo } = await supabase
+  const { data: vinculo, error: vinculoErr } = await supabase
     .from('vinculos_familiares')
     .select('tipo_vinculo')
     .eq('nino_id', d.nino_id)
     .eq('usuario_id', userId)
     .is('deleted_at', null)
     .maybeSingle()
+  if (vinculoErr) throw new LecturaFallida('registrarDecision: vínculo', vinculoErr)
 
   let rolFirmante: Database['public']['Enums']['tipo_vinculo']
   let metodoFirma: Database['public']['Enums']['firma_metodo']
@@ -225,11 +228,12 @@ export async function firmarAutorizacion(
     const d = parsed.data
 
     // El nombre tecleado debe coincidir con el del perfil (acto afirmativo explícito).
-    const { data: perfil } = await supabase
+    const { data: perfil, error: perfilErr } = await supabase
       .from('usuarios')
       .select('nombre_completo')
       .eq('id', user.id)
       .maybeSingle()
+    if (perfilErr) throw new LecturaFallida('firmarAutorizacion: perfil', perfilErr)
     if (
       !perfil ||
       normalizarNombre(perfil.nombre_completo) !== normalizarNombre(d.nombre_tecleado)
@@ -237,7 +241,8 @@ export async function firmarAutorizacion(
       return fail('autorizaciones.errors.nombre_no_coincide')
     }
 
-    return registrarDecision(supabase, user.id, {
+    // `await`: sin él, una LecturaFallida de dentro rechaza la promesa fuera del `try` y no la recoge el catch.
+    return await registrarDecision(supabase, user.id, {
       autorizacion_id: d.autorizacion_id,
       nino_id: d.nino_id,
       decision: 'firmado',
@@ -286,14 +291,15 @@ export async function rechazarAutorizacion(
     }
     const d = parsed.data
 
-    const { data: perfil } = await supabase
+    const { data: perfil, error: errPerfilRechazo } = await supabase
       .from('usuarios')
       .select('nombre_completo')
       .eq('id', user.id)
       .maybeSingle()
+    if (errPerfilRechazo) throw new LecturaFallida('rechazarAutorizacion: perfil', errPerfilRechazo)
     if (!perfil) return fail('autorizaciones.errors.no_autorizado')
 
-    return registrarDecision(supabase, user.id, {
+    return await registrarDecision(supabase, user.id, {
       autorizacion_id: d.autorizacion_id,
       nino_id: d.nino_id,
       decision: 'rechazado',
@@ -335,11 +341,12 @@ export async function revocarFirma(
     const d = parsed.data
 
     // Solo recogida/medicación/imágenes admiten revocación self-service (F11-A3).
-    const { data: aut } = await supabase
+    const { data: aut, error: errAutRevocar } = await supabase
       .from('autorizaciones')
       .select('tipo')
       .eq('id', d.autorizacion_id)
       .maybeSingle()
+    if (errAutRevocar) throw new LecturaFallida('revocarFirma: autorización', errAutRevocar)
     if (
       !aut ||
       (aut.tipo !== 'recogida' && aut.tipo !== 'medicacion' && aut.tipo !== 'autorizacion_imagenes')
@@ -347,14 +354,15 @@ export async function revocarFirma(
       return fail('autorizaciones.errors.revocar_no_permitido')
     }
 
-    const { data: perfil } = await supabase
+    const { data: perfil, error: errPerfilRevocar } = await supabase
       .from('usuarios')
       .select('nombre_completo')
       .eq('id', user.id)
       .maybeSingle()
+    if (errPerfilRevocar) throw new LecturaFallida('revocarFirma: perfil', errPerfilRevocar)
     if (!perfil) return fail('autorizaciones.errors.no_autorizado')
 
-    return registrarDecision(supabase, user.id, {
+    return await registrarDecision(supabase, user.id, {
       autorizacion_id: d.autorizacion_id,
       nino_id: d.nino_id,
       decision: 'revocado',

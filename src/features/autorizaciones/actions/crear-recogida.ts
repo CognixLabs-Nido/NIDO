@@ -55,35 +55,38 @@ export async function crearRecogida(
   const d = parsed.data
 
   // Acto afirmativo: el nombre tecleado debe coincidir con el del perfil.
-  const { data: perfil } = await supabase
+  const { data: perfil, error: perfilErr } = await supabase
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', user.id)
     .maybeSingle()
+  if (perfilErr) return fail('common.lectura_fallida')
   if (!perfil || normalizarNombre(perfil.nombre_completo) !== normalizarNombre(d.nombre_tecleado)) {
     return fail('autorizaciones.errors.nombre_no_coincide')
   }
 
   // rol_firmante = snapshot del vínculo del tutor con el niño (también valida tutela).
-  const { data: vinculo } = await supabase
+  const { data: vinculo, error: vinculoErr } = await supabase
     .from('vinculos_familiares')
     .select('tipo_vinculo')
     .eq('nino_id', d.nino_id)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
+  if (vinculoErr) return fail('common.lectura_fallida')
   if (!vinculo) return fail('autorizaciones.errors.no_es_tutor')
 
   // centro del niño (RLS deja al tutor leer su ficha).
-  const { data: nino } = await supabase
+  const { data: nino, error: ninoErr } = await supabase
     .from('ninos')
     .select('centro_id')
     .eq('id', d.nino_id)
     .maybeSingle()
+  if (ninoErr) return fail('common.lectura_fallida')
   if (!nino) return fail('autorizaciones.errors.nino_no_encontrado')
 
   // Plantilla de recogida publicada del centro (el formato estándar).
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: plantillaErr } = await supabase
     .from('autorizaciones')
     .select('id, titulo, texto, texto_version')
     .eq('centro_id', nino.centro_id)
@@ -92,6 +95,7 @@ export async function crearRecogida(
     .eq('estado', 'publicada')
     .eq('texto_definitivo', true)
     .maybeSingle()
+  if (plantillaErr) return fail('common.lectura_fallida')
   if (!plantilla) return fail('autorizaciones.errors.recogida_sin_plantilla')
 
   const hoy = hoyMadridYmd()
@@ -107,11 +111,13 @@ export async function crearRecogida(
     .eq('tipo', 'recogida')
     .eq('es_plantilla', false)
     .eq('estado', 'publicada')
-  const { data: existentes } = await (
+  const { data: existentes, error: existentesErr } = await (
     vigenciaHasta === null
       ? buscar.is('vigencia_hasta', null)
       : buscar.eq('vigencia_hasta', vigenciaHasta)
   ).limit(1)
+  // Sin poder buscar no se crea: crearía una segunda instancia de la misma recogida.
+  if (existentesErr) return fail('common.lectura_fallida')
   let instancia = existentes?.[0]
 
   if (!instancia) {
