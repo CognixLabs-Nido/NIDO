@@ -296,11 +296,362 @@ function analizar(raiz) {
     }
     visitar(sf)
   }
+
+  // ───────────────────────────────────────────────────────────────────────────────────────────────
+  // CLASE 1 · EL HELPER QUE AVISA DEL FALLO Y EL LLAMADOR QUE NO LO USA. Un helper AVISA si alguno de sus
+  // `return` está en un CAMINO DE FALLO y lo que devuelve allí se distingue, por el TIPO, de lo que devuelve
+  // por el camino bueno:
+  //   CAMINO DE FALLO  dentro del `then` de un `if` cuya condición usa un valor de tipo `PostgrestError`
+  //                    (o del `else` de un `if (!error)`), o el centinela de otro helper que avisa (punto
+  //                    fijo), o dentro de un `catch`.
+  //   CENTINELA        `null` o `undefined` que el camino bueno NO puede devolver (si puede, el helper ya
+  //                    colapsa el fallo él solo: es F1/F2 del censo, se cuenta aparte como COLAPSA); o una
+  //                    BANDERA: una propiedad de tipo literal `false` en el fallo que en el camino bueno no
+  //                    es `false` (`leidos`, `ok`, `success`…).
+  // Y cada llamada a un helper que avisa: USA (lee la bandera; distingue el centinela: si el helper devuelve
+  // `null` Y `undefined`, solo `=== null`/`!== null` lo distingue, `!x` los junta), NO_USA, PASA (`return`:
+  // quien lo hace es a su vez un helper que avisa, punto fijo) o HUECO (otra forma; se cuenta y se lista).
+  const tipoDe = (n) => checker.getTypeAtLocation(n)
+  const esErrorPostgrest = (t) =>
+    miembros(t).some((m) => {
+      const s = m.getSymbol() || m.aliasSymbol
+      return (
+        !!s &&
+        /^(PostgrestError|StorageError|StorageApiError|StorageUnknownError|AuthError|AuthApiError|FunctionsError|FunctionsHttpError)$/.test(
+          s.getName()
+        )
+      )
+    })
+  const tiene = (t, flag) => miembros(esperado(t)).some((m) => m.flags & flag)
+  const puedeNull = (t) => tiene(t, ts.TypeFlags.Null)
+  const puedeUndef = (t) => tiene(t, ts.TypeFlags.Undefined | ts.TypeFlags.Void)
+  const literalFalse = (t) =>
+    miembros(t).length > 0 &&
+    miembros(t).every(
+      (m) => m.flags & ts.TypeFlags.BooleanLiteral && checker.typeToString(m) === 'false'
+    )
+
+  const avisan = new Map() // declaración → { centinelas:Set('null'|'undefined'), banderas:Set }
+  const colapsan = []
+  const fnDe = (n) => {
+    let p = n.parent
+    while (p && !ts.isFunctionLike(p)) p = p.parent
+    return p
+  }
+  // ¿Esta expresión, en una condición, es una señal de fallo? (lee un PostgrestError, o el centinela o la
+  // bandera de un helper que avisa).
+  const llamadaQueAvisa = (e) => {
+    // e: un identificador ligado a `await h()` (o `h()`), o una propiedad de él
+    const sym = checker.getSymbolAtLocation(e)
+    const d = sym && sym.valueDeclaration
+    if (!d) return null
+    let init = null
+    if (ts.isVariableDeclaration(d)) init = d.initializer
+    else if (ts.isBindingElement(d)) {
+      let p = d.parent
+      while (p && !ts.isVariableDeclaration(p)) p = p.parent
+      init = p && p.initializer
+    }
+    if (!init) return null
+    let x = init
+    while (ts.isAwaitExpression(x) || ts.isParenthesizedExpression(x)) x = x.expression
+    if (!ts.isCallExpression(x)) return null
+    const sig = checker.getResolvedSignature(x)
+    return sig && sig.declaration && avisan.has(sig.declaration)
+      ? avisan.get(sig.declaration)
+      : null
+  }
+  const esSenal = (cond) => {
+    let si = false
+    const v = (n) => {
+      if (si) return
+      if (ts.isIdentifier(n) || ts.isPropertyAccessExpression(n)) {
+        try {
+          if (esErrorPostgrest(tipoDe(n))) si = true
+        } catch {}
+        if (!si && ts.isIdentifier(n) && llamadaQueAvisa(n)) si = true
+        if (!si && ts.isPropertyAccessExpression(n) && ts.isIdentifier(n.expression)) {
+          const a = llamadaQueAvisa(n.expression)
+          if (a && a.banderas.has(n.name.text)) si = true
+        }
+      }
+      if (!si) ts.forEachChild(n, v)
+    }
+    v(cond)
+    return si
+  }
+  const negada = (c) =>
+    ts.isPrefixUnaryExpression(c) && c.operator === ts.SyntaxKind.ExclamationToken
+  const enCaminoDeFallo = (ret, fn) => {
+    let n = ret
+    while (n && n !== fn) {
+      const p = n.parent
+      if (ts.isCatchClause(p)) return true
+      if (ts.isIfStatement(p) && n !== p.expression && esSenal(p.expression)) {
+        const enThen = p.thenStatement === n
+        return negada(p.expression) && !ts.isPrefixUnaryExpression(p.expression.operand)
+          ? !enThen
+          : enThen
+      }
+      n = p
+    }
+    return false
+  }
+  const retornos = (fn) => {
+    const rs = []
+    const v = (n) => {
+      if (n !== fn && ts.isFunctionLike(n)) return
+      if (ts.isReturnStatement(n)) rs.push(n)
+      ts.forEachChild(n, v)
+    }
+    if (fn.body && ts.isBlock(fn.body)) v(fn.body)
+    return rs
+  }
+  const centinelaDe = (ret) => {
+    const e = ret.expression
+    if (!e || (ts.isIdentifier(e) && e.text === 'undefined')) return 'undefined'
+    if (e.kind === ts.SyntaxKind.NullKeyword) return 'null'
+    return null
+  }
+  const banderasFalse = (t) => {
+    const r = new Set()
+    for (const m of miembros(esperado(t)))
+      for (const p of m.getProperties()) {
+        const pt = checker.getTypeOfSymbol(p)
+        if (literalFalse(pt)) r.add(p.getName())
+      }
+    return r
+  }
+  const todasLasFunciones = []
+  for (const sf of fuentes) {
+    const v = (n) => {
+      if (ts.isFunctionLike(n) && n.body && ts.isBlock(n.body)) todasLasFunciones.push(n)
+      ts.forEachChild(n, v)
+    }
+    v(sf)
+  }
+  // Punto fijo: una función avisa por sus propios caminos de fallo, que pueden depender de otros que avisan.
+  for (let cambio = true, vuelta = 0; cambio && vuelta < 10; vuelta++) {
+    cambio = false
+    for (const fn of todasLasFunciones) {
+      if (avisan.has(fn)) continue
+      const rs = retornos(fn)
+      const fallo = rs.filter((r) => enCaminoDeFallo(r, fn))
+      if (!fallo.length) continue
+      const bueno = rs.filter((r) => !fallo.includes(r))
+      const tBueno = bueno.filter((r) => r.expression).map((r) => tipoDe(r.expression))
+      const centinelas = new Set()
+      const banderas = new Set()
+      let colapsa = false
+      for (const r of fallo) {
+        const c = centinelaDe(r)
+        if (c === 'null') {
+          if (tBueno.some(puedeNull) || bueno.some((b) => centinelaDe(b) === 'null')) colapsa = true
+          else centinelas.add('null')
+        } else if (c === 'undefined') {
+          if (tBueno.some(puedeUndef) || bueno.some((b) => !b.expression)) colapsa = true
+          else centinelas.add('undefined')
+        } else if (r.expression) {
+          for (const p of banderasFalse(tipoDe(r.expression))) {
+            // la bandera solo avisa si en el camino bueno NO es siempre false
+            const enBueno = tBueno.every((t) =>
+              miembros(esperado(t)).every((m) => {
+                const s = m.getProperty(p)
+                return !s || literalFalse(checker.getTypeOfSymbol(s))
+              })
+            )
+            if (!enBueno && bueno.length) banderas.add(p)
+          }
+        }
+      }
+      if (centinelas.size || banderas.size) {
+        avisan.set(fn, { centinelas, banderas, donde: donde(fn), nombre: nombreDe(fn) })
+        cambio = true
+      } else if (colapsa && !colapsan.some((c) => c.fn === fn))
+        colapsan.push({ fn, donde: donde(fn), nombre: nombreDe(fn) })
+    }
+  }
+
+  // Los llamadores.
+  const usoDeVinculo = (nombre, a) => {
+    // nombre: Identifier o ObjectBindingPattern del resultado esperado
+    if (ts.isObjectBindingPattern(nombre)) {
+      if (!a.banderas.size) return { clase: 'HUECO', como: 'desestructura un centinela' }
+      const usadas = nombre.elements.filter((e) => {
+        const k = e.propertyName ? e.propertyName.getText() : e.name.getText()
+        return a.banderas.has(k) && ts.isIdentifier(e.name) && usosDe(e.name).length > 0
+      })
+      return usadas.length
+        ? { clase: 'USA', como: 'lee ' + usadas.map((e) => e.name.getText()).join(',') }
+        : { clase: 'NO_USA', como: 'desestructura sin ' + [...a.banderas].join('/') }
+    }
+    if (!ts.isIdentifier(nombre)) return { clase: 'HUECO', como: 'patrón de array' }
+    const usos = usosDe(nombre)
+    if (a.banderas.size) {
+      if (
+        usos.some(
+          (u) => ts.isPropertyAccessExpression(u.parent) && a.banderas.has(u.parent.name.text)
+        )
+      )
+        return { clase: 'USA', como: 'lee la bandera' }
+    }
+    if (a.centinelas.size) {
+      const ambos = a.centinelas.size === 2 || false
+      const estricto = (u) => {
+        const p = sinEnvoltorio(u).parent
+        return (
+          ts.isBinaryExpression(p) &&
+          [
+            ts.SyntaxKind.EqualsEqualsEqualsToken,
+            ts.SyntaxKind.ExclamationEqualsEqualsToken,
+          ].includes(p.operatorToken.kind) &&
+          [p.left, p.right].some(
+            (x) =>
+              x.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(x) && x.text === 'undefined')
+          )
+        )
+      }
+      const laxo = (u) => {
+        const p = sinEnvoltorio(u).parent
+        return (
+          (ts.isPrefixUnaryExpression(p) && p.operator === ts.SyntaxKind.ExclamationToken) ||
+          (ts.isIfStatement(p) && p.expression === sinEnvoltorio(u)) ||
+          (ts.isBinaryExpression(p) &&
+            [ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(
+              p.operatorToken.kind
+            )) ||
+          (ts.isBinaryExpression(p) &&
+            p.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+            p.left === sinEnvoltorio(u)) ||
+          (ts.isConditionalExpression(p) && p.condition === sinEnvoltorio(u))
+        )
+      }
+      // ¿Puede el camino bueno devolver el OTRO falsy (undefined = «no le toca»)? Entonces `!x` junta los dos.
+      const otroFalsy = a.otroFalsy
+      if (usos.some(estricto)) return { clase: 'USA', como: 'compara estricto' }
+      if (usos.some(laxo))
+        return otroFalsy
+          ? { clase: 'NO_USA', como: '!x junta el fallo con ' + otroFalsy }
+          : { clase: 'USA', como: 'comprueba el centinela' }
+    }
+    if (usos.some((u) => ts.isReturnStatement(sinEnvoltorio(u).parent)))
+      return { clase: 'PASA', como: 'return' }
+    // `x?.a` o `x ?? defecto`: degrada a propósito o colapsa; se juzga a mano (DEGRADA).
+    if (
+      usos.some((u) => {
+        const q = sinEnvoltorio(u).parent
+        return (
+          (ts.isPropertyAccessExpression(q) && q.questionDotToken) ||
+          (ts.isBinaryExpression(q) &&
+            q.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken &&
+            q.left === sinEnvoltorio(u))
+        )
+      })
+    )
+      return { clase: 'DEGRADA', como: '?. o ??' }
+    if (
+      usos.some(
+        (u) =>
+          ts.isJsxExpression(sinEnvoltorio(u).parent) ||
+          ts.isJsxAttribute(sinEnvoltorio(u).parent?.parent)
+      )
+    )
+      return { clase: 'HUECO', como: 'prop de JSX' }
+    if (
+      usos.some((u) => {
+        const p = sinEnvoltorio(u).parent
+        return ts.isCallExpression(p) && p.arguments.includes(sinEnvoltorio(u))
+      })
+    )
+      return { clase: 'HUECO', como: 'pasa a otra función' }
+    return { clase: 'NO_USA', como: 'no mira ' + [...a.banderas, ...a.centinelas].join('/') }
+  }
+  // el «otro falsy» del camino bueno: undefined si el bueno puede devolverlo y el centinela es null, etc.
+  for (const [fn, a] of avisan) {
+    const rs = retornos(fn).filter((r) => !enCaminoDeFallo(r, fn))
+    const ts_ = rs.filter((r) => r.expression).map((r) => tipoDe(r.expression))
+    a.otroFalsy =
+      a.centinelas.has('null') &&
+      !a.centinelas.has('undefined') &&
+      (ts_.some(puedeUndef) || rs.some((r) => !r.expression || centinelaDe(r) === 'undefined'))
+        ? 'undefined («no le toca»)'
+        : null
+  }
+  const sitios1 = []
+  for (const sf of fuentes) {
+    const v = (n) => {
+      if (ts.isCallExpression(n)) {
+        const sig = checker.getResolvedSignature(n)
+        const d = sig && sig.declaration
+        if (d && avisan.has(d)) {
+          const a = avisan.get(d)
+          let top = sinEnvoltorio(n)
+          let p = top.parent
+          if (ts.isAwaitExpression(p)) {
+            top = sinEnvoltorio(p)
+            p = top.parent
+          }
+          let r
+          if (ts.isVoidExpression(p)) r = { clase: 'HUECO', como: 'sin esperar (void)' }
+          else if (
+            ts.isPropertyAccessExpression(p) &&
+            p.expression === top &&
+            ['then', 'catch', 'finally'].includes(p.name.text)
+          )
+            r = { clase: 'HUECO', como: `sin esperar (.${p.name.text})` }
+          else if (ts.isPropertyAccessExpression(p) && p.expression === top && p.questionDotToken)
+            r = { clase: 'DEGRADA', como: `(…)?.${p.name.text}` }
+          else if (ts.isVariableDeclaration(p) && p.initializer === top) r = usoDeVinculo(p.name, a)
+          else if (ts.isReturnStatement(p) || (ts.isArrowFunction(p) && p.body === top))
+            r = { clase: 'PASA', como: 'return' }
+          else if (ts.isExpressionStatement(p)) r = { clase: 'NO_USA', como: 'resultado tirado' }
+          else if (ts.isPropertyAccessExpression(p) && p.expression === top)
+            r = a.banderas.has(p.name.text)
+              ? { clase: 'USA', como: `.${p.name.text}` }
+              : { clase: 'NO_USA', como: `.${p.name.text}` }
+          else if (ts.isArrayLiteralExpression(p)) {
+            // Promise.all([...]) desestructurado
+            const call = p.parent
+            const aw = call && sinEnvoltorio(call).parent
+            const decl = aw && ts.isAwaitExpression(aw) && sinEnvoltorio(aw).parent
+            if (decl && ts.isVariableDeclaration(decl) && ts.isArrayBindingPattern(decl.name)) {
+              const el = decl.name.elements[p.elements.indexOf(top)]
+              r =
+                !el || ts.isOmittedExpression(el)
+                  ? { clase: 'NO_USA', como: 'Promise.all, omitido' }
+                  : usoDeVinculo(el.name, a)
+            } else r = { clase: 'HUECO', como: 'array' }
+          } else r = { clase: 'HUECO', como: ts.SyntaxKind[p.kind] }
+          sitios1.push({
+            donde: donde(n),
+            helper: a.nombre,
+            helperEn: a.donde,
+            avisa: [...a.centinelas, ...a.banderas].join('/'),
+            ...r,
+          })
+        }
+      }
+      ts.forEachChild(n, v)
+    }
+    v(sf)
+  }
+  const clase1 = {
+    helpers: [...avisan.values()].map((a) => ({
+      donde: a.donde,
+      nombre: a.nombre,
+      avisa: [...a.centinelas, ...a.banderas],
+      otroFalsy: a.otroFalsy,
+    })),
+    colapsan: colapsan.map((c) => ({ donde: c.donde, nombre: c.nombre })),
+    sitios: sitios1,
+  }
+
   return {
     helpers: [...helpers.values()],
     anonimas,
     sitios,
     sinResolver,
+    clase1,
   }
 }
 
@@ -320,6 +671,16 @@ if (require.main === module) {
   for (const s of r.sitios.filter((s) => s.clase !== 'MIRA' && s.clase !== 'PASA'))
     console.log(
       `  ${s.clase.padEnd(7)} ${s.donde}  ${s.helper} (${s.tipo}, ${s.helperEn}) · ${s.como}`
+    )
+  const c1 = r.clase1
+  const k1 = {}
+  for (const s of c1.sitios) k1[s.clase] = (k1[s.clase] ?? 0) + 1
+  console.log(
+    `CLASE 1 · helpers que avisan ${c1.helpers.length} · colapsan dentro ${c1.colapsan.length} · sitios ${c1.sitios.length} · ${JSON.stringify(k1)}`
+  )
+  for (const s of c1.sitios.filter((s) => s.clase !== 'USA' && s.clase !== 'PASA'))
+    console.log(
+      `  ${s.clase.padEnd(7)} ${s.donde}  ${s.helper} (avisa ${s.avisa}, ${s.helperEn}) · ${s.como}`
     )
   const i = process.argv.indexOf('--informe')
   if (i > 0) fs.writeFileSync(process.argv[i + 1], JSON.stringify(r, null, 1))

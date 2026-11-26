@@ -460,6 +460,34 @@ que salga de la clase 1. Si al juntarlo no se puede leer, PÁRTELO EN DOS: lo me
 necesita diseño —aprobarCambio y el rollback de la cuenta nueva— por otro. Dímelo tú si hace falta; no quiero
 un PR que nadie pueda revisar, pero tampoco cinco.»
 
+### 2026-11-26 · la clase 1 medida, el PR B en dos, y recalcularTotal adelantado a B1
+
+Medido (`~/nido-logs/16/c/reclas/CLASE1-AVISO.md`): 316 helpers avisan del fallo, 464 sitios; los 77 que el
+escáner no resolvió, leídos uno a uno: 14 defectos (9 nuevos: los 4 llamadores que no leen `leidos`, las 3
+«altas sin terminar» con `?? []`, la publicación en lote que cuenta un fallo como «faltan ítems» y el borrado de
+limpieza del blog). **Límite conocido del escáner, escrito para que el próximo no los cuente como defectos:** 7
+sitios que el escáner da por «no usa» porque `!x` junta el fallo (`null`) con «no le toca» (`undefined`) son
+correctos, porque para Dirección `ficha_gestion_ninos` y `sip_de_ninos` contestan siempre y «no le toca» no
+puede darse (gate-alta 89/90, aplicar.ts 119, campos-ficha-familia 46, alta/[ninoId] 149 y 444,
+admin/ninos/[id] 113). El doble fallo de `aprobarCambio`, medido abierto (run 45785330097): la fila queda
+`aprobado`, fuera de la cola, y Dirección lee el mismo «no se pudo aplicar» que con un fallo solo. Jose, literal:
+
+«Sí, adelántalo. recalcularTotal es el único de todo esto que ESCRIBE un importe equivocado: un recibo con
+líneas que se queda en 0 € y además responde ok. Todo lo demás de este tramo son mensajes falsos o pantallas
+raras; esto es dinero escrito mal, y no espera a los grupos 5 y 6.
+Que entre en B1 con su medición abierta y su control: hoy escribe 0 con el recibo lleno, y después no escribe
+nada y lo dice.
+
+La partición B1 mecánico y B2 de diseño me vale tal cual, y el reparto también. aprobarCambio con su migración
+en B2, y el rollback de la cuenta nueva con él.
+
+La medición de la clase 1 está bien hecha, y lo que la hace creíble es que declares los 77 que el escáner no
+pudo resolver y los leyeras uno a uno, en vez de contarlos como buenos. Y los 7 que el escáner marcaba «no usa»
+y resultaron correctos porque para Dirección ese caso no puede darse: bien dejarlo escrito como límite conocido
+del instrumento, que es lo que evita que el próximo los cuente como defectos.
+
+Adelante con B1.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
