@@ -1417,7 +1417,8 @@
         "sepa_sin_mandato": "Pays by bank direct debit, but no active SEPA mandate is on record: their receipts cannot go into the remittance. Register the direct debit or change the payment method.",
         "errors": {
           "invalido": "Invalid payment method.",
-          "guardado": "The payment method could not be saved."
+          "guardado": "The payment method could not be saved.",
+          "borradores_sin_cambiar": "The payment method is saved, but the family's draft receipts still have the previous one. Save it again to update them."
         },
         "mandato_pregunta": "They have an active SEPA mandate but pay by: {metodo}. Collect their receipts by bank direct debit?",
         "pasar_a_sepa": "Switch to bank direct debit"

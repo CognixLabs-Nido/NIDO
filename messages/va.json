@@ -1417,7 +1417,8 @@
         "sepa_sin_mandato": "Paga amb rebut pel banc, però no consta cap mandat SEPA actiu: els seus rebuts no podran entrar en la remesa. Registra la domiciliació o canvia la forma de pagament.",
         "errors": {
           "invalido": "Forma de pagament no vàlida.",
-          "guardado": "No s'ha pogut guardar la forma de pagament."
+          "guardado": "No s'ha pogut guardar la forma de pagament.",
+          "borradores_sin_cambiar": "La forma de pagament està guardada, però els rebuts en esborrany de la família continuen amb l'anterior. Torna-la a guardar per a canviar-los."
         },
         "mandato_pregunta": "Té un mandat SEPA actiu, però paga amb: {metodo}. Cobrar els seus rebuts pel banc?",
         "pasar_a_sepa": "Passar a rebut pel banc"

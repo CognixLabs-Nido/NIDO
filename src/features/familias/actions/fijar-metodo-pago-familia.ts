@@ -79,23 +79,9 @@ export async function fijarMetodoPagoFamiliaCore(
   familiaId: string,
   metodo: MetodoPago
 ): Promise<ActionResult<void>> {
-  const { data, error } = await supabase
-    .from('familias')
-    .update({ metodo_pago: metodo, metodo_pago_manual: true })
-    .eq('id', familiaId)
-    .select('id')
-    .maybeSingle()
-
-  if (error) {
-    logger.warn('fijarMetodoPagoFamilia', error.message)
-    if (error.code === '42501') return fail('admin.familias.errors.no_autorizado')
-    return fail('admin.familias.metodo_pago.errors.guardado')
-  }
-  // RLS USING falso (familia de otro centro) → 0 filas, sin error.
-  if (!data) return fail('admin.familias.errors.no_encontrada')
-
-  // 2. Reflejar en los borradores sin excepción. Si falla, el método ya quedó en la ficha y el
-  // borrador se corrige al regenerar: no es fatal.
+  // Los borradores sin excepción, en los que se reflejará el método. Se leen ANTES de escribir nada (censo C,
+  // 2026-11-26, el patrón de `setMetodoPagoFamilia`): antes se leían después y, con la lectura caída, un
+  // `warn` y ok con los borradores en el método viejo («se corrige al regenerar: no es fatal»).
   const [{ data: borradores, error: recErr }, { data: excepciones, error: excErr }] =
     await Promise.all([
       supabase
@@ -112,18 +98,38 @@ export async function fijarMetodoPagoFamiliaCore(
         .eq('familia_id', familiaId)
         .is('deleted_at', null),
     ])
-  if (recErr || excErr) {
-    logger.warn('fijarMetodoPagoFamilia borradores', (recErr ?? excErr)?.message)
-    return ok(undefined)
-  }
+  if (recErr || excErr) return fail('common.lectura_fallida')
 
+  const { data, error } = await supabase
+    .from('familias')
+    .update({ metodo_pago: metodo, metodo_pago_manual: true })
+    .eq('id', familiaId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) {
+    logger.warn('fijarMetodoPagoFamilia', error.message)
+    if (error.code === '42501') return fail('admin.familias.errors.no_autorizado')
+    return fail('admin.familias.metodo_pago.errors.guardado')
+  }
+  // RLS USING falso (familia de otro centro) → 0 filas, sin error.
+  if (!data) return fail('admin.familias.errors.no_encontrada')
+
+  // Reflejarlo en esos borradores.
   const conExcepcion = new Set((excepciones ?? []).map((e) => `${e.anio}-${e.mes}`))
   const ids = (borradores ?? [])
     .filter((r) => !conExcepcion.has(`${r.anio}-${r.mes}`))
     .map((r) => r.id)
   if (ids.length > 0) {
     const { error: updErr } = await supabase.from('recibos').update({ metodo }).in('id', ids)
-    if (updErr) logger.warn('fijarMetodoPagoFamilia reflejar', updErr.message)
+    // El método de la ficha ya está guardado; los borradores siguen con el anterior. Se dice (guardarlo
+    // otra vez lo vuelve a reflejar), como `metodo_recibo_sin_cambiar` del método del mes (2026-11-23).
+    if (updErr) {
+      logger.error('fijarMetodoPagoFamilia: los borradores no se actualizaron', {
+        code: updErr.code ?? null,
+      })
+      return fail('admin.familias.metodo_pago.errors.borradores_sin_cambiar')
+    }
   }
 
   return ok(undefined)

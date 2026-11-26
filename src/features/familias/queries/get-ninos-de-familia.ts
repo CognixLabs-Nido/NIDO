@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface NinoDeFamiliaItem {
@@ -54,9 +53,9 @@ export async function getNinosDeFamilia(familiaId: string): Promise<NinoDeFamili
     )
     .is('fecha_baja', null)
     .is('deleted_at', null)
-  // Un embed roto hace fallar la query entera (data=null): sin este log, el aula saldría
-  // null en silencio para toda la familia (misma regresión F11-H que en get-ninos).
-  if (errorMatriculas) logger.warn('getNinosDeFamilia: matriculas', errorMatriculas.message)
+  // Un embed roto hace fallar la query entera (data=null): el aula saldría null para toda la familia
+  // (misma regresión F11-H que en get-ninos). Antes solo se logueaba; ahora lanza (censo C).
+  if (errorMatriculas) throw new LecturaFallida('getNinosDeFamilia: matrículas', errorMatriculas)
 
   const aulaPorNino = new Map<string, string>()
   for (const m of matriculas ?? []) {

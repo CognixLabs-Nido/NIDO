@@ -1417,7 +1417,8 @@
         "sepa_sin_mandato": "Paga con recibo por banco, pero no consta ningún mandato SEPA activo: sus recibos no podrán entrar en la remesa. Registra la domiciliación o cambia la forma de pago.",
         "errors": {
           "invalido": "Forma de pago no válida.",
-          "guardado": "No se ha podido guardar la forma de pago."
+          "guardado": "No se ha podido guardar la forma de pago.",
+          "borradores_sin_cambiar": "La forma de pago está guardada, pero los recibos en borrador de la familia siguen con la anterior. Vuelve a guardarla para cambiarlos."
         },
         "mandato_pregunta": "Tiene un mandato SEPA activo, pero paga con: {metodo}. ¿Cobrar sus recibos por banco?",
         "pasar_a_sepa": "Pasar a recibo por banco"

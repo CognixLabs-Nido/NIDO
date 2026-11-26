@@ -17,6 +17,7 @@ import {
   type EditarFechaCampanaInput,
 } from '../schemas/campanas-informe'
 import { fail, ok, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const E = 'informes.campana.errors'
 
@@ -48,7 +49,13 @@ export async function abrirCampanaInforme(
 
   // Centro de la página; solo admin de ese centro (la RLS lo vuelve a comprobar).
   if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${E}.no_autorizado`)
-  const curso = await getCursoActivo(centroId)
+  // Censo C: getCursoActivo lanza con la lectura caída; aquí se contesta lectura_fallida.
+  let curso: Awaited<ReturnType<typeof getCursoActivo>>
+  try {
+    curso = await getCursoActivo(centroId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!curso) return fail(`${E}.sin_curso_activo`)
 
   // ¿Existe ya una campaña de esta terna? (UNIQUE centro/curso/período).

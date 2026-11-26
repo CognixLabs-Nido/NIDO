@@ -63,7 +63,14 @@ export async function POST(
   const centroId = form.get('centro_id')
   if (typeof centroId !== 'string' || !UUID.test(centroId))
     return err('alta.errors.no_autorizado', 403)
-  const familia = await familiaDelUsuarioEn(centroId)
+  // Censo C: sin leer la familia no es «no autorizado».
+  let familia: Awaited<ReturnType<typeof familiaDelUsuarioEn>>
+  try {
+    familia = await familiaDelUsuarioEn(centroId)
+  } catch (e) {
+    if (!esLecturaFallida(e)) throw e
+    return err('common.lectura_fallida', 500)
+  }
   if (!familia) return err('alta.errors.no_autorizado', 403)
 
   const ibanRaw = form.get('iban')

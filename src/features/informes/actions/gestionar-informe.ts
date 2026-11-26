@@ -21,6 +21,7 @@ import {
 } from '../schemas/informes'
 import type { RespuestasInforme } from '../types'
 import { fail, ok, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 function revalidarInformesProfe(): void {
   revalidatePath('/[locale]/teacher/informes', 'page')
@@ -63,7 +64,13 @@ export async function crearInformeEvolucion(
   }
   if (!nino) return fail('informes.errors.no_autorizado')
   const centroId = nino.centro_id
-  const curso = await getCursoActivo(centroId)
+  // Censo C: getCursoActivo lanza con la lectura caída; aquí se contesta lectura_fallida.
+  let curso: Awaited<ReturnType<typeof getCursoActivo>>
+  try {
+    curso = await getCursoActivo(centroId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!curso) return fail('informes.errors.sin_curso_activo')
 
   // ¿Ya existe el informe de la terna? → no se duplica, se reusa.

@@ -25,13 +25,15 @@ export async function getCursosPorCentro(centroId: string): Promise<CursoListIte
 
 export async function getCursoActivo(centroId: string): Promise<CursoListItem | null> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('cursos_academicos')
     .select('id, nombre, fecha_inicio, fecha_fin, estado')
     .eq('centro_id', centroId)
     .eq('estado', 'activo')
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C (2026-11-26): una lectura caída era «el centro no tiene curso activo».
+  if (error) throw new LecturaFallida('getCursoActivo', error)
   return (data as CursoListItem | null) ?? null
 }
 

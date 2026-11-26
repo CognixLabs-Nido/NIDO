@@ -41,13 +41,18 @@ export async function invitarAdmin(
 
     // A quién y en qué idioma: la invitación que acaba de escribir la RPC y el idioma del centro.
     const service = createServiceRoleClient()
-    const [{ data: invitacion }, { data: centro, error: errorLectura }] = await Promise.all([
-      service.from('invitaciones').select('email').eq('id', invitationId).single(),
-      service.from('centros').select('idioma_default').eq('id', centroId).single(),
-    ])
+    const [{ data: invitacion, error: errInvitacion }, { data: centro, error: errorLectura }] =
+      await Promise.all([
+        service.from('invitaciones').select('email').eq('id', invitationId).single(),
+        service.from('centros').select('idioma_default').eq('id', centroId).single(),
+      ])
     // La invitación ya está escrita: sin el idioma del centro, el correo sale en el idioma por defecto
     // (como antes del censo C) y el fallo va a Sentry. Parar aquí diría «no» sobre algo guardado.
     if (errorLectura) lecturaFallidaTrasEscritura('invitarAdmin: idioma del centro', errorLectura)
+    // Sin releerla no hay a quién mandar el correo: el mensaje nombra el síntoma («no se pudo localizar la
+    // invitación», cruce lint/censo del 2026-11-25), y el fallo va a Sentry (censo C).
+    if (errInvitacion)
+      lecturaFallidaTrasEscritura('invitarAdmin: releer la invitación', errInvitacion)
     if (!invitacion) return fail('auth.invitation.errors.lookup_failed')
     const idioma = idiomaCorreoEnum.safeParse(centro?.idioma_default)
 
