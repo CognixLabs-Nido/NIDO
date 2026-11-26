@@ -2367,6 +2367,7 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "guardar_acreedor_failed": "No se pudieron guardar los datos del acreedor.",
       "crear_failed": "No se pudo crear la remesa.",
+      "remesa_vacia_creada": "No se pudo crear la remesa, y ha quedado una remesa vacía en borrador. Añádele los recibos a esa en vez de crear otra.",
       "no_encontrada": "Recibo o remesa no encontrado.",
       "ya_enviada": "La remesa ya estaba enviada.",
       "enviar_failed": "No se pudo marcar la remesa como enviada.",

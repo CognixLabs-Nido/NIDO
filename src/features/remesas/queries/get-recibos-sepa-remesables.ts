@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface ReciboSepaRemesable {
   /** id del RECIBO (1 recibo = 1 adeudo pain.008; endToEndId = recibo_id). */
@@ -77,7 +78,7 @@ export async function getRecibosSepaRemesables(
 ): Promise<ReciboSepaRemesable[]> {
   const supabase = await createClient()
 
-  const { data: recibos } = await supabase
+  const { data: recibos, error: errRecibos } = await supabase
     .from('recibos')
     .select('id, familia_id, total_centimos, es_esporadico, fecha_cobro_banco')
     .eq('centro_id', centroId)
@@ -87,6 +88,7 @@ export async function getRecibosSepaRemesables(
     .eq('estado', 'pendiente_procesar')
     .is('deleted_at', null)
     .gt('total_centimos', 0)
+  if (errRecibos) throw new LecturaFallida('remesables: recibos', errRecibos)
 
   if (!recibos || recibos.length === 0) return []
 
@@ -98,22 +100,34 @@ export async function getRecibosSepaRemesables(
 
   const familiaIds = [...new Set(conFamilia.map((r) => r.familia_id))]
 
-  const [{ data: yaEnRemesa }, { data: mandatos }, { data: familias }, { data: tutores }] =
-    await Promise.all([
-      supabase.from('recibos_remesa').select('recibo_id').eq('centro_id', centroId),
-      supabase
-        .from('mandatos_sepa')
-        .select('familia_id')
-        .eq('centro_id', centroId)
-        .eq('estado', 'activo')
-        .is('deleted_at', null),
-      supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
-      supabase
-        .from('familia_tutores')
-        .select('familia_id, rol_familia, nombre_completo, usuario:usuarios(nombre_completo)')
-        .in('familia_id', familiaIds)
-        .is('deleted_at', null),
-    ])
+  const [rRemesa, rMandatos, rFamilias, rTutores] = await Promise.all([
+    supabase.from('recibos_remesa').select('recibo_id').eq('centro_id', centroId),
+    supabase
+      .from('mandatos_sepa')
+      .select('familia_id')
+      .eq('centro_id', centroId)
+      .eq('estado', 'activo')
+      .is('deleted_at', null),
+    supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
+    supabase
+      .from('familia_tutores')
+      .select('familia_id, rol_familia, nombre_completo, usuario:usuarios(nombre_completo)')
+      .in('familia_id', familiaIds)
+      .is('deleted_at', null),
+  ])
+  // Censo C: sin los ya remesados, un recibo ya enviado salía remesable; sin los mandatos, la familia
+  // salía «sin mandato»; sin familias o tutores, sin nombre.
+  for (const [donde, r] of [
+    ['ya en remesa', rRemesa],
+    ['mandatos', rMandatos],
+    ['familias', rFamilias],
+    ['tutores', rTutores],
+  ] as const)
+    if (r.error) throw new LecturaFallida(`remesables: ${donde}`, r.error)
+  const yaEnRemesa = rRemesa.data
+  const mandatos = rMandatos.data
+  const familias = rFamilias.data
+  const tutores = rTutores.data
 
   const remesados = new Set((yaEnRemesa ?? []).map((r) => r.recibo_id))
   const familiasConMandato = new Set(

@@ -2,6 +2,7 @@ import 'server-only'
 
 import { origenExceso } from '@/features/beca-comedor/lib/origen-exceso'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 import {
@@ -34,7 +35,7 @@ export async function getRecibosGestion(
 ): Promise<ReciboGestion[]> {
   const supabase = await createClient()
 
-  const { data: recibos } = await supabase
+  const { data: recibos, error: errRecibos } = await supabase
     .from('recibos')
     .select(
       'id, familia_id, anio, mes, total_centimos, estado, metodo, es_esporadico, concepto_esporadico, fecha_envio_banco, fecha_devolucion, devuelto_de_recibo_id, cobro_forma, cobro_fecha, cobro_nota, cobro_importe_centimos, diferencia_de_recibo_id, devolucion_gastos_centimos, devolucion_salida'
@@ -44,6 +45,7 @@ export async function getRecibosGestion(
     .eq('mes', mes)
     .in('estado', [...ESTADOS_GESTION])
     .is('deleted_at', null)
+  if (errRecibos) throw new LecturaFallida('gestión de cobros: recibos', errRecibos)
 
   const gestionables = (recibos ?? []).filter(entraEnGestion)
   if (gestionables.length === 0) return []
@@ -61,14 +63,7 @@ export async function getRecibosGestion(
     (r) => r.cobro_importe_centimos != null && r.cobro_importe_centimos > r.total_centimos
   )
 
-  const [
-    { data: familias },
-    { data: mandatos },
-    { data: regulares },
-    { data: cierres },
-    { data: lineasArrastre },
-    { data: sobrantes },
-  ] = await Promise.all([
+  const [rFamilias, rMandatos, rRegulares, rCierres, rArrastre, rSobrantes] = await Promise.all([
     supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
     // PR-1b: la diferencia de un cheque solo se pasa al banco con mandato activo.
     supabase
@@ -89,6 +84,7 @@ export async function getRecibosGestion(
             mes: number
             estado: Database['public']['Enums']['estado_recibo']
           }>,
+          error: null,
         })
       : supabase
           .from('recibos')
@@ -99,7 +95,7 @@ export async function getRecibosGestion(
           .is('devuelto_de_recibo_id', null)
           .is('deleted_at', null),
     porResolver.length === 0
-      ? Promise.resolve({ data: [] as Array<{ anio: number; mes: number }> })
+      ? Promise.resolve({ data: [] as Array<{ anio: number; mes: number }>, error: null })
       : supabase.from('cierre_mensual').select('anio, mes').eq('centro_id', centroId),
     arrastradas.length === 0
       ? Promise.resolve({
@@ -107,6 +103,7 @@ export async function getRecibosGestion(
             arrastre_de_recibo_id: string | null
             recibo: { anio: number; mes: number }
           }>,
+          error: null,
         })
       : supabase
           .from('lineas_recibo')
@@ -120,6 +117,7 @@ export async function getRecibosGestion(
     conSobrante.length === 0
       ? Promise.resolve({
           data: [] as Array<Database['public']['Tables']['beca_comedor_desborde']['Row']>,
+          error: null,
         })
       : supabase
           .from('beca_comedor_desborde')
@@ -130,6 +128,24 @@ export async function getRecibosGestion(
             conSobrante.map((r) => r.id)
           ),
   ])
+  // Censo C: antes, sin etiqueta («»), «sin mandato» (no se ofrecía pasar la diferencia al banco), una
+  // devolución sin adónde llevarla, un mes cerrado que no lo era, o el sobrante de un cheque perdido.
+  // Las cuatro de los ternarios no las ve la regla de lint: se miran igual.
+  for (const [donde, r] of [
+    ['familias', rFamilias],
+    ['mandatos', rMandatos],
+    ['recibo regular', rRegulares],
+    ['cierres', rCierres],
+    ['arrastres', rArrastre],
+    ['sobrantes de cheque', rSobrantes],
+  ] as const)
+    if (r.error) throw new LecturaFallida(`gestión de cobros: ${donde}`, r.error)
+  const familias = rFamilias.data
+  const mandatos = rMandatos.data
+  const regulares = rRegulares.data
+  const cierres = rCierres.data
+  const lineasArrastre = rArrastre.data
+  const sobrantes = rSobrantes.data
   const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
   const familiasConMandato = new Set((mandatos ?? []).map((m) => m.familia_id))
   const clave = (familiaId: string, m: MesRecibo) => `${familiaId}:${m.anio}-${m.mes}`

@@ -2367,6 +2367,7 @@
       "no_autorizado": "You don't have permission for this action.",
       "guardar_acreedor_failed": "Could not save the creditor details.",
       "crear_failed": "Could not create the remittance.",
+      "remesa_vacia_creada": "The remittance could not be created, and an empty draft remittance was left behind. Add the receipts to that one instead of creating another.",
       "no_encontrada": "Receipt or remittance not found.",
       "ya_enviada": "The remittance was already sent.",
       "enviar_failed": "Could not mark the remittance as sent.",

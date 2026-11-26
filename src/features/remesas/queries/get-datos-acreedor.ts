@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface DatosAcreedorConfig {
   identificadorAcreedor: string | null
@@ -17,11 +18,13 @@ export interface DatosAcreedorConfig {
 export async function getDatosAcreedor(centroId: string): Promise<DatosAcreedorConfig> {
   const supabase = await createClient()
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('centros')
     .select('identificador_acreedor, bic_acreedor, iban_acreedor_cifrado')
     .eq('id', centroId)
     .maybeSingle()
+  // Censo C: sin leerlo, el formulario salía en blanco: «sin CID ni BIC, IBAN sin configurar».
+  if (error) throw new LecturaFallida('datos del acreedor', error)
 
   return {
     identificadorAcreedor: data?.identificador_acreedor ?? null,

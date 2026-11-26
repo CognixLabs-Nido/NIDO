@@ -2367,6 +2367,7 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "guardar_acreedor_failed": "No s'han pogut guardar les dades del creditor.",
       "crear_failed": "No s'ha pogut crear la remesa.",
+      "remesa_vacia_creada": "No s'ha pogut crear la remesa, i ha quedat una remesa buida en esborrany. Afig-hi els rebuts en compte de crear-ne una altra.",
       "no_encontrada": "Rebut o remesa no trobat.",
       "ya_enviada": "La remesa ja estava enviada.",
       "enviar_failed": "No s'ha pogut marcar la remesa com a enviada.",
