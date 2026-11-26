@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { totalALasLineas } from './total-a-las-lineas'
 
 /**
  * PR-5 (`20261110120000`) — una beca descontada pasa a «aplicada».
@@ -255,6 +256,8 @@ describe('PR-5 — beca aplicada al validar', () => {
       beca_tramo_id: t,
     })
     expect(linea.error).toBeNull()
+    // La línea entra como la pone el motor: con el total del recibo al día (20270208120000).
+    await totalALasLineas(serviceClient, rb)
     const { error } = await cAdmin.rpc('confirmar_recibo', { p_recibo_id: rb })
     expect(error?.hint).toBe('beca_ya_aplicada')
     expect(await estado(t)).toEqual({ estado: 'aplicada', aplicada_en_recibo_id: ra })
