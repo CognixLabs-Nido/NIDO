@@ -191,6 +191,11 @@ export function PanelMesRecibos({
         if (r.data.conDesborde.length > 0) {
           toast.warning(t('lote_saltados', { n: r.data.conDesborde.length }))
         }
+        // Censo C (confirmar-recibo:94, F3): los que no se confirmaron se dicen; antes solo salía «N confirmados».
+        if (r.data.conTotalDesfasado.length > 0) {
+          toast.warning(t('lote_total_desfasado', { n: r.data.conTotalDesfasado.length }))
+        }
+        if (r.data.fallidos > 0) toast.error(t('lote_fallidos', { n: r.data.fallidos }))
         setSaltados(r.data.conDesborde)
         setSelected(new Set())
       } else {

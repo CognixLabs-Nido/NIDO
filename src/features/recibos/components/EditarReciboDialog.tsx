@@ -61,9 +61,14 @@ export function EditarReciboDialog({ destino, lineas, hijos }: Props) {
   const [importe, setImporte] = useState('')
   const [ninoId, setNinoId] = useState<string>('')
 
-  function feedback(r: { success: boolean; error?: string }, okMsg: string) {
-    if (r.success) toast.success(t(okMsg))
-    else toast.error(tErrors(r.error!))
+  // Censo C (2026-11-26): la línea guardada con el total sin recalcular se dice, no se pinta como un ok.
+  function feedback(
+    r: { success: boolean; error?: string; data?: { aviso?: string } | void },
+    okMsg: string
+  ) {
+    if (!r.success) toast.error(tErrors(r.error!))
+    else if (r.data && r.data.aviso) toast.warning(tErrors(r.data.aviso))
+    else toast.success(t(okMsg))
   }
 
   function anadir() {

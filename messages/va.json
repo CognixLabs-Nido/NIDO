@@ -2149,6 +2149,7 @@
       "recibo_cobrado": "Este rebut ja està cobrat: ja no es pot modificar.",
       "desconfirmar_failed": "No s’ha pogut reobrir el rebut.",
       "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo.",
+      "total_desfasado": "El total d'aquest rebut no és la suma de les seues línies, i així no es confirma. Per a posar-lo al dia, torna a guardar una línia d'aquest rebut o prem «Recalcular el mes»; després, confirma'l.",
       "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo.",
       "linea_arrastre": "La línia d’una devolució no s’edita: es lleva, i la devolució torna a quedar sense resoldre.",
       "linea_sobrante": "La línia del saldo a favor d’un xec no s’edita: si cal, lleva-la i el sobrant torna a quedar pendent.",
@@ -2169,6 +2170,8 @@
     "desconfirmado_ok": "Rebut reobert. Edita’l i torna a confirmar-lo.",
     "desconfirmado_reabre": "Rebut reobert. El mes torna a estar obert fins que el confirmes de nou.",
     "lote_saltados": "{n} rebuts no s'han confirmat: tenen un excés de beca menjador sense resoldre.",
+    "lote_total_desfasado": "{n} rebuts no s'han confirmat: el seu total no és la suma de les seues línies. Per a posar-los al dia, torna a guardar una línia de cadascun o prem «Recalcular el mes».",
+    "lote_fallidos": "{n} rebuts no s'han pogut confirmar. Torna-ho a intentar.",
     "lote_saltado_fila": "{familia} · excés de {importe}",
     "metodo_excepcion": "Només este mes · en la fitxa: {ficha}",
     "metodo_sepa_sin_mandato": "Sense mandat SEPA actiu: no entrarà en la remesa.",
@@ -2181,7 +2184,10 @@
     "filtro_familia": "Família",
     "filtro_todas": "Totes les famílies",
     "filtro_sin_resultados": "Esta família no ix en el panell d'este mes.",
-    "quitar_filtro": "Veure-les totes"
+    "quitar_filtro": "Veure-les totes",
+    "avisos": {
+      "total_sin_recalcular": "Línia guardada, però no s'ha pogut recalcular el total del rebut: el total que veus no està al dia, i així el rebut no es podrà confirmar. Per a posar-lo al dia, torna a guardar una línia d'aquest rebut o prem «Recalcular el mes»."
+    }
   },
   "cargo_puntual": {
     "abrir": "Càrrec a diversos xiquets",

@@ -2149,6 +2149,7 @@
       "recibo_cobrado": "Este recibo ya está cobrado: ya no se puede modificar.",
       "desconfirmar_failed": "No se pudo reabrir el recibo.",
       "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo.",
+      "total_desfasado": "El total de este recibo no es la suma de sus líneas, y así no se confirma. Para ponerlo al día, vuelve a guardar una línea de este recibo o pulsa «Recalcular el mes»; después, confírmalo.",
       "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo.",
       "linea_arrastre": "La línea de una devolución no se edita: se quita, y la devolución vuelve a quedar sin resolver.",
       "linea_sobrante": "La línea del saldo a favor de un cheque no se edita: si hace falta, quítala y el sobrante vuelve a quedar pendiente.",
@@ -2169,6 +2170,8 @@
     "desconfirmado_ok": "Recibo reabierto. Edítalo y vuelve a confirmarlo.",
     "desconfirmado_reabre": "Recibo reabierto. El mes vuelve a estar abierto hasta que lo confirmes de nuevo.",
     "lote_saltados": "{n} recibos no se han confirmado: tienen un exceso de beca comedor sin resolver.",
+    "lote_total_desfasado": "{n} recibos no se han confirmado: su total no es la suma de sus líneas. Para ponerlos al día, vuelve a guardar una línea de cada uno o pulsa «Recalcular el mes».",
+    "lote_fallidos": "{n} recibos no se han podido confirmar. Vuelve a intentarlo.",
     "lote_saltado_fila": "{familia} · exceso de {importe}",
     "metodo_excepcion": "Solo este mes · en la ficha: {ficha}",
     "metodo_sepa_sin_mandato": "Sin mandato SEPA activo: no entrará en la remesa.",
@@ -2181,7 +2184,10 @@
     "filtro_familia": "Familia",
     "filtro_todas": "Todas las familias",
     "filtro_sin_resultados": "Esta familia no sale en el panel de este mes.",
-    "quitar_filtro": "Ver todas"
+    "quitar_filtro": "Ver todas",
+    "avisos": {
+      "total_sin_recalcular": "Línea guardada, pero no se ha podido recalcular el total del recibo: el total que ves no está al día, y así el recibo no se podrá confirmar. Para ponerlo al día, vuelve a guardar una línea de este recibo o pulsa «Recalcular el mes»."
+    }
   },
   "cargo_puntual": {
     "abrir": "Cargo a varios niños",

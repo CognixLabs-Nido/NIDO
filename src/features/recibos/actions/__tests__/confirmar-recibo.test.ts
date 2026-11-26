@@ -27,6 +27,10 @@ interface RpcOutcome {
 }
 
 const DESBORDE = { message: 'desborde', hint: 'desborde_pendiente' }
+const DESFASADO = {
+  message: 'el total del recibo no es la suma de sus líneas',
+  hint: 'total_desfasado',
+}
 
 function makeRpcClient(outcomes: RpcOutcome[]) {
   let i = 0
@@ -53,6 +57,7 @@ describe('confirmarRecibosCore', () => {
       expect(res.data.fallidos).toBe(0)
       expect(res.data.cerrado).toBe(true)
       expect(res.data.conDesborde).toEqual([])
+      expect(res.data.conTotalDesfasado).toEqual([])
     }
   })
 
@@ -67,7 +72,13 @@ describe('confirmarRecibosCore', () => {
 
     expect(res).toEqual({
       success: true,
-      data: { confirmados: 1, fallidos: 1, cerrado: false, conDesborde: ['b'] },
+      data: {
+        confirmados: 1,
+        fallidos: 1,
+        cerrado: false,
+        conDesborde: ['b'],
+        conTotalDesfasado: [],
+      },
     })
   })
 
@@ -79,7 +90,50 @@ describe('confirmarRecibosCore', () => {
 
     expect(await confirmarRecibosCore(fake, ['a', 'b'])).toEqual({
       success: true,
-      data: { confirmados: 0, fallidos: 0, cerrado: false, conDesborde: ['a', 'b'] },
+      data: {
+        confirmados: 0,
+        fallidos: 0,
+        cerrado: false,
+        conDesborde: ['a', 'b'],
+        conTotalDesfasado: [],
+      },
+    })
+  })
+
+  it('censo C: el recibo con el total desfasado se salta y se lista aparte, no cuenta como fallido', async () => {
+    const fake = makeRpcClient([
+      { data: null, error: DESFASADO },
+      { data: false, error: null },
+      { data: null, error: { message: 'boom' } },
+    ])
+
+    expect(await confirmarRecibosCore(fake, ['a', 'b', 'c'])).toEqual({
+      success: true,
+      data: {
+        confirmados: 1,
+        fallidos: 1,
+        cerrado: false,
+        conDesborde: [],
+        conTotalDesfasado: ['a'],
+      },
+    })
+  })
+
+  it('censo C: si todos tienen el total desfasado, no es el error genérico: se listan', async () => {
+    const fake = makeRpcClient([
+      { data: null, error: DESFASADO },
+      { data: null, error: DESFASADO },
+    ])
+
+    expect(await confirmarRecibosCore(fake, ['a', 'b'])).toEqual({
+      success: true,
+      data: {
+        confirmados: 0,
+        fallidos: 0,
+        cerrado: false,
+        conDesborde: [],
+        conTotalDesfasado: ['a', 'b'],
+      },
     })
   })
 
@@ -146,6 +200,15 @@ describe('confirmarRecibo (uno)', () => {
     expect(await confirmarRecibo(ID)).toEqual({
       success: false,
       error: 'recibos_panel.errors.beca_ya_aplicada',
+    })
+  })
+
+  it('censo C: el total desfasado se traduce a su aviso, que dice cómo ponerlo al día', async () => {
+    respuestaUno.data = null
+    respuestaUno.error = { code: 'P0001', ...DESFASADO }
+    expect(await confirmarRecibo(ID)).toEqual({
+      success: false,
+      error: 'recibos_panel.errors.total_desfasado',
     })
   })
 })

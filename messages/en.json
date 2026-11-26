@@ -2149,6 +2149,7 @@
       "recibo_cobrado": "This receipt has already been collected: it can no longer be modified.",
       "desconfirmar_failed": "Could not reopen the receipt.",
       "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming.",
+      "total_desfasado": "The total of this receipt is not the sum of its lines, so it is not confirmed. To bring it up to date, save a line of this receipt again or press “Recalculate month”; then confirm it.",
       "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it.",
       "linea_arrastre": "The line of a returned receipt cannot be edited: remove it, and the return goes back to unresolved.",
       "linea_sobrante": "A voucher credit line can’t be edited: if needed, remove it and the surplus goes back to pending.",
@@ -2169,6 +2170,8 @@
     "desconfirmado_ok": "Receipt reopened. Edit it and confirm it again.",
     "desconfirmado_reabre": "Receipt reopened. The month is open again until you confirm it once more.",
     "lote_saltados": "{n} receipts were not confirmed: they have an unresolved meal grant excess.",
+    "lote_total_desfasado": "{n} receipts were not confirmed: their total is not the sum of their lines. To bring them up to date, save a line of each again or press “Recalculate month”.",
+    "lote_fallidos": "{n} receipts could not be confirmed. Please try again.",
     "lote_saltado_fila": "{familia} · excess of {importe}",
     "metodo_excepcion": "This month only · on file: {ficha}",
     "metodo_sepa_sin_mandato": "No active SEPA mandate: it will not go into the remittance.",
@@ -2181,7 +2184,10 @@
     "filtro_familia": "Family",
     "filtro_todas": "All families",
     "filtro_sin_resultados": "This family isn't in this month's panel.",
-    "quitar_filtro": "Show all"
+    "quitar_filtro": "Show all",
+    "avisos": {
+      "total_sin_recalcular": "Line saved, but the receipt total could not be recalculated: the total you see is not up to date, and the receipt cannot be confirmed like this. To bring it up to date, save a line of this receipt again or press “Recalculate month”."
+    }
   },
   "cargo_puntual": {
     "abrir": "Charge several children",

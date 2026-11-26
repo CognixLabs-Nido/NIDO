@@ -7,6 +7,7 @@ import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/db'
 
@@ -53,7 +54,7 @@ const crearConLineaSchema = z.object({
  */
 export async function anadirLineaRecibo(
   input: z.input<typeof anadirSchema>
-): Promise<ActionResult<void>> {
+): Promise<ActionResult<TrasLinea>> {
   const parsed = anadirSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -80,9 +81,9 @@ export async function anadirLineaRecibo(
     return fail('recibos_panel.errors.linea_failed')
   }
 
-  await recalcularTotal(supabase, recibo.id)
+  const recalculado = await recalcularTotal(supabase, recibo.id)
   revalidatePath(RUTA, 'page')
-  return ok(undefined)
+  return ok(trasLinea(recalculado))
 }
 
 /**
@@ -97,7 +98,7 @@ export async function anadirLineaRecibo(
  */
 export async function editarLineaRecibo(
   input: z.input<typeof editarSchema>
-): Promise<ActionResult<void>> {
+): Promise<ActionResult<TrasLinea>> {
   const parsed = editarSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -127,9 +128,9 @@ export async function editarLineaRecibo(
     return fail('recibos_panel.errors.linea_failed')
   }
 
-  await recalcularTotal(supabase, linea.recibo_id)
+  const recalculado = await recalcularTotal(supabase, linea.recibo_id)
   revalidatePath(RUTA, 'page')
-  return ok(undefined)
+  return ok(trasLinea(recalculado))
 }
 
 /**
@@ -143,7 +144,7 @@ export async function editarLineaRecibo(
  */
 export async function crearReciboConLineaManual(
   input: z.input<typeof crearConLineaSchema>
-): Promise<ActionResult<{ reciboId: string }>> {
+): Promise<ActionResult<{ reciboId: string; aviso?: typeof AVISO_TOTAL }>> {
   const parsed = crearConLineaSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -252,15 +253,15 @@ export async function crearReciboConLineaManual(
     return fail('recibos_panel.errors.linea_failed')
   }
 
-  await recalcularTotal(supabase, recibo.id)
+  const recalculado = await recalcularTotal(supabase, recibo.id)
   revalidatePath(RUTA, 'page')
-  return ok({ reciboId: recibo.id })
+  return ok({ reciboId: recibo.id, ...trasLinea(recalculado) })
 }
 
 /** F-4-4: borra una línea de un recibo en BORRADOR. Recalcula `total_centimos`. */
 export async function borrarLineaRecibo(
   input: z.input<typeof borrarSchema>
-): Promise<ActionResult<void>> {
+): Promise<ActionResult<TrasLinea>> {
   const parsed = borrarSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -280,9 +281,9 @@ export async function borrarLineaRecibo(
     return fail('recibos_panel.errors.linea_failed')
   }
 
-  await recalcularTotal(supabase, linea.recibo_id)
+  const recalculado = await recalcularTotal(supabase, linea.recibo_id)
   revalidatePath(RUTA, 'page')
-  return ok(undefined)
+  return ok(trasLinea(recalculado))
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -329,16 +330,38 @@ async function lineaDeBorrador(
   return recibo ? { recibo_id: linea.recibo_id } : null
 }
 
-/** Recalcula `recibos.total_centimos` como la suma de las líneas vivas del recibo. */
-async function recalcularTotal(supabase: Supabase, reciboId: string): Promise<void> {
-  const { data: lineas } = await supabase
+/**
+ * Recalcula `recibos.total_centimos` como la suma de las líneas vivas del recibo. Devuelve `false` si NO
+ * lo recalculó, y entonces quien llama lo dice (`AVISO_TOTAL`).
+ *
+ * Censo C (lineas-recibo 333 y 338; adelantado a B1 por Jose el 2026-11-26): con la relectura de las líneas
+ * caída, `(lineas ?? [])` sumaba 0 y un recibo con líneas se quedaba en 0 €, con la acción contestando ok.
+ * Ahora, sin las líneas leídas no se escribe ningún total. No para: la línea YA está guardada, y decir «no
+ * se guardó» haría que se volviera a añadir (lo de después de una escritura: `lecturaFallidaTrasEscritura`).
+ */
+async function recalcularTotal(supabase: Supabase, reciboId: string): Promise<boolean> {
+  const { data: lineas, error: errorLectura } = await supabase
     .from('lineas_recibo')
     .select('importe_centimos')
     .eq('recibo_id', reciboId)
-  const total = (lineas ?? []).reduce((acc, l) => acc + l.importe_centimos, 0)
+  if (errorLectura || !lineas) {
+    lecturaFallidaTrasEscritura('recalcularTotal: las líneas del recibo', errorLectura)
+    return false
+  }
+  const total = lineas.reduce((acc, l) => acc + l.importe_centimos, 0)
   const { error } = await supabase
     .from('recibos')
     .update({ total_centimos: total })
     .eq('id', reciboId)
-  if (error) logger.warn('recalcularTotal', error.message)
+  if (error) {
+    logger.error('recalcularTotal: el total no se escribió', { code: error.code ?? null })
+    return false
+  }
+  return true
 }
+
+/** La línea se guardó y el total del recibo no se pudo recalcular: el que se ve no está al día. */
+const AVISO_TOTAL = 'recibos_panel.avisos.total_sin_recalcular' as const
+type TrasLinea = { aviso: typeof AVISO_TOTAL } | undefined
+const trasLinea = (recalculado: boolean): TrasLinea =>
+  recalculado ? undefined : { aviso: AVISO_TOTAL }
