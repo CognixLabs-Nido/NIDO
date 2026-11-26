@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-bloqueada'
 import type { HistoricoTramo } from '@/features/ninos/lib/historico-matriculas'
 import { fueAlumno, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
@@ -33,8 +32,8 @@ function unwrap(raw: unknown): Record<string, unknown> | null {
 /**
  * `matriculas.motivo_baja` no se puede leer con sesión (permiso por columna, migración
  * 20261009120000): solo Dirección lo lee, por la RPC `get_motivos_baja_matriculas`.
- * Devuelve matricula_id → motivo. Si la RPC falla (p. ej. quien llama no es admin), mapa
- * vacío: la pantalla pinta el motivo como ausente en vez de romperse.
+ * Devuelve matricula_id → motivo. Si la RPC falla, lanza (censo C): el mapa vacío pintaba «sin
+ * motivo». Solo la llama la ficha de Dirección, que ya dio `notFound` a quien no es admin del centro.
  */
 async function motivosBajaPorMatricula(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -44,7 +43,7 @@ async function motivosBajaPorMatricula(
   const { data, error } = await supabase.rpc('get_motivos_baja_matriculas', {
     p_nino_ids: ninoIds,
   })
-  if (error) logger.warn('motivosBajaPorMatricula', error.message)
+  if (error) throw new LecturaFallida('motivos de baja', error)
   return new Map((data ?? []).map((r) => [r.matricula_id, r.motivo_baja]))
 }
 
@@ -95,9 +94,9 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
       ninos.map((n) => n.id)
     )
     .is('deleted_at', null)
-  // Un embed roto (p.ej. FK que cambió) hace fallar la query entera y devuelve `data=null`:
-  // sin este log, todos los niños saldrían con estado/aula null en silencio (regresión F11-H).
-  if (errorMatriculas) logger.warn('getNinosPorCentro: matriculas', errorMatriculas.message)
+  // Un embed roto (p.ej. FK que cambió) hace fallar la query entera y devuelve `data=null`: todos los
+  // niños saldrían con estado/aula null (regresión F11-H). Antes solo se logueaba; ahora lanza (censo C).
+  if (errorMatriculas) throw new LecturaFallida('getNinosPorCentro: matrículas', errorMatriculas)
 
   const aulaPorNino = new Map<string, string>()
   const estadoPorNino = new Map<string, 'pendiente' | 'lista' | 'activa'>()
@@ -366,7 +365,7 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
       .order('fecha_alta', { ascending: false }),
     motivosBajaPorMatricula(supabase, [ninoId]),
   ])
-  if (error) logger.warn('getMatriculasPorNino', error.message)
+  if (error) throw new LecturaFallida('getMatriculasPorNino', error)
 
   return (data ?? []).map((m) => ({
     id: m.id,
@@ -401,7 +400,7 @@ export async function getHistoricoMatriculas(ninoId: string): Promise<HistoricoT
       .order('fecha_alta', { ascending: true }),
     motivosBajaPorMatricula(supabase, [ninoId]),
   ])
-  if (error) logger.warn('getHistoricoMatriculas', error.message)
+  if (error) throw new LecturaFallida('getHistoricoMatriculas', error)
 
   return (data ?? []).map((m) => {
     const curso = extraerCurso(m.aulas_curso)

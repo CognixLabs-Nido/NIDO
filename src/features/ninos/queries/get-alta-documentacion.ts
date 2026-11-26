@@ -70,7 +70,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   // niño; el helper mapea rol_familia→tipo_vinculo y ordena titular primero.
   // F-2c-1: el mandato es de la FAMILIA → se resuelve por `ninos.familia_id`, no por
   // `nino_id`. Se lee primero la familia del niño y luego su mandato activo.
-  const [lecturaTutores, { data: ninoBase }, gestion] = await Promise.all([
+  const [lecturaTutores, { data: ninoBase, error: errNino }, gestion] = await Promise.all([
     leerTutoresDeNino(supabase, ninoId),
     supabase.from('ninos').select('familia_id').eq('id', ninoId).maybeSingle(),
     // El libro de familia es de gestión (`20270115120000`): de la función. `null` = la lectura
@@ -80,6 +80,8 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   // Censo C (clase 1): sin los tutores, el panel decía «Sin datos de tutores» y el consentimiento médico (que
   // se busca por sus cuentas) salía como «sin»: no se pudo leer, y se dice (error.tsx de la sección).
   if (!lecturaTutores.leidos) throw new LecturaFallida('getAltaDocumentacion', lecturaTutores.error)
+  // Sin la familia del niño, el mandato salía «sin mandato».
+  if (errNino) throw new LecturaFallida('getAltaDocumentacion: familia', errNino)
   const tutoresRows = lecturaTutores.tutores
   const libroLeido = gestion !== null
   const ninoRow = ninoBase
@@ -95,7 +97,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
     id: string
   } | null = null
   if (ninoRow?.familia_id) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('mandatos_sepa')
       .select('id, estado, titular, identificador_mandato, fecha_firma, documento_path')
       .eq('familia_id', ninoRow.familia_id)
@@ -104,6 +106,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
       .order('fecha_firma', { ascending: false })
       .limit(1)
       .maybeSingle()
+    if (error) throw new LecturaFallida('getAltaDocumentacion: mandato', error)
     mandatoRow = data
   }
 
@@ -116,7 +119,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
     .filter((u): u is string => typeof u === 'string')
   let consentimientoMedico: ConsentimientoAltaItem | null = null
   if (tutorUserIds.length > 0) {
-    const { data: consentRow } = await supabase
+    const { data: consentRow, error: errConsent } = await supabase
       .from('consentimientos')
       .select('version, aceptado_en')
       .in('usuario_id', tutorUserIds)
@@ -126,6 +129,8 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
       .order('aceptado_en', { ascending: false })
       .limit(1)
       .maybeSingle()
+    if (errConsent)
+      throw new LecturaFallida('getAltaDocumentacion: consentimiento médico', errConsent)
     if (consentRow) {
       consentimientoMedico = { version: consentRow.version, aceptado_en: consentRow.aceptado_en }
     }

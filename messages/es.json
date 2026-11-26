@@ -1830,7 +1830,8 @@
           "confirmar": "Autorizar",
           "procesando": "Autorizando…",
           "exito": "Imagen autorizada: ya puede aparecer en las fotos.",
-          "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos."
+          "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos.",
+          "exito_sin_estado": "Tu autorización queda registrada."
         },
         "denegar": {
           "boton": "No autorizo",

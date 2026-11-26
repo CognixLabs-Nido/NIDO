@@ -61,6 +61,8 @@ vi.mock('@/features/autorizaciones/lib/request-context', () => ({
   getRequestContext: () => Promise.resolve({ ip: '10.0.0.1', userAgent: 'test-ua' }),
 }))
 
+import { logger } from '@/shared/lib/logger'
+
 import { otorgarImagenNino } from '../otorgar-imagen-nino'
 import { revocarImagenNino } from '../revocar-imagen-nino'
 
@@ -73,7 +75,11 @@ interface Setup {
   flagTras?: boolean
   rpcError?: { code?: string; message: string } | null
   quitarError?: { code?: string; message: string } | null
+  /** Lecturas que fallan (censo C): una tabla (`ninos`, `consentimientos`) o una RPC por su nombre. */
+  caidas?: string[]
 }
+
+const CAIDA = { code: 'XX000', message: 'caída' }
 
 function makeFake(s: Setup) {
   const rpcSpy = vi.fn()
@@ -86,6 +92,7 @@ function makeFake(s: Setup) {
       is: () => b,
       limit: () => b,
       maybeSingle: () => {
+        if (s.caidas?.includes(table)) return Promise.resolve({ data: null, error: CAIDA })
         if (table === 'consentimientos') return Promise.resolve({ data: s.miVigente ?? null })
         if (table === 'ninos') {
           return Promise.resolve({
@@ -114,6 +121,7 @@ function makeFake(s: Setup) {
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcSpy(fn, args)
       orden.push(fn)
+      if (s.caidas?.includes(fn)) return Promise.resolve({ data: null, error: CAIDA })
       if (fn === 'es_admin') return Promise.resolve({ data: s.esAdmin ?? false })
       if (fn === 'es_tutor_legal_de') return Promise.resolve({ data: s.esTutorLegal ?? false })
       if (fn === 'quitar_foto_perfil_nino')
@@ -331,5 +339,67 @@ describe('otorgarImagenNino — el tutor vuelve a autorizar', () => {
 
     expect(r).toEqual({ success: false, error: 'nino.imagen.errors.no_autorizado_otorgar' })
     expect(rpcSpy).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * Censo C (B1, 2026-11-26): las lecturas de revocar y otorgar con la base caída.
+ *  - antes de escribir, una lectura caída decía «no autorizado» (el niño, es_admin, es_tutor_legal_de) o,
+ *    en otorgar, tomaba «¿ya tiene uno?» por «no» y otorgaba encima: ahora `common.lectura_fallida`, sin
+ *    escribir;
+ *  - después de otorgar, el flag sin leer decía «falta la del otro tutor»: ahora `visible: null` y Sentry.
+ */
+describe('censo C: revocar y otorgar con una lectura caída', () => {
+  const LECTURA_FALLIDA = { success: false, error: 'common.lectura_fallida' }
+  const escribe = (spy: ReturnType<typeof vi.fn>) =>
+    spy.mock.calls.some((c) =>
+      [
+        'revocar_consentimiento_imagen',
+        'otorgar_consentimiento_imagen',
+        'quitar_foto_perfil_nino',
+      ].includes(c[0] as string)
+    )
+
+  it('premisa: con todo leído, el tutor legal revoca', async () => {
+    const { fake, rpcSpy } = makeFake({ esTutorLegal: true })
+    createClientMock.mockReturnValue(fake)
+    expect((await revocarImagenNino({ nino_id: NINO })).success).toBe(true)
+    expect(escribe(rpcSpy)).toBe(true)
+  })
+
+  it.each(['ninos', 'es_admin', 'es_tutor_legal_de'])(
+    'revocar con %s caída: no dice «no autorizado», y no escribe',
+    async (caida) => {
+      const { fake, rpcSpy } = makeFake({ esTutorLegal: true, esAdmin: true, caidas: [caida] })
+      createClientMock.mockReturnValue(fake)
+      expect(await revocarImagenNino({ nino_id: NINO })).toEqual(LECTURA_FALLIDA)
+      expect(escribe(rpcSpy)).toBe(false)
+      expect(borrarSpy).not.toHaveBeenCalled()
+    }
+  )
+
+  it.each(['es_tutor_legal_de', 'consentimientos'])(
+    'otorgar con %s caída: no dice «no autorizado» ni otorga encima, y no escribe',
+    async (caida) => {
+      const { fake, rpcSpy } = makeFake({ esTutorLegal: true, flagTras: true, caidas: [caida] })
+      createClientMock.mockReturnValue(fake)
+      expect(await otorgarImagenNino({ nino_id: NINO })).toEqual(LECTURA_FALLIDA)
+      expect(escribe(rpcSpy)).toBe(false)
+    }
+  )
+
+  it('otorgado y sin poder leer si ya se ve: no dice «falta el otro tutor», y va a Sentry', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    const { fake, rpcSpy } = makeFake({ esTutorLegal: true, flagTras: false, caidas: ['ninos'] })
+    createClientMock.mockReturnValue(fake)
+    expect(await otorgarImagenNino({ nino_id: NINO })).toEqual({
+      success: true,
+      data: { visible: null },
+    })
+    expect(llamadas(rpcSpy, 'otorgar_consentimiento_imagen'), 'premisa: otorgó').toHaveLength(1)
+    expect(error.mock.calls.map((c) => String(c[0]))).toContainEqual(
+      expect.stringContaining('otorgarImagenNino')
+    )
+    error.mockRestore()
   })
 })

@@ -1830,7 +1830,8 @@
           "confirmar": "Authorise",
           "procesando": "Authorising…",
           "exito": "Image authorised: may now appear in photos.",
-          "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos."
+          "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos.",
+          "exito_sin_estado": "Your authorisation is recorded."
         },
         "denegar": {
           "boton": "I do not authorise",
