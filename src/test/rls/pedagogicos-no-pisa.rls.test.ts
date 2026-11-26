@@ -101,6 +101,9 @@ describe('los datos pedagógicos no se guardan sobre lo que no se leyó', () => 
     nino = await createTestNino(centro.id, 'Nino Pedagogicos No Pisa')
     const matricula = await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Pedagogicos No Pisa' })
+    // Un tutor legal de verdad es del centro (`pertenece_a_centro`; medido en prod el 2026-11-23, 4 de 4). Sin
+    // el rol, `existe_consentimiento_imagen` le da 42501 y desde el censo C la página del alta lo dice.
+    await asignarRol(legal.id, centro.id, 'tutor_legal')
     admin = await createTestUser({ nombre: 'Admin Pedagogicos No Pisa' })
     await asignarRol(admin.id, centro.id, 'admin')
     await crearFamiliaTutor(nino.familia_id, legal.id)
