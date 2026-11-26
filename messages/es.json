@@ -3416,7 +3416,8 @@
       "lugar": "Lugar",
       "confirmaciones": "Confirmaciones de asistencia",
       "sin_ninos": "No hay niños en la audiencia.",
-      "ventana_cerrada": "El plazo para confirmar ha terminado."
+      "ventana_cerrada": "El plazo para confirmar ha terminado.",
+      "confirmaciones_no_leidas": "No se ha podido leer de qué niños puedes confirmar la asistencia. Cierra y vuelve a abrir el evento."
     },
     "calendario": {
       "aria": "Calendario de eventos",

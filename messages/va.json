@@ -3416,7 +3416,8 @@
       "lugar": "Lloc",
       "confirmaciones": "Confirmacions d'assistència",
       "sin_ninos": "No hi ha xiquets en l'audiència.",
-      "ventana_cerrada": "El termini per a confirmar ha acabat."
+      "ventana_cerrada": "El termini per a confirmar ha acabat.",
+      "confirmaciones_no_leidas": "No s'ha pogut llegir de quins xiquets pots confirmar l'assistència. Tanca i torna a obrir l'esdeveniment."
     },
     "calendario": {
       "aria": "Calendari d'esdeveniments",

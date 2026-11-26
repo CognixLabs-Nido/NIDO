@@ -3416,7 +3416,8 @@
       "lugar": "Place",
       "confirmaciones": "Attendance confirmations",
       "sin_ninos": "No children in the audience.",
-      "ventana_cerrada": "The deadline to confirm has passed."
+      "ventana_cerrada": "The deadline to confirm has passed.",
+      "confirmaciones_no_leidas": "We could not read which children you can confirm attendance for. Close and open the event again."
     },
     "calendario": {
       "aria": "Events calendar",
