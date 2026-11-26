@@ -436,6 +436,30 @@ porque invitarTutor2AlValidar dice «no hacía falta». Corrígelo en B y que el
 ya está mergeado y su descripción se queda como está.
 El encabezado de roles-del-usuario, al barrido del B.»
 
+### 2026-11-26 · la clase 2, medida con el compilador; aprobarCambio necesita diseño
+
+Medido (`scripts/ci/fallo-que-se-pierde.cjs`, `~/nido-logs/16/c/reclas/CLASE2-BUILDER.md`): 8 helpers, 17
+sitios, 9 miran el error, 8 no, 0 llamadas sin resolver; una función anónima de la clase, leída a mano
+(mira). De los 8, el de dinero que no estaba en la lista: `aprobarCambio` → `revertir()`, cuyo resultado se
+tira; si aplicar falla y deshacer también, el cambio queda «aprobado» sin aplicar y sale de la cola. Jose,
+literal:
+
+«Y aprobarCambio es el hallazgo, y NO se arregla comprobando el error. Lo que has descrito es un estado que no
+debería existir: un cambio marcado «aprobado» que no se aplicó, fuera de la cola y sin forma de reintentarlo.
+Comprobar el error te dice que pasó; lo que hace falta es decidir dónde queda ese cambio.
+La salida es que NUNCA SALGA DE LA COLA SI NO SE APLICÓ: si aplicar falla, el cambio se queda pendiente; si
+además falla el deshacer, se queda pendiente y marcado como «falló al aplicar», con lo que pasó, para que
+Dirección lo vea y lo reintente. Lo que no puede es desaparecer. Y que Dirección lo tenga en su lista, como
+los que están sin tarjeta sanitaria.
+Mídelo abierto antes: monta el doble fallo y enséñame en qué estado queda el cambio hoy.
+
+La clase 1 con el mismo escáner, sí, adelante.
+
+Y una cosa de tamaño: el PR B ya lleva los 66 apartados, los 16, los 5 de la re-clasificación, estos 8 y lo
+que salga de la clase 1. Si al juntarlo no se puede leer, PÁRTELO EN DOS: lo mecánico por un lado y lo que
+necesita diseño —aprobarCambio y el rollback de la cuenta nueva— por otro. Dímelo tú si hace falta; no quiero
+un PR que nadie pueda revisar, pero tampoco cinco.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
