@@ -33,6 +33,12 @@ let rolesResult: Array<{ usuario_id: string }>
 let perfilTutor: { nombre_completo: string; email: string } | null
 let vinculoPrevio: { parentesco: string; descripcion_parentesco: string | null } | null
 
+// Censo C: la lectura que falla (`tabla`, `rpc:nombre` o `service:tabla`) y el error del UPDATE que saca
+// el prospecto de la cola.
+let caida: string | null
+let estadoUpdateError: unknown
+const CAIDA = { code: 'XX000', message: 'caída' }
+
 // `tutor_usuario_id` (U-2/D1) configurable por test: null = prospecto normal (familia nueva).
 let prospectoTutorUsuarioId: string | null
 
@@ -60,13 +66,14 @@ function makeServerFake() {
   function builder(table: string) {
     const state = { table, op: 'select' as 'select' | 'update' }
     const result = () => {
+      if (state.op === 'select' && caida === table) return { data: null, error: CAIDA }
       if (table === 'roles_usuario')
         return { data: [{ rol: 'admin', centro_id: CENTRO }], error: null }
       if (table === 'aulas_curso') return { data: { aula_id: AULA }, error: null }
       if (table === 'lista_espera') {
         if (state.op === 'update') {
           estadoUpdateSpy()
-          return { data: null, error: null }
+          return { data: null, error: estadoUpdateError }
         }
         return {
           data: { ...PROSPECTO_ROW, tutor_usuario_id: prospectoTutorUsuarioId },
@@ -89,6 +96,7 @@ function makeServerFake() {
     return b
   }
   rpcSpy = vi.fn((name: string) => {
+    if (caida === `rpc:${name}`) return Promise.resolve({ data: null, error: CAIDA })
     if (name === 'curso_activo_de_centro') return Promise.resolve({ data: CURSO, error: null })
     if (name === 'crear_o_anadir_a_familia') return Promise.resolve(rpcAltaResult)
     return Promise.resolve({ data: null, error: null })
@@ -117,6 +125,7 @@ vi.mock('@/lib/supabase/server', () => ({
 function makeServiceFake() {
   function builder(table: string) {
     const result = () => {
+      if (caida === `service:${table}`) return { data: null, error: CAIDA }
       if (table === 'roles_usuario') return { data: rolesResult, error: null }
       // FIX A (#262): con cuenta REAL, `vincularHijoATutorExistente` lee el perfil del tutor
       // en el centro (nombre EXACTO + email, anti-colisión) y su vínculo previo (parentesco
@@ -171,6 +180,8 @@ vi.mock('@/features/auth/actions/send-invitation', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+import { logger } from '@/shared/lib/logger'
+
 import { invitarAlAlta } from '../invitar-al-alta'
 
 beforeEach(() => {
@@ -187,6 +198,8 @@ beforeEach(() => {
   rolesResult = []
   // Por defecto: prospecto normal (1.er hijo, familia nueva) → sin cuenta de tutor guardada.
   prospectoTutorUsuarioId = null
+  caida = null
+  estadoUpdateError = null
   // Por defecto: la cuenta (si la hay) NO tiene familia en este centro → se invita.
   perfilTutor = null
   vinculoPrevio = { parentesco: 'madre', descripcion_parentesco: null }
@@ -469,4 +482,59 @@ describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que
     expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null, p_parentesco: '' })
     expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
   })
+})
+
+/**
+ * Censo C (B1, 2026-11-26). Antes: sin leer el prospecto, «no encontrado»; sin el curso activo, «el centro no
+ * tiene curso activo»; sin el aula, «aula no válida»; sin el vínculo previo del tutor, el hermano nuevo
+ * heredaba otro parentesco (o se pedía sin hacer falta). Y el UPDATE que saca al prospecto de la cola se
+ * logueaba y ya: con el alta hecha, el prospecto seguía «en espera» y un segundo «Invitar» creaba otro niño.
+ */
+describe('censo C: invitar con una lectura caída, y el prospecto que no sale de la cola', () => {
+  it.each(['lista_espera', 'rpc:curso_activo_de_centro', 'aulas_curso'])(
+    'con %s caída: no da un motivo falso, y no da el alta',
+    async (c) => {
+      caida = c
+      expect(await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')).toEqual({
+        success: false,
+        error: 'common.lectura_fallida',
+      })
+      expect(rpcSpy.mock.calls.some((x) => x[0] === 'crear_o_anadir_a_familia')).toBe(false)
+    }
+  )
+
+  it('2.º hijo sin poder leer el vínculo previo: no hereda a ciegas, y no da el alta', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid'
+    conFamiliaAqui()
+    caida = 'service:vinculos_familiares'
+    expect(await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')).toEqual({
+      success: false,
+      error: 'common.lectura_fallida',
+    })
+    expect(rpcSpy.mock.calls.some((x) => x[0] === 'crear_o_anadir_a_familia')).toBe(false)
+  })
+
+  it('premisa: con el prospecto fuera de la cola, el resultado no lleva el aviso', async () => {
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+    expect(r.success && r.data).toEqual({ resultado: 'ok', ninoId: NINO, invitationId: 'inv-1' })
+  })
+
+  it.each([
+    ['ok', () => {}],
+    ['vinculado', () => ((prospectoTutorUsuarioId = 'tutor-uid'), conFamiliaAqui())],
+  ] as const)(
+    '%s y el prospecto que no sale de la cola: lo dice (sigueEnCola), y va a Sentry',
+    async (resultado, montar) => {
+      const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+      montar()
+      estadoUpdateError = CAIDA
+      const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+      expect(r.success && r.data).toMatchObject({ resultado, sigueEnCola: true })
+      expect(estadoUpdateSpy, 'premisa: intentó sacarlo').toHaveBeenCalledTimes(1)
+      expect(error.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('sacar el prospecto de la cola')
+      )
+      error.mockRestore()
+    }
+  )
 })

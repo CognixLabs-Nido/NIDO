@@ -5165,6 +5165,7 @@
       "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling.",
       "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it.",
       "alta_creada_sin_correo": "The enrolment has been created, but the invitation email was not sent: the family has not received it. Do not enrol again; ask the NIDO administrator to resend it.",
+      "sigue_en_cola": "The registration is done, but the prospect is still on the waiting list. Do not register it again (another child would be created); let the NIDO administrator know.",
       "tutor_olvido": "The enrolment cannot be completed with this account: there is a request in progress to erase their data at this centre (right to be forgotten).",
       "orden_desfasado": "The list changed while you were ordering it (someone added or discarded a prospect). It has been reloaded: please order it again."
     }

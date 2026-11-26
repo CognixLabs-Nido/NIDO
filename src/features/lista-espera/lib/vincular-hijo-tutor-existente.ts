@@ -80,11 +80,13 @@ export async function vincularHijoATutorExistente(
   const emailTutor = perfil.email
   if (nombreExacto === null) {
     // Perfil de este centro sin nombre guardado: el de su cuenta (es la misma persona, ya de aquí).
-    const { data: usuario } = await service
+    const { data: usuario, error: errUsuario } = await service
       .from('usuarios')
       .select('nombre_completo')
       .eq('id', params.tutorUsuarioId)
       .maybeSingle()
+    // Censo C: sin leerlo, el nombre iba vacío a la RPC, que lo usa para ver si es la misma persona.
+    if (errUsuario) throw new LecturaFallida('vincularHijoATutorExistente: nombre', errUsuario)
     nombreExacto = usuario?.nombre_completo ?? ''
   }
 

@@ -5165,6 +5165,7 @@
       "sin_fecha_nacimiento": "Falta la data de naixement del xiquet; emplena-la abans de fer l'alta.",
       "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer.",
       "alta_creada_sin_correo": "L'alta està creada, però el correu d'invitació no ha eixit: la família no l'ha rebut. No tornes a donar l'alta; avisa el responsable de NIDO perquè el reenvie.",
+      "sigue_en_cola": "L'alta està feta, però el prospecte continua en la llista d'espera. No li tornes a donar l'alta (es crearia un altre xiquet); avisa el responsable de NIDO.",
       "tutor_olvido": "No es pot completar l'alta amb aquest compte: hi ha en curs una petició d'esborrat de les seues dades en aquest centre (dret a l'oblit).",
       "orden_desfasado": "La llista ha canviat mentre l'ordenaves (algú ha afegit o descartat un prospecte). S'ha recarregat: torna a ordenar-la."
     }

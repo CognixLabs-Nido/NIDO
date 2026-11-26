@@ -384,6 +384,8 @@ function InvitarBoton({
             )
             return
           }
+          // Censo C: el alta está hecha pero el prospecto no salió de la cola (`sacarDeLaCola`).
+          if (r.data.sigueEnCola) toast.warning(tErrors('listaEspera.errors.sigue_en_cola'))
           if (r.data.resultado === 'vinculado') {
             // FIX A: el tutor ya tenía cuenta → hijo vinculado directamente (sin invitación).
             toast.success(t('vinculado_invitar'))
@@ -606,6 +608,8 @@ function CompletarBoton({
             )
             return
           }
+          // Censo C: el alta está hecha pero el prospecto no salió de la cola (`sacarDeLaCola`).
+          if (r.data.sigueEnCola) toast.warning(tErrors('listaEspera.errors.sigue_en_cola'))
           if (r.data.resultado === 'vinculado') {
             // FIX A: el tutor ya tenía cuenta → hijo vinculado a su familia (sin contraseña).
             // U-1: la promoción está hecha; la Dirección completa el alta en el wizard (modo
