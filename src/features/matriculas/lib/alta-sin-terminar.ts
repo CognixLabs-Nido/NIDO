@@ -14,6 +14,7 @@ import { logger } from '@/shared/lib/logger'
 import { GRACIA_ESQUELETO_DIAS } from '@/features/retencion/types'
 
 import type { Database } from '@/types/db'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 type Service = SupabaseClient<Database>
 
@@ -132,7 +133,13 @@ export async function reinvitarAltaCore(
  */
 export async function borrarCuentasDeAuth(service: Service, ids: string[]): Promise<void> {
   for (const id of ids) {
-    const { data: avatares } = await service.storage.from(BUCKET_USUARIOS_FOTOS).list(id)
+    const { data: avatares, error: errListar } = await service.storage
+      .from(BUCKET_USUARIOS_FOTOS)
+      .list(id)
+    // Censo C: la cuenta ya no está en la base. Sin el listado, su avatar se quedaba en el bucket sin que
+    // nadie lo supiera; no para a las demás (como el resto de esta función), pero va a Sentry.
+    if (errListar)
+      lecturaFallidaTrasEscritura('alta sin terminar: avatares de la cuenta', errListar)
     const paths = (avatares ?? []).filter((o) => o.id !== null).map((o) => `${id}/${o.name}`)
     if (paths.length > 0) {
       const { error } = await service.storage.from(BUCKET_USUARIOS_FOTOS).remove(paths)

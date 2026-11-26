@@ -21,12 +21,14 @@ type Puerta = { ok: true; actorId: string; centroId: string } | { ok: false; err
  */
 async function puerta(ninoId: string): Promise<Puerta> {
   const service = createServiceRoleClient()
-  const { data: nino } = await service
+  const { data: nino, error: errNino } = await service
     .from('ninos')
     .select('centro_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C: una lectura caída no es «ya no hay segundo tutor que invitar».
+  if (errNino) return { ok: false, error: 'common.lectura_fallida' }
   if (!nino) return { ok: false, error: 'matricula.errors.tutor2_ya_no' }
   const actorId = await usuarioAdminEn(await createClient(), nino.centro_id)
   if (!actorId) return { ok: false, error: 'matricula.errors.no_autorizado' }

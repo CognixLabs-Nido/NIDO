@@ -41,11 +41,13 @@ async function puerta(ninoId: string): Promise<Puerta> {
   if (!user?.user) return { ok: false, error: 'matricula.errors.no_autorizado' }
 
   const service = createServiceRoleClient()
-  const { data: nino } = await service
+  const { data: nino, error: errNino } = await service
     .from('ninos')
     .select('centro_id')
     .eq('id', ninoId)
     .maybeSingle()
+  // Censo C: una lectura caída no es «esta alta ya no está».
+  if (errNino) return { ok: false, error: 'common.lectura_fallida' }
   if (!nino) return { ok: false, error: 'matricula.errors.alta_ya_no' }
 
   const { data: altas, error } = await supabase.rpc('altas_sin_terminar', {
