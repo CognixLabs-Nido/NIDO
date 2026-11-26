@@ -130,7 +130,12 @@ export async function crearCitaCore(
       // role. El audit de citas registra el DELETE (valores_antes) → trazabilidad.
       const service = createServiceRoleClient()
       const { error: delErr } = await service.from('citas').delete().eq('id', creada.id)
-      if (delErr) logger.warn('crearCita: limpieza de cita huérfana', delErr.message)
+      // Censo C: si tampoco se retira, la cita existe sin invitados y «no se pudieron añadir» haría crearla
+      // otra vez. Se dice, con lo que se puede hacer (añadirlos desde la cita), y va a Sentry.
+      if (delErr) {
+        logger.error('crearCita: la cita sin invitados no se retiró', { code: delErr.code ?? null })
+        return fail('citas.errors.cita_sin_invitados')
+      }
       return fail('citas.errors.invitados_fallo')
     }
 

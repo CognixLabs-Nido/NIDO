@@ -1,11 +1,4 @@
 {
-  "src/features/agenda/actions/agregar-invitados.ts": 1,
-  "src/features/agenda/actions/crear-cita.ts": 1,
-  "src/features/aulas/actions/create-aula.ts": 1,
-  "src/features/aulas/queries/get-aulas-con-personal.ts": 1,
-  "src/features/calendario-centro/actions/upsert-dia-centro.ts": 1,
-  "src/features/cambios-pendientes/actions/decidir.ts": 1,
-  "src/features/cambios-pendientes/lib/aplicar.ts": 1,
   "src/features/centros/contexto/ambito-familiar.ts": 2,
   "src/features/cursos/queries/get-cursos.ts": 1,
   "src/features/familias/actions/fijar-metodo-pago-familia.ts": 1,

@@ -72,11 +72,14 @@ export async function agregarInvitadosCore(
 
     // Dedup contra los invitados internos ya existentes (la UNIQUE parcial también
     // lo impide a nivel BD, pero un duplicado abortaría el batch entero).
-    const { data: existentes } = await supabase
+    const { data: existentes, error: errExistentes } = await supabase
       .from('cita_invitados')
       .select('usuario_id')
       .eq('cita_id', d.cita_id)
       .not('usuario_id', 'is', null)
+    // Censo C: sin ellos se intentaba insertar a los que ya estaban y el UNIQUE abortaba el lote con un
+    // «no se pudo» genérico.
+    if (errExistentes) return fail('common.lectura_fallida')
     const yaInvitados = new Set((existentes ?? []).map((r) => r.usuario_id))
     const internosNuevos = snapshot.internos.filter((id) => !yaInvitados.has(id))
 

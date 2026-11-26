@@ -2545,6 +2545,7 @@
     },
     "errors": {
       "nombre_duplicado": "A classroom with this name already exists in this year.",
+      "sala_a_medias": "The room was only partly created and could not be removed. Contact the NIDO administrator: creating it again will say it already exists.",
       "create_failed": "Could not create the classroom.",
       "no_encontrada": "Classroom not found."
     }
@@ -3622,6 +3623,7 @@
       "creacion_fallo": "Could not create the appointment.",
       "sin_invitados": "The appointment has no guests.",
       "invitados_fallo": "Could not add the guests.",
+      "cita_sin_invitados": "The appointment was created, but without guests. Add them from the appointment; do not create it again.",
       "edicion_fallo": "Could not edit the appointment.",
       "cancelacion_fallo": "Could not cancel the appointment.",
       "rsvp_fallo": "Could not record your response.",

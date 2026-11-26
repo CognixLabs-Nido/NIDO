@@ -9,10 +9,10 @@ import {
   ordenarConPrincipal,
 } from '@/features/profes-aulas/lib/personal-principal'
 import type { TipoPersonalAula } from '@/features/profes-aulas/types'
-import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * F5B-#34 — Query enriquecida para la tabla `/admin/aulas` (PR #35).
@@ -105,8 +105,9 @@ export async function getAulasConPersonalCore(
         .is('deleted_at', null),
     ])
 
-  if (matErr) logger.warn('getAulasConPersonal: matriculas', matErr.message)
-  if (profesErr) logger.warn('getAulasConPersonal: profes_aulas', profesErr.message)
+  // Censo C: antes un `warn` y cada sala con 0 niños y sin personal. Lanza; la pinta admin/error.tsx.
+  if (matErr) throw new LecturaFallida('salas: matrículas', matErr)
+  if (profesErr) throw new LecturaFallida('salas: personal', profesErr)
 
   // Conteos de alumnos por aula.
   const numAlumnosPorAula = new Map<string, number>()

@@ -287,4 +287,24 @@ describe('getAulasConPersonalCore', () => {
     })
     await expect(getAulasConPersonalCore(client, CURSO_ID)).rejects.toBeInstanceOf(LecturaFallida)
   })
+
+  // Censo C (B1, 2026-11-26): sin las matrículas o el personal, antes un `warn` y cada sala «0 niños,
+  // sin personal». Premisa: el caso «aula sin matrículas ni personal» de arriba, que sí sale.
+  it.each([
+    ['matriculasErr', 'salas: matrículas'],
+    ['profesErr', 'salas: personal'],
+  ] as const)('con %s → LecturaFallida en «%s», no «0 niños»', async (campo, donde) => {
+    const client = makeClient({
+      aulas: [makeAula('a1', 'Aula A')],
+      matriculas: [],
+      profes: [],
+      [campo]: { message: 'caída' },
+    })
+    const e = await getAulasConPersonalCore(client, CURSO_ID).then(
+      () => null,
+      (err: unknown) => err
+    )
+    expect(e).toBeInstanceOf(LecturaFallida)
+    expect((e as LecturaFallida).donde).toBe(donde)
+  })
 })

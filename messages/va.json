@@ -2545,6 +2545,7 @@
     },
     "errors": {
       "nombre_duplicado": "Ja existeix una aula amb este nom en este curs.",
+      "sala_a_medias": "La sala s'ha creat a mitges i no s'ha pogut retirar. Avisa el responsable de NIDO: si la tornes a crear, dirà que ja existeix.",
       "create_failed": "No s'ha pogut crear l'aula.",
       "no_encontrada": "Aula no trobada."
     }
@@ -3622,6 +3623,7 @@
       "creacion_fallo": "No s'ha pogut crear la cita.",
       "sin_invitados": "La cita no té convidats.",
       "invitados_fallo": "No s'han pogut afegir els convidats.",
+      "cita_sin_invitados": "La cita s'ha creat, però sense convidats. Afig-los des de la cita; no la tornes a crear.",
       "edicion_fallo": "No s'ha pogut editar la cita.",
       "cancelacion_fallo": "No s'ha pogut cancel·lar la cita.",
       "rsvp_fallo": "No s'ha pogut registrar la teua resposta.",

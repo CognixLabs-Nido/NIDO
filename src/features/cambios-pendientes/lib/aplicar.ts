@@ -28,6 +28,7 @@ import {
   rutaDocumentoDelNino,
   type EntidadCambio,
 } from '../schemas'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 type Client = SupabaseClient<Database>
 
@@ -58,7 +59,13 @@ function exigirRutaDelNino(path: string, row: CambioRow): void {
 
 /** Resuelve la familia del niño (NOT NULL desde F-2b-3); lanza si no la encuentra. */
 async function familiaDeNino(db: Client, ninoId: string): Promise<string> {
-  const { data: nino } = await db.from('ninos').select('familia_id').eq('id', ninoId).maybeSingle()
+  const { data: nino, error } = await db
+    .from('ninos')
+    .select('familia_id')
+    .eq('id', ninoId)
+    .maybeSingle()
+  // Censo C: una lectura caída no es «familia no encontrada».
+  if (error) throw new LecturaFallida('familiaDeNino', error)
   if (!nino?.familia_id) throw new Error('familia_no_encontrada')
   return nino.familia_id
 }

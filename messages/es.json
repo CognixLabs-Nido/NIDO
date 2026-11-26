@@ -2545,6 +2545,7 @@
     },
     "errors": {
       "nombre_duplicado": "Ya existe un aula con ese nombre en este curso.",
+      "sala_a_medias": "La sala se ha creado a medias y no se ha podido retirar. Avisa al responsable de NIDO: si la creas otra vez, dirá que ya existe.",
       "create_failed": "No se pudo crear el aula.",
       "no_encontrada": "Aula no encontrada."
     }
@@ -3622,6 +3623,7 @@
       "creacion_fallo": "No se pudo crear la cita.",
       "sin_invitados": "La cita no tiene invitados.",
       "invitados_fallo": "No se pudieron añadir los invitados.",
+      "cita_sin_invitados": "La cita se ha creado, pero sin invitados. Añádelos desde la cita; no la vuelvas a crear.",
       "edicion_fallo": "No se pudo editar la cita.",
       "cancelacion_fallo": "No se pudo cancelar la cita.",
       "rsvp_fallo": "No se pudo registrar tu respuesta.",
