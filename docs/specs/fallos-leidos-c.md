@@ -565,6 +565,23 @@ contar, y la página del alta no pregunta. Es una degradación DELIBERADA, no un
 respuesta opcional de marketing; lo que se evitaría preguntando «por si acaso» es justo lo que se decidió el
 2026-11-10 que no pasara (preguntarla a una familia que ya está en el centro). No se cambia.
 
+### 2026-11-26 · los 228 de la lista blanca, por áreas (Jose, literal)
+
+«Y el detalle que más me ha gustado del mensaje es el del lint: que la regla ponga rojo también cuando un
+fichero tiene MENOS sitios que su número, diciendo a cuánto bajarlo. Eso es lo que impide que la whitelist se
+quede alta y esconda los nuevos detrás del hueco que deja lo arreglado. Sin eso, el contador habría sido una
+puerta abierta con el tiempo.
+Y bien medir la whitelist de verdad —228 contra los 237 que permitía— en vez de fiarte del número que había.
+
+Adelante con los 228 por áreas. Y cuando el PR esté entero, dame el md5 de la 20270208120000 y le paso a Jose
+el merge.»
+
+Hecho en B1: los 228, por áreas, con su mutación por área; la lista blanca de `nido/lectura-mira-el-error`
+queda vacía y se borra, y la regla reporta todo lo que ve. Lo que la regla no ve (su cabecera lo declara) lo
+cubre el escáner `fallo-que-se-pierde`, ahora paso propio de la CI con su lista
+(`scripts/ci/fallo-que-se-pierde.lista.json`), que tiene la misma propiedad que la de arriba: rojo con uno
+más, y rojo con uno menos («la lista solo encoge»).
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
