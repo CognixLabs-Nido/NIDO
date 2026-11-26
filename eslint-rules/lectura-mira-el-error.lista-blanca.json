@@ -11,7 +11,6 @@
   "src/features/cambios-pendientes/actions/decidir.ts": 1,
   "src/features/cambios-pendientes/lib/aplicar.ts": 1,
   "src/features/centros/contexto/ambito-familiar.ts": 2,
-  "src/features/cuotas-config/queries/get-asignacion-permanente.ts": 6,
   "src/features/cursos/queries/get-cursos.ts": 1,
   "src/features/export/lib/recolectar.ts": 4,
   "src/features/export/lib/registrar.ts": 1,
