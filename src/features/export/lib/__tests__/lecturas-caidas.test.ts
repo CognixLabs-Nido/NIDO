@@ -8,16 +8,20 @@ import type { Database } from '@/types/db'
  * Censo C (B1, lista blanca, 2026-11-26): el export (art. 15) con una lectura o una escritura caídas.
  *  - `registrarExport` tiraba el error del INSERT en `export_log`: el `catch` de las rutas (que lo manda a
  *    Sentry y entrega el export igual) no se disparaba nunca. Ahora lanza.
- *  - el adjunto sin firmar salía con `url_firmada: null`, sin decirlo: ahora lanza.
+ *  - el adjunto sin firmar salía con `url_firmada: null`, sin decirlo: ahora lanza. Salvo si el fichero
+ *    no está en Storage (404): eso es una ausencia, no un fallo, y el export sale diciéndolo en ese
+ *    adjunto (lanzar dejaba a la persona sin su copia entera; medido en la CI, export.rls e06).
  *  - el export del tutor sin cuenta: sin el centro de su familia, `centroId` null y el export no quedaba
  *    registrado. Ahora lanza.
  * Fixtures ficticios.
  */
 vi.mock('server-only', () => ({}))
 const { estado } = vi.hoisted(() => ({
-  estado: { insertFalla: false, familiaCaida: false, firmaFalla: false },
+  estado: { insertFalla: false, familiaCaida: false, firmaFalla: false, noEsta: false },
 }))
 const CAIDA = { code: 'XX000', message: 'caída' }
+// Lo que contesta Storage a un objeto que no existe (`StorageApiError`).
+const NO_ESTA = { message: 'Object not found', status: 400, statusCode: '404' }
 
 const { registrarExport } = await import('../registrar')
 const { recolectarTutor } = await import('../recolectar')
@@ -29,7 +33,9 @@ const service = {
       createSignedUrl: async () =>
         estado.firmaFalla
           ? { data: null, error: CAIDA }
-          : { data: { signedUrl: 'https://firmada' }, error: null },
+          : estado.noEsta
+            ? { data: null, error: NO_ESTA }
+            : { data: { signedUrl: 'https://firmada' }, error: null },
     }),
   },
 } as unknown as SupabaseClient<Database>
@@ -54,6 +60,7 @@ beforeEach(() => {
   estado.insertFalla = false
   estado.familiaCaida = false
   estado.firmaFalla = false
+  estado.noEsta = false
 })
 
 describe('registrarExport', () => {
@@ -80,5 +87,16 @@ describe('recolectarTutor (el tutor sin cuenta)', () => {
   it('sin firmar su DNI: lanza, no un adjunto sin enlace', async () => {
     estado.firmaFalla = true
     await expect(recolectarTutor(client, service, 'ft-1')).rejects.toThrow(/firmar/)
+  })
+  it('su DNI no está en Storage (404): el export sale, y el adjunto dice por qué no tiene enlace', async () => {
+    estado.noEsta = true
+    const r = await recolectarTutor(client, service, 'ft-1')
+    expect(r?.data.adjuntos).toEqual([
+      expect.objectContaining({
+        path: 'c-1/n-1/dni.pdf',
+        url_firmada: null,
+        sin_enlace: 'fichero_no_encontrado',
+      }),
+    ])
   })
 })

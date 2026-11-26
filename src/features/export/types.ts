@@ -12,6 +12,8 @@ export interface AdjuntoExport {
   url_firmada: string | null
   /** NULL en lo que no tiene enlace que caduque: el PDF del mandato se abre por la ruta (2026-11-22). */
   caduca_en: string | null
+  /** Por qué no hay enlace: la fila nombra un fichero que no está en Storage (censo C, 2026-11-26). */
+  sin_enlace?: 'fichero_no_encontrado'
 }
 
 /** Documento de export del sujeto (se serializa a datos.json + se renderiza a HTML). */

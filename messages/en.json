@@ -4337,6 +4337,7 @@
       "sin_datos": "No data",
       "firmado": "Signed",
       "descargar": "Download file",
+      "fichero_no_encontrado": "The file is no longer stored",
       "sexo": {
         "F": "Girl",
         "M": "Boy",

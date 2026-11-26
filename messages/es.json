@@ -4337,6 +4337,7 @@
       "sin_datos": "Sin datos",
       "firmado": "Firmado",
       "descargar": "Descargar archivo",
+      "fichero_no_encontrado": "El archivo ya no está guardado",
       "sexo": {
         "F": "Niña",
         "M": "Niño",
