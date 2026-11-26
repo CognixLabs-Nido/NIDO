@@ -4314,6 +4314,7 @@
       "etiquetado_fallo": "Could not tag.",
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",
+      "subida_a_medias": "The photo could not be uploaded, and what was left half-done could not be removed. Reload the post: if you see an empty photo, delete it.",
       "procesado_fallo": "Could not process the photo.",
       "resolver_fallo": "Could not resolve the photo"
     }

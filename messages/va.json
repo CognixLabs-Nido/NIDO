@@ -4314,6 +4314,7 @@
       "etiquetado_fallo": "No s'ha pogut etiquetar.",
       "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
       "subida_fallo": "No s'ha pogut pujar la foto.",
+      "subida_a_medias": "No s'ha pogut pujar la foto, i el que ha quedat a mitges no s'ha pogut llevar. Torna a carregar la publicació: si hi veus una foto buida, esborra-la.",
       "procesado_fallo": "No s'ha pogut processar la foto.",
       "resolver_fallo": "No s'ha pogut resoldre la foto"
     }

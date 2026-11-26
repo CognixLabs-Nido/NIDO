@@ -44,19 +44,24 @@ export async function GET(
   const supabase = await createClient()
 
   // 1. Remesa (RLS admin) → centro/periodo.
-  const { data: remesa } = await supabase
+  const { data: remesa, error: errRemesa } = await supabase
     .from('remesas')
     .select('id, centro_id, anio, mes, fichero_generado_at')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C: una lectura caída no es «no encontrada».
+  if (errRemesa) return json({ error: 'xml_failed' }, 500)
   if (!remesa) return json({ error: 'no_encontrada' }, 404)
 
-  const { data: centro } = await supabase
+  const { data: centro, error: errCentro } = await supabase
     .from('centros')
     .select('nombre')
     .eq('id', remesa.centro_id)
     .maybeSingle()
+  // Sin el nombre del centro, el concepto y el acreedor saldrían en blanco, y la primera descarga registra el
+  // fichero: desde entonces se entrega ese. Medido abierto (route.test.ts): 200, subido, marcado y registrado.
+  if (errCentro) return json({ error: 'xml_failed' }, 500)
 
   // 2. Deudores (IBAN descifrado server-side) + config del acreedor → el fichero, o el motivo.
   // `marca` NULL solo en la comprobación previa: ahí la hora no importa.

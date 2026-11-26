@@ -4314,6 +4314,7 @@
       "etiquetado_fallo": "No se pudo etiquetar.",
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",
+      "subida_a_medias": "No se pudo subir la foto, y lo que quedó a medias no se pudo quitar. Recarga la publicación: si ves una foto vacía, bórrala.",
       "procesado_fallo": "No se pudo procesar la foto.",
       "resolver_fallo": "No se pudo resolver la foto"
     }

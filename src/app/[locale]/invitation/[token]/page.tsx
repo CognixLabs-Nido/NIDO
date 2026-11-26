@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -28,13 +29,15 @@ export default async function InvitationPage({ params }: PageProps) {
 
   const service = createServiceRoleClient()
   // entre-centros: por token; la invitación es de un solo centro y se abre antes de ser de él.
-  const { data: invitation } = await service
+  const { data: invitation, error: errInvitacion } = await service
     .from('invitaciones')
     .select(
       'email, rol_objetivo, nombre_completo, nino_id, centro_id, expires_at, accepted_at, rejected_at'
     )
     .eq('token', token)
     .maybeSingle()
+  // Una lectura caída no es «enlace caducado»: la dice `error.tsx`.
+  if (errInvitacion) throw new LecturaFallida('invitación', errInvitacion)
 
   if (!invitation) redirect(`/${locale}/invitation/expired`)
 
@@ -88,11 +91,13 @@ export default async function InvitationPage({ params }: PageProps) {
     // El número de pasos se fija al empezar (0c, 2026-11-04): sin CID del centro el alta tiene 7
     // desde el principio, sin el de domiciliación. Antes de entrar no hay sesión que lea el
     // centro; se lee aquí con el servicio y al wizard solo llega si lo tiene, nunca el CID.
-    const { data: centro } = await service
+    const { data: centro, error: errCentro } = await service
       .from('centros')
       .select('identificador_acreedor')
       .eq('id', invitation.centro_id)
       .maybeSingle()
+    // Sin el centro leído, sin CID: el alta se montaría sin el paso de domiciliación.
+    if (errCentro) throw new LecturaFallida('invitación: centro', errCentro)
     // Fase 8b: el paso de servicios, igual, solo si el centro ofrece alguno en Cuotas.
     const centroTieneServicios = await centroOfreceServicios(service, invitation.centro_id)
     // Fase 9: el paso de los gastos de gestión, solo si el curso del alta tiene importe.

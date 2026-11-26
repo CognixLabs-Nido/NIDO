@@ -1,11 +1,4 @@
 {
-  "src/app/[locale]/admin/remesas/[id]/xml/route.ts": 2,
-  "src/app/[locale]/alta/[ninoId]/page.tsx": 10,
-  "src/app/[locale]/export/me/route.ts": 1,
-  "src/app/[locale]/family/nino/[id]/page.tsx": 1,
-  "src/app/[locale]/family/recibos/page.tsx": 1,
-  "src/app/[locale]/fotos/upload/route.ts": 4,
-  "src/app/[locale]/invitation/[token]/page.tsx": 2,
   "src/features/agenda-diaria/queries/get-agenda-del-dia.ts": 5,
   "src/features/agenda-diaria/queries/get-agendas-aula-del-dia.ts": 4,
   "src/features/agenda-diaria/queries/get-permiso-agenda.ts": 1,

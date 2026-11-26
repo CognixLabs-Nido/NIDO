@@ -79,19 +79,23 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // Publicación visible para el usuario (RLS). Nos da centro_id/aula_id para la ruta.
-  const { data: pub } = await supabase
+  const { data: pub, error: errPub } = await supabase
     .from('publicaciones')
     .select('id, centro_id, aula_id')
     .eq('id', parsed.data.publicacion_id)
     .maybeSingle()
+  // Una lectura caída no es «no autorizado».
+  if (errPub) return err('common.lectura_fallida', 500)
   if (!pub) return err('fotos.errors.no_autorizado', 403)
 
   // Límite de fotos por publicación (P4).
-  const { count } = await supabase
+  const { count, error: errCount } = await supabase
     .from('media')
     .select('id', { count: 'exact', head: true })
     .eq('publicacion_id', pub.id)
-  if ((count ?? 0) >= MAX_FOTOS_PUBLICACION) return err('fotos.validation.max_fotos')
+  // Sin contarlas, `null` sería 0 y el límite no se miraría.
+  if (errCount || count === null) return err('common.lectura_fallida', 500)
+  if (count >= MAX_FOTOS_PUBLICACION) return err('fotos.validation.max_fotos')
 
   // 1. Procesado (sharp). Lanza FotoInvalidaError con clave i18n.
   let procesada
@@ -144,11 +148,20 @@ export async function POST(request: Request): Promise<Response> {
     // 4. Rollback: sin objetos no debe quedar la fila ni objetos a medias. La fila se borra
     //    con la sesión del autor (`media_delete`: autor de la publicación o admin, el mismo
     //    predicado que dejó insertarla) → el DELETE queda en audit_log con su uid (PR-D, D2).
-    await supabase.from('media').delete().eq('id', media.id)
-    await service.storage
+    const { error: errFila } = await supabase.from('media').delete().eq('id', media.id)
+    const { error: errObjetos } = await service.storage
       .from(BUCKET_AULA_FOTOS)
       .remove([rutas.original, rutas.miniatura])
-      .catch(() => undefined)
+      .catch((e: unknown) => ({ error: e instanceof Error ? e : new Error(String(e)) }))
+    // Censo C: si la limpieza tampoco sale, queda una foto vacía en la publicación (la fila) o los
+    // ficheros sin fila. A Sentry, y a quien sube, que lo vea y la borre.
+    if (errFila || errObjetos) {
+      logger.error('fotos/upload: rollback a medias', {
+        fila: errFila?.code ?? null,
+        objetos: errObjetos?.message ?? null,
+      })
+      return err('fotos.errors.subida_a_medias', 500)
+    }
     logger.warn(
       'fotos/upload: storage.upload',
       subirOriginal.error?.message ?? subirMini.error?.message
