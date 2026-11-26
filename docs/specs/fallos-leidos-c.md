@@ -404,6 +404,38 @@ datos dentro, y sin dar acceso a ninguna parte. Con eso una página pública no 
 Y del escáner: «que el escáner enseñe TODAS las paradas de cada función, no solo la primera, porque si no el
 número que da vuelve a ser un suelo sin que lo sepamos.»
 
+### 2026-11-26 · la re-clasificación de las 201, y las dos clases que no veía ningún instrumento
+
+Resultado (`~/nido-logs/16/c/reclas/RESULTADO-201.md`): 185 propagan con motivo verdadero, 9 sin efecto, 2
+arregladas en el PR A, 3 paran con un motivo falso (ficha de gestión y tarjeta sanitaria → «no tienes
+permiso»; el curso destino del paso de curso → «no encontrado») y 2 F2 (el detalle de un evento sin
+«confirmar asistencia»; «cómo nos conociste»). Y dos clases que ni el censo ni el lint veían: el helper que
+avisa del fallo (`leidos`, `null`/`undefined`) con llamadores que no lo usan, y el helper que devuelve el
+constructor de la consulta sin `await`. Uno de los llamadores de la primera, `invitarTutor2AlValidar`, hace
+falsa una afirmación del cuerpo del PR A: `activarMatricula` no avisa si la invitación no sale. Jose, literal:
+
+«Los 5 defectos y las dos clases nuevas van al PR B, y las dos soluciones que propones son las correctas: un
+tipo que no deje usar los tutores sin mirar `leidos` es estructura, no una regla que haya que recordar.
+
+PERO LA SEGUNDA CLASE ESTÁ MEDIDA CON UNA REGEX Y ES UN SUELO, Y ESO NO ME VALE AQUÍ. Un helper que devuelve
+el constructor de la consulta sin await es invisible para el censo Y para el lint, así que no tenemos ni idea
+de cuántos hay, y uno de los tres que has encontrado se salta la comprobación de «ya existe» en una carga de
+beca. Eso es dinero.
+Mídelo con el compilador, como hiciste con el escáner de cadena: un helper cuyo tipo de retorno sea el
+constructor, y los sitios que hacen await sobre él. Dame el número exacto con sus huecos declarados, no un
+suelo. Y si al medirlo bien salen más sitios de dinero, me lo dices antes de seguir.
+
+Y LA PRIMERA CLASE ES PEOR DE LO QUE PARECE, por el motivo que tú mismo das: el escáner marcó ese helper como
+OK porque SÍ comprueba el error, y nunca llegó al clasificador. O sea que nuestro instrumento mira si el
+helper se entera del fallo, no si el llamador hace algo con esa información. Censa esa clase también con el
+compilador: helpers que informan del fallo —con un flag, con null o con undefined— y llamadores que no lo
+usan. Que el número salga del tipo, no de una lista de nombres.
+
+Y bien dicho lo de tu afirmación falsa del PR A: que activarMatricula no avisa cuando la invitación no sale,
+porque invitarTutor2AlValidar dice «no hacía falta». Corrígelo en B y que el cuerpo del B lo diga, que el A
+ya está mergeado y su descripción se queda como está.
+El encabezado de roles-del-usuario, al barrido del B.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
