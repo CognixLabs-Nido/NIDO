@@ -6,7 +6,11 @@ import type { Database } from '@/types/db'
 import { acceptInvitationSchema } from '../../schemas/invitation'
 import { logger } from '@/shared/lib/logger'
 
-import { acceptPendingInvitationCore, rejectPendingInvitation } from '../accept-invitation'
+import {
+  acceptInvitationCore,
+  acceptPendingInvitationCore,
+  rejectPendingInvitation,
+} from '../accept-invitation'
 
 // `rejectPendingInvitation` lee la sesión y escribe con el servicio (censo C, más abajo).
 const rechazo = vi.hoisted(() => ({
@@ -451,6 +455,34 @@ describe('censo C: aceptar y rechazar', () => {
       expect.stringContaining('accepted_at')
     )
     error.mockRestore()
+  })
+
+  const alta = {
+    token: '11111111-1111-4111-8111-111111111111',
+    nombreCompleto: 'Profe Pruebas',
+    password: 'Una-Clave-Larga-2026!',
+    idiomaPreferido: 'es' as const,
+    aceptaTerminos: true as const,
+    aceptaPrivacidad: true as const,
+  }
+
+  it('premisa del alta: sin invitación con ese token, «inválida»', async () => {
+    rechazo.leer = { data: null, error: null }
+    rechazo.escrito = false
+    expect(await acceptInvitationCore(alta)).toEqual({
+      success: false,
+      error: 'auth.invitation.errors.invalid',
+    })
+  })
+
+  it('alta con la invitación sin leer: no dice «inválida», y no escribe', async () => {
+    rechazo.leer = { data: null, error: { code: 'XX000', message: 'caída' } }
+    rechazo.escrito = false
+    expect(await acceptInvitationCore(alta)).toEqual({
+      success: false,
+      error: 'common.lectura_fallida',
+    })
+    expect(rechazo.escrito).toBe(false)
   })
 
   const pendiente = {

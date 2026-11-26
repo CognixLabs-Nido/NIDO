@@ -242,8 +242,9 @@ export async function acceptInvitationCore(
     .eq('token', parsed.data.token)
     .maybeSingle()
 
-  if (invErr) logger.warn('accept: lookup de invitación falló', invErr.message)
-  if (invErr || !invitation) return fail('auth.invitation.errors.invalid')
+  // Censo C: sin leer la invitación no se sabe si es inválida; decirlo mandaría a pedir otra.
+  if (invErr) return fail('common.lectura_fallida')
+  if (!invitation) return fail('auth.invitation.errors.invalid')
   if (invitation.accepted_at || invitation.rejected_at) {
     return fail('auth.invitation.errors.invalid')
   }
