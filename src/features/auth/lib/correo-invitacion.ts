@@ -30,13 +30,14 @@ export async function enviarCorreoInvitacion(
     idioma?: IdiomaCorreo
   }
 ): Promise<string | null> {
-  const { data: invitation } = await service
+  const { data: invitation, error: errInvitacion } = await service
     .from('invitaciones')
     .select('token')
     .eq('id', datos.invitationId)
     .single()
 
-  if (!invitation) return 'auth.invitation.errors.lookup_failed'
+  // Sin el token no sale el correo, y se dice (la invitación ya está guardada).
+  if (errInvitacion || !invitation) return 'auth.invitation.errors.lookup_failed'
 
   // Nombre del centro para personalizar la firma del email ({{ .Data.centro_nombre }}
   // en la plantilla de invitación). Si faltara, la plantilla cae a "la escuela". La invitación ya

@@ -1,10 +1,37 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/types/db'
 
 import { acceptInvitationSchema } from '../../schemas/invitation'
-import { acceptPendingInvitationCore } from '../accept-invitation'
+import { logger } from '@/shared/lib/logger'
+
+import { acceptPendingInvitationCore, rejectPendingInvitation } from '../accept-invitation'
+
+// `rejectPendingInvitation` lee la sesión y escribe con el servicio (censo C, más abajo).
+const rechazo = vi.hoisted(() => ({
+  leer: { data: null as unknown, error: null as unknown },
+  escribir: { error: null as unknown },
+  escrito: false,
+}))
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: async () => ({
+    auth: { getUser: async () => ({ data: { user: { email: 'tutora@example.test' } } }) },
+  }),
+}))
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const b: any = {}
+    let op = 'select'
+    b.select = () => b
+    b.eq = () =>
+      op === 'update' ? ((rechazo.escrito = true), Promise.resolve(rechazo.escribir)) : b
+    b.update = () => ((op = 'update'), b)
+    b.maybeSingle = async () => rechazo.leer
+    return { from: () => b }
+  },
+}))
 
 /**
  * Tests del núcleo B8 (`acceptPendingInvitationCore`, F11-C-2): un usuario que YA
@@ -394,5 +421,57 @@ describe('accept: la foto es OPCIONAL (decisión D, F11-C-3)', () => {
     const parsed = acceptInvitationSchema.parse(baseInput)
     expect('foto' in parsed).toBe(false)
     expect('avatar' in parsed).toBe(false)
+  })
+})
+
+/**
+ * Censo C (B1, 2026-11-26): aceptar y rechazar con una lectura o una escritura caídas.
+ *  - la invitación sin leer se tomaba por «inválida»;
+ *  - el rechazo se esperaba y se tiraba: contestaba ok sin haberla rechazado;
+ *  - el sello de aceptación, ya hecho el vínculo, iba a un `warn`: ahora no para y va a Sentry.
+ */
+describe('censo C: aceptar y rechazar', () => {
+  it('aceptar con la invitación sin leer: no dice «inválida», y no escribe', async () => {
+    const { fake, calls } = makeFake([{ data: null, error: { code: 'XX000', message: 'caída' } }])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
+    expect(r).toEqual({ success: false, error: 'common.lectura_fallida' })
+    expect(escrituras(calls)).toEqual([])
+  })
+
+  it('el sello de aceptación que no se escribe: acepta igual (el vínculo ya está) y va a Sentry', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    const { fake } = makeFake([
+      { data: profeInvitation, error: null },
+      { data: null, error: null },
+      { data: null, error: { code: 'XX000', message: 'no' } },
+    ])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
+    expect(r.success).toBe(true)
+    expect(error.mock.calls.map((c) => String(c[0]))).toContainEqual(
+      expect.stringContaining('accepted_at')
+    )
+    error.mockRestore()
+  })
+
+  const pendiente = {
+    data: { id: INV, email: 'tutora@example.test', accepted_at: null, rejected_at: null },
+    error: null,
+  }
+
+  it('premisa: rechazar una pendiente la marca y contesta ok', async () => {
+    rechazo.leer = pendiente
+    rechazo.escribir = { error: null }
+    rechazo.escrito = false
+    expect(await rejectPendingInvitation(INV)).toEqual({ success: true, data: undefined })
+    expect(rechazo.escrito).toBe(true)
+  })
+
+  it('si el rechazo no se escribe: no contesta ok', async () => {
+    rechazo.leer = pendiente
+    rechazo.escribir = { error: { code: 'XX000', message: 'no' } }
+    rechazo.escrito = false
+    const r = await rejectPendingInvitation(INV)
+    expect(rechazo.escrito, 'premisa: intentó escribir').toBe(true)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.update_failed' })
   })
 })

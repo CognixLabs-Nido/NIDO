@@ -240,22 +240,26 @@ export async function revocarInvitacionProfeCore(
   if (centrosAdmin.length === 0) return fail('auth.invitation.errors.forbidden')
 
   // Acotado a los centros donde quien llama es admin (R5): una invitación ajena = inexistente.
-  const { data: inv } = await serviceClient
+  const { data: inv, error: errInv } = await serviceClient
     .from('invitaciones')
     .select('id, centro_id, rol_objetivo, accepted_at, rejected_at')
     .eq('id', invitationId)
     .in('centro_id', centrosAdmin)
     .maybeSingle()
+  // Censo C: una lectura caída no es «invitación inválida».
+  if (errInv) return fail('common.lectura_fallida')
 
   if (!inv || inv.rol_objetivo !== 'profe' || inv.accepted_at || inv.rejected_at) {
     return fail('auth.invitation.errors.invalid')
   }
   if (!centrosAdmin.includes(inv.centro_id)) return fail('auth.invitation.errors.forbidden')
 
-  await serviceClient
+  // Censo C: si no se marca, no está revocada (antes contestaba ok igual).
+  const { error: errRevocar } = await serviceClient
     .from('invitaciones')
     .update({ rejected_at: new Date().toISOString() })
     .eq('id', inv.id)
+  if (errRevocar) return fail('auth.invitation.errors.update_failed')
 
   return ok(undefined)
 }

@@ -2,13 +2,15 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
 import type { IdiomaCorreo } from '../schemas/invitation'
 
 import { llamarGoTrue } from './llamar-gotrue'
-import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
+import {
+  escrituraSecundariaFallida,
+  lecturaFallidaTrasEscritura,
+} from '@/shared/lib/tras-escritura'
 
 /**
  * Idioma del correo de invitación (y de la página a la que lleva su enlace). La plantilla lo lee
@@ -33,7 +35,7 @@ export async function prepararIdiomaInvitacion(
   const { data: cuenta, error: buscarErr } = await service
     .rpc('buscar_auth_user_por_email', { p_email: email })
     .maybeSingle()
-  if (buscarErr) logger.warn('prepararIdiomaInvitacion: buscar cuenta', buscarErr.message)
+  if (buscarErr) lecturaFallidaTrasEscritura('idioma de la invitación: buscar la cuenta', buscarErr)
   if (!cuenta) return elegido ?? 'es'
 
   const { data: usuario, error: errorLectura } = await service
@@ -56,11 +58,11 @@ export async function prepararIdiomaInvitacion(
   const { error: metaErr } = await llamarGoTrue('updateUserById', () =>
     service.auth.admin.updateUserById(cuenta.id, { user_metadata: { idioma_preferido: elegido } })
   )
-  if (metaErr) logger.warn('prepararIdiomaInvitacion: metadatos', metaErr.message)
+  if (metaErr) escrituraSecundariaFallida('prepararIdiomaInvitacion: metadatos', metaErr)
   const { error: usuarioErr } = await service
     .from('usuarios')
     .update({ idioma_preferido: elegido })
     .eq('id', cuenta.id)
-  if (usuarioErr) logger.warn('prepararIdiomaInvitacion: usuarios', usuarioErr.message)
+  if (usuarioErr) escrituraSecundariaFallida('prepararIdiomaInvitacion: usuarios', usuarioErr)
   return elegido
 }

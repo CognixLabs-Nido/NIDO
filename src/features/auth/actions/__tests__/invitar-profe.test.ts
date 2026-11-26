@@ -344,6 +344,24 @@ describe('revocarInvitacionProfeCore', () => {
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error).toBe('auth.invitation.errors.invalid')
   })
+
+  // Censo C (B1, 2026-11-26): una lectura caída no es «inválida», y una revocación que no se escribe no es ok.
+  it('con la lectura caída: no dice «inválida», y no escribe', async () => {
+    const { fake, calls } = makeFake([{ data: null, error: { code: 'XX000', message: 'caída' } }])
+    const r = await revocarInvitacionProfeCore(fake, INV, [CENTRO])
+    expect(r).toEqual({ success: false, error: 'common.lectura_fallida' })
+    expect(calls.length).toBe(0)
+  })
+
+  it('si la revocación no se escribe: no contesta ok', async () => {
+    const { fake, calls } = makeFake([
+      { data: pendiente, error: null },
+      { data: null, error: { code: 'XX000', message: 'no' } },
+    ])
+    const r = await revocarInvitacionProfeCore(fake, INV, [CENTRO])
+    expect(calls[0]?.op, 'premisa: intentó escribir').toBe('update')
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.update_failed' })
+  })
 })
 
 describe('invitarProfeSchema', () => {
