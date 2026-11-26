@@ -1021,7 +1021,9 @@
             "titulo": "Esborrar l'alta?",
             "texto": "S'esborra l'alta d'aquest xiquet: la seua fitxa, la matrícula, la invitació i les seues línies als esborranys de rebut. La família i el del seu fill anterior es queden. No es pot desfer."
           }
-        }
+        },
+        "no_leido_lista": "No s'ha pogut llegir quines altes porten més de 30 dies sense acabar: aquesta marca no ix en aquesta llista. Torna a carregar la pàgina.",
+        "no_leido": "No s'ha pogut llegir l'estat d'aquesta alta sense acabar. Torna a carregar la pàgina."
       }
     },
     "audit": {
@@ -4052,7 +4054,8 @@
       "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}",
       "recibos_nuevos": "{n, plural, one {Tens # rebut nou} other {Tens # rebuts nous}}",
       "domiciliaciones_nuevas": "{n, plural, one {Una família ha signat o canviat la seua domiciliació bancària des de l’app} other {# famílies han signat o canviat la seua domiciliació bancària des de l’app}}",
-      "altas_sin_terminar": "{n, plural, one {# alta sense acabar fa més de 30 dies} other {# altes sense acabar fa més de 30 dies}}"
+      "altas_sin_terminar": "{n, plural, one {# alta sense acabar fa més de 30 dies} other {# altes sense acabar fa més de 30 dies}}",
+      "altas_sin_terminar_no_leido": "No s'ha pogut llegir si hi ha altes sense acabar fa més de 30 dies. Torna a carregar la pàgina."
     },
     "errors": {
       "no_autorizado": "No autoritzat.",

@@ -95,10 +95,10 @@ export default async function AdminNinosPage({ params, searchParams }: PageProps
 
   const todos = await getNinosPorCentro(centroId)
   // Las altas sin terminar que ya se proponen a Dirección para borrar (20261209120000).
+  // Censo C: `null` es que no se pudo leer; la lista sale igual y dice que la marca falta.
+  const altasSinTerminar = await getAltasSinTerminar(await createClient(), centroId)
   const propuestas = new Set(
-    ((await getAltasSinTerminar(await createClient(), centroId)) ?? [])
-      .filter((a) => a.propuesta)
-      .map((a) => a.ninoId)
+    (altasSinTerminar ?? []).filter((a) => a.propuesta).map((a) => a.ninoId)
   )
 
   // Deep-link desde el dashboard: ?estado=lista aterriza en las altas a validar.
@@ -132,6 +132,9 @@ export default async function AdminNinosPage({ params, searchParams }: PageProps
             {t('filtro.quitar')}
           </Link>
         </div>
+      )}
+      {altasSinTerminar === null && (
+        <p className="text-muted-foreground text-sm">{t('sin_terminar.no_leido_lista')}</p>
       )}
       {ninos.length === 0 ? (
         <Card>

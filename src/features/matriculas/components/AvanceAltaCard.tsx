@@ -25,15 +25,20 @@ interface Props {
    * los tres contestados (`datosPedagogicosContestados`, C, 2026-11-24): una fila no basta.
    */
   pedagogicos: boolean
-  /** El alta sin terminar (`altas_sin_terminar`, 20261209120000): solo con la matrícula pendiente. */
-  sinTerminar?: {
-    ninoId: string
-    estado: 'invitacion_abierta' | 'sin_invitacion' | 'iniciada'
-    desde: string | null
-    propuesta: boolean
-    email: string | null
-    familiaNueva: boolean
-  }
+  /**
+   * El alta sin terminar (`altas_sin_terminar`, 20261209120000): solo con la matrícula pendiente.
+   * `'no_leido'`: la lectura falló, y la tarjeta lo dice (censo C, 2026-11-26).
+   */
+  sinTerminar?:
+    | 'no_leido'
+    | {
+        ninoId: string
+        estado: 'invitacion_abierta' | 'sin_invitacion' | 'iniciada'
+        desde: string | null
+        propuesta: boolean
+        email: string | null
+        familiaNueva: boolean
+      }
   /**
    * Fase 8b: la petición de servicios, para verla y corregirla antes de validar. `null` si no se
    * pudo leer (lo dice); sin el prop, no se enseña.
@@ -114,7 +119,10 @@ export async function AvanceAltaCard({
         ) : (
           <p className="text-muted-foreground border-t pt-3 text-xs">{t('pendiente_ayuda')}</p>
         )}
-        {estado === 'pendiente' && sinTerminar && (
+        {estado === 'pendiente' && sinTerminar === 'no_leido' && (
+          <p className="text-muted-foreground border-t pt-3 text-sm">{tS('no_leido')}</p>
+        )}
+        {estado === 'pendiente' && sinTerminar && sinTerminar !== 'no_leido' && (
           <div className="space-y-3 border-t pt-3">
             <div className="space-y-1">
               <p className="text-sm">

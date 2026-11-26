@@ -1021,7 +1021,9 @@
             "titulo": "Delete the enrolment?",
             "texto": "This child's enrolment is deleted: their record, enrolment, invitation and their lines in draft receipts. The family and their previous child's data stay. This cannot be undone."
           }
-        }
+        },
+        "no_leido_lista": "We could not read which enrolments have been unfinished for more than 30 days: that mark is missing from this list. Reload the page.",
+        "no_leido": "We could not read the status of this unfinished enrolment. Reload the page."
       }
     },
     "audit": {
@@ -4052,7 +4054,8 @@
       "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}",
       "recibos_nuevos": "{n, plural, one {You have # new receipt} other {You have # new receipts}}",
       "domiciliaciones_nuevas": "{n, plural, one {A family has signed or changed its direct debit from the app} other {# families have signed or changed their direct debit from the app}}",
-      "altas_sin_terminar": "{n, plural, one {# enrolment unfinished for more than 30 days} other {# enrolments unfinished for more than 30 days}}"
+      "altas_sin_terminar": "{n, plural, one {# enrolment unfinished for more than 30 days} other {# enrolments unfinished for more than 30 days}}",
+      "altas_sin_terminar_no_leido": "We could not read whether there are enrolments unfinished for more than 30 days. Reload the page."
     },
     "errors": {
       "no_autorizado": "Not authorised.",
