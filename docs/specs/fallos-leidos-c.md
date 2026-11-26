@@ -239,6 +239,16 @@ Mídelo con un huérfano montado en el ensayo, y según salga:
   El barrido del blog en el PR 1 con su migración, como propones. Y sigue con el PR 1 mientras mides
   esto, que tienes razón en que no cambia su código.»
 
+### 2026-11-26 · el barrido de los 8 buckets: quién alerta y quién cuenta; y la foto del niño 205c70e9
+
+«1 · EL BARRIDO DEL #549: tu reparto, tal cual. Alertan los que son datos personales o prueba de algo
+—DNI, libro de familia, tarjeta sanitaria, recibos de gestión, documentos de recogida y fotos de niños—, y
+solo cuentan los avatares, los documentos del centro y el blog. Y siempre alerta si el barrido falla al
+borrar, que eso es el propio instrumento diciendo que no puede hacer su trabajo.
+
+2 · LA FOTO DEL NIÑO 205c70e9: no hace falta decidir nada. Con el PR 1 ya mergeado, Dirección ve el aviso
+y el botón de borrar en los dos niños, así que lo decide Jose desde la app cuando entre. No la toques.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
