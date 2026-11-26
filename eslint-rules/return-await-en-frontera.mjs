@@ -43,6 +43,7 @@ function desenvolver(n) {
   return cur
 }
 
+/** @type {import('eslint').Rule.RuleModule} */
 export default {
   meta: {
     type: 'problem',
