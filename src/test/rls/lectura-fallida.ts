@@ -21,6 +21,11 @@ export interface SesionConFallos {
    * no (C, 2026-11-23: la tercera forma, una escritura que falla y se informa como éxito).
    */
   fallaEscrituraTabla?: string | null
+  /**
+   * Tabla cuyas LECTURAS (`from(tabla).select(…)`) contestan error, y sus escrituras no (C, 2026-11-26:
+   * la lectura que va DESPUÉS de una escritura en la misma tabla, como `recalcularTotal`).
+   */
+  fallaLecturaTabla?: string | null
 }
 
 const RESPUESTA_FALLIDA = {
@@ -57,6 +62,12 @@ export function clienteConFallos(s: SesionConFallos): SupabaseClient<Database> {
         return (tabla: string) => {
           if (tabla === s.fallaTabla) return cadena()
           const qb = t.from(tabla as never)
+          if (tabla === s.fallaLecturaTabla)
+            return new Proxy(qb, {
+              get(q, m, rq) {
+                return m === 'select' ? () => cadena() : Reflect.get(q, m, rq)
+              },
+            })
           if (tabla !== s.fallaEscrituraTabla) return qb
           const escribe = new Set(['insert', 'update', 'upsert', 'delete'])
           return new Proxy(qb, {
