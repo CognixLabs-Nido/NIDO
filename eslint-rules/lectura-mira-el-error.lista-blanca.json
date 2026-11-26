@@ -31,8 +31,6 @@
   "src/features/messaging/queries/count-no-leidos.ts": 1,
   "src/features/messaging/queries/get-conversacion-by-nino.ts": 1,
   "src/features/messaging/queries/get-lectores-anuncio.ts": 1,
-  "src/features/notificaciones/lib/helpers.ts": 1,
-  "src/features/notificaciones/queries/get-avisos-inicio.ts": 11,
   "src/features/olvido/actions/peticiones.ts": 1,
   "src/features/olvido/lib/avisar.ts": 1,
   "src/features/olvido/lib/fuentes-adjuntos.ts": 6,

@@ -17,9 +17,6 @@ export function fail(error: string): ActionResult<never> {
   return { success: false, error }
 }
 
-/** Clave del marcador "todo lo anterior está visto" en preferencias_usuario. */
-export const PREF_NOTIF_VISTO = 'notificaciones_visto_at'
-
 /**
  * Clave del mapa por-autorización `{ [autorizacion_id]: iso_visto_at }` en
  * preferencias_usuario: registra cuándo el usuario ABRIÓ cada autorización. El
