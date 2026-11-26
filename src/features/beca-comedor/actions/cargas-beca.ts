@@ -8,6 +8,8 @@ import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { createClient } from '@/lib/supabase/server'
 import { eurosACentimos } from '@/shared/lib/format-money'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
@@ -27,17 +29,22 @@ async function mesEstaCerrado(
   anio: number,
   mes: number
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('cierre_mensual')
     .select('id')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
     .maybeSingle()
+  // Censo C: una lectura caída no es «mes abierto» (dejaría tocar los tramos de un mes cerrado).
+  if (error) throw new LecturaFallida('cargas-beca: cierre del mes', error)
   return data != null
 }
 
-/** Identidad de carga = (curso, año/mes CORRESPONDIENTE). Selecciona sus tramos normales. */
+/**
+ * Identidad de carga = (curso, año/mes CORRESPONDIENTE). Selecciona sus tramos normales. Devuelve el BUILDER:
+ * quien lo espera tiene que mirar `error` (censo C, clase 2, 2026-11-26: sus tres llamadores no lo miraban).
+ */
 function tramosDeCarga(
   supabase: Supa,
   centroId: string,
@@ -57,12 +64,14 @@ function tramosDeCarga(
 
 /** Alumnos con elegibilidad ACTIVA en el curso: los únicos que pueden recibir un tramo nuevo. */
 async function becadosDelCurso(supabase: Supa, centroId: string, cursoId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('beca_comedor_elegibilidad')
     .select('nino_id')
     .eq('centro_id', centroId)
     .eq('curso_academico_id', cursoId)
     .eq('activa', true)
+  // Censo C (cargas-beca 60-66, DINERO): una lectura caída no es «ninguno becado» («no_becado», falso).
+  if (error) throw new LecturaFallida('cargas-beca: becados del curso', error)
   return new Set((data ?? []).map((e) => e.nino_id))
 }
 
@@ -153,47 +162,54 @@ export async function crearCarga(
   input: CargaBecaInput,
   centroId: string
 ): Promise<ActionResult<{ n: number }>> {
-  const parsed = cargaBecaSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'admin.cuotas.beca_comedor.errors.invalid')
+  try {
+    const parsed = cargaBecaSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'admin.cuotas.beca_comedor.errors.invalid')
+    }
+    const c = parsed.data
+
+    // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+    const supabase = await createClient()
+    if (!(await usuarioAdminEn(supabase, centroId))) {
+      return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+    }
+    const curso = await getCursoActivo(centroId)
+    if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
+
+    if (await mesEstaCerrado(supabase, centroId, c.anio_aplicacion, c.mes_aplicacion)) {
+      return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
+    }
+
+    // ¿Ya hay carga para ese (año/mes correspondiente)? → rechazar (usar editar).
+    const { data: existentes, error: errExistentes } = await tramosDeCarga(
+      supabase,
+      centroId,
+      curso.id,
+      c.anio_correspondiente,
+      c.mes_correspondiente
+    ).limit(1)
+    // Censo C (clase 2, 175, DINERO): caída no es «no hay carga»; el índice beca_tramo_normal_unico frenaba el
+    // duplicado, pero con un error de escritura genérico en vez de decir que no se pudo leer.
+    if (errExistentes) throw new LecturaFallida('crearCarga: tramos existentes', errExistentes)
+    if ((existentes ?? []).length > 0) return fail('admin.cuotas.beca_comedor.errors.ya_existe')
+
+    const plan = planGuardarCarga([], filasDe(c), false)
+    if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
+    if (plan.insertar.length === 0) return fail('admin.cuotas.beca_comedor.errors.sin_importes')
+    const becados = await becadosDelCurso(supabase, centroId, curso.id)
+    if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
+      return fail('admin.cuotas.beca_comedor.errors.no_becado')
+    }
+
+    const err = await escribirPlan(supabase, plan, { centroId, cursoId: curso.id, c }, 'crearCarga')
+    if (err) return fail(err)
+
+    revalidatePath(RUTA, 'page')
+    return ok({ n: plan.insertar.length })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const c = parsed.data
-
-  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
-  const supabase = await createClient()
-  if (!(await usuarioAdminEn(supabase, centroId))) {
-    return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
-  }
-  const curso = await getCursoActivo(centroId)
-  if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
-
-  if (await mesEstaCerrado(supabase, centroId, c.anio_aplicacion, c.mes_aplicacion)) {
-    return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
-  }
-
-  // ¿Ya hay carga para ese (año/mes correspondiente)? → rechazar (usar editar).
-  const { data: existentes } = await tramosDeCarga(
-    supabase,
-    centroId,
-    curso.id,
-    c.anio_correspondiente,
-    c.mes_correspondiente
-  ).limit(1)
-  if ((existentes ?? []).length > 0) return fail('admin.cuotas.beca_comedor.errors.ya_existe')
-
-  const plan = planGuardarCarga([], filasDe(c), false)
-  if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
-  if (plan.insertar.length === 0) return fail('admin.cuotas.beca_comedor.errors.sin_importes')
-  const becados = await becadosDelCurso(supabase, centroId, curso.id)
-  if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
-    return fail('admin.cuotas.beca_comedor.errors.no_becado')
-  }
-
-  const err = await escribirPlan(supabase, plan, { centroId, cursoId: curso.id, c }, 'crearCarga')
-  if (err) return fail(err)
-
-  revalidatePath(RUTA, 'page')
-  return ok({ n: plan.insertar.length })
 }
 
 /**
@@ -206,54 +222,65 @@ export async function editarCarga(
   input: CargaBecaInput,
   centroId: string
 ): Promise<ActionResult<{ n: number }>> {
-  const parsed = cargaBecaSchema.safeParse(input)
-  if (!parsed.success) {
-    return fail(parsed.error.issues[0]?.message ?? 'admin.cuotas.beca_comedor.errors.invalid')
-  }
-  const c = parsed.data
-
-  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
-  const supabase = await createClient()
-  if (!(await usuarioAdminEn(supabase, centroId))) {
-    return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
-  }
-  const curso = await getCursoActivo(centroId)
-  if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
-
-  const { data: tramos } = await tramosDeCarga(
-    supabase,
-    centroId,
-    curso.id,
-    c.anio_correspondiente,
-    c.mes_correspondiente
-  )
-  if ((tramos ?? []).length === 0) return fail('admin.cuotas.beca_comedor.errors.no_existe')
-
-  // El mes de aplicación ACTUAL (compartido por la carga) y el NUEVO deben estar abiertos.
-  const actual = tramos![0]!
-  if (await mesEstaCerrado(supabase, centroId, actual.anio_aplicacion, actual.mes_aplicacion)) {
-    return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
-  }
-  if (await mesEstaCerrado(supabase, centroId, c.anio_aplicacion, c.mes_aplicacion)) {
-    return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
-  }
-
-  const cambiaAplicacion =
-    actual.anio_aplicacion !== c.anio_aplicacion || actual.mes_aplicacion !== c.mes_aplicacion
-  const plan = planGuardarCarga(tramos ?? [], filasDe(c), cambiaAplicacion)
-  if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
-  if (plan.insertar.length > 0) {
-    const becados = await becadosDelCurso(supabase, centroId, curso.id)
-    if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
-      return fail('admin.cuotas.beca_comedor.errors.no_becado')
+  try {
+    const parsed = cargaBecaSchema.safeParse(input)
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? 'admin.cuotas.beca_comedor.errors.invalid')
     }
+    const c = parsed.data
+
+    // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+    const supabase = await createClient()
+    if (!(await usuarioAdminEn(supabase, centroId))) {
+      return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+    }
+    const curso = await getCursoActivo(centroId)
+    if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
+
+    const { data: tramos, error: errTramos } = await tramosDeCarga(
+      supabase,
+      centroId,
+      curso.id,
+      c.anio_correspondiente,
+      c.mes_correspondiente
+    )
+    // Censo C (clase 2, 223/278): caída no es «la carga no existe» (motivo falso).
+    if (errTramos) throw new LecturaFallida('cargas-beca: tramos de la carga', errTramos)
+    if ((tramos ?? []).length === 0) return fail('admin.cuotas.beca_comedor.errors.no_existe')
+
+    // El mes de aplicación ACTUAL (compartido por la carga) y el NUEVO deben estar abiertos.
+    const actual = tramos![0]!
+    if (await mesEstaCerrado(supabase, centroId, actual.anio_aplicacion, actual.mes_aplicacion)) {
+      return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
+    }
+    if (await mesEstaCerrado(supabase, centroId, c.anio_aplicacion, c.mes_aplicacion)) {
+      return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
+    }
+
+    const cambiaAplicacion =
+      actual.anio_aplicacion !== c.anio_aplicacion || actual.mes_aplicacion !== c.mes_aplicacion
+    const plan = planGuardarCarga(tramos ?? [], filasDe(c), cambiaAplicacion)
+    if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
+    if (plan.insertar.length > 0) {
+      const becados = await becadosDelCurso(supabase, centroId, curso.id)
+      if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
+        return fail('admin.cuotas.beca_comedor.errors.no_becado')
+      }
+    }
+
+    const err = await escribirPlan(
+      supabase,
+      plan,
+      { centroId, cursoId: curso.id, c },
+      'editarCarga'
+    )
+    if (err) return fail(err)
+
+    revalidatePath(RUTA, 'page')
+    return ok({ n: plan.insertar.length })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-
-  const err = await escribirPlan(supabase, plan, { centroId, cursoId: curso.id, c }, 'editarCarga')
-  if (err) return fail(err)
-
-  revalidatePath(RUTA, 'page')
-  return ok({ n: plan.insertar.length })
 }
 
 /**
@@ -267,45 +294,52 @@ export async function borrarCarga(
   },
   centroId: string
 ): Promise<ActionResult<{ n: number }>> {
-  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
-  const supabase = await createClient()
-  if (!(await usuarioAdminEn(supabase, centroId))) {
-    return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+  try {
+    // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+    const supabase = await createClient()
+    if (!(await usuarioAdminEn(supabase, centroId))) {
+      return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+    }
+    const curso = await getCursoActivo(centroId)
+    if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
+
+    const { data: tramos, error: errTramos } = await tramosDeCarga(
+      supabase,
+      centroId,
+      curso.id,
+      input.anio_correspondiente,
+      input.mes_correspondiente
+    )
+    // Censo C (clase 2, 223/278): caída no es «la carga no existe» (motivo falso).
+    if (errTramos) throw new LecturaFallida('cargas-beca: tramos de la carga', errTramos)
+    if ((tramos ?? []).length === 0) return fail('admin.cuotas.beca_comedor.errors.no_existe')
+
+    const actual = tramos![0]!
+    if (await mesEstaCerrado(supabase, centroId, actual.anio_aplicacion, actual.mes_aplicacion)) {
+      return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
+    }
+
+    const { error } = await supabase
+      .from('beca_comedor_tramo')
+      .delete()
+      .eq('centro_id', centroId)
+      .eq('curso_academico_id', curso.id)
+      .eq('origen', 'normal')
+      .eq('anio_correspondiente', input.anio_correspondiente)
+      .eq('mes_correspondiente', input.mes_correspondiente)
+
+    if (error) {
+      logger.warn('borrarCarga error', error.message)
+      if (error.code === '42501') return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+      // PR-5: algún tramo ya está descontado en un recibo validado (trigger beca_tramo_proteger).
+      if (error.hint === BECA_APLICADA)
+        return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
+      return fail('admin.cuotas.beca_comedor.errors.delete_failed')
+    }
+
+    revalidatePath(RUTA, 'page')
+    return ok({ n: (tramos ?? []).length })
+  } catch (e) {
+    return falloDeLectura(e)
   }
-  const curso = await getCursoActivo(centroId)
-  if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
-
-  const { data: tramos } = await tramosDeCarga(
-    supabase,
-    centroId,
-    curso.id,
-    input.anio_correspondiente,
-    input.mes_correspondiente
-  )
-  if ((tramos ?? []).length === 0) return fail('admin.cuotas.beca_comedor.errors.no_existe')
-
-  const actual = tramos![0]!
-  if (await mesEstaCerrado(supabase, centroId, actual.anio_aplicacion, actual.mes_aplicacion)) {
-    return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
-  }
-
-  const { error } = await supabase
-    .from('beca_comedor_tramo')
-    .delete()
-    .eq('centro_id', centroId)
-    .eq('curso_academico_id', curso.id)
-    .eq('origen', 'normal')
-    .eq('anio_correspondiente', input.anio_correspondiente)
-    .eq('mes_correspondiente', input.mes_correspondiente)
-
-  if (error) {
-    logger.warn('borrarCarga error', error.message)
-    if (error.code === '42501') return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
-    // PR-5: algún tramo ya está descontado en un recibo validado (trigger beca_tramo_proteger).
-    if (error.hint === BECA_APLICADA) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
-    return fail('admin.cuotas.beca_comedor.errors.delete_failed')
-  }
-
-  revalidatePath(RUTA, 'page')
-  return ok({ n: (tramos ?? []).length })
 }
