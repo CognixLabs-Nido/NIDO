@@ -469,7 +469,10 @@ limpieza del blog). **Límite conocido del escáner, escrito para que el próxim
 sitios que el escáner da por «no usa» porque `!x` junta el fallo (`null`) con «no le toca» (`undefined`) son
 correctos, porque para Dirección `ficha_gestion_ninos` y `sip_de_ninos` contestan siempre y «no le toca» no
 puede darse (gate-alta 89/90, aplicar.ts 119, campos-ficha-familia 46, alta/[ninoId] 149 y 444,
-admin/ninos/[id] 113). El doble fallo de `aprobarCambio`, medido abierto (run 45785330097): la fila queda
+admin/ninos/[id] 113). _(Corregido el 2026-11-26, al escribir el cuerpo de B1: son 6, no 7. La
+444 de alta/[ninoId] era `esFamiliaNuevaEnCentro`, que no es un `!x`: es la re-clasificación 161, decidida
+abajo como degradación deliberada. Las 6 y la 161 están en `scripts/ci/fallo-que-se-pierde.lista.json`, cada
+una con su motivo.)_ El doble fallo de `aprobarCambio`, medido abierto (run 45785330097): la fila queda
 `aprobado`, fuera de la cola, y Dirección lee el mismo «no se pudo aplicar» que con un fallo solo. Jose, literal:
 
 «Sí, adelántalo. recalcularTotal es el único de todo esto que ESCRIBE un importe equivocado: un recibo con
