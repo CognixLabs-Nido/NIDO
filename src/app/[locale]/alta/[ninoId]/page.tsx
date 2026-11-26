@@ -221,6 +221,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const lecturaTutores = await leerTutoresDeNino(supabase, ninoId)
   if (!lecturaTutores.leidos) throw new Error('alta: no se pudo leer familia_tutores')
   const tutoresRows = lecturaTutores.tutores
+  const personalesLeidos = lecturaTutores.personalesLeidos
 
   async function aDatosTutor(
     tipo: 'tutor_legal_principal' | 'tutor_legal_secundario'
@@ -248,10 +249,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       legibles: row.ve_personales,
       // Solo si la lectura funcionó: si falló, no es «lo gestiona el otro», es «no se pudo leer».
       gestionaElOtro:
-        lecturaTutores.personalesLeidos &&
-        row.tiene_cuenta &&
-        row.usuario_id !== user?.id &&
-        !row.ve_personales,
+        personalesLeidos && row.tiene_cuenta && row.usuario_id !== user?.id && !row.ve_personales,
     }
   }
   let datosTutor1 = await aDatosTutor('tutor_legal_principal')

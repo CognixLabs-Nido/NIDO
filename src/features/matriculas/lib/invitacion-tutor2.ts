@@ -2,7 +2,8 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
+import { leerTutoresDeNino, type TutorFamiliaRow } from '@/features/alta/lib/tutores-familia'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
@@ -50,11 +51,15 @@ export async function destinoReenvioTutor2(
   | {
       ok: true
       email: string
-      tutores: Awaited<ReturnType<typeof leerTutoresDeNino>>['tutores']
+      tutores: TutorFamiliaRow[]
     }
   | { ok: false; motivo: 'sin_tutor2' | 'ya_entro' }
 > {
-  const { tutores } = await leerTutoresDeNino(service, ninoId)
+  // Censo C (clase 1): con la lectura caída esto decía «no tiene segundo tutor» (motivo falso). Lanza, como
+  // el resto de lecturas de aquí («Lanza si la base falla»).
+  const lecturaTutores = await leerTutoresDeNino(service, ninoId)
+  if (!lecturaTutores.leidos) throw new LecturaFallida('destinoReenvioTutor2', lecturaTutores.error)
+  const { tutores } = lecturaTutores
   const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
   const email = tutor2?.email?.trim().toLowerCase()
   if (!tutor2 || !email) return { ok: false, motivo: 'sin_tutor2' }

@@ -102,9 +102,10 @@ export async function comprobarAlta(
     faltan.push('identidad')
 
   // Tutor 1 y su DNI, del perfil compartido `familia_tutores` (F-2b-3). Un fallo no es «falta».
-  const { tutores, leidos, personalesLeidos } = await leerTutoresDeNino(supabase, ninoId)
+  const lecturaTutores = await leerTutoresDeNino(supabase, ninoId)
   // Si falló la función de los personales, un `ve_personales` en falso no es la regla: no se sabe.
-  if (!leidos || !personalesLeidos) return { ok: false }
+  if (!lecturaTutores.leidos || !lecturaTutores.personalesLeidos) return { ok: false }
+  const { tutores } = lecturaTutores
   const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
   // Fase 6: la regla de la base (`privado.tutor_completo`). Lo que no se pudo leer no es «falta».

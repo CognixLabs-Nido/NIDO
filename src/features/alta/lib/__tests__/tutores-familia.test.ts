@@ -22,7 +22,10 @@ const filas = [
 ]
 
 /** Un cliente falso: el niño y su familia, las filas de la tabla y `tutores_de_familia`. */
-function cliente(rpc: { data: unknown; error: unknown }) {
+function cliente(
+  rpc: { data: unknown; error: unknown },
+  tabla: { data: unknown; error: unknown } = { data: filas, error: null }
+) {
   const resuelve = (r: unknown) => {
     const b: Record<string, unknown> = {}
     for (const m of ['select', 'eq', 'is']) b[m] = () => b
@@ -32,9 +35,7 @@ function cliente(rpc: { data: unknown; error: unknown }) {
   }
   return {
     from: (t: string) =>
-      t === 'ninos'
-        ? resuelve({ data: { familia_id: FAMILIA }, error: null })
-        : resuelve({ data: filas, error: null }),
+      t === 'ninos' ? resuelve({ data: { familia_id: FAMILIA }, error: null }) : resuelve(tabla),
     rpc: () => Promise.resolve(rpc),
   } as unknown as SupabaseClient<Database>
 }
@@ -56,6 +57,7 @@ describe('leerTutoresDeNino · la regla y el fallo no llegan iguales', () => {
       }),
       NINO
     )
+    if (!r.leidos) throw new Error('premisa: la lectura tenía que salir')
     expect(r.tutores.map((t) => [t.usuario_id, t.ve_personales])).toEqual([
       [YO, true],
       [OTRO, false],
@@ -65,8 +67,33 @@ describe('leerTutoresDeNino · la regla y el fallo no llegan iguales', () => {
 
   it('si la función falla: las filas siguen (lo abierto), pero personalesLeidos es falso', async () => {
     const r = await leerTutoresDeNino(cliente({ data: null, error: { code: 'XX000' } }), NINO)
+    if (!r.leidos) throw new Error('premisa: las filas se leyeron')
     expect(r.tutores).toHaveLength(2)
     expect(r.tutores.every((t) => !t.ve_personales)).toBe(true)
     expect(r).toMatchObject({ leidos: true, personalesLeidos: false })
+  })
+})
+
+/**
+ * Censo C, clase 1 (2026-11-26): `leidos` iba junto a `tutores`, y cuatro llamadores cogían `tutores` sin mirarla.
+ * Ahora con la lectura caída no hay `tutores` en el resultado: el compilador obliga a mirar `leidos` antes.
+ */
+describe('leerTutoresDeNino · sin leer no hay tutores que coger', () => {
+  it('control: con la tabla bien, leidos y los dos tutores', async () => {
+    const r = await leerTutoresDeNino(cliente({ data: [], error: null }), NINO)
+    expect(r.leidos).toBe(true)
+    expect('tutores' in r && r.tutores.length).toBe(2)
+  })
+
+  it('si falla familia_tutores: leidos false, el error de la base, y ninguna lista', async () => {
+    const r = await leerTutoresDeNino(
+      cliente(
+        { data: [], error: null },
+        { data: null, error: { message: 'caída', code: 'XX000' } }
+      ),
+      NINO
+    )
+    expect(r).toEqual({ leidos: false, error: { message: 'caída', code: 'XX000' } })
+    expect('tutores' in r).toBe(false)
   })
 })
