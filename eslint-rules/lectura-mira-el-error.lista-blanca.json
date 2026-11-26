@@ -17,8 +17,6 @@
   "src/features/export/lib/registrar.ts": 1,
   "src/features/familias/actions/fijar-metodo-pago-familia.ts": 1,
   "src/features/familias/queries/get-ninos-de-familia.ts": 1,
-  "src/features/fotos/queries/get-fotos-pendientes-nino.ts": 5,
-  "src/features/fotos/queries/get-revocaciones-pendientes.ts": 1,
   "src/features/informes/actions/gestionar-informe.ts": 2,
   "src/features/informes/actions/publicar-lote-informes.ts": 2,
   "src/features/matriculas/actions/alta-sin-terminar.ts": 1,

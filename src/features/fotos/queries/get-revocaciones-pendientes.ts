@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface RevocacionPendiente {
   ninoId: string
@@ -19,12 +20,14 @@ export interface RevocacionPendiente {
  */
 export async function getRevocacionesPendientes(centroId: string): Promise<RevocacionPendiente[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('media_etiquetas')
     .select('nino_id, ninos!inner(id, nombre, apellidos, puede_aparecer_en_fotos)')
     .eq('centro_id', centroId)
     .is('resuelta_en', null)
     .eq('ninos.puede_aparecer_en_fotos', false)
+  // Censo C: antes, «ninguna revocación con fotos pendientes».
+  if (error) throw new LecturaFallida('fotos revocadas: listado', error)
 
   if (!data) return []
 

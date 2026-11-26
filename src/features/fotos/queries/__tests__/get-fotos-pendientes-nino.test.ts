@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
+
 /**
  * D3 — `getFotosPendientesNino` autoriza en la propia query (`es_admin` del centro), no solo
  * en el layout de admin. Si quien llama no es admin del centro: `null`, sin leer el niño ni
@@ -34,15 +36,26 @@ beforeEach(() => {
 })
 
 describe('D3 — getFotosPendientesNino', () => {
-  it.each([
-    ['no admin (false)', { data: false, error: null }],
-    ['error del rpc', { data: null, error: { message: 'boom' } }],
-  ])('%s → null, sin leer nada más ni firmar', async (_caso, respuesta) => {
-    rpc.mockResolvedValue(respuesta)
+  it('no admin (false) → null, sin leer nada más ni firmar', async () => {
+    rpc.mockResolvedValue({ data: false, error: null })
     tablas({ ninos: [{ data: { nombre: 'Ana', apellidos: null }, error: null }] })
     const r = await getFotosPendientesNino(NINO, CENTRO)
     expect(r).toBeNull()
     expect(rpc).toHaveBeenCalledWith('es_admin', { p_centro_id: CENTRO })
+    expect(from).not.toHaveBeenCalled()
+    expect(createServiceRoleClient).not.toHaveBeenCalled()
+  })
+
+  // Censo C (B1, 2026-11-26): el error del rpc daba `null` como «no eres Dirección». Ahora lanza
+  // `LecturaFallida` (la página la pinta con su error.tsx), igual sin leer nada más ni firmar.
+  it('error del rpc → LecturaFallida, sin leer nada más ni firmar', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'boom' } })
+    tablas({ ninos: [{ data: { nombre: 'Ana', apellidos: null }, error: null }] })
+    const e = await getFotosPendientesNino(NINO, CENTRO).then(
+      () => null,
+      (err: unknown) => err
+    )
+    expect(esLecturaFallida(e)).toBe(true)
     expect(from).not.toHaveBeenCalled()
     expect(createServiceRoleClient).not.toHaveBeenCalled()
   })
@@ -90,4 +103,59 @@ describe('D3 — getFotosPendientesNino', () => {
       ],
     })
   })
+})
+
+/**
+ * Censo C (B1, 2026-11-26): con una de las lecturas que cuentan los niños de la publicación caída,
+ * `ninosEnPublicacion` caía a 1 («solo sale este niño»): el aviso que Dirección lee antes de borrar la
+ * publicación callaba que salen otros. Ahora lanza. Premisa: una publicación con dos niños dice 2.
+ */
+describe('censo C: el aviso de cuántos niños salen', () => {
+  const CAIDA = { data: null, error: { code: 'XX000', message: 'caída' } }
+  const ETIQUETA = {
+    id: 'e1',
+    media_id: 'm1',
+    media: { id: 'm1', path_miniatura: null, publicacion_id: 'pub1' },
+  }
+  function montar(caida: string | null) {
+    rpc.mockResolvedValue({ data: true, error: null })
+    tablas({
+      ninos: [
+        caida === 'ninos' ? CAIDA : { data: { nombre: 'Ana', apellidos: null }, error: null },
+      ],
+      media_etiquetas: [
+        caida === 'etiquetas' ? CAIDA : { data: [ETIQUETA], error: null },
+        caida === 'todas'
+          ? CAIDA
+          : {
+              data: [
+                { media_id: 'm1', nino_id: NINO },
+                { media_id: 'm1', nino_id: 'otro' },
+              ],
+              error: null,
+            },
+      ],
+      media: [
+        caida === 'media' ? CAIDA : { data: [{ id: 'm1', publicacion_id: 'pub1' }], error: null },
+      ],
+    })
+  }
+
+  it('premisa: con todo leído, la publicación con dos niños dice 2', async () => {
+    montar(null)
+    const r = await getFotosPendientesNino(NINO, CENTRO)
+    expect(r?.fotos[0]?.ninosEnPublicacion).toBe(2)
+  })
+
+  it.each(['ninos', 'etiquetas', 'media', 'todas'])(
+    'con %s caída: no dice 1, lanza',
+    async (caida) => {
+      montar(caida)
+      const e = await getFotosPendientesNino(NINO, CENTRO).then(
+        () => null,
+        (err: unknown) => err
+      )
+      expect(esLecturaFallida(e), `esperaba una LecturaFallida, llegó ${String(e)}`).toBe(true)
+    }
+  )
 })

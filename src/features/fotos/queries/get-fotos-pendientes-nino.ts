@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 import { firmarRutas } from '../lib/storage'
 
@@ -37,24 +38,30 @@ export async function getFotosPendientesNino(
 
   // D3 — autorización en la propia query, no solo en el layout de admin: solo la dirección
   // del centro del niño (el niño se filtra por ese mismo `centroId` justo abajo).
-  const { data: esAdmin } = await supabase.rpc('es_admin', { p_centro_id: centroId })
+  const { data: esAdmin, error: errAdmin } = await supabase.rpc('es_admin', {
+    p_centro_id: centroId,
+  })
+  // Censo C: una lectura caída no es «no eres Dirección» ni «el niño no existe».
+  if (errAdmin) throw new LecturaFallida('fotos revocadas: es_admin', errAdmin)
   if (esAdmin !== true) return null
 
-  const { data: nino } = await supabase
+  const { data: nino, error: errNino } = await supabase
     .from('ninos')
     .select('nombre, apellidos')
     .eq('id', ninoId)
     .eq('centro_id', centroId)
     .maybeSingle()
+  if (errNino) throw new LecturaFallida('fotos revocadas: niño', errNino)
   if (!nino) return null
 
   // Etiquetas pendientes del niño + su media (ruta miniatura + publicación).
-  const { data: etiquetas } = await supabase
+  const { data: etiquetas, error: errEtiquetas } = await supabase
     .from('media_etiquetas')
     .select('id, media_id, media!inner(id, path_miniatura, publicacion_id)')
     .eq('nino_id', ninoId)
     .eq('centro_id', centroId)
     .is('resuelta_en', null)
+  if (errEtiquetas) throw new LecturaFallida('fotos revocadas: etiquetas', errEtiquetas)
 
   if (!etiquetas || etiquetas.length === 0) {
     return { nombre: nino.nombre, apellidos: nino.apellidos, fotos: [] }
@@ -70,18 +77,22 @@ export async function getFotosPendientesNino(
   const pubIds = [...new Set(filas.map((f) => f.media.publicacion_id))]
 
   // Todas las medias de esas publicaciones (para mapear media→publicación).
-  const { data: medias } = await supabase
+  // Censo C: sin estas dos lecturas, `ninosEnPublicacion` caía a 1 («solo sale este niño»): el aviso que
+  // Dirección lee antes de BORRAR la publicación callaba que salen otros niños.
+  const { data: medias, error: errMedias } = await supabase
     .from('media')
     .select('id, publicacion_id')
     .in('publicacion_id', pubIds)
+  if (errMedias) throw new LecturaFallida('fotos revocadas: fotos de la publicación', errMedias)
   const pubDeMedia = new Map<string, string>()
   for (const m of medias ?? []) pubDeMedia.set(m.id, m.publicacion_id)
 
   // Niños distintos por publicación = unión de etiquetas sobre todas sus medias.
-  const { data: todasEtiquetas } = await supabase
+  const { data: todasEtiquetas, error: errTodas } = await supabase
     .from('media_etiquetas')
     .select('media_id, nino_id')
     .in('media_id', [...pubDeMedia.keys()])
+  if (errTodas) throw new LecturaFallida('fotos revocadas: niños de la publicación', errTodas)
   const ninosPorPub = new Map<string, Set<string>>()
   for (const t of todasEtiquetas ?? []) {
     const pub = pubDeMedia.get(t.media_id)
