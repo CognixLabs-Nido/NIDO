@@ -37,6 +37,9 @@ tester.run('lectura-mira-el-error', regla, {
     `async function f() { const { data } = await Array.from([1]); return data }`,
     // Sin await: un builder, no un resultado.
     `function f(s) { let q = s.from('a').select('id'); return q }`,
+    // Promise.all de cadenas que acaban en `.then(fn)`: quien escribe `fn` mira el error (export/recolectar.ts,
+    // falso positivo arreglado el 2026-11-26).
+    `async function f(s) { const [a, b] = await Promise.all([s.from('a').select().then((r) => leido('a', r)), s.from('b').select().then((r) => leido('b', r))]); return [a, b] }`,
   ],
   invalid: [
     {

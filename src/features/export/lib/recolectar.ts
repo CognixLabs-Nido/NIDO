@@ -338,7 +338,12 @@ async function firmar(
   path: string,
   descripcion: string
 ): Promise<AdjuntoExport> {
-  const { data } = await service.storage.from(bucket).createSignedUrl(path, EXPORT_URL_TTL_SEGUNDOS)
+  const { data, error } = await service.storage
+    .from(bucket)
+    .createSignedUrl(path, EXPORT_URL_TTL_SEGUNDOS)
+  // Censo C (2026-11-26): sin firmar, el adjunto salía con `url_firmada: null` (el export decía que el
+  // fichero existe y no daba cómo obtenerlo). Lanza: un export incompleto sin decirlo es peor que reintentar.
+  if (error) throw new Error(`export: no se pudo firmar ${bucket}: ${error.message}`)
   return { descripcion, bucket, path, url_firmada: data?.signedUrl ?? null, caduca_en: caducaEn() }
 }
 
@@ -363,11 +368,14 @@ export async function recolectarTutor(
   const perfiles = filas(d?.perfiles_familia)
   const perfil = perfiles[0]
   if (!perfil) return null
-  const { data: familia } = await client
+  const { data: familia, error: errFamilia } = await client
     .from('familias')
     .select('centro_id')
     .eq('id', String(perfil.familia_id))
     .maybeSingle()
+  // Censo C: sin el centro, `centroId` null y el export no quedaba registrado (`registrarExport` omite
+  // los sujetos sin centro).
+  if (errFamilia) throw new Error(`export: la lectura de familias falló: ${errFamilia.message}`)
   const adjuntos: AdjuntoExport[] = []
   if (typeof perfil.dni_documento_path === 'string')
     adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, perfil.dni_documento_path, 'DNI'))

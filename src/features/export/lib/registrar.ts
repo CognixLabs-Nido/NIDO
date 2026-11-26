@@ -33,5 +33,8 @@ export async function registrarExport(
       solicitado_por: solicitadoPor,
     }))
   if (payload.length === 0) return
-  await service.from('export_log').insert(payload)
+  // Censo C (2026-11-26): el error se tiraba, y el `catch` de las rutas (que lo manda a Sentry y entrega el
+  // export igual) no se disparaba nunca: un acceso sin registro, sin que nadie lo supiera.
+  const { error } = await service.from('export_log').insert(payload)
+  if (error) throw new Error(`export_log: ${error.message}`)
 }

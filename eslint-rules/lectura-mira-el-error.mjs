@@ -7,7 +7,9 @@
 //   4. la llamada esperada y tirada:                      await supabase.from('x').insert(…)
 // Lo mismo dentro de un `Promise.all([...])` destructurado.
 //
-// Lo que NO ve: un `if (error) return []` (lo mira y lo convierte en vacío). Eso no se distingue de un
+// Lo que NO ve: un `if (error) return []` (lo mira y lo convierte en vacío). Ni una cadena que acaba en
+// `.then(fn)`/`.catch(fn)`: el resultado es de quien escribe `fn` (falso positivo de `export/recolectar.ts`,
+// arreglado con su caso el 2026-11-26), y por eso tampoco un `.then((r) => r)` que lo pasa tal cual. Eso no se distingue de un
 // tratamiento bueno por la forma; lo vigila el censo, no el lint.
 //
 // LISTA BLANCA TEMPORAL (`lectura-mira-el-error.lista-blanca.json`): fichero → cuántos sitios tiene hoy.
@@ -27,6 +29,18 @@ const NO_SUPABASE = /^(Array|Object|Buffer|Uint8Array|Int8Array|Float32Array|Set
 
 /** ¿Esta expresión es (o termina en) una cadena de Supabase? */
 function esCadenaSupabase(n) {
+  // `cadena.then((r) => leido(r))`: quien escribe la función recibe el `{ data, error }` y responde de él; lo
+  // que sale ya no es el resultado crudo (export/recolectar.ts, 2026-11-26: `leido` lanza si `r.error`).
+  // Lo que NO ve, por eso: un `.then((r) => r)` que lo pasa tal cual.
+  if (
+    n &&
+    n.type === 'CallExpression' &&
+    n.callee.type === 'MemberExpression' &&
+    !n.callee.computed &&
+    (n.callee.property.name === 'then' || n.callee.property.name === 'catch') &&
+    n.arguments.length > 0
+  )
+    return false
   let cur = n
   while (cur) {
     if (
