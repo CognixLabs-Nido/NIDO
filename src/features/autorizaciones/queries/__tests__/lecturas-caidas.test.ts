@@ -207,12 +207,20 @@ describe('getMedicacionesConActividad', () => {
     const [m] = await getMedicacionesConActividad('centro-1')
     expect(m).toMatchObject({ estadoFirma: 'firmado' })
     expect(JSON.stringify(m)).toContain('Niño Demo')
+    // Dos lecturas de `ninos`: la de los nombres y la del estado de firma (getEstadoFirmaPorInstancia).
+    // Cada caso de abajo tumba UNA; sin esto, «ninos caída» podía caer en la otra y no probar nada.
+    expect(estado.lecturas.ninos, 'premisa: dos lecturas de ninos').toBe(2)
   })
 
-  it.each(['autorizaciones', 'administraciones_medicacion', 'ninos'])(
-    'con %s caída: no dice «no hay medicación» ni «0 dadas», lanza',
-    async (tabla) => {
-      estado.falla = { tabla, n: 1 }
+  it.each([
+    ['autorizaciones', 1],
+    ['administraciones_medicacion', 1],
+    ['ninos', 1],
+    ['ninos', 2],
+  ])(
+    'con %s (lectura %i) caída: no dice «no hay medicación» ni «0 dadas», lanza',
+    async (tabla, n) => {
+      estado.falla = { tabla, n }
       await lanzaLecturaFallida(getMedicacionesConActividad('centro-1'))
     }
   )
