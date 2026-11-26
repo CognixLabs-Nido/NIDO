@@ -79,7 +79,7 @@ export async function comprobarAlta(
 
   // Identidad del menor de la tabla; los hermanos y el libro de familia son de gestión y salen por
   // `ficha_gestion_ninos` (`20270115120000`), que al tutor legal y a la Dirección les contesta.
-  const [{ data: identidad }, gestion, tarjeta] = await Promise.all([
+  const [{ data: identidad, error: errIdentidad }, gestion, tarjeta] = await Promise.all([
     supabase
       .from('ninos')
       .select('apellidos, fecha_nacimiento, lugar_nacimiento, nacionalidad, familia_id, centro_id')
@@ -89,7 +89,8 @@ export async function comprobarAlta(
     leerFichaGestionDe(supabase, ninoId),
     leerTarjetaSanitariaDe(supabase, ninoId),
   ])
-  if (!identidad || !gestion || !tarjeta) return { ok: false }
+  // Censo C: el error se mira a la vista. `{ ok: false }` es «no se pudo leer», no «falta».
+  if (errIdentidad || !identidad || !gestion || !tarjeta) return { ok: false }
   // Fase 5b y 7: la misma regla que la base (`datos_nino_por_completar`).
   if (
     !identidad.apellidos ||

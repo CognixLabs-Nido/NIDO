@@ -1,10 +1,6 @@
 {
   "src/features/agenda/actions/agregar-invitados.ts": 1,
   "src/features/agenda/actions/crear-cita.ts": 1,
-  "src/features/alta/lib/authz-tutor.ts": 2,
-  "src/features/alta/lib/gate-alta.ts": 1,
-  "src/features/alta/lib/mandato-v3-servidor.ts": 1,
-  "src/features/alta/queries/get-mandato-familia.ts": 1,
   "src/features/aulas/actions/create-aula.ts": 1,
   "src/features/aulas/queries/get-aulas-con-personal.ts": 1,
   "src/features/calendario-centro/actions/upsert-dia-centro.ts": 1,

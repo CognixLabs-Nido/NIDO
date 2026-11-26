@@ -10,6 +10,7 @@ import {
 } from '@/features/alta/lib/mandato-v3-servidor'
 import { familiaAltaValidada } from '@/features/cambios-pendientes/lib/gate'
 import { familiaDelUsuarioEn } from '@/features/centros/contexto/ambito-familiar'
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -94,10 +95,19 @@ export async function POST(
   if (!acreedor) return err('alta.errors.no_autorizado', 403)
   if (!acreedor.cid) return err('alta.sepa.errors.centro_sin_cid', 409)
 
-  const [enCola, activo] = await Promise.all([
-    familiaAltaValidada(supabase, familia.centroId, familia.familiaId),
-    familiaTieneMandatoActivo(familia.familiaId),
-  ])
+  // Censo C: sin leer si ya hay un mandato activo no se sabe si es «registrar» o «sustituir». Antes era
+  // «no hay» y se registraba otro encima. Se dice antes de subir nada.
+  let enCola: Awaited<ReturnType<typeof familiaAltaValidada>>
+  let activo: Awaited<ReturnType<typeof familiaTieneMandatoActivo>>
+  try {
+    ;[enCola, activo] = await Promise.all([
+      familiaAltaValidada(supabase, familia.centroId, familia.familiaId),
+      familiaTieneMandatoActivo(familia.familiaId),
+    ])
+  } catch (e) {
+    if (!esLecturaFallida(e)) throw e
+    return err('common.lectura_fallida', 500)
+  }
   const r = await firmarMandatoDigital(supabase, {
     familiaId: familia.familiaId,
     centroId: familia.centroId,

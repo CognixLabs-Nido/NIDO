@@ -30,6 +30,7 @@ const { bd } = vi.hoisted(() => ({
     rpcArgs: null as Record<string, unknown> | null,
     validada: false,
     activo: null as { id: string } | null,
+    activoCaido: false,
     subidas: [] as { path: string; upsert: boolean; bytes: Uint8Array }[],
   },
 }))
@@ -41,9 +42,16 @@ vi.mock('@/shared/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() 
 vi.mock('@/features/centros/contexto/ambito-familiar', () => ({
   familiaDelUsuarioEn: async () => ({ centroId: CENTRO, familiaId: FAMILIA }),
 }))
-vi.mock('@/features/alta/queries/get-mandato-familia', () => ({
-  familiaTieneMandatoActivo: async () => bd.activo,
-}))
+vi.mock('@/features/alta/queries/get-mandato-familia', async () => {
+  const { LecturaFallida } = await import('@/shared/lib/lectura-fallida')
+  return {
+    familiaTieneMandatoActivo: async () => {
+      if (bd.activoCaido)
+        throw new LecturaFallida('familiaTieneMandatoActivo', { code: 'XX000', message: 'x' })
+      return bd.activo
+    },
+  }
+})
 vi.mock('@/lib/supabase/admin', () => ({
   createServiceRoleClient: () => ({
     storage: { from: () => ({ remove: async () => ({ error: null }) }) },
@@ -109,6 +117,7 @@ beforeEach(() => {
   bd.rpcArgs = null
   bd.validada = false
   bd.activo = null
+  bd.activoCaido = false
   bd.subidas = []
 })
 
@@ -155,5 +164,18 @@ describe('POST /family/domiciliacion (2026-11-22: el PDF del servidor, sellado)'
         .toEqual({ success: false, error })
       expect.soft(bd.llamadas).toEqual([])
     }
+  })
+})
+
+// Censo C (B1, 2026-11-26): sin leer si ya hay mandato activo, antes era «no hay» y se registraba otro encima.
+// Ahora 500 lectura_fallida, sin subir ni registrar nada. Premisa: los dos casos de arriba.
+describe('POST /family/domiciliacion — el mandato activo sin leer', () => {
+  it('500 lectura_fallida, sin subir ni registrar', async () => {
+    bd.activoCaido = true
+    expect(await enviar()).toEqual({
+      status: 500,
+      json: { success: false, error: 'common.lectura_fallida' },
+    })
+    expect(bd.llamadas).toEqual([])
   })
 })

@@ -43,13 +43,15 @@ const { bd } = vi.hoisted(() => ({
     presencial: false,
     subidas: [] as { path: string; upsert: boolean; bytes: Uint8Array }[],
     borrados: [] as string[][],
+    borrarFalla: false,
   },
 }))
 
 vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
   familiaAltaValidada: async () => bd.validada,
 }))
-vi.mock('@/shared/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
+const { logError } = vi.hoisted(() => ({ logError: vi.fn() }))
+vi.mock('@/shared/lib/logger', () => ({ logger: { error: logError, warn: vi.fn() } }))
 vi.mock('@/features/alta/lib/authz-tutor', () => ({
   esAdminDeCentroDeNino: async () => bd.presencial,
 }))
@@ -62,7 +64,7 @@ vi.mock('@/lib/supabase/admin', () => ({
       from: () => ({
         remove: async (paths: string[]) => {
           bd.borrados.push(paths)
-          return { error: null }
+          return { error: bd.borrarFalla ? { message: 'no' } : null }
         },
       }),
     },
@@ -145,6 +147,8 @@ beforeEach(() => {
   bd.presencial = false
   bd.subidas = []
   bd.borrados = []
+  bd.borrarFalla = false
+  logError.mockClear()
 })
 
 describe('POST /alta/[ninoId]/mandato-sepa (2026-11-22: el PDF del servidor, sellado)', () => {
@@ -225,6 +229,19 @@ describe('POST /alta/[ninoId]/mandato-sepa (2026-11-22: el PDF del servidor, sel
     const r = await enviar()
     expect(r.json.success).toBe(false)
     expect(bd.borrados).toEqual([[bd.subidas[0].path]])
+  })
+
+  // Censo C (B1, 2026-11-26): si ese fichero tampoco se borra, se queda para el cron (degradación
+  // deliberada), pero va a Sentry: antes era un `warn`.
+  it('si el registro no entra y el fichero no se borra: se queda para el cron, y va a Sentry', async () => {
+    bd.rpcError = { message: 'x', hint: 'sello_distinto' }
+    bd.borrarFalla = true
+    const r = await enviar()
+    expect(r.json.success).toBe(false)
+    expect(bd.borrados, 'premisa: intentó borrarlo').toHaveLength(1)
+    expect(logError.mock.calls.map((c) => String(c[0]))).toContainEqual(
+      expect.stringContaining('se queda para el cron')
+    )
   })
 
   it('Dirección, presencial: sin PDF y v2 (la prueba es el papel)', async () => {

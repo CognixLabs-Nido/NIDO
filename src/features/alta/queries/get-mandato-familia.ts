@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface MandatoFamiliaActivo {
   ultimos4: string | null
@@ -15,7 +16,8 @@ export interface MandatoFamiliaActivo {
  * alta). Resuelve `mandatos_sepa` por `familia_id` (el mandato es de la familia desde
  * F-2c-1) y devuelve solo lo necesario para el INFORMATIVO del paso 8: los últimos 4
  * dígitos (enmascarado `****1234`), el titular y el identificador. NUNCA devuelve el IBAN
- * completo ni el cifrado. Devuelve `null` si la familia no tiene mandato activo.
+ * completo ni el cifrado. Devuelve `null` si la familia no tiene mandato activo; si no se pudo leer, lanza
+ * `LecturaFallida` (censo C, 2026-11-26): antes era `null` también, «sin mandato», y se pedía firmar otro.
  *
  * RLS: `mandatos_sepa_select` ya autoriza `es_admin(centro) OR es_tutor_de_familia(familia)`,
  * así que el tutor de la familia lo lee con su cliente autenticado (sin service role, sin RPC
@@ -26,7 +28,7 @@ export async function familiaTieneMandatoActivo(
 ): Promise<MandatoFamiliaActivo | null> {
   const supabase = await createClient()
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('mandatos_sepa')
     .select('iban_ultimos4, titular, identificador_mandato, fecha_firma, metodo_firma')
     .eq('familia_id', familiaId)
@@ -35,6 +37,7 @@ export async function familiaTieneMandatoActivo(
     .order('fecha_firma', { ascending: false })
     .limit(1)
     .maybeSingle()
+  if (error) throw new LecturaFallida('familiaTieneMandatoActivo', error)
 
   if (!data) return null
   return {
