@@ -39,7 +39,7 @@ tester.run('lectura-mira-el-error', regla, {
     `function f(s) { let q = s.from('a').select('id'); return q }`,
     // Promise.all de cadenas que acaban en `.then(fn)`: quien escribe `fn` mira el error (export/recolectar.ts,
     // falso positivo arreglado el 2026-11-26).
-    `async function f(s) { const [a, b] = await Promise.all([s.from('a').select().then((r) => leido('a', r)), s.from('b').select().then((r) => leido('b', r))]); return [a, b] }`,
+    `async function f(s) { const [a, b] = await Promise.all([s.from('a').select().then((r) => leido('a', r)), s.from('b').select().then((r) => leido('b', r))]); return a.filter((x) => b.includes(x)) }`,
   ],
   invalid: [
     {
