@@ -182,6 +182,26 @@ describe('enviarPushANotificarUsuarios', () => {
     expect(mocks.deleteCalls[0]?.ids).toEqual(['sub-410'])
   })
 
+  // Censo C (B1, 2026-11-26): si borrar las caducadas falla, se quedan y se reintentan la próxima vez,
+  // pero el fallo va a Sentry (`escrituraSecundariaFallida`); antes, a la consola.
+  it('si borrar las caducadas falla: el envío cuenta igual, y va a Sentry', async () => {
+    const logError = vi.fn()
+    vi.doMock('@/shared/lib/logger', () => ({ logger: { error: logError, warn: vi.fn() } }))
+    const mocks = setupMocks({ subs: [SUB_OK, SUB_410], deleteError: { message: 'caída' } })
+    const { enviarPushANotificarUsuarios } = await import('../enviar-push')
+    const res = await enviarPushANotificarUsuarios(['user-1'], {
+      titulo: 'T',
+      cuerpo: 'C',
+      url: '/x',
+    })
+    expect(res).toEqual({ enviados: 1, expirados: 1, errores: 0, total: 2 })
+    expect(mocks.deleteCalls, 'premisa: intentó borrarla').toHaveLength(1)
+    expect(logError.mock.calls.map((c) => String(c[0]))).toContainEqual(
+      expect.stringContaining('suscripciones expiradas')
+    )
+    vi.doUnmock('@/shared/lib/logger')
+  })
+
   it('borra la suscripción al recibir 404 Not Found', async () => {
     const mocks = setupMocks({ subs: [SUB_404] })
     const { enviarPushANotificarUsuarios } = await import('../enviar-push')
