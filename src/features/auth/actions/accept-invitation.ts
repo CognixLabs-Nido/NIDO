@@ -16,6 +16,7 @@ import { getRequestContext } from '@/features/autorizaciones/lib/request-context
 import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createClient } from '@/lib/supabase/server'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
+import { escrituraSecundariaFallida } from '@/shared/lib/tras-escritura'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
@@ -185,11 +186,14 @@ async function enlazarPerfilFamiliar(
   }
 
   // El nombre del perfil, el de la cuenta: al aceptar, la persona lo comparte con este centro.
-  const { data: usuario } = await service
+  const { data: usuario, error: errUsuario } = await service
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', params.usuarioId)
     .maybeSingle()
+  // Va antes de cualquier escritura de la aceptación (su llamada, «antes de nada más»): sin el nombre, no se
+  // enlaza con el de la ficha a medias; se para.
+  if (errUsuario) return { error: 'common.lectura_fallida' }
 
   const { data: enlazado, error: updErr } = await service
     .from('familia_tutores')
@@ -238,8 +242,9 @@ export async function acceptInvitationCore(
     .eq('token', parsed.data.token)
     .maybeSingle()
 
-  if (invErr) logger.warn('accept: lookup de invitación falló', invErr.message)
-  if (invErr || !invitation) return fail('auth.invitation.errors.invalid')
+  // Censo C: sin leer la invitación no se sabe si es inválida; decirlo mandaría a pedir otra.
+  if (invErr) return fail('common.lectura_fallida')
+  if (!invitation) return fail('auth.invitation.errors.invalid')
   if (invitation.accepted_at || invitation.rejected_at) {
     return fail('auth.invitation.errors.invalid')
   }
@@ -312,7 +317,7 @@ export async function acceptInvitationCore(
       .from('usuarios')
       .update({ idioma_preferido: parsed.data.idiomaPreferido })
       .eq('id', userId)
-    if (idiomaErr) logger.warn('accept: idioma_preferido en usuarios', idiomaErr.message)
+    if (idiomaErr) escrituraSecundariaFallida('accept: idioma_preferido en usuarios', idiomaErr)
   } else {
     const { data: created, error: createErr } = await service.auth.admin.createUser({
       email: invitation.email,
@@ -481,8 +486,8 @@ export async function acceptInvitationCore(
     .eq('id', invitation.id)
   if (acceptedErr) {
     // La cuenta ya está creada y usable; solo el sello de aceptación falló (la invitación
-    // quedaría reutilizable). No se revierte, pero NO se traga en silencio.
-    logger.warn('accept: marcar invitación accepted_at falló', acceptedErr.message)
+    // quedaría reutilizable). No se revierte, pero NO se traga en silencio: a Sentry.
+    escrituraSecundariaFallida('accept: marcar invitación accepted_at', acceptedErr)
   }
 
   // Login automático en el contexto del request actual.
@@ -573,7 +578,8 @@ export async function acceptPendingInvitationCore(
     .eq('id', invitationId)
     .maybeSingle()
 
-  if (invErr) logger.warn('acceptPending: lookup de invitación falló', invErr.message)
+  // Censo C: una lectura caída no es «invitación inválida».
+  if (invErr) return fail('common.lectura_fallida')
   if (!invitation) return fail('auth.invitation.errors.invalid')
   if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
     return fail('auth.invitation.errors.email_mismatch')
@@ -683,7 +689,8 @@ export async function acceptPendingInvitationCore(
     .update({ accepted_at: new Date().toISOString() })
     .eq('id', invitation.id)
   if (acceptedErr) {
-    logger.warn('acceptPending: marcar invitación accepted_at falló', acceptedErr.message)
+    // El vínculo ya está hecho: lo mismo que arriba.
+    escrituraSecundariaFallida('acceptPending: marcar invitación accepted_at', acceptedErr)
   }
 
   return ok({ rol: invitation.rol_objetivo })
@@ -709,10 +716,12 @@ export async function rejectPendingInvitation(invitationId: string): Promise<Act
   if (invitation.accepted_at || invitation.rejected_at)
     return fail('auth.invitation.errors.invalid')
 
-  await service
+  // Censo C: si no se marca, no está rechazada (antes contestaba ok igual).
+  const { error: rechazoErr } = await service
     .from('invitaciones')
     .update({ rejected_at: new Date().toISOString() })
     .eq('id', invitation.id)
+  if (rechazoErr) return fail('auth.invitation.errors.update_failed')
 
   return ok(undefined)
 }

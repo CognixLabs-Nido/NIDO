@@ -5,10 +5,10 @@ import {
   aplicarMatriculaActiva,
   esMatriculaActiva,
 } from '@/features/matriculas/lib/matricula-activa'
-import { logger } from '@/shared/lib/logger'
 
 import { esIdioma, IDIOMA_POR_DEFECTO, type Idioma } from './idioma'
 import { LecturaFallida } from '@/shared/lib/lectura-fallida'
+import { lecturaFallidaTrasEscritura } from '@/shared/lib/tras-escritura'
 
 /**
  * Devuelve los `usuario_id` que deben recibir un push tras un mensaje nuevo
@@ -64,7 +64,8 @@ export async function destinatariosDeNino(
  * Las profes del aula del niño: las que tienen una asignación viva (`profes_aulas`, sin
  * `fecha_fin`) en el aula de su matrícula activa. Con el cliente de servicio: quien avisa
  * (normalmente un tutor) no lee `profes_aulas`. La usan los mensajes y el aviso de una recogida
- * firmada. Un fallo de lectura sale como lista vacía: el push es best-effort.
+ * firmada. Un fallo de lectura sale como lista vacía: el push es best-effort (degradación deliberada; el
+ * mensaje ya está guardado). Desde el censo C (2026-11-26) el fallo va a Sentry, no a la nada.
  */
 export async function profesDelAulaDelNino(ninoId: string): Promise<string[]> {
   const supabase = createServiceRoleClient()
@@ -72,14 +73,22 @@ export async function profesDelAulaDelNino(ninoId: string): Promise<string[]> {
   const matriculasRes = await aplicarMatriculaActiva(
     supabase.from('matriculas').select('aula_id').eq('nino_id', ninoId)
   )
+  if (matriculasRes.error) {
+    lecturaFallidaTrasEscritura('push: aula del niño', matriculasRes.error)
+    return []
+  }
   const aulaIds = (matriculasRes.data ?? []).map((m) => m.aula_id)
   if (aulaIds.length === 0) return []
-  const { data: profes } = await supabase
+  const { data: profes, error: errProfes } = await supabase
     .from('profes_aulas')
     .select('profe_id')
     .in('aula_id', aulaIds)
     .is('fecha_fin', null)
     .is('deleted_at', null)
+  if (errProfes) {
+    lecturaFallidaTrasEscritura('push: profes del aula', errProfes)
+    return []
+  }
   return [...new Set((profes ?? []).map((p) => p.profe_id))]
 }
 
@@ -213,7 +222,8 @@ export async function idiomasDeUsuarios(usuarioIds: string[]): Promise<Map<strin
     .from('usuarios')
     .select('id, idioma_preferido')
     .in('id', usuarioIds)
-  if (error) logger.warn('idiomasDeUsuarios', error.message)
+  // Degradación deliberada: sin leerlos, cada uno recibe el idioma por defecto. A Sentry (censo C).
+  if (error) lecturaFallidaTrasEscritura('push: idiomas de los destinatarios', error)
   for (const u of data ?? [])
     idiomas.set(u.id, esIdioma(u.idioma_preferido) ? u.idioma_preferido : IDIOMA_POR_DEFECTO)
   return idiomas

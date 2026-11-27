@@ -40,11 +40,13 @@ export async function GET(
 
   // Hijos de los que es tutor legal (no 'autorizado').
   // entre-centros: el export de uno mismo (art. 15) es de todos sus centros.
-  const { data: vinc } = await supabase
+  const { data: vinc, error: errVinc } = await supabase
     .from('vinculos_familiares')
     .select('nino_id, tipo_vinculo')
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
+  // Sin leerlos, la exportación (art. 15) saldría sin los hijos y sin decirlo.
+  if (errVinc) return new Response('No se pudo leer', { status: 500 })
   const ninoIds = [
     ...new Set((vinc ?? []).filter((v) => v.tipo_vinculo !== 'autorizado').map((v) => v.nino_id)),
   ]

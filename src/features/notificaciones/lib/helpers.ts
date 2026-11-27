@@ -7,7 +7,6 @@ import {
   PREF_FIRMAS_VISTAS,
   PREF_FOTOS_VISTAS,
   PREF_INFORMES_VISTOS,
-  PREF_NOTIF_VISTO,
   PREF_RECIBOS_VISTOS,
   VENTANA_NOVEDADES_DIAS,
 } from '../types'
@@ -32,17 +31,6 @@ export function cutoffNovedades(): string {
   const d = new Date()
   d.setDate(d.getDate() - VENTANA_NOVEDADES_DIAS)
   return d.toISOString()
-}
-
-/** Marcador "todo lo anterior está visto" del usuario (ISO) o null si nunca lo abrió. */
-export async function getVistoAt(): Promise<string | null> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('preferencias_usuario')
-    .select('valor')
-    .eq('clave', PREF_NOTIF_VISTO)
-    .maybeSingle()
-  return data?.valor ?? null
 }
 
 /**

@@ -14,7 +14,9 @@ import { LecturaFallida } from '@/shared/lib/lectura-fallida'
  * el cliente inyectado para poder probarse contra la BD. Ninguna función de aquí elige un centro:
  * todas reciben el centro EXPLÍCITO o devuelven la lista entera.
  *
- * `null` = la lectura falló. Quien llama decide si eso es «no autorizado» o un error que contar.
+ * Una lectura fallida lanza `LecturaFallida` (censo C, 2026-11-25; antes devolvía `null` y quien llamaba lo
+ * leía como «sin roles» o «no autorizado»). La excepción es `esSuperusuario`: un fallo cuenta como «no»
+ * (nunca abre de más); el censo lo tiene como F2, en su grupo.
  *
  * El superusuario (Fase 3, ADR-0061) no tiene filas de admin en `roles_usuario`: es admin de
  * todos los centros. `is_superadmin()` mira al usuario de la SESIÓN de `supabase`, así que estas

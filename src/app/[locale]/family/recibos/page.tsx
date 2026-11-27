@@ -1,4 +1,5 @@
 import { CoinsIcon, LandmarkIcon, PencilIcon } from 'lucide-react'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -54,7 +55,7 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
     mandato: Awaited<ReturnType<typeof familiaTieneMandatoActivo>>
   } | null = null
   if (familia && user) {
-    const [{ data: centro }, mandato] = await Promise.all([
+    const [{ data: centro, error: errCentro }, mandato] = await Promise.all([
       supabase
         .from('centros')
         .select('nombre, direccion, identificador_acreedor')
@@ -62,6 +63,8 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
         .maybeSingle(),
       familiaTieneMandatoActivo(familia.familiaId),
     ])
+    // Sin el centro leído, sin CID: no se ofrecería domiciliar, como si el centro no domiciliara.
+    if (errCentro) throw new LecturaFallida('recibos de la familia: centro', errCentro)
     dom = {
       centroNombre: centro?.nombre ?? '',
       centroDireccion: centro?.direccion ?? '',

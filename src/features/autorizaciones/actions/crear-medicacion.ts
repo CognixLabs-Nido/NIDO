@@ -76,35 +76,38 @@ export async function crearMedicacion(
   }
 
   // Acto afirmativo: el nombre tecleado debe coincidir con el del perfil.
-  const { data: perfil } = await supabase
+  const { data: perfil, error: perfilErr } = await supabase
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', user.id)
     .maybeSingle()
+  if (perfilErr) return fail('common.lectura_fallida')
   if (!perfil || normalizarNombre(perfil.nombre_completo) !== normalizarNombre(d.nombre_tecleado)) {
     return fail('autorizaciones.errors.nombre_no_coincide')
   }
 
   // rol_firmante = snapshot del vínculo del tutor con el niño (valida tutela).
-  const { data: vinculo } = await supabase
+  const { data: vinculo, error: vinculoErr } = await supabase
     .from('vinculos_familiares')
     .select('tipo_vinculo')
     .eq('nino_id', d.nino_id)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
+  if (vinculoErr) return fail('common.lectura_fallida')
   if (!vinculo) return fail('autorizaciones.errors.no_es_tutor')
 
   // centro + política de doble firma desde el niño.
-  const { data: nino } = await supabase
+  const { data: nino, error: ninoErr } = await supabase
     .from('ninos')
     .select('centro_id, requiere_ambos_firmantes')
     .eq('id', d.nino_id)
     .maybeSingle()
+  if (ninoErr) return fail('common.lectura_fallida')
   if (!nino) return fail('autorizaciones.errors.nino_no_encontrado')
 
   // Plantilla de medicación publicada del centro (el formato estándar).
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: plantillaErr } = await supabase
     .from('autorizaciones')
     .select('id, texto, texto_version')
     .eq('centro_id', nino.centro_id)
@@ -113,6 +116,7 @@ export async function crearMedicacion(
     .eq('estado', 'publicada')
     .eq('texto_definitivo', true)
     .maybeSingle()
+  if (plantillaErr) return fail('common.lectura_fallida')
   if (!plantilla) return fail('autorizaciones.errors.medicacion_sin_plantilla')
 
   // Instancia NUEVA (multi-instancia). Vigencia de FIRMA = [hoy, fecha_fin] para

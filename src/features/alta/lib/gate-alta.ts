@@ -79,7 +79,7 @@ export async function comprobarAlta(
 
   // Identidad del menor de la tabla; los hermanos y el libro de familia son de gestión y salen por
   // `ficha_gestion_ninos` (`20270115120000`), que al tutor legal y a la Dirección les contesta.
-  const [{ data: identidad }, gestion, tarjeta] = await Promise.all([
+  const [{ data: identidad, error: errIdentidad }, gestion, tarjeta] = await Promise.all([
     supabase
       .from('ninos')
       .select('apellidos, fecha_nacimiento, lugar_nacimiento, nacionalidad, familia_id, centro_id')
@@ -89,7 +89,8 @@ export async function comprobarAlta(
     leerFichaGestionDe(supabase, ninoId),
     leerTarjetaSanitariaDe(supabase, ninoId),
   ])
-  if (!identidad || !gestion || !tarjeta) return { ok: false }
+  // Censo C: el error se mira a la vista. `{ ok: false }` es «no se pudo leer», no «falta».
+  if (errIdentidad || !identidad || !gestion || !tarjeta) return { ok: false }
   // Fase 5b y 7: la misma regla que la base (`datos_nino_por_completar`).
   if (
     !identidad.apellidos ||
@@ -102,9 +103,10 @@ export async function comprobarAlta(
     faltan.push('identidad')
 
   // Tutor 1 y su DNI, del perfil compartido `familia_tutores` (F-2b-3). Un fallo no es «falta».
-  const { tutores, leidos, personalesLeidos } = await leerTutoresDeNino(supabase, ninoId)
+  const lecturaTutores = await leerTutoresDeNino(supabase, ninoId)
   // Si falló la función de los personales, un `ve_personales` en falso no es la regla: no se sabe.
-  if (!leidos || !personalesLeidos) return { ok: false }
+  if (!lecturaTutores.leidos || !lecturaTutores.personalesLeidos) return { ok: false }
+  const { tutores } = lecturaTutores
   const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
   // Fase 6: la regla de la base (`privado.tutor_completo`). Lo que no se pudo leer no es «falta».

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { escrituraSecundariaFallida } from '@/shared/lib/tras-escritura'
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { logger } from '@/shared/lib/logger'
@@ -104,7 +105,7 @@ export async function crearTutorDirecto(
       .from('usuarios')
       .update({ idioma_preferido: params.idiomaPreferido })
       .eq('id', usuarioId)
-    if (idiomaErr) logger.warn('crearTutorDirecto idioma_preferido', idiomaErr.message)
+    if (idiomaErr) escrituraSecundariaFallida('crearTutorDirecto idioma_preferido', idiomaErr)
   } else {
     // Cuenta nueva con credenciales de la Dirección. `email_confirm:true` la deja usable ya;
     // `handle_new_user` puebla `public.usuarios` con el nombre REAL de la metadata.
@@ -148,9 +149,8 @@ export async function crearTutorDirecto(
       p_version: CONSENT_VERSIONS[tipo],
       p_metodo: 'presencial',
     })
-    if (consentErr) {
-      logger.warn('crearTutorDirecto consentimiento presencial', consentErr.message)
-    }
+    if (consentErr)
+      escrituraSecundariaFallida('crearTutorDirecto consentimiento presencial', consentErr)
   }
 
   return ok({ usuarioId })

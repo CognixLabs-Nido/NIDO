@@ -7,24 +7,34 @@
 //   4. la llamada esperada y tirada:                      await supabase.from('x').insert(…)
 // Lo mismo dentro de un `Promise.all([...])` destructurado.
 //
-// Lo que NO ve: un `if (error) return []` (lo mira y lo convierte en vacío). Eso no se distingue de un
-// tratamiento bueno por la forma; lo vigila el censo, no el lint.
+// Lo que NO ve:
+//   - un `if (error) return []` (lo mira y lo convierte en vacío): no se distingue de un tratamiento bueno por
+//     la forma; lo vigila el censo, no el lint;
+//   - una cadena que acaba en `.then(fn)`/`.catch(fn)`: el resultado es de quien escribe `fn` (falso positivo
+//     de `export/recolectar.ts`, arreglado con su caso el 2026-11-26), y por eso tampoco un `.then((r) => r)`
+//     que lo pasa tal cual;
+//   - una lectura dentro de un ternario (`c ? Promise.resolve(…) : s.from(…)`), una consulta armada en una
+//     variable y esperada después, o un helper que devuelve el builder (`aplicarMatriculaActiva(s.from(…))`):
+//     los tres, vistos y arreglados a mano en el B1 del censo C (2026-11-26).
 //
-// LISTA BLANCA TEMPORAL (`lectura-mira-el-error.lista-blanca.json`): fichero → cuántos sitios tiene hoy.
-// Un fichero con MÁS sitios que los de su lista se pone rojo entero: un sitio nuevo con el patrón viejo
-// no se cuela por estar en un fichero que ya tenía alguno. La lista solo puede bajar.
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const dir = path.dirname(fileURLToPath(import.meta.url))
-const LISTA = JSON.parse(
-  fs.readFileSync(path.join(dir, 'lectura-mira-el-error.lista-blanca.json'), 'utf8')
-)
+// La lista blanca temporal (fichero → sitios) se vació y se retiró el 2026-11-26, al cerrar el B1 del
+// censo C: desde entonces, todo sitio con el patrón viejo es un error, en cualquier fichero.
 const NO_SUPABASE = /^(Array|Object|Buffer|Uint8Array|Int8Array|Float32Array|Set|Map|String|Date)$/
 
 /** ¿Esta expresión es (o termina en) una cadena de Supabase? */
 function esCadenaSupabase(n) {
+  // `cadena.then((r) => leido(r))`: quien escribe la función recibe el `{ data, error }` y responde de él; lo
+  // que sale ya no es el resultado crudo (export/recolectar.ts, 2026-11-26: `leido` lanza si `r.error`).
+  // Lo que NO ve, por eso: un `.then((r) => r)` que lo pasa tal cual.
+  if (
+    n &&
+    n.type === 'CallExpression' &&
+    n.callee.type === 'MemberExpression' &&
+    !n.callee.computed &&
+    (n.callee.property.name === 'then' || n.callee.property.name === 'catch') &&
+    n.arguments.length > 0
+  )
+    return false
   let cur = n
   while (cur) {
     if (
@@ -155,13 +165,10 @@ export default {
       soloLog:
         '`error` solo se loguea (o ni eso): el fallo sigue leyéndose como «no hay». Lanza LecturaFallida o devuelve fail.',
       tirada: 'Llamada a Supabase esperada y tirada: si falla, nadie se entera.',
-      lista:
-        'Este fichero tiene {{hay}} sitios sin mirar el error y su lista blanca temporal admite {{admite}}: hay uno nuevo con el patrón viejo.',
     },
   },
   create(context) {
     const sc = context.sourceCode
-    const rel = path.relative(process.cwd(), context.filename).split(path.sep).join('/')
     const hallados = []
 
     function revisarPatron(idNodo, declNodo) {
@@ -244,18 +251,6 @@ export default {
         if (awaited && expr && esCadenaSupabase(expr)) hallados.push({ node, messageId: 'tirada' })
       },
       'Program:exit'() {
-        const admite = LISTA[rel] ?? 0
-        if (hallados.length === 0) return
-        if (hallados.length <= admite) return
-        if (admite > 0) {
-          for (const h of hallados)
-            context.report({
-              node: h.node,
-              messageId: 'lista',
-              data: { hay: String(hallados.length), admite: String(admite) },
-            })
-          return
-        }
         for (const h of hallados) context.report(h)
       },
     }

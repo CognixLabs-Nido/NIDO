@@ -21,6 +21,7 @@ import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existent
 import { completarDireccionSchema, type CompletarDireccionInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
 import { falloDeLectura } from '@/shared/lib/frontera-lectura'
+import { sacarDeLaCola, siSigueEnCola } from '../lib/sacar-de-la-cola'
 
 /** Retorno JSON de la RPC `crear_o_anadir_a_familia` (F-2b-1). */
 type ResultadoCrearFamilia = {
@@ -37,11 +38,11 @@ type ResultadoCrearFamilia = {
  */
 export type CompletarEnDireccionOk =
   // `usuarioId` null: la cuenta ya existía en otro sitio y se la ha invitado (aún no está enlazada).
-  | { resultado: 'ok'; ninoId: string; usuarioId: string | null }
+  | { resultado: 'ok'; ninoId: string; usuarioId: string | null; sigueEnCola?: true }
   | { resultado: 'colision'; nombreExistente: string | null }
   // FIX A: el tutor YA tenía familia en este centro → el hijo entró en ella (sin recrear cuenta,
   // sin contraseña, sin email). La UI lo distingue del alta con cuenta nueva.
-  | { resultado: 'vinculado'; ninoId: string; usuarioId: string }
+  | { resultado: 'vinculado'; ninoId: string; usuarioId: string; sigueEnCola?: true }
 
 /**
  * F11 alta PR-3a "Completa Dirección" (ENTRADA; U-1): la Dirección PROMOCIONA un prospecto a
@@ -80,13 +81,15 @@ export async function completarEnDireccion(
     // Prospecto primero: SU centro es el de la acción, no el centro activo de la cookie (una
     // pestaña de otro centro actúa sobre el prospecto que enseña). La RLS de `lista_espera`
     // solo deja leer a Dirección los de sus centros.
-    const { data: prospecto } = await supabase
+    const { data: prospecto, error: errProspecto } = await supabase
       .from('lista_espera')
       .select(
         'id, centro_id, nombre_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, tutor_usuario_id, estado'
       )
       .eq('id', parsed.data.id)
       .maybeSingle()
+    // Censo C: una lectura caída no es «no encontrado».
+    if (errProspecto) return fail('common.lectura_fallida')
     if (!prospecto) return fail('listaEspera.errors.no_encontrado')
     const centroId = prospecto.centro_id
 
@@ -99,18 +102,20 @@ export async function completarEnDireccion(
     if (await esSuperusuario(supabase)) return fail('listaEspera.errors.presencial_solo_direccion')
 
     // Curso activo del centro (autoritativo server-side; la matrícula va contra él).
-    const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
+    const { data: cursoActivoId, error: errCurso } = await supabase.rpc('curso_activo_de_centro', {
       p_centro_id: centroId,
     })
+    if (errCurso) return fail('common.lectura_fallida')
     if (!cursoActivoId) return fail('listaEspera.errors.sin_curso_activo')
 
     // El aula elegida debe estar configurada en el curso activo (aulas_curso).
-    const { data: aulaCurso } = await supabase
+    const { data: aulaCurso, error: errAula } = await supabase
       .from('aulas_curso')
       .select('aula_id')
       .eq('aula_id', parsed.data.aulaId)
       .eq('curso_academico_id', cursoActivoId)
       .maybeSingle()
+    if (errAula) return fail('common.lectura_fallida')
     if (!aulaCurso) return fail('listaEspera.errors.aula_invalida')
 
     // Debe estar en espera. A diferencia de invitar, el email NO sale del prospecto: lo teclea la
@@ -149,17 +154,22 @@ export async function completarEnDireccion(
       })
       if (!vinc.success) return fail(vinc.error)
 
-      // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva). U-4: se
-      // guarda el `nino_id` → la lista pinta el estado de la matrícula y ofrece "Reanudar alta".
-      const { error: estadoErr } = await supabase
-        .from('lista_espera')
-        .update({ estado: 'invitado', nino_id: vinc.data.ninoId })
-        .eq('id', prospecto.id)
-      if (estadoErr)
-        logger.warn('completarEnDireccion estado update (vinculado)', estadoErr.message)
+      // El prospecto sale de la cola (ver `sacarDeLaCola`). U-4: se guarda el `nino_id` → la lista
+      // pinta el estado de la matrícula y ofrece "Reanudar alta".
+      const sigue = await sacarDeLaCola(
+        supabase,
+        prospecto.id,
+        vinc.data.ninoId,
+        'completarEnDireccion (vinculado)'
+      )
 
       revalidatePath('/[locale]/admin/admisiones', 'page')
-      return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, usuarioId: tutorExistenteId })
+      return ok({
+        resultado: 'vinculado',
+        ninoId: vinc.data.ninoId,
+        usuarioId: tutorExistenteId,
+        ...siSigueEnCola(sigue),
+      })
     }
 
     // Cuenta que ya existe y ha operado (de otro centro, del personal, el superusuario): no es de
@@ -169,7 +179,7 @@ export async function completarEnDireccion(
     const cuenta = await detectarCuentaPorEmail(service, parsed.data.email)
     if (!cuenta) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
     if (cuenta.authUserExiste && (cuenta.tieneRoles || cuenta.haOperado)) {
-      return altaInvitandoCuentaExistente(supabase, {
+      return await altaInvitandoCuentaExistente(supabase, {
         prospectoId: prospecto.id,
         nombreNino: prospecto.nombre_nino,
         primerApellidoNino: prospecto.primer_apellido_nino ?? '',
@@ -238,18 +248,21 @@ export async function completarEnDireccion(
       })
     }
 
-    // 3. El prospecto sale de la cola. Best-effort: si falla, el alta ya está creada; log y
-    //    seguimos (el prospecto queda en_espera y se puede descartar a mano).
-    const { error: estadoErr } = await supabase
-      .from('lista_espera')
-      .update({ estado: 'invitado', nino_id: res.nino_id as string })
-      .eq('id', prospecto.id)
-    if (estadoErr) {
-      logger.warn('completarEnDireccion estado update', estadoErr.message)
-    }
+    // 3. El prospecto sale de la cola. El alta ya está creada: si no sale, se dice (`sacarDeLaCola`).
+    const sigue = await sacarDeLaCola(
+      supabase,
+      prospecto.id,
+      res.nino_id as string,
+      'completarEnDireccion'
+    )
 
     revalidatePath('/[locale]/admin/admisiones', 'page')
-    return ok({ resultado: 'ok', ninoId: res.nino_id as string, usuarioId: tutor.data.usuarioId })
+    return ok({
+      resultado: 'ok',
+      ninoId: res.nino_id as string,
+      usuarioId: tutor.data.usuarioId,
+      ...siSigueEnCola(sigue),
+    })
   } catch (e) {
     return falloDeLectura(e)
   }
@@ -314,16 +327,17 @@ async function altaInvitandoCuentaExistente(
   })
 
   // El prospecto sale de la cola aunque el correo no haya salido: el alta ya existe.
-  const { error: estadoErr } = await supabase
-    .from('lista_espera')
-    .update({ estado: 'invitado', nino_id: ninoId })
-    .eq('id', p.prospectoId)
-  if (estadoErr) logger.warn('completarEnDireccion estado update (invitado)', estadoErr.message)
+  const sigue = await sacarDeLaCola(
+    supabase,
+    p.prospectoId,
+    ninoId,
+    'completarEnDireccion (cuenta existente)'
+  )
   revalidatePath('/[locale]/admin/admisiones', 'page')
 
   if (!inv.success) {
     logger.warn('completarEnDireccion: alta creada sin invitación', inv.error)
     return fail('listaEspera.errors.alta_creada_sin_correo')
   }
-  return ok({ resultado: 'ok', ninoId, usuarioId: null })
+  return ok({ resultado: 'ok', ninoId, usuarioId: null, ...siSigueEnCola(sigue) })
 }

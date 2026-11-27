@@ -24,6 +24,7 @@ import {
   registrarOSustituirMandatoSepa,
   type MandatoSepaRpcArgs,
 } from './registrar-mandato-sepa'
+import { escrituraSecundariaFallida } from '@/shared/lib/tras-escritura'
 
 const sha256 = (b: Uint8Array | string) => createHash('sha256').update(b).digest('hex')
 
@@ -162,8 +163,12 @@ export async function firmarMandatoDigital(
     const { error: errBorrar } = await createServiceRoleClient()
       .storage.from(BUCKET_MANDATO_SEPA)
       .remove([path])
+    // Degradación deliberada: lo recoge el cron. Pero va a Sentry (censo C), no a un `warn`.
     if (errBorrar)
-      logger.warn('mandato: el fichero sin registro se queda para el cron', errBorrar.message)
+      escrituraSecundariaFallida(
+        'mandato: el fichero sin registro se queda para el cron',
+        errBorrar
+      )
     return { error, mandatoId: null, identificador }
   }
   return { error: null, mandatoId: typeof data === 'string' ? data : null, identificador }

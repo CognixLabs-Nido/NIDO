@@ -619,6 +619,17 @@ function seccionDatosBloqueados(v: unknown, c: Ctx): string {
   return v && typeof v === 'object' ? seccionObjeto('datos_bloqueados', v, c) : ''
 }
 
+/**
+ * El enlace de un adjunto, o por qué no lo hay. Censo C (2026-11-26): un fichero que la fila nombra y no
+ * está en Storage sale dicho, no como «Sin datos».
+ */
+function enlaceAdjunto(a: Record<string, unknown>, c: Ctx): string {
+  if (a.sin_enlace === 'fichero_no_encontrado') {
+    return `<span class="nil">${escape(c.t('doc.fichero_no_encontrado'))}</span>`
+  }
+  return formatearValor('url_firmada', a.url_firmada, c)
+}
+
 /** Documentos (DNI, mandato firmado) como enlaces firmados (#4). */
 function seccionDocumentos(items: unknown, c: Ctx): string {
   const arr = Array.isArray(items) ? (items as Record<string, unknown>[]) : []
@@ -626,7 +637,7 @@ function seccionDocumentos(items: unknown, c: Ctx): string {
   const enlaces = arr
     .map((a) => {
       const desc = typeof a.descripcion === 'string' ? a.descripcion : c.t('doc.descargar')
-      return `<li>${escape(desc)} — ${formatearValor('url_firmada', a.url_firmada, c)}</li>`
+      return `<li>${escape(desc)} — ${enlaceAdjunto(a, c)}</li>`
     })
     .join('')
   return `<h3>${escape(c.t('doc.secciones.documentos'))}</h3><ul>${enlaces}</ul>`
@@ -680,7 +691,7 @@ function renderFotos(n: Record<string, unknown>, c: Ctx): string {
   const enlaces = adjuntos
     .map((a) => {
       const desc = typeof a.descripcion === 'string' ? a.descripcion : c.t('doc.descargar')
-      return `<li>${escape(desc)} — ${formatearValor('url_firmada', a.url_firmada, c)}</li>`
+      return `<li>${escape(desc)} — ${enlaceAdjunto(a, c)}</li>`
     })
     .join('')
   const otras = compartidas.length ? renderLista(compartidas, c) : ''

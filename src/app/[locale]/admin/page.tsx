@@ -97,7 +97,8 @@ export default async function AdminDashboard({ params }: PageProps) {
   const avisos = {
     ...avisosBase,
     altasPendientesValidar: altasListaResp.count ?? 0,
-    altasSinTerminar: (altasSinTerminar ?? []).filter((a) => a.propuesta).length,
+    altasSinTerminar:
+      altasSinTerminar === null ? null : altasSinTerminar.filter((a) => a.propuesta).length,
   }
 
   return (

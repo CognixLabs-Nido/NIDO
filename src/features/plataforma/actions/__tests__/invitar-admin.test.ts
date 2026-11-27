@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@/shared/lib/logger'
+
 import { invitarAdmin } from '../invitar-admin'
 
 /**
@@ -69,6 +71,22 @@ describe('invitarAdmin', () => {
       error: 'plataforma.errores.centro_con_admin',
     })
     expect(enviarCorreo).not.toHaveBeenCalled()
+  })
+
+  // Censo C (B1, 2026-11-26): la invitación ya está escrita; sin releerla no hay a quién mandar el correo.
+  // El mensaje nombra el síntoma (como antes) y el fallo va a Sentry.
+  it('sin poder releer la invitación: lookup_failed, sin correo, y va a Sentry', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    const antes = filas.invitaciones
+    filas.invitaciones = { data: null, error: { code: 'XX000', message: 'caída' } as never }
+    const r = await invitarAdmin({ centroId: CENTRO, email: 'nueva@example.test' })
+    filas.invitaciones = antes
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.lookup_failed' })
+    expect(enviarCorreo).not.toHaveBeenCalled()
+    expect(error.mock.calls.map((c) => String(c[0]))).toContainEqual(
+      expect.stringContaining('releer la invitación')
+    )
+    error.mockRestore()
   })
 
   it('el correo no sale: se dice', async () => {

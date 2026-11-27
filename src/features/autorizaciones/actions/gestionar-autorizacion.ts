@@ -295,11 +295,12 @@ export async function enviarAutorizacion(
   // aplica el override per-niño al calcular el estado de cada uno).
   let firmantes_requeridos: 'uno_principal' | 'todos_los_principales' = 'uno_principal'
   if (ambito === 'nino' && nino_id) {
-    const { data: nino } = await supabase
+    const { data: nino, error: ninoErr } = await supabase
       .from('ninos')
       .select('requiere_ambos_firmantes')
       .eq('id', nino_id)
       .maybeSingle()
+    if (ninoErr) return fail('common.lectura_fallida')
     if (nino?.requiere_ambos_firmantes) firmantes_requeridos = 'todos_los_principales'
   }
 

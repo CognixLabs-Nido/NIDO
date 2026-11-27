@@ -40,6 +40,7 @@ import { esFamiliaNuevaEnCentro } from '@/features/alta/queries/familia-nueva-en
 import { leerPeticionServicios } from '@/features/peticion-servicios/queries/leer-peticion-servicios'
 import { leerGastosGestion } from '@/features/gastos-gestion/queries/leer-gastos-gestion'
 import { LecturaFallida } from '@/shared/lib/lectura-fallida'
+import { logger } from '@/shared/lib/logger'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -74,13 +75,15 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // cablea B2). Profe → su panel; resto (admin de OTRO centro, sin rol) → notFound. El
   // rol se ata a `nino.centro_id`, NO al centro genérico, para que un admin de otro
   // centro no entre. La decisión pura vive en `resolverEntradaAlta` (testeada aislada).
-  const { data: vinculo } = await supabase
+  const { data: vinculo, error: errVinculo } = await supabase
     .from('vinculos_familiares')
     .select('id, tipo_vinculo')
     .eq('nino_id', ninoId)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
+  // Sin el vínculo leído, la entrada caería por el camino de Dirección o en notFound.
+  if (errVinculo) throw new LecturaFallida('alta: vínculo', errVinculo)
 
   const tieneVinculo = vinculo !== null
   const entrada = resolverEntradaAlta({
@@ -100,12 +103,14 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // Varias matrículas vigentes posibles (activa + pendiente del curso siguiente): sin
   // `maybeSingle`, que con dos filas daba error y reabría el asistente a un alumno activo.
-  const { data: matriculasVigentes } = await supabase
+  const { data: matriculasVigentes, error: errMatriculas } = await supabase
     .from('matriculas')
     .select('estado')
     .eq('nino_id', ninoId)
     .is('fecha_baja', null)
     .is('deleted_at', null)
+  // Sin leerlas, el estado sería «sin matrícula» y el asistente se reabriría a un alumno activo.
+  if (errMatriculas) throw new LecturaFallida('alta: matrículas', errMatriculas)
   const estadoMatricula = estadoMatriculaVigente(matriculasVigentes ?? [])
 
   // Alta YA validada (matrícula 'activa'): el wizard solo se reabre en modo edición
@@ -119,11 +124,12 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       ? await leerEstadoFirmaFicha(supabase, ninoId)
       : null
   const firma = estadoFirma?.ok ? estadoFirma.data : null
-  const { data: perfilUsuario } = await supabase
+  const { data: perfilUsuario, error: errPerfil } = await supabase
     .from('usuarios')
     .select('nombre_completo')
     .eq('id', user.id)
     .maybeSingle()
+  if (errPerfil) throw new LecturaFallida('alta: perfil', errPerfil)
   const nombreUsuario = perfilUsuario?.nombre_completo ?? ''
   if (estadoMatricula === 'lista' && editar !== '1') {
     return (
@@ -165,14 +171,17 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1). Solo
   // hermanos de ESTE centro: cada centro es un responsable del tratamiento distinto, y el alta de
   // un centro no lee la ficha que el tutor tiene en otro (decisión del responsable, Fase 5).
-  const { data: hermanosVinc } = await supabase
+  const { data: hermanosVinc, error: errHermanos } = await supabase
     .from('vinculos_familiares')
     .select('nino_id, nino:ninos!inner(centro_id)')
     .eq('nino.centro_id', nino.centro_id)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .neq('nino_id', ninoId)
-  const hermanosIds = (hermanosVinc ?? []).map((h) => h.nino_id)
+  // Degradación DELIBERADA (censo C, 2026-11-26): esto solo rellena por defecto. Sin leer a los hermanos
+  // el campo sale vacío, nunca con otro valor, y la familia lo escribe; no se para el alta por un relleno.
+  if (errHermanos) logger.warn('alta: hermanos (sin relleno por defecto)', errHermanos.code)
+  const hermanosIds = errHermanos ? [] : (hermanosVinc ?? []).map((h) => h.nino_id)
 
   let hermanoEstadoCivil: EstadoCivil | null = null
   let hermanoDireccion: {
@@ -184,16 +193,19 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   if (hermanosIds.length > 0) {
     // Solo los hermanos vivos de este centro (la tabla filtra) y de ellos, lo de gestión (la
     // función): la dirección y el estado civil de un hermano del que no se es tutor legal no vienen.
-    const { data: hermanosVivos } = await supabase
+    const { data: hermanosVivos, error: errHermanosVivos } = await supabase
       .from('ninos')
       .select('id')
       .in('id', hermanosIds)
       .eq('centro_id', nino.centro_id)
       .is('deleted_at', null)
-    const gestionHermanos = await leerFichaGestion(
-      supabase,
-      (hermanosVivos ?? []).map((h) => h.id)
-    )
+    // La misma degradación: sin ellos, sin relleno.
+    const gestionHermanos = errHermanosVivos
+      ? null
+      : await leerFichaGestion(
+          supabase,
+          (hermanosVivos ?? []).map((h) => h.id)
+        )
     for (const h of gestionHermanos?.values() ?? []) {
       if (!hermanoEstadoCivil && h.estado_civil_familia) hermanoEstadoCivil = h.estado_civil_familia
       if (!hermanoDireccion && h.direccion_calle) hermanoDireccion = h
@@ -221,6 +233,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const lecturaTutores = await leerTutoresDeNino(supabase, ninoId)
   if (!lecturaTutores.leidos) throw new Error('alta: no se pudo leer familia_tutores')
   const tutoresRows = lecturaTutores.tutores
+  const personalesLeidos = lecturaTutores.personalesLeidos
 
   async function aDatosTutor(
     tipo: 'tutor_legal_principal' | 'tutor_legal_secundario'
@@ -248,10 +261,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       legibles: row.ve_personales,
       // Solo si la lectura funcionó: si falló, no es «lo gestiona el otro», es «no se pudo leer».
       gestionaElOtro:
-        lecturaTutores.personalesLeidos &&
-        row.tiene_cuenta &&
-        row.usuario_id !== user?.id &&
-        !row.ve_personales,
+        personalesLeidos && row.tiene_cuenta && row.usuario_id !== user?.id && !row.ve_personales,
     }
   }
   let datosTutor1 = await aDatosTutor('tutor_legal_principal')
@@ -281,12 +291,15 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // tutor no lee `lista_espera` (solo la Dirección): se lee con el servidor SOLO ese teléfono, del
   // prospecto de ESTE niño, y solo si aún no tiene uno guardado; aquí ya se ha autorizado la entrada.
   if (datosTutor1.legibles && !datosTutor1.telefono) {
-    const { data: prospecto } = await createServiceRoleClient()
+    const { data: prospecto, error: errProspecto } = await createServiceRoleClient()
       .from('lista_espera')
       .select('telefono_tutor')
       .eq('nino_id', ninoId)
       .maybeSingle()
-    if (prospecto?.telefono_tutor)
+    // Degradación DELIBERADA, como la de los hermanos: un relleno; sin él, el teléfono sale vacío.
+    if (errProspecto)
+      logger.warn('alta: teléfono de la lista de espera (sin relleno)', errProspecto.code)
+    if (!errProspecto && prospecto?.telefono_tutor)
       datosTutor1 = { ...datosTutor1, telefono: prospecto.telefono_tutor }
   }
 
@@ -313,7 +326,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // U-3: el acuse médico es POR NIÑO. El filtro por `nino_id` es lo que hace que el 2.º hijo
   // vea el checkbox sin marcar (el acuse del hermano ya no lo satisface), espejo del gate.
-  const { data: consentMedico } = await supabase
+  const { data: consentMedico, error: errConsentMedico } = await supabase
     .from('consentimientos')
     .select('id')
     .eq('usuario_id', user.id)
@@ -322,6 +335,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .is('revocado_en', null)
     .limit(1)
     .maybeSingle()
+  // Sin leerlo, la casilla saldría sin marcar a quien ya consintió.
+  if (errConsentMedico) throw new LecturaFallida('alta: consentimiento médico', errConsentMedico)
   const consintioDatosMedicos = consentMedico !== null
 
   // El formulario no guarda la ficha médica que no pudo leer (2026-11-12, medido): con la lectura
@@ -347,9 +362,13 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // «no», desde la 10a-2; habilita subir su foto). Y la respuesta de quien hace el alta, que es lo que
   // pide el cierre (fase 10: cada tutor responde por sí). Sin leerla no hay alta: «sin respuesta»
   // sería decirlo sin haberlo mirado.
-  const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
-    p_nino_id: ninoId,
-  })
+  const { data: imagenConsentida, error: errImagen } = await supabase.rpc(
+    'existe_consentimiento_imagen',
+    {
+      p_nino_id: ninoId,
+    }
+  )
+  if (errImagen) throw new LecturaFallida('alta: consentimiento de imagen', errImagen)
   const imagenAceptado = imagenConsentida ?? false
   const miRespuesta = await leerRespuestaImagen(supabase, ninoId, user.id)
   if (!miRespuesta.ok) throw new Error('alta: la respuesta a la imagen no se lee')
@@ -385,7 +404,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   if (errCentro) throw new Error(`alta: no se pudo leer el centro: ${errCentro.message}`)
 
   // El IBAN va cifrado (G-2bis) y no se pre-rellena: solo titular/identificador/PDF para el preview.
-  const { data: mandatoRow } = await supabase
+  const { data: mandatoRow, error: errMandato } = await supabase
     .from('mandatos_sepa')
     .select('id, titular, identificador_mandato, documento_path')
     .eq('nino_id', ninoId)
@@ -393,6 +412,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .eq('estado', 'activo')
     .is('deleted_at', null)
     .maybeSingle()
+  // Sin leerlo, el paso diría que no hay mandato y pediría firmar otro.
+  if (errMandato) throw new LecturaFallida('alta: mandato', errMandato)
   const mandatoSepaInicial: MandatoSepaInicial | null = mandatoRow
     ? {
         titular: mandatoRow.titular,
@@ -440,6 +461,9 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // Fase 5b: «cómo nos has conocido» solo a familias nuevas en el centro (decidido el 2026-11-10),
   // o si ya está contestado (que se pueda corregir). Se cuenta después de autorizar (arriba).
+  // Sin poder contar (`null`) no se pregunta: degradación DELIBERADA (decidido el 2026-11-26, spec
+  // fallos-leidos-c.md): es una pregunta opcional, y preguntarla «por si acaso» molesta a una familia que
+  // ya está en el centro, justo lo que se decidió que no pasara.
   const familiaNueva = ninoExtra?.familia_id
     ? await esFamiliaNuevaEnCentro(ninoId, ninoExtra.familia_id)
     : null
@@ -559,7 +583,7 @@ async function sinPlantilla(
   centroId: string,
   tipo: 'autorizacion_imagenes'
 ): Promise<boolean> {
-  const { data: plantilla } = await supabase
+  const { data: plantilla, error: errPlantilla } = await supabase
     .from('autorizaciones')
     .select('id')
     .eq('centro_id', centroId)
@@ -569,5 +593,7 @@ async function sinPlantilla(
     .eq('texto_definitivo', true)
     .limit(1)
     .maybeSingle()
+  // Sin leerla, `null` diría «falta la plantilla».
+  if (errPlantilla) throw new LecturaFallida('alta: plantilla', errPlantilla)
   return plantilla === null
 }

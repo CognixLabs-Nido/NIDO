@@ -61,4 +61,9 @@ export interface EventoDetalle {
   roster: RosterConfirmacion[]
   /** El usuario actual creó el evento. Junto a `esAdmin` gatea editar/cancelar (D8). */
   es_autor: boolean
+  /**
+   * `false`: no se pudo leer de qué niños es tutor legal quien mira, así que `puede_confirmar` no dice nada. La
+   * vista de familia lo dice en vez de esconder el bloque (censo C, re-clasificación 139, 2026-11-26).
+   */
+  confirmaciones_leidas: boolean
 }

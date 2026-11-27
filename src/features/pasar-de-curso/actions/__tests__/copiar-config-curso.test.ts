@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
  * `copiarConfigCurso` copia el personal del curso activo al planificado sin tocar la
@@ -21,9 +21,16 @@ interface Registro {
 
 const registro: Registro = { selects: [], inserts: [] }
 let selectsPorTabla: Record<string, number> = {}
+// Censo C: la lectura que falla (`tabla#n`, n desde 0, o `rpc`) y una sala en el origen por copiar.
+let caida: string | null = null
+let conSalaEnOrigen = false
+const CAIDA = { data: null, error: { code: 'XX000', message: 'caída' } }
 
 // Respuesta por (tabla, n.º de select en esa tabla).
 function respuesta(tabla: string, n: number): { data: unknown; error: unknown } {
+  if (caida === `${tabla}#${n}`) return CAIDA
+  if (tabla === 'aulas_curso' && n === 0 && conSalaEnOrigen)
+    return { data: [{ aula_id: AULA, tramo_edad: [2024], capacidad: 12 }], error: null }
   if (tabla === 'cursos_academicos') {
     return { data: { id: DESTINO, centro_id: CENTRO, estado: 'planificado' }, error: null }
   }
@@ -43,7 +50,7 @@ function respuesta(tabla: string, n: number): { data: unknown; error: unknown } 
 
 function fakeClient() {
   return {
-    rpc: () => Promise.resolve({ data: ORIGEN, error: null }),
+    rpc: () => Promise.resolve(caida === 'rpc' ? CAIDA : { data: ORIGEN, error: null }),
     from: (tabla: string) => {
       let res: { data: unknown; error: unknown } = { data: null, error: null }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,5 +114,46 @@ describe('copiarConfigCurso — personal sin es_profe_principal', () => {
         tipo_personal_aula: 'profesora',
       },
     ])
+  })
+})
+
+/**
+ * Censo C (B1, 2026-11-26). Antes: sin el destino o el curso activo, «no encontrado» o «sin curso activo»;
+ * sin las salas del destino, se intentaba insertar lo que ya estaba; y el personal se leía DESPUÉS de copiar
+ * las salas, sin mirar el error: con la lectura caída, «0 copiados» y ok. Ahora todo se lee antes de
+ * escribir, y una lectura caída contesta `lectura_fallida` sin escribir nada.
+ */
+describe('censo C: copiar con una lectura caída', () => {
+  beforeEach(() => {
+    registro.selects = []
+    registro.inserts = []
+    selectsPorTabla = {}
+    caida = null
+    conSalaEnOrigen = true
+  })
+  afterEach(() => {
+    caida = null
+    conSalaEnOrigen = false
+  })
+
+  it('premisa: con todo leído, copia la sala y el personal', async () => {
+    const r = await copiarConfigCurso({ curso_destino_id: DESTINO, incluir_personal: true })
+    expect(r).toEqual({ success: true, data: { aulasCopiadas: 1, personalCopiado: 2 } })
+    expect(registro.inserts.map((i) => i.tabla)).toEqual(['aulas_curso', 'profes_aulas'])
+  })
+
+  it.each([
+    ['cursos_academicos#0', 'el destino'],
+    ['rpc', 'el curso activo'],
+    ['aulas_curso#1', 'las salas del destino'],
+    ['profes_aulas#0', 'el personal del origen'],
+    ['profes_aulas#1', 'el personal del destino'],
+  ])('con %s caída (%s): lectura_fallida, y no escribe nada', async (c) => {
+    caida = c
+    expect(await copiarConfigCurso({ curso_destino_id: DESTINO, incluir_personal: true })).toEqual({
+      success: false,
+      error: 'common.lectura_fallida',
+    })
+    expect(registro.inserts).toEqual([])
   })
 })

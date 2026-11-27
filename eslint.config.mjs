@@ -4,6 +4,7 @@ import nextTs from 'eslint-config-next/typescript'
 
 import lecturaMiraElError from './eslint-rules/lectura-mira-el-error.mjs'
 import paradaTrasEscritura from './eslint-rules/parada-tras-escritura.mjs'
+import returnAwaitEnFrontera from './eslint-rules/return-await-en-frontera.mjs'
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -68,10 +69,16 @@ const eslintConfig = defineConfig([
         rules: {
           'lectura-mira-el-error': lecturaMiraElError,
           'parada-tras-escritura': paradaTrasEscritura,
+          'return-await-en-frontera': returnAwaitEnFrontera,
         },
       },
     },
-    rules: { 'nido/lectura-mira-el-error': 'error', 'nido/parada-tras-escritura': 'error' },
+    // Y (2026-11-26) dentro del try de la frontera, `return await`: sin él, la LecturaFallida se escapa.
+    rules: {
+      'nido/lectura-mira-el-error': 'error',
+      'nido/parada-tras-escritura': 'error',
+      'nido/return-await-en-frontera': 'error',
+    },
   },
   // `src/types/database.ts` es la salida del generador, sin tocar. Lo que el generador no sabe (la
   // nulabilidad de las funciones RETURNS TABLE, los argumentos que aceptan NULL, las columnas

@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 import type { AgendaCompleta, AgendaRow } from '../types'
 
@@ -9,17 +10,19 @@ import type { AgendaCompleta, AgendaRow } from '../types'
  *  - cabecera (`agendas_diarias`) — puede ser null si nadie la ha tocado aún.
  *  - eventos hijo (comidas, biberones, sueños, deposiciones).
  * RLS decide qué filas se devuelven. Si el rol no puede ver nada, la
- * cabecera queda null y los arrays vacíos.
+ * cabecera queda null y los arrays vacíos. Una lectura caída lanza `LecturaFallida` (censo C): antes era la
+ * agenda vacía, y la profe veía el día sin nada y los formularios en blanco.
  */
 export async function getAgendaDelDia(ninoId: string, fecha: string): Promise<AgendaCompleta> {
   const supabase = await createClient()
 
-  const { data: cabecera } = await supabase
+  const { data: cabecera, error: errCabecera } = await supabase
     .from('agendas_diarias')
     .select('id, nino_id, fecha, estado_general, humor, observaciones_generales, updated_at')
     .eq('nino_id', ninoId)
     .eq('fecha', fecha)
     .maybeSingle()
+  if (errCabecera) throw new LecturaFallida('agenda del día: cabecera', errCabecera)
 
   const empty: AgendaCompleta = {
     cabecera: (cabecera as AgendaRow | null) ?? null,
@@ -32,33 +35,41 @@ export async function getAgendaDelDia(ninoId: string, fecha: string): Promise<Ag
 
   const agendaId = cabecera.id
 
-  const [{ data: comidas }, { data: biberones }, { data: suenos }, { data: deposiciones }] =
-    await Promise.all([
-      supabase
-        .from('comidas')
-        .select(
-          'id, agenda_id, momento, hora, cantidad, descripcion, observaciones, tipo_plato, menu_dia_id, updated_at'
-        )
-        .eq('agenda_id', agendaId)
-        .order('hora', { ascending: true, nullsFirst: true }),
-      supabase
-        .from('biberones')
-        .select(
-          'id, agenda_id, hora, cantidad_ml, tipo, tomado_completo, observaciones, updated_at'
-        )
-        .eq('agenda_id', agendaId)
-        .order('hora', { ascending: true }),
-      supabase
-        .from('suenos')
-        .select('id, agenda_id, hora_inicio, hora_fin, calidad, observaciones, updated_at')
-        .eq('agenda_id', agendaId)
-        .order('hora_inicio', { ascending: true }),
-      supabase
-        .from('deposiciones')
-        .select('id, agenda_id, hora, tipo, consistencia, cantidad, observaciones, updated_at')
-        .eq('agenda_id', agendaId)
-        .order('hora', { ascending: true, nullsFirst: true }),
-    ])
+  const [rComidas, rBiberones, rSuenos, rDeposiciones] = await Promise.all([
+    supabase
+      .from('comidas')
+      .select(
+        'id, agenda_id, momento, hora, cantidad, descripcion, observaciones, tipo_plato, menu_dia_id, updated_at'
+      )
+      .eq('agenda_id', agendaId)
+      .order('hora', { ascending: true, nullsFirst: true }),
+    supabase
+      .from('biberones')
+      .select('id, agenda_id, hora, cantidad_ml, tipo, tomado_completo, observaciones, updated_at')
+      .eq('agenda_id', agendaId)
+      .order('hora', { ascending: true }),
+    supabase
+      .from('suenos')
+      .select('id, agenda_id, hora_inicio, hora_fin, calidad, observaciones, updated_at')
+      .eq('agenda_id', agendaId)
+      .order('hora_inicio', { ascending: true }),
+    supabase
+      .from('deposiciones')
+      .select('id, agenda_id, hora, tipo, consistencia, cantidad, observaciones, updated_at')
+      .eq('agenda_id', agendaId)
+      .order('hora', { ascending: true, nullsFirst: true }),
+  ])
+  for (const [donde, r] of [
+    ['comidas', rComidas],
+    ['biberones', rBiberones],
+    ['sueños', rSuenos],
+    ['deposiciones', rDeposiciones],
+  ] as const)
+    if (r.error) throw new LecturaFallida(`agenda del día: ${donde}`, r.error)
+  const comidas = rComidas.data
+  const biberones = rBiberones.data
+  const suenos = rSuenos.data
+  const deposiciones = rDeposiciones.data
 
   return {
     cabecera: cabecera as AgendaRow,

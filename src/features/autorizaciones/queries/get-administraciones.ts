@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { createClient } from '@/lib/supabase/server'
 
 import type { AdministracionItem } from '../types'
@@ -15,13 +16,14 @@ export async function getAdministracionesPorAutorizacion(
   autorizacionId: string
 ): Promise<AdministracionItem[]> {
   const supabase = await createClient()
-  const { data: rows } = await supabase
+  const { data: rows, error } = await supabase
     .from('administraciones_medicacion')
     .select(
       'id, administrado_por, administrado_en, medicamento, dosis, notas, confirmado_por, confirmado_at'
     )
     .eq('autorizacion_id', autorizacionId)
     .order('administrado_en', { ascending: false })
+  if (error) throw new LecturaFallida('getAdministracionesPorAutorizacion', error)
   if (!rows || rows.length === 0) return []
 
   const ids = Array.from(
@@ -29,7 +31,12 @@ export async function getAdministracionesPorAutorizacion(
   )
   const nombre = new Map<string, string>()
   if (ids.length) {
-    const { data: us } = await supabase.from('usuarios').select('id, nombre_completo').in('id', ids)
+    // Un perfil que la RLS no deja ver no viene (sin error) y la UI pone la etiqueta genérica; un error, lanza.
+    const { data: us, error: errUs } = await supabase
+      .from('usuarios')
+      .select('id, nombre_completo')
+      .in('id', ids)
+    if (errUs) throw new LecturaFallida('getAdministracionesPorAutorizacion: nombres', errUs)
     for (const u of us ?? []) nombre.set(u.id, u.nombre_completo)
   }
 

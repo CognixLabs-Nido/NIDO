@@ -41,20 +41,34 @@ export interface TutorFamiliaRow {
   empresa: string | null
 }
 
+/**
+ * Lo que devuelve `leerTutoresDeNino`. Censo C, clase 1 (2026-11-26): `leidos` era una bandera junto a
+ * `tutores`, y cuatro llamadores cogían `tutores` sin mirarla: con la lectura caída, «no hay segundo tutor»
+ * (la invitación al validar no salía y la pantalla decía «guardado»), la ficha a firmar sin nombres y la
+ * documentación sin tutores. Ahora, sin leer no HAY tutores que coger: el tipo obliga a mirar `leidos` antes.
+ */
+export type LecturaTutores =
+  | {
+      leidos: false
+      /** Lo que contestó la base, para `LecturaFallida`. */
+      error: { message: string; code?: string }
+    }
+  | {
+      leidos: true
+      familiaId: string | null
+      tutores: TutorFamiliaRow[]
+      /**
+       * `false`: falló `tutores_de_familia`, y los `ve_personales` en falso NO son la regla de la fase 6
+       * («este tutor tiene cuenta y gestiona él sus datos»), son que no se pudo leer. Sin esto las dos
+       * cosas llegaban iguales (censo del 2026-11-18, «qué hacen con el no»).
+       */
+      personalesLeidos: boolean
+    }
+
 export async function leerTutoresDeNino(
   client: SupabaseClient<Database>,
   ninoId: string
-): Promise<{
-  familiaId: string | null
-  tutores: TutorFamiliaRow[]
-  leidos: boolean
-  /**
-   * `false`: falló `tutores_de_familia`, y los `ve_personales` en falso NO son la regla de la fase 6
-   * («este tutor tiene cuenta y gestiona él sus datos»), son que no se pudo leer. Sin esto las dos
-   * cosas llegaban iguales (censo del 2026-11-18, «qué hacen con el no»).
-   */
-  personalesLeidos: boolean
-}> {
+): Promise<LecturaTutores> {
   const { data: nino, error: errorNino } = await client
     .from('ninos')
     .select('familia_id')
@@ -63,7 +77,7 @@ export async function leerTutoresDeNino(
   // `leidos: false` = una de las dos lecturas falló: los tutores vacíos NO son «no hay perfil». Quien
   // va a escribir o a decidir con ellos lo mira (el paso del tutor del alta guarda los seis campos:
   // sobre un perfil que no se leyó pisaba el nombre y vaciaba la dirección, 2026-11-12, medido).
-  if (errorNino) return { familiaId: null, tutores: [], leidos: false, personalesLeidos: false }
+  if (errorNino) return { leidos: false, error: errorNino }
   const familiaId = nino?.familia_id ?? null
   if (!familiaId) return { familiaId: null, tutores: [], leidos: true, personalesLeidos: true }
 
@@ -75,7 +89,7 @@ export async function leerTutoresDeNino(
     .eq('familia_id', familiaId)
     .is('deleted_at', null)
 
-  if (errorTutores) return { familiaId, tutores: [], leidos: false, personalesLeidos: false }
+  if (errorTutores) return { leidos: false, error: errorTutores }
 
   // Los cinco nuevos: si la función falla, ningún tutor los tiene leídos (y la pantalla lo dice).
   const { data: nuevos, error: errorNuevos } = await client.rpc('tutores_de_familia', {

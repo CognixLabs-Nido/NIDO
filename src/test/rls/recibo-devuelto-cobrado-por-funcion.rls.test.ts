@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { totalALasLineas } from './total-a-las-lineas'
 import { prepararRecibo, quienRechaza, type DestinoRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -84,6 +85,33 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
       mes: mesRegular,
       ...over,
     })
+  }
+
+  /**
+   * Un borrador regular lo deja el motor con líneas y el total en su suma, y uno sin líneas lo borra; confirmar
+   * no confirma un total que no es la suma de sus líneas (20270208120000). Una línea por el total del recibo.
+   */
+  async function conSuLinea(id: string) {
+    const { data, error } = await serviceClient
+      .from('recibos')
+      .select('centro_id, total_centimos')
+      .eq('id', id)
+      .single()
+    if (error || !data) throw new Error(`conSuLinea: ${error?.message}`)
+    const l = await serviceClient.from('lineas_recibo').insert({
+      centro_id: data.centro_id,
+      recibo_id: id,
+      descripcion: 'Cuota',
+      cantidad: 1,
+      precio_unitario_centimos: data.total_centimos,
+      importe_centimos: data.total_centimos,
+      origen: 'manual',
+    })
+    if (l.error) throw new Error(`conSuLinea: ${l.error.message}`)
+    expect(
+      await totalALasLineas(serviceClient, id),
+      'premisa: el total es la suma de sus líneas'
+    ).toBe(data.total_centimos)
   }
 
   const ENVIADO: DestinoRecibo = { estado: 'enviado_banco', fecha_envio_banco: '2026-03-05' }
@@ -394,6 +422,7 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
 
   it('D · de borrador a pendiente solo confirmar_recibo, también para service_role', async () => {
     const id = await regular()
+    await conSuLinea(id)
     for (const c of [cDirectora, serviceClient]) {
       const { error } = await c
         .from('recibos')
@@ -408,6 +437,7 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
 
   it('D · con el mes cerrado, la vuelta a borrador por fuera no pasa y el cierre sigue; desconfirmar lo quita', async () => {
     const id = await regular()
+    await conSuLinea(id)
     const { data: mes } = await serviceClient.from('recibos').select('mes').eq('id', id).single()
     // Confirmar el único regular del mes cierra el mes (el ancla de cierre_mensual).
     expect((await cDirectora.rpc('confirmar_recibo', { p_recibo_id: id })).data).toBe(true)

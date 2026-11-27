@@ -33,6 +33,26 @@ jobs:
       - name: Escáner de cadena
         run: npm run check:cadena-tras-escritura
 
+  # Censo C (2026-11-26): el fallo que se pierde entre un helper y quien lo llama (el helper devuelve el
+  # constructor de la consulta, o avisa con null/una bandera, y el llamador no lo mira). Rojo si aparece uno
+  # nuevo fuera de `scripts/ci/fallo-que-se-pierde.lista.json`, o si sobra uno en la lista (solo encoge).
+  fallo-que-se-pierde:
+    name: Fallo que se pierde — el aviso que nadie mira
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Escáner del fallo que se pierde
+        run: npm run check:fallo-que-se-pierde
+
   # Nombre de job SIN cambiar ("Typecheck, Lint, Test") para no romper el required
   # status check de la protección de rama. Solo corre lo RÁPIDO y sin BD: typecheck,
   # lint, format, UNIT (proyecto vitest `unit`, excluye RLS/audit) y build. Las suites

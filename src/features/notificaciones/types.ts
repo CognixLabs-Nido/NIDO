@@ -17,9 +17,6 @@ export function fail(error: string): ActionResult<never> {
   return { success: false, error }
 }
 
-/** Clave del marcador "todo lo anterior está visto" en preferencias_usuario. */
-export const PREF_NOTIF_VISTO = 'notificaciones_visto_at'
-
 /**
  * Clave del mapa por-autorización `{ [autorizacion_id]: iso_visto_at }` en
  * preferencias_usuario: registra cuándo el usuario ABRIÓ cada autorización. El
@@ -156,9 +153,10 @@ export interface AvisosInicio {
   /**
    * Admin: altas sin terminar (matrícula pendiente) que llevan más de 30 días y se le proponen a
    * Dirección para borrar (`altas_sin_terminar`, 20261209120000). Se calcula en el dashboard admin;
-   * para profe/familia es 0.
+   * para profe/familia es 0. `null`: no se pudo leer, y el aviso lo dice (censo C, 2026-11-26: antes salía
+   * 0 y el aviso desaparecía sin decirlo).
    */
-  altasSinTerminar: number
+  altasSinTerminar: number | null
   /**
    * Admin: familias que han firmado o cambiado su domiciliación SEPA por su cuenta (firma
    * digital del tutor, con la familia ya dada de alta) y cuya ficha Dirección no ha abierto

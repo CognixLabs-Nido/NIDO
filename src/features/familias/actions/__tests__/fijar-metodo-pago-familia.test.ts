@@ -22,6 +22,7 @@ const { estado, esAdmin } = vi.hoisted(() => ({
     borradores: [] as Array<{ id: string; anio: number; mes: number }>,
     excepciones: [] as Array<{ anio: number; mes: number }>,
     errorBorradores: null as { message: string } | null,
+    errorReflejar: null as { code?: string; message: string } | null,
     llamadas: [] as Llamada[],
   },
   esAdmin: vi.fn(),
@@ -57,7 +58,7 @@ vi.mock('@/lib/supabase/server', () => ({
             : { data: estado.familia, error: null },
         // Las lecturas de lista y el UPDATE de los recibos se esperan como thenable.
         then: (res: (v: unknown) => unknown) => {
-          if (llamada.update) return res({ error: null })
+          if (llamada.update) return res({ error: estado.errorReflejar })
           if (tabla === 'recibos')
             return res({ data: estado.borradores, error: estado.errorBorradores })
           return res({ data: estado.excepciones, error: null })
@@ -79,6 +80,7 @@ describe('fijarMetodoPagoFamilia', () => {
     estado.borradores = []
     estado.excepciones = []
     estado.errorBorradores = null
+    estado.errorReflejar = null
     estado.llamadas = []
     esAdmin.mockReset().mockResolvedValue(true)
   })
@@ -126,14 +128,29 @@ describe('fijarMetodoPagoFamilia', () => {
     expect(updateDe('recibos')).toBeUndefined()
   })
 
-  it('si no puede leer los borradores, el método queda guardado y no toca recibos', async () => {
+  // Censo C (B1, 2026-11-26): sustituye a «si no puede leer los borradores, el método queda guardado y no
+  // toca recibos» (ok, con los borradores en el método viejo: «se corrige al regenerar, no es fatal»). Ahora
+  // los borradores se leen ANTES de escribir, como `setMetodoPagoFamilia` desde el 2026-11-23.
+  it('si no puede leer los borradores: lectura_fallida, y no escribe nada', async () => {
     estado.borradores = [{ id: 'r-sep', anio: 2026, mes: 9 }]
     estado.errorBorradores = { message: 'boom' }
-    expect((await fijarMetodoPagoFamilia({ familia_id: FAMILIA, metodo: 'sepa' })).success).toBe(
-      true
-    )
-    expect(updateDe('familias')).toBeDefined()
+    expect(await fijarMetodoPagoFamilia({ familia_id: FAMILIA, metodo: 'sepa' })).toEqual({
+      success: false,
+      error: 'common.lectura_fallida',
+    })
+    expect(updateDe('familias')).toBeUndefined()
     expect(updateDe('recibos')).toBeUndefined()
+  })
+
+  it('si el método no se refleja en los borradores: lo dice (el de la ficha sí quedó)', async () => {
+    estado.borradores = [{ id: 'r-sep', anio: 2026, mes: 9 }]
+    estado.errorReflejar = { code: 'XX000', message: 'no' }
+    expect(await fijarMetodoPagoFamilia({ familia_id: FAMILIA, metodo: 'sepa' })).toEqual({
+      success: false,
+      error: 'admin.familias.metodo_pago.errors.borradores_sin_cambiar',
+    })
+    expect(updateDe('familias'), 'premisa: el de la ficha se escribió').toBeDefined()
+    expect(updateDe('recibos'), 'premisa: intentó reflejarlo').toBeDefined()
   })
 
   it('quien no es Dirección de ese centro no escribe nada', async () => {
@@ -160,7 +177,9 @@ describe('fijarMetodoPagoFamilia', () => {
       success: false,
       error: 'admin.familias.errors.no_encontrada',
     })
-    expect(estado.llamadas.some((l) => l.tabla === 'recibos')).toBe(false)
+    // Censo C (2026-11-26): los borradores se leen ahora ANTES de escribir; lo que no puede pasar es que se
+    // escriban.
+    expect(updateDe('recibos')).toBeUndefined()
   })
 
   it.each([

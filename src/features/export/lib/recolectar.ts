@@ -338,8 +338,39 @@ async function firmar(
   path: string,
   descripcion: string
 ): Promise<AdjuntoExport> {
-  const { data } = await service.storage.from(bucket).createSignedUrl(path, EXPORT_URL_TTL_SEGUNDOS)
+  const { data, error } = await service.storage
+    .from(bucket)
+    .createSignedUrl(path, EXPORT_URL_TTL_SEGUNDOS)
+  // Censo C (2026-11-26): sin firmar, el adjunto salía con `url_firmada: null`, sin decir por qué.
+  // Dos casos, y no son el mismo:
+  //  · el fichero no está en Storage (la fila lo nombra y el objeto no existe): es una AUSENCIA que llega
+  //    como error. El export sale y lo dice en ese adjunto. Lanzar aquí dejaba a la persona sin su copia
+  //    entera (art. 15) por una foto que falta (medido en la CI: export.rls e06, «Object not found»).
+  //  · cualquier otro error: no se pudo firmar algo que sí está. Lanza: un export incompleto sin decirlo es
+  //    peor que reintentar.
+  if (error) {
+    if (esFicheroNoEncontrado(error)) {
+      return {
+        descripcion,
+        bucket,
+        path,
+        url_firmada: null,
+        caduca_en: null,
+        sin_enlace: 'fichero_no_encontrado',
+      }
+    }
+    throw new Error(`export: no se pudo firmar ${bucket}: ${error.message}`)
+  }
   return { descripcion, bucket, path, url_firmada: data?.signedUrl ?? null, caduca_en: caducaEn() }
+}
+
+/** El «no existe» de Storage: `StorageApiError` con 404 (en `statusCode` o en `status`). */
+function esFicheroNoEncontrado(error: {
+  message?: string
+  statusCode?: string
+  status?: number
+}): boolean {
+  return error.statusCode === '404' || error.status === 404
 }
 
 /**
@@ -363,11 +394,14 @@ export async function recolectarTutor(
   const perfiles = filas(d?.perfiles_familia)
   const perfil = perfiles[0]
   if (!perfil) return null
-  const { data: familia } = await client
+  const { data: familia, error: errFamilia } = await client
     .from('familias')
     .select('centro_id')
     .eq('id', String(perfil.familia_id))
     .maybeSingle()
+  // Censo C: sin el centro, `centroId` null y el export no quedaba registrado (`registrarExport` omite
+  // los sujetos sin centro).
+  if (errFamilia) throw new Error(`export: la lectura de familias falló: ${errFamilia.message}`)
   const adjuntos: AdjuntoExport[] = []
   if (typeof perfil.dni_documento_path === 'string')
     adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, perfil.dni_documento_path, 'DNI'))

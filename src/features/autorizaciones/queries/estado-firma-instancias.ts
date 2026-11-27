@@ -1,7 +1,7 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 import {
   calcularEstadoNino,
@@ -40,20 +40,25 @@ export async function getEstadoFirmaPorInstancia(
 
   const ids = conNino.map((i) => i.id)
   const ninoIds = Array.from(new Set(conNino.map((i) => i.nino_id)))
-  const [{ data: ninos, error: errNinos }, { data: vinculos }, { data: firmas }] =
-    await Promise.all([
-      supabase.from('ninos').select('id, requiere_ambos_firmantes').in('id', ninoIds),
-      supabase
-        .from('vinculos_familiares')
-        .select('nino_id, usuario_id, tipo_vinculo')
-        .in('nino_id', ninoIds)
-        .is('deleted_at', null),
-      supabase
-        .from('firmas_autorizacion')
-        .select('autorizacion_id, nino_id, firmante_id, decision, firmado_at')
-        .in('autorizacion_id', ids),
-    ])
-  if (errNinos) logger.warn('getEstadoFirmaPorInstancia: ninos', errNinos.message)
+  const [
+    { data: ninos, error: errNinos },
+    { data: vinculos, error: errVinculos },
+    { data: firmas, error: errFirmas },
+  ] = await Promise.all([
+    supabase.from('ninos').select('id, requiere_ambos_firmantes').in('id', ninoIds),
+    supabase
+      .from('vinculos_familiares')
+      .select('nino_id, usuario_id, tipo_vinculo')
+      .in('nino_id', ninoIds)
+      .is('deleted_at', null),
+    supabase
+      .from('firmas_autorizacion')
+      .select('autorizacion_id, nino_id, firmante_id, decision, firmado_at')
+      .in('autorizacion_id', ids),
+  ])
+  // Sin los vínculos o las firmas, una medicación firmada saldría «sin firmar».
+  const errLectura = errNinos ?? errVinculos ?? errFirmas
+  if (errLectura) throw new LecturaFallida('getEstadoFirmaPorInstancia', errLectura)
 
   const ambosPorNino = new Map((ninos ?? []).map((n) => [n.id, n.requiere_ambos_firmantes]))
   const vinculosPorNino = new Map<string, FirmanteVinculo[]>()

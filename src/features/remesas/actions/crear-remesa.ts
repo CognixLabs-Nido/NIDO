@@ -58,10 +58,18 @@ export async function crearRemesa(
   if (errEnlaces) {
     logger.warn('crearRemesa insert enlaces error', errEnlaces.message)
     // Deshacer la remesa huérfana (soft delete) para no dejar borradores vacíos.
-    await supabase
+    const { error: errDeshacer } = await supabase
       .from('remesas')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', remesa.id)
+    // Censo C: si tampoco se deshace, queda una remesa vacía en borrador y la acción decía solo «no se
+    // pudo». Se dice, con lo que se puede hacer: añadirle los recibos (`anadirARemesa`).
+    if (errDeshacer) {
+      logger.error('crearRemesa: los enlaces fallaron y la remesa vacía se quedó', {
+        code: errDeshacer.code ?? null,
+      })
+      return fail('remesas.errors.remesa_vacia_creada')
+    }
     return fail(claveErrorEnlace(errEnlaces, 'remesas.errors.crear_failed'))
   }
 

@@ -548,7 +548,8 @@
             "descuadre": "El repartiment no quadra amb l’excés; no s’ha aplicat.",
             "save_failed": "No s’ha pogut resoldre.",
             "sin_hijos_cheque": "La família ja no té xiquets actius: el sobrant es torna per transferència.",
-            "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot descomptar allí. Torna’l per transferència, o torna eixe rebut a esborrany si encara estàs a temps."
+            "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot descomptar allí. Torna’l per transferència, o torna eixe rebut a esborrany si encara estàs a temps.",
+            "resuelto_sin_aplicar": "No s'ha pogut aplicar, i el desbordament ha quedat marcat com a resolt sense estar-ho. Avisa el suport abans de tornar-ho a intentar."
           },
           "aviso_validar": "Aquest rebut no es pot confirmar amb un excés de beca de {importe} sense resoldre. Comprova que és correcte: si la beca està mal posada, corregeix-la i recalcula el mes. Si ho és, tria què fer amb ell.",
           "cheque": {
@@ -1021,7 +1022,9 @@
             "titulo": "Esborrar l'alta?",
             "texto": "S'esborra l'alta d'aquest xiquet: la seua fitxa, la matrícula, la invitació i les seues línies als esborranys de rebut. La família i el del seu fill anterior es queden. No es pot desfer."
           }
-        }
+        },
+        "no_leido_lista": "No s'ha pogut llegir quines altes porten més de 30 dies sense acabar: aquesta marca no ix en aquesta llista. Torna a carregar la pàgina.",
+        "no_leido": "No s'ha pogut llegir l'estat d'aquesta alta sense acabar. Torna a carregar la pàgina."
       }
     },
     "audit": {
@@ -1414,7 +1417,8 @@
         "sepa_sin_mandato": "Paga amb rebut pel banc, però no consta cap mandat SEPA actiu: els seus rebuts no podran entrar en la remesa. Registra la domiciliació o canvia la forma de pagament.",
         "errors": {
           "invalido": "Forma de pagament no vàlida.",
-          "guardado": "No s'ha pogut guardar la forma de pagament."
+          "guardado": "No s'ha pogut guardar la forma de pagament.",
+          "borradores_sin_cambiar": "La forma de pagament està guardada, però els rebuts en esborrany de la família continuen amb l'anterior. Torna-la a guardar per a canviar-los."
         },
         "mandato_pregunta": "Té un mandat SEPA actiu, però paga amb: {metodo}. Cobrar els seus rebuts pel banc?",
         "pasar_a_sepa": "Passar a rebut pel banc"
@@ -1828,7 +1832,8 @@
           "confirmar": "Autoritzar",
           "procesando": "Autoritzant…",
           "exito": "Imatge autoritzada: ja pot aparéixer en les fotos.",
-          "exito_pendiente": "La teua autorització queda registrada. Falta la de l'altre tutor perquè aparega en les fotos."
+          "exito_pendiente": "La teua autorització queda registrada. Falta la de l'altre tutor perquè aparega en les fotos.",
+          "exito_sin_estado": "La teua autorització queda registrada."
         },
         "denegar": {
           "boton": "No autoritze",
@@ -2142,6 +2147,7 @@
       "no_borrador": "El rebut no està en esborrany.",
       "linea_failed": "No s'ha pogut guardar la línia.",
       "recibo_ya_existe": "Esta família ja té rebut este mes; edita'l des de la seua fila.",
+      "recibo_vacio_creado": "La línia no s'ha guardat i el rebut s'ha quedat creat sense línies: torna a afegir-la en eixe rebut.",
       "no_encontrado": "No s’ha trobat el rebut.",
       "no_regular": "Els rebuts esporàdics i les devolucions no es modifiquen des d’ací.",
       "no_confirmado": "Este rebut és un esborrany: edita’l directament.",
@@ -2149,6 +2155,7 @@
       "recibo_cobrado": "Este rebut ja està cobrat: ja no es pot modificar.",
       "desconfirmar_failed": "No s’ha pogut reobrir el rebut.",
       "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo.",
+      "total_desfasado": "El total d'aquest rebut no és la suma de les seues línies, i així no es confirma. Per a posar-lo al dia, torna a guardar una línia d'aquest rebut o prem «Recalcular el mes»; després, confirma'l.",
       "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo.",
       "linea_arrastre": "La línia d’una devolució no s’edita: es lleva, i la devolució torna a quedar sense resoldre.",
       "linea_sobrante": "La línia del saldo a favor d’un xec no s’edita: si cal, lleva-la i el sobrant torna a quedar pendent.",
@@ -2169,6 +2176,8 @@
     "desconfirmado_ok": "Rebut reobert. Edita’l i torna a confirmar-lo.",
     "desconfirmado_reabre": "Rebut reobert. El mes torna a estar obert fins que el confirmes de nou.",
     "lote_saltados": "{n} rebuts no s'han confirmat: tenen un excés de beca menjador sense resoldre.",
+    "lote_total_desfasado": "{n} rebuts no s'han confirmat: el seu total no és la suma de les seues línies. Per a posar-los al dia, torna a guardar una línia de cadascun o prem «Recalcular el mes».",
+    "lote_fallidos": "{n} rebuts no s'han pogut confirmar. Torna-ho a intentar.",
     "lote_saltado_fila": "{familia} · excés de {importe}",
     "metodo_excepcion": "Només este mes · en la fitxa: {ficha}",
     "metodo_sepa_sin_mandato": "Sense mandat SEPA actiu: no entrarà en la remesa.",
@@ -2181,7 +2190,10 @@
     "filtro_familia": "Família",
     "filtro_todas": "Totes les famílies",
     "filtro_sin_resultados": "Esta família no ix en el panell d'este mes.",
-    "quitar_filtro": "Veure-les totes"
+    "quitar_filtro": "Veure-les totes",
+    "avisos": {
+      "total_sin_recalcular": "Línia guardada, però no s'ha pogut recalcular el total del rebut: el total que veus no està al dia, i així el rebut no es podrà confirmar. Per a posar-lo al dia, torna a guardar una línia d'aquest rebut o prem «Recalcular el mes»."
+    }
   },
   "cargo_puntual": {
     "abrir": "Càrrec a diversos xiquets",
@@ -2356,6 +2368,7 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "guardar_acreedor_failed": "No s'han pogut guardar les dades del creditor.",
       "crear_failed": "No s'ha pogut crear la remesa.",
+      "remesa_vacia_creada": "No s'ha pogut crear la remesa, i ha quedat una remesa buida en esborrany. Afig-hi els rebuts en compte de crear-ne una altra.",
       "no_encontrada": "Rebut o remesa no trobat.",
       "ya_enviada": "La remesa ja estava enviada.",
       "enviar_failed": "No s'ha pogut marcar la remesa com a enviada.",
@@ -2533,6 +2546,7 @@
     },
     "errors": {
       "nombre_duplicado": "Ja existeix una aula amb este nom en este curs.",
+      "sala_a_medias": "La sala s'ha creat a mitges i no s'ha pogut retirar. Avisa el responsable de NIDO: si la tornes a crear, dirà que ja existeix.",
       "create_failed": "No s'ha pogut crear l'aula.",
       "no_encontrada": "Aula no trobada."
     }
@@ -3408,7 +3422,8 @@
       "lugar": "Lloc",
       "confirmaciones": "Confirmacions d'assistència",
       "sin_ninos": "No hi ha xiquets en l'audiència.",
-      "ventana_cerrada": "El termini per a confirmar ha acabat."
+      "ventana_cerrada": "El termini per a confirmar ha acabat.",
+      "confirmaciones_no_leidas": "No s'ha pogut llegir de quins xiquets pots confirmar l'assistència. Tanca i torna a obrir l'esdeveniment."
     },
     "calendario": {
       "aria": "Calendari d'esdeveniments",
@@ -3609,6 +3624,7 @@
       "creacion_fallo": "No s'ha pogut crear la cita.",
       "sin_invitados": "La cita no té convidats.",
       "invitados_fallo": "No s'han pogut afegir els convidats.",
+      "cita_sin_invitados": "La cita s'ha creat, però sense convidats. Afig-los des de la cita; no la tornes a crear.",
       "edicion_fallo": "No s'ha pogut editar la cita.",
       "cancelacion_fallo": "No s'ha pogut cancel·lar la cita.",
       "rsvp_fallo": "No s'ha pogut registrar la teua resposta.",
@@ -4046,7 +4062,8 @@
       "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}",
       "recibos_nuevos": "{n, plural, one {Tens # rebut nou} other {Tens # rebuts nous}}",
       "domiciliaciones_nuevas": "{n, plural, one {Una família ha signat o canviat la seua domiciliació bancària des de l’app} other {# famílies han signat o canviat la seua domiciliació bancària des de l’app}}",
-      "altas_sin_terminar": "{n, plural, one {# alta sense acabar fa més de 30 dies} other {# altes sense acabar fa més de 30 dies}}"
+      "altas_sin_terminar": "{n, plural, one {# alta sense acabar fa més de 30 dies} other {# altes sense acabar fa més de 30 dies}}",
+      "altas_sin_terminar_no_leido": "No s'ha pogut llegir si hi ha altes sense acabar fa més de 30 dies. Torna a carregar la pàgina."
     },
     "errors": {
       "no_autorizado": "No autoritzat.",
@@ -4112,6 +4129,7 @@
     "errors": {
       "no_autorizado": "No tens permís per a gestionar plantilles d'informe.",
       "creacion_fallo": "No s'ha pogut crear la plantilla.",
+      "ya_existe_recarga": "L'informe ja existeix: l'acaba de crear una altra persona. Recarrega la pàgina per a obrir-lo.",
       "edicion_fallo": "No s'han pogut guardar els canvis.",
       "archivar_fallo": "No s'ha pogut arxivar la plantilla.",
       "sin_curso_activo": "No hi ha cap curs acadèmic actiu.",
@@ -4156,6 +4174,7 @@
         "publicando": "Publicant…"
       },
       "lote_resultado": "{publicados} publicats · {incompletos} sense publicar (falten ítems)",
+      "lote_fallidos": "{n, plural, one {# informe no s'ha pogut publicar per un error (no li falten ítems). Torna-ho a intentar.} other {# informes no s'han pogut publicar per un error (no els falten ítems). Torna-ho a intentar.}}",
       "lote_vacio": "No hi havia informes per publicar.",
       "seguimiento": {
         "titulo": "Seguiment",
@@ -4271,7 +4290,8 @@
       "quitar_foto": "Llevar foto",
       "publicar": "Publicar",
       "cerrar": "Tancar",
-      "publicada": "Publicació guardada."
+      "publicada": "Publicació guardada.",
+      "vacia_no_borrada": "No s'ha pogut descartar la publicació buida: continua al blog sense fotos ni text. Esborra-la des de la llista."
     },
     "etiquetar": {
       "titulo": "Qui apareix?",
@@ -4302,6 +4322,7 @@
       "etiquetado_fallo": "No s'ha pogut etiquetar.",
       "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
       "subida_fallo": "No s'ha pogut pujar la foto.",
+      "subida_a_medias": "No s'ha pogut pujar la foto, i el que ha quedat a mitges no s'ha pogut llevar. Torna a carregar la publicació: si hi veus una foto buida, esborra-la.",
       "procesado_fallo": "No s'ha pogut processar la foto.",
       "resolver_fallo": "No s'ha pogut resoldre la foto"
     }
@@ -4316,6 +4337,7 @@
       "sin_datos": "Sense dades",
       "firmado": "Firmat",
       "descargar": "Descarregar arxiu",
+      "fichero_no_encontrado": "El fitxer ja no està guardat",
       "sexo": {
         "F": "Xiqueta",
         "M": "Xiquet",
@@ -5149,6 +5171,7 @@
       "sin_fecha_nacimiento": "Falta la data de naixement del xiquet; emplena-la abans de fer l'alta.",
       "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer.",
       "alta_creada_sin_correo": "L'alta està creada, però el correu d'invitació no ha eixit: la família no l'ha rebut. No tornes a donar l'alta; avisa el responsable de NIDO perquè el reenvie.",
+      "sigue_en_cola": "L'alta està feta, però el prospecte continua en la llista d'espera. No li tornes a donar l'alta (es crearia un altre xiquet); avisa el responsable de NIDO.",
       "tutor_olvido": "No es pot completar l'alta amb aquest compte: hi ha en curs una petició d'esborrat de les seues dades en aquest centre (dret a l'oblit).",
       "orden_desfasado": "La llista ha canviat mentre l'ordenaves (algú ha afegit o descartat un prospecte). S'ha recarregat: torna a ordenar-la."
     }

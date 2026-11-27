@@ -187,10 +187,13 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
         ? await firmarRuta(supabase, BUCKET_JUSTIFICANTES_GESTION, g.justificantePath)
         : null
   // El alta sin terminar (20261209120000): su estado y el botón, solo con la matrícula pendiente.
-  const sinTerminar =
+  // Censo C: `'no_leido'` si la lectura falló (la tarjeta lo dice); antes quedaba como si no hubiera nada.
+  const altasDelCentro =
     matriculaActiva?.estado === 'pendiente'
-      ? (await getAltasSinTerminar(supabase, nino.centro_id))?.find((a) => a.ninoId === id)
+      ? await getAltasSinTerminar(supabase, nino.centro_id)
       : undefined
+  const sinTerminar =
+    altasDelCentro === null ? ('no_leido' as const) : altasDelCentro?.find((a) => a.ninoId === id)
 
   // Fase 10b-2: la ficha firmada, a Dirección. Con la matrícula en `lista` y la firma vigente, cambiar un
   // dato firmado la deja sin valor: se avisa ANTES de los formularios que lo cambian (2026-11-17).

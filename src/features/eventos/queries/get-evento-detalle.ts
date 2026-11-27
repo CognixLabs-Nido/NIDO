@@ -46,9 +46,11 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
   if (ev.ambito === 'nino' && ev.nino_id) {
     ninoIds = [ev.nino_id]
   } else if (ev.ambito === 'aula' && ev.aula_id) {
-    const { data: mats } = await aplicarMatriculaActiva(
+    const { data: mats, error: errorMats } = await aplicarMatriculaActiva(
       supabase.from('matriculas').select('nino_id').eq('aula_id', ev.aula_id)
     )
+    // Censo C: la lista del aula caída no es «nadie en el aula» (roster vacío).
+    if (errorMats) throw new LecturaFallida('getEventoDetalle', errorMats)
     ninoIds = (mats ?? []).map((m) => m.nino_id)
   } else if (ev.ambito === 'centro') {
     const { data: ns, error: errorLectura } = await supabase
@@ -61,6 +63,7 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
   }
 
   let roster: RosterConfirmacion[] = []
+  let confirmacionesLeidas = true
   if (ninoIds.length > 0) {
     const [{ data: ninos, error: errorLectura2 }, { data: confs, error: errorLectura3 }, legales] =
       await Promise.all([
@@ -87,6 +90,7 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
     if (errorLectura3) throw new LecturaFallida('getEventoDetalle', errorLectura3)
     if (legales.error) {
       logger.warn('getEventoDetalle: vinculos_familiares.select', legales.error.message)
+      confirmacionesLeidas = false
     }
     const deLosQueEsTutorLegal = new Set(
       legales.error ? [] : (legales.data ?? []).map((v) => v.nino_id)
@@ -124,5 +128,10 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
     aula_id: ev.aula_id,
     nino_id: ev.nino_id,
   }
-  return { evento, roster, es_autor: !!user && ev.creado_por === user.id }
+  return {
+    evento,
+    roster,
+    es_autor: !!user && ev.creado_por === user.id,
+    confirmaciones_leidas: confirmacionesLeidas,
+  }
 }

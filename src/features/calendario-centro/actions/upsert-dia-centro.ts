@@ -38,12 +38,14 @@ export async function upsertDiaCentro(
   // UPDATE. Lo hacemos en dos pasos:
   //  1) intentar UPDATE
   //  2) si no afectó filas, INSERT con `creado_por = uid()`
-  const { data: existente } = await supabase
+  const { data: existente, error: errExistente } = await supabase
     .from('dias_centro')
     .select('id')
     .eq('centro_id', parsed.data.centro_id)
     .eq('fecha', parsed.data.fecha)
     .maybeSingle()
+  // Censo C: una lectura caída era «no hay» → INSERT, que paraba el UNIQUE con un «no se pudo» genérico.
+  if (errExistente) return fail('common.lectura_fallida')
 
   let id: string | undefined
 

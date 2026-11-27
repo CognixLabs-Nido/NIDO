@@ -548,7 +548,8 @@
             "descuadre": "El reparto no cuadra con el exceso; no se ha aplicado.",
             "save_failed": "No se pudo resolver.",
             "sin_hijos_cheque": "La familia ya no tiene niños activos: el sobrante se devuelve por transferencia.",
-            "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede descontar ahí. Devuélvelo por transferencia, o devuelve ese recibo a borrador si aún estás a tiempo."
+            "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede descontar ahí. Devuélvelo por transferencia, o devuelve ese recibo a borrador si aún estás a tiempo.",
+            "resuelto_sin_aplicar": "No se pudo aplicar, y el desborde ha quedado marcado como resuelto sin estarlo. Avisa a soporte antes de volver a intentarlo."
           },
           "aviso_validar": "Este recibo no se puede confirmar con un exceso de beca de {importe} sin resolver. Comprueba que es correcto: si la beca está mal puesta, corrígela y recalcula el mes. Si lo es, elige qué hacer con él.",
           "cheque": {
@@ -1021,7 +1022,9 @@
             "titulo": "¿Borrar el alta?",
             "texto": "Se borra el alta de este niño: su ficha, su matrícula, su invitación y sus líneas en los borradores de recibo. La familia y lo de su hijo anterior se quedan. No se puede deshacer."
           }
-        }
+        },
+        "no_leido_lista": "No se ha podido leer qué altas llevan más de 30 días sin terminar: esa marca no sale en esta lista. Vuelve a cargar la página.",
+        "no_leido": "No se ha podido leer el estado de esta alta sin terminar. Vuelve a cargar la página."
       }
     },
     "audit": {
@@ -1414,7 +1417,8 @@
         "sepa_sin_mandato": "Paga con recibo por banco, pero no consta ningún mandato SEPA activo: sus recibos no podrán entrar en la remesa. Registra la domiciliación o cambia la forma de pago.",
         "errors": {
           "invalido": "Forma de pago no válida.",
-          "guardado": "No se ha podido guardar la forma de pago."
+          "guardado": "No se ha podido guardar la forma de pago.",
+          "borradores_sin_cambiar": "La forma de pago está guardada, pero los recibos en borrador de la familia siguen con la anterior. Vuelve a guardarla para cambiarlos."
         },
         "mandato_pregunta": "Tiene un mandato SEPA activo, pero paga con: {metodo}. ¿Cobrar sus recibos por banco?",
         "pasar_a_sepa": "Pasar a recibo por banco"
@@ -1828,7 +1832,8 @@
           "confirmar": "Autorizar",
           "procesando": "Autorizando…",
           "exito": "Imagen autorizada: ya puede aparecer en las fotos.",
-          "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos."
+          "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos.",
+          "exito_sin_estado": "Tu autorización queda registrada."
         },
         "denegar": {
           "boton": "No autorizo",
@@ -2142,6 +2147,7 @@
       "no_borrador": "El recibo no está en borrador.",
       "linea_failed": "No se pudo guardar la línea.",
       "recibo_ya_existe": "Esta familia ya tiene recibo este mes; edítalo desde su fila.",
+      "recibo_vacio_creado": "La línea no se guardó y el recibo se quedó creado sin líneas: vuelve a añadirla en ese recibo.",
       "no_encontrado": "No se ha encontrado el recibo.",
       "no_regular": "Los recibos esporádicos y las devoluciones no se modifican por aquí.",
       "no_confirmado": "Este recibo es un borrador: edítalo directamente.",
@@ -2149,6 +2155,7 @@
       "recibo_cobrado": "Este recibo ya está cobrado: ya no se puede modificar.",
       "desconfirmar_failed": "No se pudo reabrir el recibo.",
       "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo.",
+      "total_desfasado": "El total de este recibo no es la suma de sus líneas, y así no se confirma. Para ponerlo al día, vuelve a guardar una línea de este recibo o pulsa «Recalcular el mes»; después, confírmalo.",
       "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo.",
       "linea_arrastre": "La línea de una devolución no se edita: se quita, y la devolución vuelve a quedar sin resolver.",
       "linea_sobrante": "La línea del saldo a favor de un cheque no se edita: si hace falta, quítala y el sobrante vuelve a quedar pendiente.",
@@ -2169,6 +2176,8 @@
     "desconfirmado_ok": "Recibo reabierto. Edítalo y vuelve a confirmarlo.",
     "desconfirmado_reabre": "Recibo reabierto. El mes vuelve a estar abierto hasta que lo confirmes de nuevo.",
     "lote_saltados": "{n} recibos no se han confirmado: tienen un exceso de beca comedor sin resolver.",
+    "lote_total_desfasado": "{n} recibos no se han confirmado: su total no es la suma de sus líneas. Para ponerlos al día, vuelve a guardar una línea de cada uno o pulsa «Recalcular el mes».",
+    "lote_fallidos": "{n} recibos no se han podido confirmar. Vuelve a intentarlo.",
     "lote_saltado_fila": "{familia} · exceso de {importe}",
     "metodo_excepcion": "Solo este mes · en la ficha: {ficha}",
     "metodo_sepa_sin_mandato": "Sin mandato SEPA activo: no entrará en la remesa.",
@@ -2181,7 +2190,10 @@
     "filtro_familia": "Familia",
     "filtro_todas": "Todas las familias",
     "filtro_sin_resultados": "Esta familia no sale en el panel de este mes.",
-    "quitar_filtro": "Ver todas"
+    "quitar_filtro": "Ver todas",
+    "avisos": {
+      "total_sin_recalcular": "Línea guardada, pero no se ha podido recalcular el total del recibo: el total que ves no está al día, y así el recibo no se podrá confirmar. Para ponerlo al día, vuelve a guardar una línea de este recibo o pulsa «Recalcular el mes»."
+    }
   },
   "cargo_puntual": {
     "abrir": "Cargo a varios niños",
@@ -2356,6 +2368,7 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "guardar_acreedor_failed": "No se pudieron guardar los datos del acreedor.",
       "crear_failed": "No se pudo crear la remesa.",
+      "remesa_vacia_creada": "No se pudo crear la remesa, y ha quedado una remesa vacía en borrador. Añádele los recibos a esa en vez de crear otra.",
       "no_encontrada": "Recibo o remesa no encontrado.",
       "ya_enviada": "La remesa ya estaba enviada.",
       "enviar_failed": "No se pudo marcar la remesa como enviada.",
@@ -2533,6 +2546,7 @@
     },
     "errors": {
       "nombre_duplicado": "Ya existe un aula con ese nombre en este curso.",
+      "sala_a_medias": "La sala se ha creado a medias y no se ha podido retirar. Avisa al responsable de NIDO: si la creas otra vez, dirá que ya existe.",
       "create_failed": "No se pudo crear el aula.",
       "no_encontrada": "Aula no encontrada."
     }
@@ -3408,7 +3422,8 @@
       "lugar": "Lugar",
       "confirmaciones": "Confirmaciones de asistencia",
       "sin_ninos": "No hay niños en la audiencia.",
-      "ventana_cerrada": "El plazo para confirmar ha terminado."
+      "ventana_cerrada": "El plazo para confirmar ha terminado.",
+      "confirmaciones_no_leidas": "No se ha podido leer de qué niños puedes confirmar la asistencia. Cierra y vuelve a abrir el evento."
     },
     "calendario": {
       "aria": "Calendario de eventos",
@@ -3609,6 +3624,7 @@
       "creacion_fallo": "No se pudo crear la cita.",
       "sin_invitados": "La cita no tiene invitados.",
       "invitados_fallo": "No se pudieron añadir los invitados.",
+      "cita_sin_invitados": "La cita se ha creado, pero sin invitados. Añádelos desde la cita; no la vuelvas a crear.",
       "edicion_fallo": "No se pudo editar la cita.",
       "cancelacion_fallo": "No se pudo cancelar la cita.",
       "rsvp_fallo": "No se pudo registrar tu respuesta.",
@@ -4046,7 +4062,8 @@
       "altas_pendientes_validar": "{n, plural, one {# alta pendiente de validar} other {# altas pendientes de validar}}",
       "recibos_nuevos": "{n, plural, one {Tienes # recibo nuevo} other {Tienes # recibos nuevos}}",
       "domiciliaciones_nuevas": "{n, plural, one {Una familia ha firmado o cambiado su domiciliación bancaria desde la app} other {# familias han firmado o cambiado su domiciliación bancaria desde la app}}",
-      "altas_sin_terminar": "{n, plural, one {# alta sin terminar hace más de 30 días} other {# altas sin terminar hace más de 30 días}}"
+      "altas_sin_terminar": "{n, plural, one {# alta sin terminar hace más de 30 días} other {# altas sin terminar hace más de 30 días}}",
+      "altas_sin_terminar_no_leido": "No se ha podido leer si hay altas sin terminar hace más de 30 días. Vuelve a cargar la página."
     },
     "errors": {
       "no_autorizado": "No autorizado.",
@@ -4112,6 +4129,7 @@
     "errors": {
       "no_autorizado": "No tienes permiso para gestionar plantillas de informe.",
       "creacion_fallo": "No se pudo crear la plantilla.",
+      "ya_existe_recarga": "El informe ya existe: lo acaba de crear otra persona. Recarga la página para abrirlo.",
       "edicion_fallo": "No se pudieron guardar los cambios.",
       "archivar_fallo": "No se pudo archivar la plantilla.",
       "sin_curso_activo": "No hay un curso académico activo.",
@@ -4156,6 +4174,7 @@
         "publicando": "Publicando…"
       },
       "lote_resultado": "{publicados} publicados · {incompletos} sin publicar (faltan ítems)",
+      "lote_fallidos": "{n, plural, one {# informe no se ha podido publicar por un error (no le faltan ítems). Vuelve a intentarlo.} other {# informes no se han podido publicar por un error (no les faltan ítems). Vuelve a intentarlo.}}",
       "lote_vacio": "No había informes que publicar.",
       "seguimiento": {
         "titulo": "Seguimiento",
@@ -4271,7 +4290,8 @@
       "quitar_foto": "Quitar foto",
       "publicar": "Publicar",
       "cerrar": "Cerrar",
-      "publicada": "Publicación guardada."
+      "publicada": "Publicación guardada.",
+      "vacia_no_borrada": "No se ha podido descartar la publicación vacía: sigue en el blog sin fotos ni texto. Bórrala desde la lista."
     },
     "etiquetar": {
       "titulo": "¿Quién aparece?",
@@ -4302,6 +4322,7 @@
       "etiquetado_fallo": "No se pudo etiquetar.",
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",
+      "subida_a_medias": "No se pudo subir la foto, y lo que quedó a medias no se pudo quitar. Recarga la publicación: si ves una foto vacía, bórrala.",
       "procesado_fallo": "No se pudo procesar la foto.",
       "resolver_fallo": "No se pudo resolver la foto"
     }
@@ -4316,6 +4337,7 @@
       "sin_datos": "Sin datos",
       "firmado": "Firmado",
       "descargar": "Descargar archivo",
+      "fichero_no_encontrado": "El archivo ya no está guardado",
       "sexo": {
         "F": "Niña",
         "M": "Niño",
@@ -5149,6 +5171,7 @@
       "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta.",
       "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo.",
       "alta_creada_sin_correo": "El alta está creada, pero el correo de invitación no ha salido: la familia no lo ha recibido. No vuelvas a dar el alta; avisa al responsable de NIDO para reenviarlo.",
+      "sigue_en_cola": "El alta está hecha, pero el prospecto sigue en la lista de espera. No vuelvas a darle el alta (se crearía otro niño); avisa al responsable de NIDO.",
       "tutor_olvido": "No se puede completar el alta con esta cuenta: hay en curso una petición de borrado de sus datos en este centro (derecho al olvido).",
       "orden_desfasado": "La lista ha cambiado mientras la ordenabas (alguien añadió o descartó un prospecto). Se ha recargado: vuelve a ordenarla."
     }

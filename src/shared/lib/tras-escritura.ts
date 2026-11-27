@@ -19,6 +19,20 @@ export function lecturaFallidaTrasEscritura(
 }
 
 /**
+ * Una escritura SECUNDARIA que falla después de la principal ya hecha (censo C, 2026-11-26; la misma regla
+ * que la de arriba): la cuenta ya está creada, el recibo ya está guardado… y lo que falla es lo de después
+ * (el sello de aceptación, el idioma copiado). Deshacer la principal o decir «no se guardó» haría que se
+ * reintentara sobre algo que existe. No para, y el fallo va a Sentry (`logger.error`), no a un `warn` que
+ * nadie lee. Si quien actúa puede hacer algo con ello, se le dice además; si no, es cosa de quien opera.
+ */
+export function escrituraSecundariaFallida(
+  donde: string,
+  error: { code?: string; message?: string } | null | undefined
+): void {
+  logger.error(`escritura secundaria fallida (${donde})`, { code: error?.code ?? null })
+}
+
+/**
  * Una lectura que va DESPUÉS de una escritura hecha y que el codemod hizo lanzar (`LecturaFallida`):
  * si falla, devuelve `porDefecto` (lo que pasaba antes del censo C) y deja el fallo en Sentry. Solo
  * recoge `LecturaFallida`: cualquier otro error sigue subiendo. Ejemplo: firmar la vista previa de una

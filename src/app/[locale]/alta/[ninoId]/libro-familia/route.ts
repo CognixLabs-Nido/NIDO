@@ -11,7 +11,7 @@ import {
   borrarObjetosBucket,
   firmarRuta,
 } from '@/shared/lib/adjuntos/storage'
-import { LecturaFallida } from '@/shared/lib/lectura-fallida'
+import { esLecturaFallida, LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -92,9 +92,18 @@ export async function POST(
 
   // 2. Primera barrera en app: tutor legal del niño O admin del centro (modo Dirección, B2 —
   //    carga del libro en papel). La RPC vuelve a autorizar. Si no, limpia el objeto subido.
-  const autorizado =
-    (await esTutorLegalDe(supabase, nino.id, user.id)) ||
-    (await esAdminDeCentroDeNino(supabase, nino.id, user.id))
+  //    Censo C: si no se puede leer quién es, el fichero ya subido se borra igual y se dice que no se pudo
+  //    leer (antes era «no autorizado»).
+  let autorizado: boolean
+  try {
+    autorizado =
+      (await esTutorLegalDe(supabase, nino.id, user.id)) ||
+      (await esAdminDeCentroDeNino(supabase, nino.id, user.id))
+  } catch (e) {
+    if (!esLecturaFallida(e)) throw e
+    await borrarObjetosBucket(supabase, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
+    return err('common.lectura_fallida', 500)
+  }
   if (!autorizado) {
     await borrarObjetosBucket(supabase, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
     return err('alta.errors.no_autorizado', 403)

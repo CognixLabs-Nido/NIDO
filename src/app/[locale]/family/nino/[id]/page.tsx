@@ -10,6 +10,7 @@ import {
   MessageCircleIcon,
   PencilIcon,
 } from 'lucide-react'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -125,13 +126,15 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // (Flag-2 / F11-F2). Mismo criterio que el gate de la RPC `es_tutor_legal_de`.
   let esTutorLegal = false
   if (userId) {
-    const { data: vinculo } = await supabase
+    const { data: vinculo, error: errVinculo } = await supabase
       .from('vinculos_familiares')
       .select('permisos, tipo_vinculo')
       .eq('usuario_id', userId)
       .eq('nino_id', id)
       .is('deleted_at', null)
       .maybeSingle()
+    // Sin leerlo, sin permisos y sin ser tutor legal: la ficha escondería lo que sí puede ver.
+    if (errVinculo) throw new LecturaFallida('ficha del niño: vínculo', errVinculo)
     permisos = (vinculo?.permisos as Record<string, boolean> | null) ?? {}
     esTutorLegal =
       vinculo?.tipo_vinculo === 'tutor_legal_principal' ||
@@ -177,7 +180,10 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
 
   // Agenda del día: cargamos siempre la estructura (RLS filtra si no hay
   // permiso); el render decide qué mostrar.
-  const agendaDelDia = permisos.puede_ver_agenda ? await getAgendaDelDia(id, fecha) : null
+  // Censo C (B1): la agenda es una sección de esta pantalla diaria; si no se lee, lo dice ahí y la ficha sigue.
+  const agendaDelDia = permisos.puede_ver_agenda
+    ? await oNoLeido(getAgendaDelDia(id, fecha), 'ficha del niño: agenda del día')
+    : null
 
   // Ausencias: dependen de `puede_ver_agenda` (compartido con la agenda)
   // para leer; `puede_reportar_ausencias` para reportar/cancelar.
@@ -426,7 +432,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         {permisos.puede_ver_agenda ? (
           <>
             <MenuDelDiaWidget centroId={nino.centro_id} fecha={fecha} />
-            {agendaDelDia && (
+            {agendaDelDia === null ? (
+              <NoSePudoLeer alcance="seccion" />
+            ) : (
               <AgendaFamiliaView ninoId={id} locale={locale} fecha={fecha} agenda={agendaDelDia} />
             )}
           </>

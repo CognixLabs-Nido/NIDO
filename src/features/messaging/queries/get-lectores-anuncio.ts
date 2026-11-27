@@ -76,9 +76,8 @@ export async function getLectoresAnuncio(anuncioId: string): Promise<LectorAnunc
     logger.warn('getLectoresAnuncio: usuarios', usuariosErr.message)
     throw new LecturaFallida('getLectoresAnuncio', usuariosErr)
   }
-  if (lecturasErr) {
-    logger.warn('getLectoresAnuncio: lecturas', lecturasErr.message)
-  }
+  // Censo C: antes un `warn` y «nadie lo ha leído». Lanza, como la lectura de los usuarios.
+  if (lecturasErr) throw new LecturaFallida('getLectoresAnuncio: lecturas', lecturasErr)
 
   const leidoByUser = new Map<string, string>()
   for (const l of lecturas ?? []) leidoByUser.set(l.usuario_id, l.leido_at)

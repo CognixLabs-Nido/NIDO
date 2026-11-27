@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { VinculoParentesco } from '@/features/familias/lib/resolver-parentesco'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/db'
 
@@ -28,7 +29,7 @@ export async function buscarVinculoPrevio(
   tutorUsuarioId: string,
   centroId: string
 ): Promise<VinculoParentesco | null> {
-  const { data } = await service
+  const { data, error } = await service
     .from('vinculos_familiares')
     .select('parentesco, descripcion_parentesco, ninos!inner(centro_id)')
     .eq('usuario_id', tutorUsuarioId)
@@ -36,6 +37,9 @@ export async function buscarVinculoPrevio(
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+  // Censo C: sin leerlo no es «no hay del que heredar» (el hermano nuevo saldría con otro parentesco, o
+  // se pediría sin hacer falta). Quien llama está dentro del try de la acción: `lectura_fallida`.
+  if (error) throw new LecturaFallida('buscarVinculoPrevio', error)
   return data
     ? { parentesco: data.parentesco, descripcion_parentesco: data.descripcion_parentesco }
     : null

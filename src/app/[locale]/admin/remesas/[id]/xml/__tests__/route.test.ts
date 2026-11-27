@@ -35,6 +35,9 @@ const { bd } = vi.hoisted(() => ({
     iban1: 'ES7620770024003102575766',
     acreedorCompleto: true,
     errorLineas: null as unknown,
+    // Censo C: la lectura de la remesa o la del centro contestan error.
+    errorRemesa: null as unknown,
+    errorCentro: null as unknown,
     // Lo que tiene la remesa al registrar (los recibos cobrables).
     recibosEnRemesa: [] as string[],
     registros: [] as Registro[],
@@ -79,17 +82,24 @@ vi.mock('@/lib/supabase/server', () => ({
       select: () => ({
         eq: () => ({
           is: () => ({
-            maybeSingle: async () => ({
-              data: {
-                id: ID,
-                centro_id: 'c1',
-                anio: 2026,
-                mes: 10,
-                fichero_generado_at: bd.marca,
-              },
-            }),
+            maybeSingle: async () =>
+              bd.errorRemesa
+                ? { data: null, error: bd.errorRemesa }
+                : {
+                    data: {
+                      id: ID,
+                      centro_id: 'c1',
+                      anio: 2026,
+                      mes: 10,
+                      fichero_generado_at: bd.marca,
+                    },
+                    error: null,
+                  },
           }),
-          maybeSingle: async () => ({ data: { nombre: 'CEI Ejemplo' } }),
+          maybeSingle: async () =>
+            bd.errorCentro
+              ? { data: null, error: bd.errorCentro }
+              : { data: { nombre: 'CEI Ejemplo' }, error: null },
           in: async () => {
             if (tabla === 'recibos')
               return {
@@ -202,6 +212,8 @@ describe('GET /admin/remesas/[id]/xml: el fichero de cada versión, guardado (R-
     bd.iban1 = 'ES7620770024003102575766'
     bd.acreedorCompleto = true
     bd.errorLineas = null
+    bd.errorRemesa = null
+    bd.errorCentro = null
     bd.recibosEnRemesa = [R_SIN_FECHA, R_CON_FECHA]
     bd.registros = []
     bd.bucket = new Map()
@@ -322,5 +334,23 @@ describe('GET /admin/remesas/[id]/xml: el fichero de cada versión, guardado (R-
       expect(bd.bucket.size).toBe(0)
       expect(bd.marca).toBeNull()
     })
+
+    // Censo C (B1): sin el nombre del centro, el fichero salía con el concepto y el acreedor en blanco, y la
+    // primera descarga lo registraba: desde entonces se entrega ese, byte a byte.
+    it('si falla la lectura del centro, no sale el fichero (500) ni se guarda nada', async () => {
+      bd.errorCentro = { code: 'XX000', message: 'caída' }
+      const res = await pedir()
+      expect.soft(res.status).toBe(500)
+      expect.soft(bd.bucket.size, 'nada en el bucket').toBe(0)
+      expect.soft(bd.marca, 'sin marca').toBeNull()
+      expect.soft(bd.llamadas).not.toContain('registrar_fichero_remesa')
+    })
+  })
+
+  it('si falla la lectura de la remesa, 500, no «no encontrada» (404)', async () => {
+    bd.errorRemesa = { code: 'XX000', message: 'caída' }
+    const res = await pedir()
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ error: 'xml_failed' })
   })
 })

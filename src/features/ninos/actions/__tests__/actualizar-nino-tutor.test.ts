@@ -48,7 +48,8 @@ function makeFake(
   update: { data: { id: string } | null; error: { code: string } | null } = {
     data: { id: NINO },
     error: null,
-  }
+  },
+  falla: 'ficha_gestion_ninos' | 'sip_de_ninos' | null = null
 ) {
   const rpcSpy = vi.fn()
   const updateSpy = vi.fn()
@@ -68,6 +69,8 @@ function makeFake(
     rpc: (fn: string, args: Record<string, unknown>) => {
       // Lo de gestión (el DNI guardado) sale por su función desde `20270115130000`; no es una
       // escritura, así que no cuenta como «RPC» en los asertos de este fichero.
+      if (fn === falla)
+        return Promise.resolve({ data: null, error: { code: 'XX000', message: 'caída' } })
       if (fn === 'ficha_gestion_ninos')
         return Promise.resolve({ data: [{ nino_id: NINO, dni: GUARDADA.dni }], error: null })
       // La tarjeta sanitaria guardada, por `sip_de_ninos` (fase 7): tampoco es una escritura.
@@ -107,6 +110,22 @@ beforeEach(() => {
   gate.validada = false
   gate.registroOk = true
   direccion.es = false
+})
+
+describe('actualizarNinoTutor — una lectura caída no es «no tienes permiso» (censo C, 130/131)', () => {
+  for (const funcion of ['ficha_gestion_ninos', 'sip_de_ninos'] as const) {
+    it(`con el alta validada y ${funcion} caída → «no se pudo leer», y nada a la cola`, async () => {
+      gate.validada = true
+      const { fake, rpcSpy } = makeFake(undefined, funcion)
+      createClientMock.mockReturnValue(fake)
+
+      const r = await actualizarNinoTutor({ ...ENVIADO, primer_apellido: 'Otro' })
+
+      expect(r).toEqual({ success: false, error: 'common.lectura_fallida' })
+      expect(registrarSpy).not.toHaveBeenCalled()
+      expect(rpcSpy).not.toHaveBeenCalled()
+    })
+  }
 })
 
 describe('actualizarNinoTutor — la puerta de identidad', () => {

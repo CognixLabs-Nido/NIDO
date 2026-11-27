@@ -38,7 +38,13 @@ export function AutorizarImagenNinoButton({ ninoId, nombreCompleto }: Props) {
     startTransition(async () => {
       const r = await otorgarImagenNino({ nino_id: ninoId })
       if (r.success) {
-        toast.success(r.data.visible ? t('exito') : t('exito_pendiente'))
+        toast.success(
+          r.data.visible === null
+            ? t('exito_sin_estado')
+            : r.data.visible
+              ? t('exito')
+              : t('exito_pendiente')
+        )
         setOpen(false)
         router.refresh()
       } else {

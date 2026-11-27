@@ -8,9 +8,11 @@ import { signIn } from '../sign-in'
  * al usuario de la sesión), así que solo se hace con las credenciales buenas.
  */
 
-const { auth, esSuperMock } = vi.hoisted(() => ({
+const { auth, esSuperMock, intentos } = vi.hoisted(() => ({
   auth: { signInWithPassword: vi.fn() },
   esSuperMock: vi.fn(),
+  /** Lo que contesta la cuenta de intentos fallidos recientes (el freno contra la fuerza bruta). */
+  intentos: { respuesta: { count: 0, error: null } as { count: number | null; error: unknown } },
 }))
 
 vi.mock('next/headers', () => ({ headers: async () => ({ get: () => null }) }))
@@ -21,7 +23,7 @@ vi.mock('@/lib/supabase/admin', () => ({
       const q = {
         select: () => q,
         eq: () => q,
-        gte: async () => ({ count: 0 }),
+        gte: async () => intentos.respuesta,
         insert: async () => ({ error: null }),
       }
       return q
@@ -73,5 +75,34 @@ describe('signIn — ¿es superusuario?', () => {
       error: 'auth.login.errors.invalid_credentials',
     })
     expect(esSuperMock).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * El freno contra la fuerza bruta con la cuenta de intentos sin leer (censo C, B1, 2026-11-26): `count ?? 0`
+ * lo apagaba. Ahora no se entra y se dice; ni se llega a probar la contraseña.
+ */
+describe('signIn — el freno de intentos', () => {
+  beforeEach(() => {
+    auth.signInWithPassword
+      .mockReset()
+      .mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
+    esSuperMock.mockReset().mockResolvedValue(false)
+    intentos.respuesta = { count: 0, error: null }
+  })
+
+  it('premisa: con muchos intentos contados, frena sin probar la contraseña', async () => {
+    intentos.respuesta = { count: 1_000, error: null }
+    expect(await signIn(ENTRADA)).toEqual({
+      success: false,
+      error: 'auth.login.errors.too_many_attempts',
+    })
+    expect(auth.signInWithPassword).not.toHaveBeenCalled()
+  }, 10_000)
+
+  it('sin poder contarlos: no se apaga el freno, lo dice y no prueba la contraseña', async () => {
+    intentos.respuesta = { count: null, error: { code: 'XX000', message: 'caída' } }
+    expect(await signIn(ENTRADA)).toEqual({ success: false, error: 'common.lectura_fallida' })
+    expect(auth.signInWithPassword).not.toHaveBeenCalled()
   })
 })

@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { totalALasLineas } from './total-a-las-lineas'
 import { intentarConMarcador } from './remesa-como-sus-funciones'
 
 /**
@@ -240,6 +241,8 @@ describe('R-5 — desconfirmar un recibo', () => {
       })
       .eq('id', linea!.id)
     expect(editar.error).toBeNull()
+    // Como la acción de editar línea: después, el total del recibo (20270208120000).
+    await totalALasLineas(cAdmin, reciboId)
 
     // Reconfirmar con la acción que ya existía.
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
@@ -407,6 +410,7 @@ describe('R-5 — desconfirmar un recibo', () => {
       .select('id')
       .single()
     if (errManual || !manual) throw new Error(`fixture linea manual: ${errManual?.message}`)
+    await totalALasLineas(serviceClient, reciboId)
 
     // Un desborde YA RESUELTO por transferencia: el caso con más cosas colgando del recibo.
     // `resuelto_at` NO es decorativo: `beca_desborde_resolucion_coherente` lo exige cuando

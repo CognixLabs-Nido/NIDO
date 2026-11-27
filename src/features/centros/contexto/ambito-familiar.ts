@@ -4,6 +4,7 @@ import { cache } from 'react'
 
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/db'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 /**
  * Lo que la parte familia de la app ve EN UN CENTRO (multicentro · Fase 2).
@@ -51,12 +52,15 @@ export const ambitoFamiliar = cache(async (centroId: string): Promise<AmbitoFami
   const hijos: HijoEnCentro[] = []
 
   if (userId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('vinculos_familiares')
       .select('tipo_vinculo, nino:ninos!inner(id, nombre, apellidos, centro_id)')
       .eq('usuario_id', userId)
       .eq('nino.centro_id', centroId)
       .is('deleted_at', null)
+    // Censo C (2026-11-26): una lectura caída era «no tienes hijos en este centro». Lanza; lo pinta el
+    // error.tsx de la página (o el de [locale] si viene del layout).
+    if (error) throw new LecturaFallida('ambitoFamiliar', error)
     for (const v of data ?? []) {
       if (!v.nino || v.nino.centro_id !== centroId) continue
       hijos.push({
@@ -92,13 +96,15 @@ export async function familiaDelUsuarioEn(centroId: string): Promise<FamiliaEnCe
   const userId = userData.user?.id
   if (!userId) return null
 
-  const { data: fila } = await supabase
+  const { data: fila, error } = await supabase
     .from('familia_tutores')
     .select('familia_id')
     .eq('usuario_id', userId)
     .eq('centro_id', centroId)
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C: una lectura caída no es «no eres de ninguna familia de este centro».
+  if (error) throw new LecturaFallida('familiaDelUsuarioEn', error)
   if (!fila?.familia_id) return null
   return { familiaId: fila.familia_id, centroId }
 }

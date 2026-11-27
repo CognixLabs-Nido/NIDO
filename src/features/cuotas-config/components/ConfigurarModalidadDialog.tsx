@@ -25,8 +25,15 @@ import type {
   ConceptoCatalogo,
   ImportesPropios as Importes,
 } from '../queries/get-asignacion-permanente'
-import type { ConceptoAsignable } from '../queries/get-conceptos-asignables'
 import { ImportesPropios } from './ImportesPropios'
+import type { Database } from '@/types/db'
+
+/** Un concepto que la directora asigna A MANO a un niño (`aplicacion = 'manual'`). */
+export interface ConceptoAsignable {
+  id: string
+  nombre: string
+  tipo_concepto: Database['public']['Enums']['tipo_concepto']
+}
 
 // F-4-2: asignación PERMANENTE de conceptos por niño (sin mes, sin modalidad — la
 // periodicidad es del concepto). MVP viable; la UX completa del panel es F-4-4.

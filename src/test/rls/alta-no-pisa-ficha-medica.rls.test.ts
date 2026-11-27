@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import type { Database } from '@/types/db'
 
 import {
+  asignarRol,
   clientFor,
   createTestAula,
   createTestCentro,
@@ -136,6 +137,9 @@ describe('el alta no guarda la ficha médica que no pudo leer', () => {
     nino = await createTestNino(centro.id, 'Nino Alta Ficha Medica')
     const matricula = await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Alta Ficha Medica' })
+    // Un tutor legal de verdad es del centro (`pertenece_a_centro`; medido en prod el 2026-11-23, 4 de 4). Sin
+    // el rol, `existe_consentimiento_imagen` le da 42501 y desde el censo C la página del alta lo dice.
+    await asignarRol(legal.id, centro.id, 'tutor_legal')
     await crearFamiliaTutor(nino.familia_id, legal.id)
     vinculo = await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', {
       puede_ver_info_medica: true,

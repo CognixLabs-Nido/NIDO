@@ -36,11 +36,13 @@ export async function crearVinculoProfeAula(
 ): Promise<{ error: string | null }> {
   // F11-H: la asignación de personal es por curso. Se vincula al curso ACTIVO
   // del centro del aula (el único operativo en el momento de aceptar).
-  const { data: aulaRow } = await service
+  const { data: aulaRow, error: errAula } = await service
     .from('aulas')
     .select('centro_id')
     .eq('id', params.aulaId)
     .maybeSingle()
+  // Como el curso activo, abajo: en `{ error }`, para que el llamador deshaga la cuenta recién creada.
+  if (errAula) return { error: 'common.lectura_fallida' }
   if (!aulaRow) return { error: 'auth.invitation.errors.profe_aula_failed' }
 
   const { data: cursoActivoId, error: errorLectura } = await service.rpc('curso_activo_de_centro', {

@@ -25,7 +25,7 @@ import { LimiteSeccion } from '@/shared/components/LimiteSeccion'
  * resumen son las confirmadas; para familia, pendientes de firmar + firmadas. Debajo,
  * medicaciones activas hoy. No renderiza nada si no hay actividad. Server component.
  */
-async function AvisosInicioContenido({
+export async function AvisosInicioContenido({
   avisos,
   rol,
   locale,
@@ -55,7 +55,9 @@ async function AvisosInicioContenido({
   // Altas (matrículas en 'lista') pendientes de validar: solo admin (#4 dashboard).
   const altasPendientesN = esAdmin ? avisos.altasPendientesValidar : 0
   // Altas sin terminar que se proponen para borrar: solo admin (20261209120000).
-  const altasSinTerminarN = esAdmin ? avisos.altasSinTerminar : 0
+  const altasSinTerminarN = esAdmin ? (avisos.altasSinTerminar ?? 0) : 0
+  // Censo C: si no se pudo leer, se dice; antes el aviso desaparecía como si no hubiera ninguna.
+  const altasSinTerminarNoLeido = esAdmin && avisos.altasSinTerminar === null
   // Familias que firmaron o cambiaron su domiciliación por su cuenta: solo admin.
   const domiciliaciones = esAdmin ? avisos.familiasDomiciliacionNueva : []
   if (
@@ -70,6 +72,7 @@ async function AvisosInicioContenido({
     recibosNuevosN <= 0 &&
     altasPendientesN <= 0 &&
     altasSinTerminarN <= 0 &&
+    !altasSinTerminarNoLeido &&
     domiciliaciones.length === 0 &&
     !campanaPend
   )
@@ -193,6 +196,12 @@ async function AvisosInicioContenido({
             {t('altas_sin_terminar', { n: altasSinTerminarN })}
           </span>
         </Link>
+      )}
+      {altasSinTerminarNoLeido && (
+        <p className="text-muted-foreground flex items-center gap-3 rounded-xl border p-4 text-sm">
+          <AlertTriangleIcon className="size-5 shrink-0" />
+          <span>{t('altas_sin_terminar_no_leido')}</span>
+        </p>
       )}
       {altasPendientesN > 0 && (
         <Link

@@ -10,6 +10,7 @@ import { altaEnProceso, type SenalMatricula } from '@/features/matriculas/lib/es
 import type { EstadoMatricula } from '../lib/acciones-prospecto'
 import { tutoresConVinculoPrevio } from '../lib/vinculo-previo-tutor'
 import { LecturaFallida } from '@/shared/lib/lectura-fallida'
+import { logger } from '@/shared/lib/logger'
 
 export interface ProspectoListItem {
   id: string
@@ -118,12 +119,20 @@ export async function getListaEsperaCore(
   // El centro del curso: el parentesco solo se hereda de vínculos de este centro.
   let conVinculo: Set<string> | null = new Set()
   if (tutorIds.length > 0) {
-    const { data: curso } = await supabase
+    const { data: curso, error: errCurso } = await supabase
       .from('cursos_academicos')
       .select('centro_id')
       .eq('id', cursoAcademicoId)
       .maybeSingle()
-    conVinculo = curso ? await tutoresConVinculoPrevio(service, tutorIds, curso.centro_id) : null
+    // Degradación DELIBERADA (censo C, 2026-11-26), la misma de `tutoresConVinculoPrevio`: sin el centro no
+    // se marca ninguno, y el diálogo revela el campo si la acción lo exige. Es una pista, no una regla.
+    if (errCurso)
+      logger.warn(
+        'getListaEspera: centro del curso (sin marcar necesita_parentesco)',
+        errCurso.code
+      )
+    conVinculo =
+      !errCurso && curso ? await tutoresConVinculoPrevio(service, tutorIds, curso.centro_id) : null
   }
 
   return (

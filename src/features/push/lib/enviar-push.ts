@@ -3,6 +3,7 @@ import webpush from 'web-push'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 import type { PushPayload, PushSubscriptionRow } from '../types'
+import { escrituraSecundariaFallida } from '@/shared/lib/tras-escritura'
 
 let vapidConfigured = false
 let vapidWarned = false
@@ -150,9 +151,8 @@ export async function enviarPushANotificarUsuarios(
       .from('push_subscriptions')
       .delete()
       .in('id', idsAExpirar)
-    if (delErr) {
-      console.error('[enviarPush] limpiar suscripciones expiradas falló:', delErr)
-    }
+    // Se quedan; la próxima vez vuelven a salir «gone» y se reintenta. A Sentry (censo C), no a la consola.
+    if (delErr) escrituraSecundariaFallida('push: limpiar suscripciones expiradas', delErr)
   }
 
   return { enviados, expirados, errores, total: subs.length }

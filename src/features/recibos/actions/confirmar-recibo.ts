@@ -18,6 +18,12 @@ const loteSchema = z.object({ reciboIds: z.array(z.string().uuid()).min(1).max(5
 const DESBORDE_PENDIENTE = 'desborde_pendiente'
 /** HINT de `recibos_aplicar_becas` (PR-5): una beca del recibo ya está descontada en otro. */
 const BECA_YA_APLICADA = 'beca_ya_aplicada'
+/**
+ * Censo C (decisión de Jose del 2026-11-26): el HINT de `confirmar_recibo` cuando el total del recibo no es la
+ * suma de sus líneas (lo deja así `recalcularTotal` si no pudo releerlas). Un total así no se confirma: llegaría
+ * a la remesa y se cobraría ese importe.
+ */
+const TOTAL_DESFASADO = 'total_desfasado'
 
 /**
  * F-4-4: confirma UN recibo (borrador→pendiente_procesar) vía `confirmar_recibo`. La RPC
@@ -41,6 +47,7 @@ export async function confirmarRecibo(
     if (error.code === '42501') return fail('recibos_panel.errors.no_autorizado')
     if (error.hint === DESBORDE_PENDIENTE) return fail('recibos_panel.errors.desborde_pendiente')
     if (error.hint === BECA_YA_APLICADA) return fail('recibos_panel.errors.beca_ya_aplicada')
+    if (error.hint === TOTAL_DESFASADO) return fail('recibos_panel.errors.total_desfasado')
     return fail('recibos_panel.errors.confirmar_failed')
   }
 
@@ -55,6 +62,8 @@ export interface ResultadoLote {
   cerrado: boolean
   /** PR-3: ids de los recibos que no se validaron por su desborde de beca pendiente. */
   conDesborde: string[]
+  /** Censo C: ids de los recibos que no se validaron porque su total no es la suma de sus líneas. */
+  conTotalDesfasado: string[]
 }
 
 /**
@@ -89,12 +98,17 @@ export async function confirmarRecibosCore(
   let fallidos = 0
   let cerrado = false
   const conDesborde: string[] = []
+  const conTotalDesfasado: string[] = []
 
   for (const id of reciboIds) {
     const { data, error } = await supabase.rpc('confirmar_recibo', { p_recibo_id: id })
     if (error) {
       if (error.hint === DESBORDE_PENDIENTE) {
         conDesborde.push(id)
+        continue
+      }
+      if (error.hint === TOTAL_DESFASADO) {
+        conTotalDesfasado.push(id)
         continue
       }
       logger.warn('confirmarRecibos item', error.message)
@@ -105,8 +119,8 @@ export async function confirmarRecibosCore(
     if (data === true) cerrado = true
   }
 
-  if (confirmados === 0 && conDesborde.length === 0) {
+  if (confirmados === 0 && conDesborde.length === 0 && conTotalDesfasado.length === 0) {
     return fail('recibos_panel.errors.confirmar_failed')
   }
-  return ok({ confirmados, fallidos, cerrado, conDesborde })
+  return ok({ confirmados, fallidos, cerrado, conDesborde, conTotalDesfasado })
 }

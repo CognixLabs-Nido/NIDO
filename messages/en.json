@@ -548,7 +548,8 @@
             "descuadre": "The split doesn’t match the excess; nothing was applied.",
             "save_failed": "Couldn’t resolve.",
             "sin_hijos_cheque": "The family has no active children any more: refund the surplus by transfer.",
-            "recibo_siguiente_cerrado": "The family’s receipt for next month is already validated: it can’t be deducted there. Refund it by transfer, or set that receipt back to draft if there is still time."
+            "recibo_siguiente_cerrado": "The family’s receipt for next month is already validated: it can’t be deducted there. Refund it by transfer, or set that receipt back to draft if there is still time.",
+            "resuelto_sin_aplicar": "It could not be applied, and the overflow has been left marked as resolved when it is not. Contact support before trying again."
           },
           "aviso_validar": "This receipt cannot be confirmed with an unresolved grant excess of {importe}. Check that it is correct: if the grant is wrong, fix it and recalculate the month. If it is right, choose what to do with it.",
           "cheque": {
@@ -1021,7 +1022,9 @@
             "titulo": "Delete the enrolment?",
             "texto": "This child's enrolment is deleted: their record, enrolment, invitation and their lines in draft receipts. The family and their previous child's data stay. This cannot be undone."
           }
-        }
+        },
+        "no_leido_lista": "We could not read which enrolments have been unfinished for more than 30 days: that mark is missing from this list. Reload the page.",
+        "no_leido": "We could not read the status of this unfinished enrolment. Reload the page."
       }
     },
     "audit": {
@@ -1414,7 +1417,8 @@
         "sepa_sin_mandato": "Pays by bank direct debit, but no active SEPA mandate is on record: their receipts cannot go into the remittance. Register the direct debit or change the payment method.",
         "errors": {
           "invalido": "Invalid payment method.",
-          "guardado": "The payment method could not be saved."
+          "guardado": "The payment method could not be saved.",
+          "borradores_sin_cambiar": "The payment method is saved, but the family's draft receipts still have the previous one. Save it again to update them."
         },
         "mandato_pregunta": "They have an active SEPA mandate but pay by: {metodo}. Collect their receipts by bank direct debit?",
         "pasar_a_sepa": "Switch to bank direct debit"
@@ -1828,7 +1832,8 @@
           "confirmar": "Authorise",
           "procesando": "Authorising…",
           "exito": "Image authorised: may now appear in photos.",
-          "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos."
+          "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos.",
+          "exito_sin_estado": "Your authorisation is recorded."
         },
         "denegar": {
           "boton": "I do not authorise",
@@ -2142,6 +2147,7 @@
       "no_borrador": "The receipt is not a draft.",
       "linea_failed": "Could not save the line.",
       "recibo_ya_existe": "This family already has a receipt this month; edit it from its row.",
+      "recibo_vacio_creado": "The line was not saved and the receipt was left created with no lines: add it again to that receipt.",
       "no_encontrado": "Receipt not found.",
       "no_regular": "One-off receipts and returns are not modified from here.",
       "no_confirmado": "This receipt is a draft: edit it directly.",
@@ -2149,6 +2155,7 @@
       "recibo_cobrado": "This receipt has already been collected: it can no longer be modified.",
       "desconfirmar_failed": "Could not reopen the receipt.",
       "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming.",
+      "total_desfasado": "The total of this receipt is not the sum of its lines, so it is not confirmed. To bring it up to date, save a line of this receipt again or press “Recalculate month”; then confirm it.",
       "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it.",
       "linea_arrastre": "The line of a returned receipt cannot be edited: remove it, and the return goes back to unresolved.",
       "linea_sobrante": "A voucher credit line can’t be edited: if needed, remove it and the surplus goes back to pending.",
@@ -2169,6 +2176,8 @@
     "desconfirmado_ok": "Receipt reopened. Edit it and confirm it again.",
     "desconfirmado_reabre": "Receipt reopened. The month is open again until you confirm it once more.",
     "lote_saltados": "{n} receipts were not confirmed: they have an unresolved meal grant excess.",
+    "lote_total_desfasado": "{n} receipts were not confirmed: their total is not the sum of their lines. To bring them up to date, save a line of each again or press “Recalculate month”.",
+    "lote_fallidos": "{n} receipts could not be confirmed. Please try again.",
     "lote_saltado_fila": "{familia} · excess of {importe}",
     "metodo_excepcion": "This month only · on file: {ficha}",
     "metodo_sepa_sin_mandato": "No active SEPA mandate: it will not go into the remittance.",
@@ -2181,7 +2190,10 @@
     "filtro_familia": "Family",
     "filtro_todas": "All families",
     "filtro_sin_resultados": "This family isn't in this month's panel.",
-    "quitar_filtro": "Show all"
+    "quitar_filtro": "Show all",
+    "avisos": {
+      "total_sin_recalcular": "Line saved, but the receipt total could not be recalculated: the total you see is not up to date, and the receipt cannot be confirmed like this. To bring it up to date, save a line of this receipt again or press “Recalculate month”."
+    }
   },
   "cargo_puntual": {
     "abrir": "Charge several children",
@@ -2356,6 +2368,7 @@
       "no_autorizado": "You don't have permission for this action.",
       "guardar_acreedor_failed": "Could not save the creditor details.",
       "crear_failed": "Could not create the remittance.",
+      "remesa_vacia_creada": "The remittance could not be created, and an empty draft remittance was left behind. Add the receipts to that one instead of creating another.",
       "no_encontrada": "Receipt or remittance not found.",
       "ya_enviada": "The remittance was already sent.",
       "enviar_failed": "Could not mark the remittance as sent.",
@@ -2533,6 +2546,7 @@
     },
     "errors": {
       "nombre_duplicado": "A classroom with this name already exists in this year.",
+      "sala_a_medias": "The room was only partly created and could not be removed. Contact the NIDO administrator: creating it again will say it already exists.",
       "create_failed": "Could not create the classroom.",
       "no_encontrada": "Classroom not found."
     }
@@ -3408,7 +3422,8 @@
       "lugar": "Place",
       "confirmaciones": "Attendance confirmations",
       "sin_ninos": "No children in the audience.",
-      "ventana_cerrada": "The deadline to confirm has passed."
+      "ventana_cerrada": "The deadline to confirm has passed.",
+      "confirmaciones_no_leidas": "We could not read which children you can confirm attendance for. Close and open the event again."
     },
     "calendario": {
       "aria": "Events calendar",
@@ -3609,6 +3624,7 @@
       "creacion_fallo": "Could not create the appointment.",
       "sin_invitados": "The appointment has no guests.",
       "invitados_fallo": "Could not add the guests.",
+      "cita_sin_invitados": "The appointment was created, but without guests. Add them from the appointment; do not create it again.",
       "edicion_fallo": "Could not edit the appointment.",
       "cancelacion_fallo": "Could not cancel the appointment.",
       "rsvp_fallo": "Could not record your response.",
@@ -4046,7 +4062,8 @@
       "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}",
       "recibos_nuevos": "{n, plural, one {You have # new receipt} other {You have # new receipts}}",
       "domiciliaciones_nuevas": "{n, plural, one {A family has signed or changed its direct debit from the app} other {# families have signed or changed their direct debit from the app}}",
-      "altas_sin_terminar": "{n, plural, one {# enrolment unfinished for more than 30 days} other {# enrolments unfinished for more than 30 days}}"
+      "altas_sin_terminar": "{n, plural, one {# enrolment unfinished for more than 30 days} other {# enrolments unfinished for more than 30 days}}",
+      "altas_sin_terminar_no_leido": "We could not read whether there are enrolments unfinished for more than 30 days. Reload the page."
     },
     "errors": {
       "no_autorizado": "Not authorised.",
@@ -4112,6 +4129,7 @@
     "errors": {
       "no_autorizado": "You don't have permission to manage report templates.",
       "creacion_fallo": "The template could not be created.",
+      "ya_existe_recarga": "The report already exists: someone else has just created it. Reload the page to open it.",
       "edicion_fallo": "Changes could not be saved.",
       "archivar_fallo": "The template could not be archived.",
       "sin_curso_activo": "There is no active academic year.",
@@ -4156,6 +4174,7 @@
         "publicando": "Publishing…"
       },
       "lote_resultado": "{publicados} published · {incompletos} not published (missing items)",
+      "lote_fallidos": "{n, plural, one {# report could not be published because of an error (it is not missing items). Please try again.} other {# reports could not be published because of an error (they are not missing items). Please try again.}}",
       "lote_vacio": "There were no reports to publish.",
       "seguimiento": {
         "titulo": "Progress",
@@ -4271,7 +4290,8 @@
       "quitar_foto": "Remove photo",
       "publicar": "Publish",
       "cerrar": "Close",
-      "publicada": "Post saved."
+      "publicada": "Post saved.",
+      "vacia_no_borrada": "The empty post could not be discarded: it is still in the blog with no photos or text. Delete it from the list."
     },
     "etiquetar": {
       "titulo": "Who appears?",
@@ -4302,6 +4322,7 @@
       "etiquetado_fallo": "Could not tag.",
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",
+      "subida_a_medias": "The photo could not be uploaded, and what was left half-done could not be removed. Reload the post: if you see an empty photo, delete it.",
       "procesado_fallo": "Could not process the photo.",
       "resolver_fallo": "Could not resolve the photo"
     }
@@ -4316,6 +4337,7 @@
       "sin_datos": "No data",
       "firmado": "Signed",
       "descargar": "Download file",
+      "fichero_no_encontrado": "The file is no longer stored",
       "sexo": {
         "F": "Girl",
         "M": "Boy",
@@ -5149,6 +5171,7 @@
       "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling.",
       "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it.",
       "alta_creada_sin_correo": "The enrolment has been created, but the invitation email was not sent: the family has not received it. Do not enrol again; ask the NIDO administrator to resend it.",
+      "sigue_en_cola": "The registration is done, but the prospect is still on the waiting list. Do not register it again (another child would be created); let the NIDO administrator know.",
       "tutor_olvido": "The enrolment cannot be completed with this account: there is a request in progress to erase their data at this centre (right to be forgotten).",
       "orden_desfasado": "The list changed while you were ordering it (someone added or discarded a prospect). It has been reloaded: please order it again."
     }

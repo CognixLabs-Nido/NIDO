@@ -21,6 +21,7 @@ import {
 } from '../schemas/informes'
 import type { RespuestasInforme } from '../types'
 import { fail, ok, type ActionResult } from '../types'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 function revalidarInformesProfe(): void {
   revalidatePath('/[locale]/teacher/informes', 'page')
@@ -63,17 +64,25 @@ export async function crearInformeEvolucion(
   }
   if (!nino) return fail('informes.errors.no_autorizado')
   const centroId = nino.centro_id
-  const curso = await getCursoActivo(centroId)
+  // Censo C: getCursoActivo lanza con la lectura caída; aquí se contesta lectura_fallida.
+  let curso: Awaited<ReturnType<typeof getCursoActivo>>
+  try {
+    curso = await getCursoActivo(centroId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!curso) return fail('informes.errors.sin_curso_activo')
 
   // ¿Ya existe el informe de la terna? → no se duplica, se reusa.
-  const { data: existente } = await supabase
+  const { data: existente, error: errExistente } = await supabase
     .from('informes_evolucion')
     .select('id')
     .eq('nino_id', nino_id)
     .eq('curso_academico_id', curso.id)
     .eq('periodo', periodo)
     .maybeSingle()
+  // Censo C: una lectura caída era «no existe» → insert, que paraba el UNIQUE con un «no se pudo» genérico.
+  if (errExistente) return fail('common.lectura_fallida')
   if (existente) {
     return ok({ informe_id: existente.id })
   }
@@ -112,13 +121,16 @@ export async function crearInformeEvolucion(
     if (error?.code === '42501') return fail('informes.errors.no_autorizado')
     // 23505 = UNIQUE de la terna (carrera): reusa el existente.
     if (error?.code === '23505') {
-      const { data: row } = await supabase
+      const { data: row, error: errRow } = await supabase
         .from('informes_evolucion')
         .select('id')
         .eq('nino_id', nino_id)
         .eq('curso_academico_id', curso.id)
         .eq('periodo', periodo)
         .maybeSingle()
+      // El informe existe (lo dice el UNIQUE): lo creó otra persona a la vez. Sin poder leerlo, se dice eso
+      // (no «no se pudo crear», que haría reintentar, ni «no se pudo leer» a secas).
+      if (errRow) return fail('informes.errors.ya_existe_recarga')
       if (row) return ok({ informe_id: row.id })
     }
     return fail('informes.errors.creacion_fallo')

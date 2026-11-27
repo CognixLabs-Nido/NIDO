@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 type TipoConcepto = Database['public']['Enums']['tipo_concepto']
@@ -75,7 +76,7 @@ const VACIO: AsignacionPermanente = {
 export async function getAsignacionPermanente(centroId: string): Promise<AsignacionPermanente> {
   const supabase = await createClient()
 
-  const { data: ninosRows } = await supabase
+  const { data: ninosRows, error: errNinos } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos, familia_id, matriculas!inner(estado, fecha_baja, deleted_at)')
     .eq('centro_id', centroId)
@@ -83,6 +84,9 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     .is('matriculas.fecha_baja', null)
     .is('matriculas.deleted_at', null)
     .is('deleted_at', null)
+  // Censo C: una lectura caída no es «ningún alumno» ni «sin conceptos asignados» (el panel invitaba a
+  // asignarlos otra vez). Lanza `LecturaFallida`; la pinta `admin/error.tsx`.
+  if (errNinos) throw new LecturaFallida('asignación permanente: alumnos', errNinos)
 
   const ninos = ninosRows ?? []
   if (ninos.length === 0) return VACIO
@@ -119,6 +123,14 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
       .eq('activo', true)
       .is('deleted_at', null),
   ])
+  for (const [donde, r] of [
+    ['familias', familiasRes],
+    ['tutores', tutoresRes],
+    ['conceptos asignables', conceptosRes],
+    ['asignaciones', asignRes],
+    ['catálogo', catalogoRes],
+  ] as const)
+    if (r.error) throw new LecturaFallida(`asignación permanente: ${donde}`, r.error)
 
   const etiquetaPorFamilia = new Map((familiasRes.data ?? []).map((f) => [f.id, f.etiqueta]))
 

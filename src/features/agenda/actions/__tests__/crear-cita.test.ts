@@ -16,13 +16,14 @@ vi.mock('@/lib/supabase/server', () => ({
 
 // createServiceRoleClient solo lo usa la limpieza best-effort (cliente síncrono).
 const serviceDeleteSpy = vi.fn()
+const limpieza = { falla: false }
 vi.mock('@/lib/supabase/admin', () => ({
   createServiceRoleClient: vi.fn(() => ({
     from: () => ({
       delete: () => ({
         eq: () => {
           serviceDeleteSpy()
-          return Promise.resolve({ error: null })
+          return Promise.resolve({ error: limpieza.falla ? { message: 'no' } : null })
         },
       }),
     }),
@@ -212,5 +213,21 @@ describe('crearCitaCore', () => {
     expect(res.success).toBe(false)
     if (!res.success) expect(res.error).toBe('citas.errors.invitados_fallo')
     expect(serviceDeleteSpy).toHaveBeenCalled()
+  })
+
+  // Censo C (B1, 2026-11-26): si la cita tampoco se retira, existe sin invitados; «no se pudieron añadir»
+  // haría crearla otra vez. Lo dice. Premisa: el caso de arriba (retirada bien → invitados_fallo).
+  it('si la cita tampoco se retira: dice que se creó sin invitados', async () => {
+    limpieza.falla = true
+    const { fake } = makeFake({
+      rolesCentros: [CENTRO],
+      esAdmin: true,
+      citaInsert: { id: CITA },
+      invitadosError: { message: 'boom' },
+    })
+    const res = await crearCitaCore(fake, USER, claustro)
+    limpieza.falla = false
+    expect(serviceDeleteSpy, 'premisa: intentó retirarla').toHaveBeenCalled()
+    expect(res).toEqual({ success: false, error: 'citas.errors.cita_sin_invitados' })
   })
 })

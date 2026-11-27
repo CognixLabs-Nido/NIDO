@@ -186,7 +186,10 @@ describe('centro del registro', () => {
     // Control: con el aula en el centro de la campaña sigue adelante (sin borradores: 0).
     st.filas.aulas = { id: AULA }
     const ok = await publicarLoteInformes({ campana_id: CAMPANA, aula_id: AULA })
-    expect(ok).toEqual({ success: true, data: { total: 0, publicados: 0, incompletos: 0 } })
+    expect(ok).toEqual({
+      success: true,
+      data: { total: 0, publicados: 0, incompletos: 0, fallidos: 0 },
+    })
   })
 
   const prospecto = {

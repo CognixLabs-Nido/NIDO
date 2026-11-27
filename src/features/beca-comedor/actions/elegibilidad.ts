@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { toggleElegibilidadSchema, type ToggleElegibilidadInput } from '../schemas/beca-comedor'
+import { falloDeLectura } from '@/shared/lib/frontera-lectura'
 
 const RUTA = '/[locale]/admin/cuotas'
 
@@ -44,7 +45,13 @@ export async function toggleElegibilidad(
   }
   const centroId = nino.centro_id
 
-  const curso = await getCursoActivo(centroId)
+  // Censo C: getCursoActivo lanza con la lectura caída; aquí se contesta lectura_fallida.
+  let curso: Awaited<ReturnType<typeof getCursoActivo>>
+  try {
+    curso = await getCursoActivo(centroId)
+  } catch (e) {
+    return falloDeLectura(e)
+  }
   if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
   const { error } = await supabase.from('beca_comedor_elegibilidad').upsert(
     {

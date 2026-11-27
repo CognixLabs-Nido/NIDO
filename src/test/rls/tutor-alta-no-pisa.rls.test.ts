@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { propsDe, type SesionConFallos } from './lectura-fallida'
 import {
+  asignarRol,
   clientFor,
   createTestAula,
   createTestCentro,
@@ -92,6 +93,9 @@ describe('el paso del tutor del alta no guarda el perfil que no pudo leer', () =
     nino = await createTestNino(centro.id, 'Nino Tutor Alta No Pisa')
     const matricula = await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Tutor Alta No Pisa' })
+    // Un tutor legal de verdad es del centro (`pertenece_a_centro`; medido en prod el 2026-11-23, 4 de 4). Sin
+    // el rol, `existe_consentimiento_imagen` le da 42501 y desde el censo C la página del alta lo dice.
+    await asignarRol(legal.id, centro.id, 'tutor_legal')
     await crearFamiliaTutor(nino.familia_id, legal.id)
     await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', { puede_ver_info_medica: true })
     const m = await serviceClient

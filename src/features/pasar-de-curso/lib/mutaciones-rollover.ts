@@ -100,6 +100,20 @@ export async function asignarAulaPropuestaCore(
   if (errorLectura) throw new LecturaFallida('asignarAulaPropuestaCore', errorLectura)
   if (!aulaCfg) return fail('rollover.errors.aula_no_en_destino')
 
+  // ¿Ya hay una pendiente para este niño en el destino? → update; si no, insert. Se lee ANTES de escribir
+  // nada (censo C, 2026-11-26): antes se leía después de sacarlo de «Finaliza» y sin mirar el error, y una
+  // lectura caída era «no hay» → insert, que paraba el UNIQUE con un «no se pudo» genérico, con el niño ya
+  // fuera de «Finaliza». Y el «no está pendiente» también se decía con el niño ya sacado.
+  const { data: existente, error: errExistente } = await supabase
+    .from('matriculas')
+    .select('id, estado')
+    .eq('nino_id', ninoId)
+    .eq('curso_academico_id', cursoDestinoId)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (errExistente) throw new LecturaFallida('asignarAulaPropuestaCore: matrícula', errExistente)
+  if (existente && existente.estado !== 'pendiente') return fail('rollover.errors.no_pendiente')
+
   // Exclusión mutua: sacar de "Finaliza" si estaba.
   const { error: finErr } = await supabase
     .from('rollover_finaliza')
@@ -111,17 +125,7 @@ export async function asignarAulaPropuestaCore(
     return fail('rollover.errors.asignar_fallo')
   }
 
-  // ¿Ya hay una pendiente para este niño en el destino? → update; si no, insert.
-  const { data: existente } = await supabase
-    .from('matriculas')
-    .select('id, estado')
-    .eq('nino_id', ninoId)
-    .eq('curso_academico_id', cursoDestinoId)
-    .is('deleted_at', null)
-    .maybeSingle()
-
   if (existente) {
-    if (existente.estado !== 'pendiente') return fail('rollover.errors.no_pendiente')
     const { error } = await supabase
       .from('matriculas')
       .update({ aula_id: aulaId })

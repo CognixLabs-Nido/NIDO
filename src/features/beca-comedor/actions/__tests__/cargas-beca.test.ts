@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { crearCarga, editarCarga } from '../cargas-beca'
+import { borrarCarga, crearCarga, editarCarga } from '../cargas-beca'
 
 /**
  * PR-10: una carga lleva el importe de CADA becado. Crear inserta un tramo por alumno con
@@ -22,6 +22,8 @@ const { estado, admin } = vi.hoisted(() => ({
     becados: [] as string[],
     cerrados: [] as Array<[number, number]>,
     errorEscritura: null as { code?: string; hint?: string; message: string } | null,
+    /** Censo C: la tabla cuya LECTURA contesta error. */
+    fallaLectura: null as string | null,
     llamadas: [] as Llamada[],
   },
   admin: vi.fn(),
@@ -43,6 +45,8 @@ vi.mock('@/lib/supabase/server', () => ({
       }
       const respuesta = () => {
         if (llamada.op !== 'select') return { data: null, error: estado.errorEscritura }
+        if (tabla === estado.fallaLectura)
+          return { data: null, error: { code: 'XX000', message: 'caída' } }
         if (tabla === 'beca_comedor_tramo') return { data: estado.tramos, error: null }
         if (tabla === 'beca_comedor_elegibilidad') {
           return { data: estado.becados.map((nino_id) => ({ nino_id })), error: null }
@@ -70,6 +74,8 @@ vi.mock('@/lib/supabase/server', () => ({
         limit: () => cadena,
         maybeSingle: async () => {
           // Solo cierre_mensual lee con maybeSingle.
+          if (tabla === estado.fallaLectura)
+            return { data: null, error: { code: 'XX000', message: 'caída' } }
           const anio = llamada.filtros.find((f) => f[1] === 'anio')?.[2]
           const mes = llamada.filtros.find((f) => f[1] === 'mes')?.[2]
           const cerrado = estado.cerrados.some(([a, m]) => a === anio && m === mes)
@@ -317,5 +323,45 @@ describe('editarCarga', () => {
     estado.tramos = []
     const r = await editarCarga({ ...meses, importes: [] }, CENTRO)
     expect(r).toEqual({ success: false, error: 'admin.cuotas.beca_comedor.errors.no_existe' })
+  })
+})
+
+/**
+ * Censo C, clase 2 (2026-11-26): `tramosDeCarga` devuelve el builder y sus tres llamadores no miraban el error (175
+ * «no hay carga», 223/278 «no existe»); y `becadosDelCurso` («no_becado») y `mesEstaCerrado` («mes abierto») lo
+ * tiraban. Ahora una lectura caída es «no se pudo leer», y no se escribe nada.
+ */
+describe('cargas de beca · una lectura caída no decide nada', () => {
+  beforeEach(() => {
+    estado.tramos = [tramo('t1', A, 3000)]
+    estado.becados = [A, B]
+    estado.cerrados = []
+    estado.errorEscritura = null
+    estado.fallaLectura = null
+    estado.llamadas = []
+    admin.mockReset().mockResolvedValue('u1')
+  })
+
+  const carga = { ...meses, importes: [{ nino_id: A, importe_euros: 30 }] }
+  const casos: Array<[string, string, () => Promise<unknown>]> = [
+    ['crear', 'beca_comedor_tramo', () => crearCarga(carga, CENTRO)],
+    ['crear', 'beca_comedor_elegibilidad', () => ((estado.tramos = []), crearCarga(carga, CENTRO))],
+    ['crear', 'cierre_mensual', () => crearCarga(carga, CENTRO)],
+    ['editar', 'beca_comedor_tramo', () => editarCarga(carga, CENTRO)],
+    ['editar', 'cierre_mensual', () => editarCarga(carga, CENTRO)],
+    ['borrar', 'beca_comedor_tramo', () => borrarCarga(meses, CENTRO)],
+    ['borrar', 'cierre_mensual', () => borrarCarga(meses, CENTRO)],
+  ]
+  for (const [accion, tabla, llama] of casos) {
+    it(`${accion} con ${tabla} caída → «no se pudo leer», y ninguna escritura`, async () => {
+      estado.fallaLectura = tabla
+      expect(await llama()).toEqual({ success: false, error: 'common.lectura_fallida' })
+      expect(escrituras()).toEqual([])
+    })
+  }
+
+  it('control: borrar con todo leído borra la carga', async () => {
+    expect(await borrarCarga(meses, CENTRO)).toMatchObject({ success: true })
+    expect(de('delete')).toHaveLength(1)
   })
 })

@@ -1,21 +1,21 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { RecorridoTramo } from '@/features/ninos/lib/recorrido-familia'
 
 /**
  * F-8 (familia) — recorrido reducido del niño para su tutor LEGAL, por la RPC
  * `get_recorrido_nino_familia` (SECURITY DEFINER, gate `es_tutor_legal_de`). La RPC ya
- * devuelve solo tramos `activa`/`baja` y nunca `motivo_baja`. Si falla (p. ej. quien llama
- * no es tutor legal → 42501), lista vacía.
+ * devuelve solo tramos `activa`/`baja` y nunca `motivo_baja`. Si falla, lanza (censo C): la lista vacía
+ * decía «sin recorrido». La página solo la llama para el tutor legal, así que el 42501 no es un camino.
  */
 export async function getRecorridoNinoFamilia(ninoId: string): Promise<RecorridoTramo[]> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('get_recorrido_nino_familia', {
     p_nino_id: ninoId,
   })
-  if (error) logger.warn('getRecorridoNinoFamilia', error.message)
+  if (error) throw new LecturaFallida('getRecorridoNinoFamilia', error)
 
   return (data ?? []).flatMap((r) =>
     r.estado === 'activa' || r.estado === 'baja'

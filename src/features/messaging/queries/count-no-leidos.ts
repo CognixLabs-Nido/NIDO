@@ -2,7 +2,6 @@ import 'server-only'
 
 import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 export interface UnreadCounts {
@@ -53,9 +52,9 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   }
   const { data: convs, error: convErr } = await convQuery.limit(200)
 
-  if (convErr) {
-    logger.warn('countNoLeidos: conversaciones', convErr.message)
-  }
+  // Censo C: antes un `warn` y las conversaciones sin leer a 0. La regla de lint no la veía (la consulta se
+  // arma en una variable y se espera después). Lanza, como las demás de aquí.
+  if (convErr) throw new LecturaFallida('countNoLeidos: conversaciones', convErr)
   const convIds = (convs ?? []).map((c) => c.id)
 
   let convsUnread = 0
@@ -95,9 +94,9 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
     .eq('erroneo', false)
     .neq('autor_id', userId)
     .limit(500)
-  if (anErr) {
-    logger.warn('countNoLeidos: anuncios', anErr.message)
-  }
+  // Censo C: antes un `warn` y los anuncios sin leer a 0. Lanza, como las otras lecturas de aquí; el badge
+  // pinta «?» (`contadorNoLeido`).
+  if (anErr) throw new LecturaFallida('countNoLeidos: anuncios', anErr)
 
   let anunciosUnread = 0
   if (anuncios && anuncios.length > 0) {

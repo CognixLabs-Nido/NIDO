@@ -16,6 +16,7 @@ import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existent
 import { invitarAlAltaSchema, type InvitarAlAltaInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
 import { falloDeLectura } from '@/shared/lib/frontera-lectura'
+import { sacarDeLaCola, siSigueEnCola } from '../lib/sacar-de-la-cola'
 
 /** Retorno JSON de la RPC `crear_o_anadir_a_familia` (F-2b-1). */
 type ResultadoCrearFamilia = {
@@ -31,11 +32,11 @@ type ResultadoCrearFamilia = {
  * por la RPC (email ya en el centro con otro perfil) → la UI avisa a Dirección y NO invita.
  */
 export type InvitarAlAltaOk =
-  | { resultado: 'ok'; ninoId: string; invitationId: string }
+  | { resultado: 'ok'; ninoId: string; invitationId: string; sigueEnCola?: true }
   | { resultado: 'colision'; nombreExistente: string | null }
   // FIX A: el tutor YA tenía familia en este centro → el hijo entró en ella directamente (sin
   // email ni invitación: ya tiene acceso). La UI lo distingue del alta invitada.
-  | { resultado: 'vinculado'; ninoId: string }
+  | { resultado: 'vinculado'; ninoId: string; sigueEnCola?: true }
 
 /**
  * F11-H-3 "invitar al alta" (F-2b-2b: cableado a la RPC de familia). Promociona un prospecto
@@ -75,13 +76,15 @@ export async function invitarAlAlta(
     // Prospecto primero: SU centro es el de la acción, no el centro activo de la cookie (una
     // pestaña de otro centro actúa sobre el prospecto que enseña). La RLS de `lista_espera`
     // solo deja leer a Dirección los de sus centros.
-    const { data: prospecto } = await supabase
+    const { data: prospecto, error: errProspecto } = await supabase
       .from('lista_espera')
       .select(
         'id, centro_id, nombre_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, email_tutor, tutor_usuario_id, estado'
       )
       .eq('id', parsed.data.id)
       .maybeSingle()
+    // Censo C: una lectura caída no es «no encontrado».
+    if (errProspecto) return fail('common.lectura_fallida')
     if (!prospecto) return fail('listaEspera.errors.no_encontrado')
     const centroId = prospecto.centro_id
 
@@ -91,18 +94,20 @@ export async function invitarAlAlta(
 
     // Curso activo del centro (autoritativo server-side; la matrícula va contra él). La RPC
     // lo revalida, pero se comprueba aquí para dar errores de UX específicos.
-    const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
+    const { data: cursoActivoId, error: errCurso } = await supabase.rpc('curso_activo_de_centro', {
       p_centro_id: centroId,
     })
+    if (errCurso) return fail('common.lectura_fallida')
     if (!cursoActivoId) return fail('listaEspera.errors.sin_curso_activo')
 
     // El aula elegida debe estar configurada en el curso activo (aulas_curso).
-    const { data: aulaCurso } = await supabase
+    const { data: aulaCurso, error: errAula } = await supabase
       .from('aulas_curso')
       .select('aula_id')
       .eq('aula_id', parsed.data.aulaId)
       .eq('curso_academico_id', cursoActivoId)
       .maybeSingle()
+    if (errAula) return fail('common.lectura_fallida')
     if (!aulaCurso) return fail('listaEspera.errors.aula_invalida')
 
     // Debe estar en espera y tener email.
@@ -154,14 +159,15 @@ export async function invitarAlAlta(
 
       // U-4: se guarda además el `nino_id` creado → la lista puede pintar el estado real de la
       // matrícula y ofrecer "Reanudar alta". Sin él, el prospecto se quedaba mudo tras promover.
-      const { error: estadoErr } = await supabase
-        .from('lista_espera')
-        .update({ estado: 'invitado', nino_id: vinc.data.ninoId })
-        .eq('id', prospecto.id)
-      if (estadoErr) logger.warn('invitarAlAlta estado update (vinculado)', estadoErr.message)
+      const sigue = await sacarDeLaCola(
+        supabase,
+        prospecto.id,
+        vinc.data.ninoId,
+        'invitarAlAlta (vinculado)'
+      )
 
       revalidatePath('/[locale]/admin/admisiones', 'page')
-      return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId })
+      return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, ...siSigueEnCola(sigue) })
     }
 
     // Sin tutor existente → flujo de invitación por email, que SÍ lo exige (el guard de arriba
@@ -221,14 +227,8 @@ export async function invitarAlAlta(
     )
 
     // 3. El prospecto sale de la cola, haya salido el correo o no: el alta ya existe, y dejarlo en
-    //    espera haría que un segundo «Invitar» creara otro niño. Best-effort: si falla, log.
-    const { error: estadoErr } = await supabase
-      .from('lista_espera')
-      .update({ estado: 'invitado', nino_id: ninoId })
-      .eq('id', prospecto.id)
-    if (estadoErr) {
-      logger.warn('invitarAlAlta estado update', estadoErr.message)
-    }
+    //    espera haría que un segundo «Invitar» creara otro niño: si no sale, se dice (`sacarDeLaCola`).
+    const sigue = await sacarDeLaCola(supabase, prospecto.id, ninoId, 'invitarAlAlta')
 
     // El correo no salió: nada sigue en silencio. La directora lee que el alta está creada y la
     // familia no tiene la invitación.
@@ -239,7 +239,12 @@ export async function invitarAlAlta(
     }
 
     revalidatePath('/[locale]/admin/admisiones', 'page')
-    return ok({ resultado: 'ok', ninoId, invitationId: inv.data.invitationId })
+    return ok({
+      resultado: 'ok',
+      ninoId,
+      invitationId: inv.data.invitationId,
+      ...siSigueEnCola(sigue),
+    })
   } catch (e) {
     return falloDeLectura(e)
   }

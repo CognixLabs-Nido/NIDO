@@ -5,6 +5,7 @@ import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { getPendientesCampanaProfe } from '@/features/informes/queries/get-pendientes-campana-profe'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 import { contarNoVistas, familiasConDomiciliacionNueva } from '../lib/derivar'
 import {
@@ -49,7 +50,7 @@ async function getFamiliasDomiciliacionNueva(
   centroId: string,
   userId: string
 ): Promise<string[]> {
-  const { data: mandatos } = await supabase
+  const { data: mandatos, error: errMandatos } = await supabase
     .from('mandatos_sepa')
     .select('familia_id, created_at')
     .eq('centro_id', centroId)
@@ -60,6 +61,7 @@ async function getFamiliasDomiciliacionNueva(
     .neq('usuario_id', userId)
     .is('deleted_at', null)
     .gte('created_at', cutoffNovedades())
+  if (errMandatos) throw new LecturaFallida('avisos: domiciliaciones', errMandatos)
   // Un mandato es de la familia desde F-2c-1; el tipo admite NULL por las filas de antes.
   const filas = (mandatos ?? []).filter(
     (m): m is { familia_id: string; created_at: string } => m.familia_id !== null
@@ -74,6 +76,7 @@ async function getFamiliasDomiciliacionNueva(
       .in('familia_id', [...new Set(filas.map((m) => m.familia_id))]),
     getDomiciliacionesVistas(),
   ])
+  if (ninos.error) throw new LecturaFallida('avisos: domiciliaciones (niños)', ninos.error)
   const activadas: Record<string, string[]> = {}
   for (const n of ninos.data ?? []) {
     if (!n.familia_id) continue
@@ -115,6 +118,9 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
     .eq('es_plantilla', false)
     .eq('estado', 'publicada')
     .gte('vigencia_hasta', hoy)
+  // Censo C: antes, cada contador caído era un 0 («nada pendiente»). La página de inicio ya lanza con sus
+  // otras lecturas (regla general): lo pinta su `error.tsx`.
+  if (meds.error) throw new LecturaFallida('avisos: medicaciones activas', meds.error)
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
@@ -170,6 +176,14 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
         // Domiciliaciones firmadas o cambiadas por la familia: solo Dirección.
         rol === 'admin' ? getFamiliasDomiciliacionNueva(supabase, centroId, user.id) : [],
       ])
+    for (const [donde, r] of [
+      ['pendientes de confirmar', pc],
+      ['confirmadas', conf],
+      ['firmas nuevas', nf],
+      ['revocaciones', rev],
+      ['medicaciones por archivar', archivar],
+    ] as const)
+      if (r.error) throw new LecturaFallida(`avisos: ${donde}`, r.error)
 
     // Una firma/revocación cuenta como "nueva" si su autorización no se ha abierto
     // después (mapa de vistas por-autorización, comparado por instante).
@@ -231,6 +245,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
       .eq('estado', 'publicado'),
     getInformesVistos(),
   ])
+  if (pub.error) throw new LecturaFallida('avisos: informes', pub.error)
   const informesNuevos = contarNoVistas(pub.data ?? [], vistos)
 
   // Publicaciones del blog visibles para esta familia (RLS → P2 aula actual +
@@ -239,6 +254,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
     supabase.from('publicaciones').select('id').eq('centro_id', ambito.centroId),
     getFotosVistas(),
   ])
+  if (fotos.error) throw new LecturaFallida('avisos: fotos', fotos.error)
   const fotosNuevas = contarNoVistas(fotos.data ?? [], fotosVistas)
 
   // Recibos de sus hijos que aún no ha visto (F12-B-7). La RLS de `recibos` ya filtra a
@@ -249,6 +265,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
     supabase.from('recibos').select('id').eq('centro_id', ambito.centroId).is('deleted_at', null),
     getRecibosVistos(),
   ])
+  if (recibos.error) throw new LecturaFallida('avisos: recibos', recibos.error)
   const recibosNuevos = contarNoVistas(recibos.data ?? [], recibosVistos)
 
   return {

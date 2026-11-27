@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import type { Database } from '@/types/db'
 
 import { copiarConfigSchema, type CopiarConfigInput } from '../schemas/rollover'
 import { fail, ok, type ActionResult } from '../../centros/types'
@@ -27,19 +28,22 @@ export async function copiarConfigCurso(
   const supabase = await createClient()
 
   // Destino: debe existir, ser del centro y estar PLANIFICADO (no se prepara sobre activo/cerrado).
-  const { data: destino } = await supabase
+  const { data: destino, error: errDestino } = await supabase
     .from('cursos_academicos')
     .select('id, centro_id, estado')
     .eq('id', curso_destino_id)
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C: una lectura caída no es «destino no encontrado» ni «sin curso activo».
+  if (errDestino) return fail('common.lectura_fallida')
   if (!destino) return fail('rollover.errors.destino_no_encontrado')
   if (destino.estado !== 'planificado') return fail('rollover.errors.destino_no_planificado')
 
   // Origen: el curso activo del centro.
-  const { data: origenId } = await supabase.rpc('curso_activo_de_centro', {
+  const { data: origenId, error: errOrigen } = await supabase.rpc('curso_activo_de_centro', {
     p_centro_id: destino.centro_id,
   })
+  if (errOrigen) return fail('common.lectura_fallida')
   if (!origenId) return fail('rollover.errors.sin_curso_activo')
 
   // --- Aulas: copia aulas_curso origen → destino (salta las ya existentes). ---
@@ -51,10 +55,12 @@ export async function copiarConfigCurso(
     logger.warn('copiarConfigCurso aulas origen', aoErr.message)
     return fail('rollover.errors.copiar_fallo')
   }
-  const { data: aulasDestino } = await supabase
+  const { data: aulasDestino, error: errAulasDestino } = await supabase
     .from('aulas_curso')
     .select('aula_id')
     .eq('curso_academico_id', curso_destino_id)
+  // Sin ellas, «ninguna copiada todavía»: se intentaba insertar lo que ya estaba.
+  if (errAulasDestino) return fail('common.lectura_fallida')
   const yaAulas = new Set((aulasDestino ?? []).map((a) => a.aula_id))
 
   const nuevasAulas = (aulasOrigen ?? [])
@@ -66,6 +72,36 @@ export async function copiarConfigCurso(
       tramo_edad: a.tramo_edad,
       capacidad: a.capacidad,
     }))
+  // --- Personal (opcional): se LEE aquí, antes de escribir nada (censo C, 2026-11-26). Antes se leía
+  //     después de insertar las aulas y sin mirar el error: con la lectura caída, «0 copiados» y ok. ---
+  let nuevoPersonal: Database['public']['Tables']['profes_aulas']['Insert'][] = []
+  if (incluir_personal) {
+    const { data: personalOrigen, error: errPersonalOrigen } = await supabase
+      .from('profes_aulas')
+      .select('profe_id, aula_id, tipo_personal_aula')
+      .eq('curso_academico_id', origenId)
+      .is('fecha_fin', null)
+      .is('deleted_at', null)
+    if (errPersonalOrigen) return fail('common.lectura_fallida')
+
+    const { data: personalDestino, error: errPersonalDestino } = await supabase
+      .from('profes_aulas')
+      .select('profe_id, aula_id')
+      .eq('curso_academico_id', curso_destino_id)
+      .is('deleted_at', null)
+    if (errPersonalDestino) return fail('common.lectura_fallida')
+    const yaPersonal = new Set((personalDestino ?? []).map((p) => `${p.profe_id}:${p.aula_id}`))
+
+    nuevoPersonal = (personalOrigen ?? [])
+      .filter((p) => !yaPersonal.has(`${p.profe_id}:${p.aula_id}`))
+      .map((p) => ({
+        profe_id: p.profe_id,
+        aula_id: p.aula_id,
+        curso_academico_id: curso_destino_id,
+        tipo_personal_aula: p.tipo_personal_aula,
+      }))
+  }
+
   if (nuevasAulas.length > 0) {
     const { error } = await supabase.from('aulas_curso').insert(nuevasAulas)
     if (error) {
@@ -74,31 +110,8 @@ export async function copiarConfigCurso(
     }
   }
 
-  // --- Personal (opcional): copia profes_aulas activos origen → destino. ---
   let personalCopiado = 0
   if (incluir_personal) {
-    const { data: personalOrigen } = await supabase
-      .from('profes_aulas')
-      .select('profe_id, aula_id, tipo_personal_aula')
-      .eq('curso_academico_id', origenId)
-      .is('fecha_fin', null)
-      .is('deleted_at', null)
-
-    const { data: personalDestino } = await supabase
-      .from('profes_aulas')
-      .select('profe_id, aula_id')
-      .eq('curso_academico_id', curso_destino_id)
-      .is('deleted_at', null)
-    const yaPersonal = new Set((personalDestino ?? []).map((p) => `${p.profe_id}:${p.aula_id}`))
-
-    const nuevoPersonal = (personalOrigen ?? [])
-      .filter((p) => !yaPersonal.has(`${p.profe_id}:${p.aula_id}`))
-      .map((p) => ({
-        profe_id: p.profe_id,
-        aula_id: p.aula_id,
-        curso_academico_id: curso_destino_id,
-        tipo_personal_aula: p.tipo_personal_aula,
-      }))
     if (nuevoPersonal.length > 0) {
       const { error } = await supabase.from('profes_aulas').insert(nuevoPersonal)
       if (error) {

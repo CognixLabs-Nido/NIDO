@@ -114,7 +114,10 @@ export async function actualizarNinoTutor(
         leerFichaGestionDe(supabase, d.nino_id),
         leerTarjetaSanitariaDe(supabase, d.nino_id),
       ])
-      if (errorLectura) return fail('common.lectura_fallida')
+      // Censo C (re-clasificación 130/131, 2026-11-26): `null` es que la lectura FALLÓ y `undefined` que no le
+      // toca. Juntarlos decía «no tienes permiso» a quien sí lo tiene cuando una lectura caía (motivo falso).
+      if (errorLectura || gestion === null || tarjeta === null)
+        return fail('common.lectura_fallida')
       if (!identidad || !gestion || !tarjeta) return fail('nino.errors.no_autorizado')
       const guardada = { ...identidad, dni: gestion.dni, sip: tarjeta.sip }
       const cambios = cambiosIdentidad(propuesta, guardada)

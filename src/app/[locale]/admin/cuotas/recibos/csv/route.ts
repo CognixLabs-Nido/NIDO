@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
 import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { pivoteACsvFilas } from '@/features/recibos/lib/pivote-csv'
 import { getPivotePeriodo } from '@/features/recibos/queries/get-pivote-periodo'
@@ -30,10 +31,18 @@ export async function GET(
   if (estado.tipo !== 'activo') return new Response('forbidden', { status: 403 })
   const centroId = estado.contexto.centroId
 
-  const [pivote, t] = await Promise.all([
-    getPivotePeriodo(centroId, anio, mes),
-    getTranslations({ locale, namespace: 'recibos' }),
-  ])
+  let pivote: Awaited<ReturnType<typeof getPivotePeriodo>>
+  let t: Awaited<ReturnType<typeof getTranslations>>
+  try {
+    ;[pivote, t] = await Promise.all([
+      getPivotePeriodo(centroId, anio, mes),
+      getTranslations({ locale, namespace: 'recibos' }),
+    ])
+  } catch (e) {
+    // Censo C: un CSV sin los recibos es un documento falso; mejor ninguno.
+    if (esLecturaFallida(e)) return new Response('lectura_fallida', { status: 500 })
+    throw e
+  }
 
   const filas = pivoteACsvFilas(pivote, {
     tutor: t('csv.tutor'),

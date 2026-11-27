@@ -49,7 +49,13 @@ export async function invitarTutor2AlValidar(
 
     // Email del tutor 2 capturado en el wizard, desde el perfil COMPARTIDO `familia_tutores`
     // (F-2b-3): el segundo_tutor de la familia del niño.
-    const { tutores } = await leerTutoresDeNino(supabase, ninoId)
+    // Censo C (clase 1): con la lectura caída esto era «no hay segundo tutor» → `no_hacia_falta`, y la
+    // activación decía «guardado» sin el aviso de que la invitación no salió (lo contrario de lo que dijo el
+    // cuerpo del PR A). Ahora lanza, y el catch de abajo contesta `no_enviada`.
+    const lecturaTutores = await leerTutoresDeNino(supabase, ninoId)
+    if (!lecturaTutores.leidos)
+      throw new LecturaFallida('invitarTutor2AlValidar', lecturaTutores.error)
+    const { tutores } = lecturaTutores
     const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
     const email = tutor2?.email?.trim()
     if (!email) return 'no_hacia_falta'

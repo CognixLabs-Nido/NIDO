@@ -1,7 +1,7 @@
 import 'server-only'
 
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
 import { hoyMadridYmd } from '../lib/server-helpers'
 import type { AutorizacionEstado, EstadoFirmaNino } from '../types'
@@ -55,25 +55,29 @@ export async function getMedicacionesConActividad(
   q = archivadas ? q.not('archivada_at', 'is', null) : q.is('archivada_at', null)
 
   const { data: meds, error } = await q
-  if (error) {
-    logger.warn('getMedicacionesConActividad', error.message)
-    return []
-  }
+  if (error) throw new LecturaFallida('getMedicacionesConActividad', error)
   if (!meds || meds.length === 0) return []
 
   const ids = meds.map((m) => m.id)
   const ninoIds = Array.from(new Set(meds.map((m) => m.nino_id).filter(Boolean) as string[]))
 
-  const [{ data: admins }, { data: ninos }, estados] = await Promise.all([
-    supabase
-      .from('administraciones_medicacion')
-      .select('autorizacion_id, confirmado_por')
-      .in('autorizacion_id', ids),
-    ninoIds.length
-      ? supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
-      : Promise.resolve({ data: [] as { id: string; nombre: string; apellidos: string }[] }),
-    getEstadoFirmaPorInstancia(supabase, meds),
-  ])
+  const [{ data: admins, error: errAdmins }, { data: ninos, error: errNinos }, estados] =
+    await Promise.all([
+      supabase
+        .from('administraciones_medicacion')
+        .select('autorizacion_id, confirmado_por')
+        .in('autorizacion_id', ids),
+      ninoIds.length
+        ? supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
+        : Promise.resolve({
+            data: [] as { id: string; nombre: string; apellidos: string }[],
+            error: null,
+          }),
+      getEstadoFirmaPorInstancia(supabase, meds),
+    ])
+  // Sin las administraciones, «0 dadas, 0 por confirmar»; sin los niños, filas sin nombre.
+  const errLectura = errAdmins ?? errNinos
+  if (errLectura) throw new LecturaFallida('getMedicacionesConActividad: actividad', errLectura)
 
   const dadasPorAut = new Map<string, number>()
   const pendientesPorAut = new Map<string, number>()

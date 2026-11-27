@@ -16,9 +16,18 @@ export interface ResumenLote {
   total: number
   /** Publicados con éxito (estaban completos). */
   publicados: number
-  /** No publicados (incompletos: faltan ítems por valorar). Quedan en borrador. */
+  /** No publicados porque les faltan ítems por valorar. Quedan en borrador. */
   incompletos: number
+  /**
+   * No publicados por cualquier otro motivo (permiso, informe no encontrado, la escritura falló). Censo C
+   * (publicar-lote-informes:111, 2026-11-26): antes contaban como «incompletos (faltan ítems)», un motivo falso
+   * que mandaba a buscar ítems sin valorar que no faltaban.
+   */
+  fallidos: number
 }
+
+/** El único `fail` de `publicarInforme` que es «incompleto». */
+const FALTAN_VALORACIONES = 'informes.errors.faltan_valoraciones'
 
 /**
  * Agrega los resultados de intentar publicar cada borrador del lote. Best-effort:
@@ -27,9 +36,11 @@ export interface ResumenLote {
  */
 export function resumenLote(resultados: ActionResult<unknown>[]): ResumenLote {
   const publicados = resultados.filter((r) => r.success).length
+  const incompletos = resultados.filter((r) => !r.success && r.error === FALTAN_VALORACIONES).length
   return {
     total: resultados.length,
     publicados,
-    incompletos: resultados.length - publicados,
+    incompletos,
+    fallidos: resultados.length - publicados - incompletos,
   }
 }

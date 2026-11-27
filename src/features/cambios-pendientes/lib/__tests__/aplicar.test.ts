@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
 import type { Database } from '@/types/db'
 
 import { rutaDocumentoDelNino } from '../../schemas'
@@ -28,6 +29,8 @@ function mockService(opts: {
   dniPrevio?: string | null
   /** Fase 9: la ruta del justificante de antes que devuelve `declarar_gastos_gestion`. */
   justificantePrevio?: string | null
+  /** Censo C: tablas cuya lectura (`maybeSingle`) falla. */
+  caidas?: string[]
 }) {
   const makeBuilder = (table: string) => {
     const builder: Record<string, unknown> = {}
@@ -40,10 +43,11 @@ function mockService(opts: {
       opts.onInsert?.(table, row)
       return builder
     })
-    builder.maybeSingle = vi.fn(async () => ({
-      data: opts.maybeSingleByTable?.[table] ?? opts.maybeSingleData ?? null,
-      error: null,
-    }))
+    builder.maybeSingle = vi.fn(async () =>
+      opts.caidas?.includes(table)
+        ? { data: null, error: { code: 'XX000', message: 'caída' } }
+        : { data: opts.maybeSingleByTable?.[table] ?? opts.maybeSingleData ?? null, error: null }
+    )
     return builder
   }
   return {
@@ -194,6 +198,22 @@ describe('aplicarCambioPendiente', () => {
         payload: { tipo_vinculo: 'tutor_legal_principal', nombre_completo: 'Ana' },
       })
     ).rejects.toThrow(/familia_no_encontrada/)
+  })
+
+  // Censo C (B1, 2026-11-26): con la lectura caída lanzaba «familia_no_encontrada», un motivo falso en el
+  // log. Ahora LecturaFallida. Premisa: el caso de arriba (sin familia → familia_no_encontrada).
+  it('datos_tutor: con la lectura del niño caída, LecturaFallida y no «familia no encontrada»', async () => {
+    const service = mockService({ caidas: ['ninos'] })
+    const e = await aplicarCambioPendiente(service, service, {
+      entidad: 'datos_tutor',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload: { tipo_vinculo: 'tutor_legal_principal', nombre_completo: 'Ana' },
+    }).then(
+      () => null,
+      (err: unknown) => err
+    )
+    expect(esLecturaFallida(e), `esperaba una LecturaFallida, llegó ${String(e)}`).toBe(true)
   })
 
   it('lanza ante entidad desconocida', async () => {

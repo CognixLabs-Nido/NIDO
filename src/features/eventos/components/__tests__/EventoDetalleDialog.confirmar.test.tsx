@@ -26,7 +26,7 @@ function fila(nino_id: string, puede_confirmar: boolean): RosterConfirmacion {
   }
 }
 
-function detalle(roster: RosterConfirmacion[]): EventoDetalle {
+function detalle(roster: RosterConfirmacion[], confirmaciones_leidas = true): EventoDetalle {
   return {
     evento: {
       id: 'ev-1',
@@ -46,6 +46,7 @@ function detalle(roster: RosterConfirmacion[]): EventoDetalle {
     },
     roster,
     es_autor: false,
+    confirmaciones_leidas,
   }
 }
 
@@ -77,6 +78,17 @@ describe('EventoDetalleDialog: solo confirman los padres', () => {
     expect(screen.getByText('Excursión Demo')).toBeTruthy()
     expect(screen.queryByTestId('evento-roster')).toBeNull()
     expect(screen.queryByText('detalle.sin_ninos')).toBeNull()
+  })
+
+  it('censo C: si no se pudo leer de qué niños es tutor legal, la familia lo ve dicho, no un evento sin confirmar', () => {
+    pinta(detalle([fila('legal', false)], false), true)
+    expect(screen.getByText('detalle.confirmaciones_no_leidas')).toBeTruthy()
+    expect(screen.queryByTestId('confirmar-legal')).toBeNull()
+  })
+
+  it('control: leído, al autorizado no se le dice nada de lecturas', () => {
+    pinta(detalle([fila('autorizado', false)]), true)
+    expect(screen.queryByText('detalle.confirmaciones_no_leidas')).toBeNull()
   })
 
   it('control: el staff ve el roster entero, sin botones', () => {

@@ -30,6 +30,7 @@ describe('agregarInvitadosCore', () => {
       estado: string
     } | null
     existentes?: { usuario_id: string }[]
+    existentesError?: { message: string } | null
     insertError?: { message: string } | null
   }) {
     const insertSpy = vi.fn()
@@ -40,7 +41,12 @@ describe('agregarInvitadosCore', () => {
         b.select = () => b
         b.eq = () => b
         b.maybeSingle = () => Promise.resolve({ data: opts.cita ?? null, error: null })
-        b.not = () => Promise.resolve({ data: opts.existentes ?? [], error: null })
+        b.not = () =>
+          Promise.resolve(
+            opts.existentesError
+              ? { data: null, error: opts.existentesError }
+              : { data: opts.existentes ?? [], error: null }
+          )
         b.insert = (payload: unknown) => {
           insertSpy(payload)
           return Promise.resolve({ error: opts.insertError ?? null })
@@ -65,6 +71,22 @@ describe('agregarInvitadosCore', () => {
     expect(res.success).toBe(true)
     if (res.success) expect(res.data.agregados).toBe(1)
     expect(insertSpy).toHaveBeenCalledWith([{ cita_id: CITA, centro_id: CENTRO, usuario_id: 't2' }])
+  })
+
+  // Censo C (B1, 2026-11-26): sin leer a los ya invitados, se intentaba insertar a todos y el UNIQUE
+  // abortaba el lote con un «no se pudo». Ahora lectura_fallida, sin insertar. Premisa: el caso de arriba.
+  it('sin poder leer a los ya invitados: lectura_fallida, y no inserta', async () => {
+    explicitosMock.mockResolvedValue({ internos: ['t1', 't2'], externos: [] })
+    const { fake, insertSpy } = makeFake({
+      cita: { centro_id: CENTRO, organizador_id: USER, aula_id: null, estado: 'programada' },
+      existentesError: { message: 'caída' },
+    })
+    const res = await agregarInvitadosCore(fake, USER, {
+      cita_id: CITA,
+      invitados: [{ tipo: 'usuario', usuario_id: U_IN }],
+    })
+    expect(res).toEqual({ success: false, error: 'common.lectura_fallida' })
+    expect(insertSpy).not.toHaveBeenCalled()
   })
 
   it('rechaza añadir a una cita cancelada', async () => {

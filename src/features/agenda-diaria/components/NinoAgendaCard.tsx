@@ -18,6 +18,7 @@ import { TarjetaSanitariaButton } from '@/features/ninos/components/TarjetaSanit
 import { EscribirAFamiliaAdminPicker } from '@/features/messaging/components/EscribirAFamiliaAdminPicker'
 import type { VinculoTutorMin } from '@/features/messaging/queries/get-vinculos-tutores-aula'
 
+import { NoSePudoLeer } from '@/shared/components/NoSePudoLeer'
 import { fetchAgendaDelDia } from '../actions/fetch-agenda-del-dia'
 import type { AgendaCompleta, NinoAgendaResumen } from '../types'
 
@@ -62,12 +63,13 @@ export function NinoAgendaCard({
   const tFicha = useTranslations('messages.ficha_nino')
   const initials =
     (resumen.nino.nombre.charAt(0) + (resumen.nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
-  const [agenda, setAgenda] = useState<AgendaCompleta | null>(null)
+  // `null`: aún no ha llegado. 'no_leida': no se pudo leer (censo C), y no se enseñan los formularios.
+  const [agenda, setAgenda] = useState<AgendaCompleta | null | 'no_leida'>(null)
 
   const cargar = useCallback(() => {
     fetchAgendaDelDia(resumen.nino.id, fecha)
-      .then((a) => setAgenda(a))
-      .catch(() => setAgenda(null))
+      .then((a) => setAgenda(a ?? 'no_leida'))
+      .catch(() => setAgenda('no_leida'))
   }, [resumen.nino.id, fecha])
 
   useEffect(() => {
@@ -153,13 +155,17 @@ export function NinoAgendaCard({
       </div>
       {expanded && (
         <CardContent id={`panel-${resumen.nino.id}`} className="pt-0">
-          <NinoAgendaPanel
-            key={resumen.nino.id}
-            resumen={resumen}
-            fecha={fecha}
-            diaCerrado={diaCerrado}
-            agenda={agenda}
-          />
+          {agenda === 'no_leida' ? (
+            <NoSePudoLeer alcance="seccion" reintentar={cargar} />
+          ) : (
+            <NinoAgendaPanel
+              key={resumen.nino.id}
+              resumen={resumen}
+              fecha={fecha}
+              diaCerrado={diaCerrado}
+              agenda={agenda}
+            />
+          )}
         </CardContent>
       )}
     </Card>

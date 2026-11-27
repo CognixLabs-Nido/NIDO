@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 import { origenExceso, type OrigenExceso } from '../lib/origen-exceso'
 
@@ -41,18 +41,18 @@ export async function getTransferenciasBeca(centroId: string): Promise<Transfere
     .order('anio', { ascending: true })
     .order('mes', { ascending: true })
 
-  if (error) {
-    logger.warn('getTransferenciasBeca', error.message)
-    return VACIO
-  }
+  // Censo C: antes, un `warn` y «no hay transferencias pendientes» (dinero de familias).
+  if (error) throw new LecturaFallida('transferencias de beca', error)
   const filas = data ?? []
   if (filas.length === 0) return VACIO
 
   const familiaIds = [...new Set(filas.map((f) => f.familia_id))]
-  const { data: familias } = await supabase
+  const { data: familias, error: errFamilias } = await supabase
     .from('familias')
     .select('id, etiqueta')
     .in('id', familiaIds)
+  // Sin ellas, las transferencias salían sin el nombre de la familia.
+  if (errFamilias) throw new LecturaFallida('transferencias de beca: familias', errFamilias)
   const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
 
   const toItem = (f: (typeof filas)[number]): TransferenciaBecaItem => ({

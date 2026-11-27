@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getCursoActivo, type CursoListItem } from '@/features/cursos/queries/get-cursos'
 import { createClient } from '@/lib/supabase/server'
+import { LecturaFallida } from '@/shared/lib/lectura-fallida'
 
 import {
   agruparCargas,
@@ -60,7 +61,11 @@ export async function getCargasBeca(centroId: string): Promise<CargasBecaData> {
 
   const supabase = await createClient()
 
-  const [{ data: tramos }, { data: cierres }, { data: elig }] = await Promise.all([
+  const [
+    { data: tramos, error: errTramos },
+    { data: cierres, error: errCierres },
+    { data: elig, error: errElig },
+  ] = await Promise.all([
     supabase
       .from('beca_comedor_tramo')
       .select(
@@ -77,6 +82,10 @@ export async function getCargasBeca(centroId: string): Promise<CargasBecaData> {
       .eq('curso_academico_id', curso.id)
       .eq('activa', true),
   ])
+  // Censo C: sin los tramos, «sin cargas»; sin los cierres, un mes cerrado salía editable.
+  if (errTramos) throw new LecturaFallida('cargas de beca: tramos', errTramos)
+  if (errCierres) throw new LecturaFallida('cargas de beca: cierres', errCierres)
+  if (errElig) throw new LecturaFallida('cargas de beca: becados', errElig)
 
   const mesesCerrados: MesCurso[] = (cierres ?? []).map((c) => ({ anio: c.anio, mes: c.mes }))
 
@@ -111,11 +120,12 @@ async function nombresYValidados(
   centroId: string,
   ninoIds: string[]
 ): Promise<{ nombres: Record<string, string>; recibosValidados: string[] }> {
-  const { data: ninos } = await supabase
+  const { data: ninos, error: errNinos } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos, familia_id')
     .eq('centro_id', centroId)
     .in('id', ninoIds)
+  if (errNinos) throw new LecturaFallida('cargas de beca: nombres', errNinos)
   const nombres: Record<string, string> = {}
   const ninosDeFamilia = new Map<string, string[]>()
   for (const n of ninos ?? []) {
@@ -125,7 +135,7 @@ async function nombresYValidados(
   if (ninosDeFamilia.size === 0) return { nombres, recibosValidados: [] }
 
   // El recibo regular de la familia (sin esporádicos, re-giros ni borrados), fuera de borrador.
-  const { data: recibos } = await supabase
+  const { data: recibos, error: errRecibos } = await supabase
     .from('recibos')
     .select('familia_id, anio, mes')
     .eq('centro_id', centroId)
@@ -134,6 +144,8 @@ async function nombresYValidados(
     .is('devuelto_de_recibo_id', null)
     .is('deleted_at', null)
     .neq('estado', 'borrador')
+  // Sin ellos, una carga con su recibo ya validado salía editable.
+  if (errRecibos) throw new LecturaFallida('cargas de beca: recibos validados', errRecibos)
   const recibosValidados = (recibos ?? []).flatMap((r) =>
     (ninosDeFamilia.get(r.familia_id) ?? []).map((id) => `${id}:${r.anio}-${r.mes}`)
   )

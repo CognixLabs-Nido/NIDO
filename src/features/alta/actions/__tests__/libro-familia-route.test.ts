@@ -20,11 +20,17 @@ const serviceFromSpy = vi.fn()
 const SERVICE = { from: (...a: unknown[]) => serviceFromSpy(...a), storage: {} }
 vi.mock('@/lib/supabase/admin', () => ({ createServiceRoleClient: () => SERVICE }))
 
-const authz = { tutor: true, admin: false }
-vi.mock('@/features/alta/lib/authz-tutor', () => ({
-  esTutorLegalDe: () => Promise.resolve(authz.tutor),
-  esAdminDeCentroDeNino: () => Promise.resolve(authz.admin),
-}))
+const authz = { tutor: true, admin: false, caida: false }
+vi.mock('@/features/alta/lib/authz-tutor', async () => {
+  const { LecturaFallida } = await import('@/shared/lib/lectura-fallida')
+  return {
+    esTutorLegalDe: () =>
+      authz.caida
+        ? Promise.reject(new LecturaFallida('esTutorLegalDe', { code: 'XX000', message: 'x' }))
+        : Promise.resolve(authz.tutor),
+    esAdminDeCentroDeNino: () => Promise.resolve(authz.admin),
+  }
+})
 
 vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
   altaValidada: () => Promise.resolve(false),
@@ -75,6 +81,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   authz.tutor = true
   authz.admin = false
+  authz.caida = false
 })
 
 describe('POST libro-familia — fija la ruta por RPC de sesión (D2)', () => {
@@ -139,6 +146,23 @@ describe('POST libro-familia — fija la ruta por RPC de sesión (D2)', () => {
     const res = await POST(peticion(), params)
 
     expect(res.status).toBe(403)
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+})
+
+// Censo C (B1, 2026-11-26): la autorización se lee DESPUÉS de subir el fichero. Si no se puede leer, antes
+// era «no autorizado»; ahora se dice que no se pudo leer, y el fichero subido se borra igual (no queda
+// huérfano). Premisa: el tutor legal sube y fija (el primer caso de arriba).
+describe('POST libro-familia — la autorización sin leer', () => {
+  it('500 lectura_fallida, borra lo subido y no fija nada', async () => {
+    authz.caida = true
+    const { fake, rpcSpy } = makeFake({ data: null, error: null })
+    createClientMock.mockReturnValue(fake)
+    const res = await POST(peticion(), params)
+    expect(res.status).toBe(500)
+    expect((await res.json()).error).toBe('common.lectura_fallida')
+    expect(borrarSpy).toHaveBeenCalledTimes(1)
+    expect(borrarSpy.mock.calls[0]?.[1]).toBe('libro-familia')
     expect(rpcSpy).not.toHaveBeenCalled()
   })
 })

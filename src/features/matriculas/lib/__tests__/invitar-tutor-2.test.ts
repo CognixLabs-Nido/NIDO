@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { LecturaTutores } from '@/features/alta/lib/tutores-familia'
 import type { Database } from '@/types/db'
 
 import { invitarTutor2AlValidar } from '../invitar-tutor-2'
@@ -46,7 +47,12 @@ function tutores(tutor2: { email: string | null; usuario_id: string | null } | n
     { tipo_vinculo: 'tutor_legal_principal', email: 't1@nido.test', usuario_id: 'u-t1' },
   ]
   if (tutor2) lista.push({ tipo_vinculo: 'tutor_legal_secundario', ...tutor2 } as never)
-  return { tutores: lista }
+  return {
+    leidos: true,
+    familiaId: null,
+    tutores: lista,
+    personalesLeidos: true,
+  } as unknown as LecturaTutores
 }
 
 beforeEach(() => {
@@ -113,6 +119,15 @@ describe('invitarTutor2AlValidar', () => {
     await invitarTutor2AlValidar(fake, NINO)
 
     expect(consultadas).toContain('invitaciones')
+    expect(sendInvitation).not.toHaveBeenCalled()
+  })
+
+  it('censo C: con la lectura de los tutores caída → no_enviada (la activación lo dice), no «no hacía falta»', async () => {
+    const caida: LecturaTutores = { leidos: false, error: { message: 'caída', code: 'XX000' } }
+    leerTutoresDeNino.mockResolvedValue(caida)
+    const { fake } = makeFake({ ninos: { centro_id: CENTRO } })
+
+    expect(await invitarTutor2AlValidar(fake, NINO)).toBe('no_enviada')
     expect(sendInvitation).not.toHaveBeenCalled()
   })
 

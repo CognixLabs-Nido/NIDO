@@ -46,17 +46,23 @@ let rpcSpy: ReturnType<typeof vi.fn>
 /** Lo que contesta `is_superadmin` (esSuperusuario). */
 let superusuario = false
 let estadoUpdateSpy: ReturnType<typeof vi.fn<() => void>>
+// Censo C: la lectura que falla (`tabla`, `rpc:nombre` o `service:tabla`) y el error del UPDATE que saca
+// el prospecto de la cola.
+let caida: string | null = null
+let estadoUpdateError: unknown = null
+const CAIDA = { code: 'XX000', message: 'caída' }
 
 function makeServerFake() {
   function builder(table: string) {
     const state = { table, op: 'select' as 'select' | 'update' }
     const result = () => {
+      if (state.op === 'select' && caida === table) return { data: null, error: CAIDA }
       if (table === 'roles_usuario') return { data: rolesFixture, error: null }
       if (table === 'aulas_curso') return { data: { aula_id: AULA }, error: null }
       if (table === 'lista_espera') {
         if (state.op === 'update') {
           estadoUpdateSpy()
-          return { data: null, error: null }
+          return { data: null, error: estadoUpdateError }
         }
         return {
           data: { ...PROSPECTO_ROW, tutor_usuario_id: prospectoTutorUsuarioId },
@@ -79,6 +85,7 @@ function makeServerFake() {
     return b
   }
   rpcSpy = vi.fn((name: string) => {
+    if (caida === `rpc:${name}`) return Promise.resolve({ data: null, error: CAIDA })
     if (name === 'curso_activo_de_centro') return Promise.resolve({ data: CURSO, error: null })
     if (name === 'crear_o_anadir_a_familia') return Promise.resolve(rpcAltaResult)
     if (name === 'is_superadmin') return Promise.resolve({ data: superusuario, error: null })
@@ -124,6 +131,7 @@ vi.mock('@/lib/supabase/admin', () => ({
       const b: Record<string, unknown> = {}
       const self = () => b as never
       const result = () => {
+        if (caida === `service:${table}`) return { data: null, error: CAIDA }
         if (table === 'familia_tutores') return { data: perfilAqui, error: null }
         if (table === 'vinculos_familiares')
           return { data: { parentesco: 'madre', descripcion_parentesco: null }, error: null }
@@ -161,6 +169,8 @@ vi.mock('@/features/auth/lib/crear-tutor-directo', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+import { logger } from '@/shared/lib/logger'
+
 import { completarEnDireccion } from '../completar-direccion'
 
 const VALID_INPUT = {
@@ -180,6 +190,8 @@ function altaRpcCall() {
 
 beforeEach(() => {
   superusuario = false
+  caida = null
+  estadoUpdateError = null
   rolesFixture = [{ rol: 'admin', centro_id: CENTRO }]
   rpcAltaResult = {
     data: { resultado: 'familia_creada', familia_id: 'fam-1', nino_id: NINO, colision_info: null },
@@ -454,4 +466,73 @@ describe('completarEnDireccion — cuenta que ya existe fuera de este centro (PR
     expect(r.success && r.data.resultado).toBe('ok')
     expect(altaRpcCall()?.[1]).not.toMatchObject({ p_usuario_id: 'tutor-uid-guardado' })
   })
+})
+
+/**
+ * Censo C (B1, 2026-11-26): lo mismo que en `invitarAlAlta`. Sin leer el prospecto, el curso o el aula, un
+ * motivo falso; sin el vínculo previo, otro parentesco. Y el prospecto que no sale de la cola con el alta
+ * hecha: antes, un `warn` y nada más (un segundo «Completar» crearía otro niño); ahora lo dice.
+ */
+describe('censo C: completar con una lectura caída, y el prospecto que no sale de la cola', () => {
+  it.each(['lista_espera', 'rpc:curso_activo_de_centro', 'aulas_curso'])(
+    'con %s caída: no da un motivo falso, y no da el alta',
+    async (c) => {
+      caida = c
+      expect(await completarEnDireccion(VALID_INPUT, 'es')).toEqual({
+        success: false,
+        error: 'common.lectura_fallida',
+      })
+      expect(altaRpcCall()).toBeUndefined()
+      expect(crearTutorSpy).not.toHaveBeenCalled()
+    }
+  )
+
+  it('2.º hijo sin poder leer el vínculo previo: no hereda a ciegas, y no da el alta', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid-guardado'
+    caida = 'service:vinculos_familiares'
+    expect(await completarEnDireccion(VALID_INPUT, 'es')).toEqual({
+      success: false,
+      error: 'common.lectura_fallida',
+    })
+    expect(altaRpcCall()).toBeUndefined()
+  })
+
+  it('premisa: con el prospecto fuera de la cola, el resultado no lleva el aviso', async () => {
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+    expect(r.success && r.data).toEqual({ resultado: 'ok', ninoId: NINO, usuarioId: 'tutor-id' })
+  })
+
+  it.each([
+    ['ok', 'cuenta nueva', (): void => {}],
+    [
+      'vinculado',
+      'vinculado',
+      (): void => {
+        prospectoTutorUsuarioId = 'tutor-uid-guardado'
+      },
+    ],
+    [
+      'ok',
+      'cuenta existente',
+      (): void => {
+        cuentaEmail = { id: 'de-otro-centro', email: 'tutor@nido.test' }
+        rolesCuenta = [{ usuario_id: 'de-otro-centro' }]
+        perfilAqui = null
+      },
+    ],
+  ] as const)(
+    '%s (%s) y el prospecto que no sale de la cola: lo dice (sigueEnCola), y va a Sentry',
+    async (resultado, _camino, montar) => {
+      const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+      montar()
+      estadoUpdateError = CAIDA
+      const r = await completarEnDireccion(VALID_INPUT, 'es')
+      expect(r.success && r.data).toMatchObject({ resultado, sigueEnCola: true })
+      expect(estadoUpdateSpy, 'premisa: intentó sacarlo').toHaveBeenCalledTimes(1)
+      expect(error.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('sacar el prospecto de la cola')
+      )
+      error.mockRestore()
+    }
+  )
 })

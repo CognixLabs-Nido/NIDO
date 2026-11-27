@@ -41,9 +41,13 @@ export async function abrirFichaParaFirmar(ninoId: string): Promise<AbrirFichaRe
   const r = await leerFichaParaFirmar(supabase, parsed.data)
   if (!r.ok) return { success: false, error: r.error }
   // Los nombres, para decir de quién es cada respuesta de imagen (la foto la guarda por cuenta).
-  const { tutores } = await leerTutoresDeNino(supabase, parsed.data)
+  // Censo C (clase 1): sin los nombres, cada respuesta de imagen saldría sin dueño («—») en lo que se firma.
+  const lecturaTutores = await leerTutoresDeNino(supabase, parsed.data)
+  if (!lecturaTutores.leidos) return { success: false, error: 'alta.firma.errors.leer' }
   const nombres = new Map(
-    tutores.filter((t) => t.usuario_id).map((t) => [t.usuario_id as string, t.nombre_completo])
+    lecturaTutores.tutores
+      .filter((t) => t.usuario_id)
+      .map((t) => [t.usuario_id as string, t.nombre_completo])
   )
   const t = await getTranslations()
   return {

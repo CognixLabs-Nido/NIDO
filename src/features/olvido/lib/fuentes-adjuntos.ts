@@ -98,7 +98,14 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
     bucket: BUCKET_NINOS_FOTOS,
     sujetos: ['nino'],
     async recolectar(service, ninoId) {
-      const { data } = await service.from('ninos').select('foto_url').eq('id', ninoId).maybeSingle()
+      // Censo C: un fallo no es «no tiene foto»: la purga seguiría y la foto del niño se quedaría en el
+      // bucket. Para la purga, como la tarjeta y el justificante.
+      const { data, error } = await service
+        .from('ninos')
+        .select('foto_url')
+        .eq('id', ninoId)
+        .maybeSingle()
+      if (error) throw new Error(`ninos (foto de perfil): ${error.message}`)
       const url = data?.foto_url
       return url ? [url, rutaThumbDe(url)] : []
     },
@@ -111,14 +118,18 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
     bucket: BUCKET_LIBRO_FAMILIA,
     sujetos: ['nino'],
     async recolectar(service, ninoId) {
-      const { data } = await service
+      const { data, error } = await service
         .from('ninos')
         .select('centro_id')
         .eq('id', ninoId)
         .maybeSingle()
+      if (error) throw new Error(`ninos (libro de familia): ${error.message}`)
       if (!data?.centro_id) return []
       const prefijo = `${data.centro_id}/${ninoId}`
-      const { data: objetos } = await service.storage.from(BUCKET_LIBRO_FAMILIA).list(prefijo)
+      const { data: objetos, error: lErr } = await service.storage
+        .from(BUCKET_LIBRO_FAMILIA)
+        .list(prefijo)
+      if (lErr) throw new Error(`libro-familia: ${lErr.message}`)
       return (objetos ?? [])
         .filter((o) => o.id !== null) // descarta pseudo-carpetas (id null), solo ficheros
         .map((o) => `${prefijo}/${o.name}`)
@@ -180,26 +191,32 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
       // #5: solo se borra el objeto si el niño era el ÚNICO etiquetado. En fotos
       // compartidas se conserva la foto (dato de terceros); la migración quita solo
       // la etiqueta.
-      const { data: etis } = await service
+      // Censo C: cada lectura caída era «no sale en ninguna foto» o «compartida», y la foto se quedaba.
+      const { data: etis, error: eErr } = await service
         .from('media_etiquetas')
         .select('media_id')
         .eq('nino_id', ninoId)
+      if (eErr) throw new Error(`media_etiquetas (del niño): ${eErr.message}`)
       const mediaIds = [...new Set((etis ?? []).map((e) => e.media_id))]
       if (mediaIds.length === 0) return []
 
-      const { data: todas } = await service
+      const { data: todas, error: tErr } = await service
         .from('media_etiquetas')
         .select('media_id, nino_id')
         .in('media_id', mediaIds)
+      // Esta caída era peor que «nada que borrar»: sin «quién más sale», `[].every(…)` es TRUE y TODAS sus
+      // fotos contaban como exclusivas: se borraban también las compartidas con otros niños.
+      if (tErr) throw new Error(`media_etiquetas (de sus fotos): ${tErr.message}`)
       const exclusivos = mediaIds.filter((mid) =>
         (todas ?? []).filter((t) => t.media_id === mid).every((t) => t.nino_id === ninoId)
       )
       if (exclusivos.length === 0) return []
 
-      const { data: media } = await service
+      const { data: media, error: mErr } = await service
         .from('media')
         .select('path, path_miniatura')
         .in('id', exclusivos)
+      if (mErr) throw new Error(`media: ${mErr.message}`)
       return (media ?? []).flatMap((m) =>
         [m.path, m.path_miniatura].filter((p): p is string => Boolean(p))
       )

@@ -55,7 +55,15 @@ export async function createAula(
   if (cursoErr) {
     logger.warn('createAula aulas_curso error', cursoErr.message)
     // Compensación: la sala quedó huérfana sin configuración → la retiramos.
-    await supabase.from('aulas').delete().eq('id', aula.id)
+    const { error: errRetirar } = await supabase.from('aulas').delete().eq('id', aula.id)
+    // Censo C: si tampoco se retira, la sala queda sin configuración (no sale en la lista) y crearla otra
+    // vez diría «ya hay una sala con ese nombre». Se dice, y va a Sentry.
+    if (errRetirar) {
+      logger.error('createAula: la sala sin configuración no se retiró', {
+        code: errRetirar.code ?? null,
+      })
+      return fail('aula.errors.sala_a_medias')
+    }
     return fail('aula.errors.create_failed')
   }
 

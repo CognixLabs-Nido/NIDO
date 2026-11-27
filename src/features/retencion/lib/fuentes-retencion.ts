@@ -105,7 +105,10 @@ async function ninosVencidos(
   meses: number
 ): Promise<Set<string>> {
   // entre-centros: el barrido de retención es del servidor y recorre todos los centros.
-  const { data } = await service.from('matriculas').select('nino_id, fecha_baja')
+  const { data, error } = await service.from('matriculas').select('nino_id, fecha_baja')
+  // Censo C: sin las matrículas, «ningún niño vencido» y nada se borraba al vencer, sin que nadie lo
+  // supiera. Lanza: el barrido lo anota en Sentry y sigue con la siguiente fuente.
+  if (error) throw new Error(`matriculas (vencidos): ${error.message}`)
   return ninosVencidosPorBaja(data ?? [], cutoffFecha(ahoraISO, { meses }))
 }
 
@@ -119,10 +122,11 @@ async function listarDniRecogida(service: Service, ahoraISO: string): Promise<Un
   const vencidosBaja = await ninosVencidos(service, ahoraISO, RETENCION_RECOGIDA_HABITUAL_MESES)
 
   // entre-centros: el barrido de retención es del servidor y recorre todos los centros.
-  const { data } = await service
+  const { data, error } = await service
     .from('firmas_autorizacion')
     .select('id, nino_id, datos, autorizaciones!inner(tipo, vigencia_hasta, centro_id)')
     .eq('autorizaciones.tipo', 'recogida')
+  if (error) throw new Error(`firmas_autorizacion (DNI de recogida): ${error.message}`)
 
   const unidades: UnidadRetencion[] = []
   for (const f of data ?? []) {
@@ -154,10 +158,11 @@ async function listarFotoPerfil(service: Service, ahoraISO: string): Promise<Uni
   const vencidos = await ninosVencidos(service, ahoraISO, RETENCION_FOTOS_MESES)
   if (vencidos.size === 0) return []
 
-  const { data } = await service
+  const { data, error } = await service
     .from('ninos')
     .select('id, centro_id, foto_url')
     .in('id', [...vencidos])
+  if (error) throw new Error(`ninos (foto de perfil): ${error.message}`)
 
   const unidades: UnidadRetencion[] = []
   for (const n of data ?? []) {
@@ -188,10 +193,11 @@ async function listarFotoBlog(service: Service, ahoraISO: string): Promise<Unida
   for (const ninoId of vencidos) {
     const exclusivos = await mediaExclusivaDe(service, ninoId)
     if (exclusivos.length === 0) continue
-    const { data: media } = await service
+    const { data: media, error: mErr } = await service
       .from('media')
       .select('centro_id, path, path_miniatura')
       .in('id', exclusivos)
+    if (mErr) throw new Error(`media: ${mErr.message}`)
     const filas = media ?? []
     if (filas.length === 0) continue
     unidades.push({
@@ -211,16 +217,20 @@ async function listarFotoBlog(service: Service, ahoraISO: string): Promise<Unida
 
 /** ids de `media` donde el niño es el ÚNICO etiquetado (#5). */
 async function mediaExclusivaDe(service: Service, ninoId: string): Promise<string[]> {
-  const { data: etis } = await service
+  const { data: etis, error: eErr } = await service
     .from('media_etiquetas')
     .select('media_id')
     .eq('nino_id', ninoId)
+  if (eErr) throw new Error(`media_etiquetas (del niño): ${eErr.message}`)
   const mediaIds = [...new Set((etis ?? []).map((e) => e.media_id))]
   if (mediaIds.length === 0) return []
-  const { data: todas } = await service
+  const { data: todas, error: tErr } = await service
     .from('media_etiquetas')
     .select('media_id, nino_id')
     .in('media_id', mediaIds)
+  // Censo C: esta lectura caída era lo peor de las dos: sin «quién más sale», `[].every(…)` es TRUE y
+  // TODAS las fotos del niño contaban como exclusivas. Se borraban las compartidas con otros niños.
+  if (tErr) throw new Error(`media_etiquetas (de sus fotos): ${tErr.message}`)
   return mediaIds.filter((mid) =>
     (todas ?? []).filter((t) => t.media_id === mid).every((t) => t.nino_id === ninoId)
   )
@@ -282,7 +292,10 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
     categoria: 'foto_perfil_nino',
     listar: listarFotoPerfil,
     async limpiarDb(service, u) {
-      await service.from('ninos').update({ foto_url: null }).eq('id', u.refId)
+      // Censo C: el fichero ya está borrado; si `foto_url` no se anula, la ficha nombra un fichero que no
+      // existe. Lanza: el barrido la cuenta como fallida y la vuelve a coger.
+      const { error } = await service.from('ninos').update({ foto_url: null }).eq('id', u.refId)
+      if (error) throw new Error(`ninos.foto_url(${u.refId}): ${error.message}`)
     },
   },
   // Blog: borra las filas `media` exclusivas (cascada de etiquetas) y quita la

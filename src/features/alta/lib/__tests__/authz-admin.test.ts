@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/db'
 
-import { esAdminDeCentroDeNino } from '../authz-tutor'
+import { esLecturaFallida } from '@/shared/lib/lectura-fallida'
+
+import { esAdminDeCentroDeNino, esTutorLegalDe } from '../authz-tutor'
 
 /**
  * PR-3b-2 · B2 — tests de aislamiento de `esAdminDeCentroDeNino`, la primitiva que TODOS
@@ -91,5 +93,38 @@ describe('esAdminDeCentroDeNino (primitiva de seguridad B2)', () => {
   it('niño sin centro_id → false', async () => {
     const fake = makeFake({ data: { centro_id: null }, error: null }, { data: [], error: null })
     expect(await esAdminDeCentroDeNino(fake, NINO, USUARIO)).toBe(false)
+  })
+})
+
+/**
+ * Censo C (B1, 2026-11-26): con la lectura caída, las dos primitivas daban `false` y quien las llama decía
+ * «no autorizado» a quien sí lo es. Ahora lanzan `LecturaFallida`. Premisa: con la lectura bien, `true`.
+ */
+describe('censo C: la lectura caída no es «no autorizado»', () => {
+  const CAIDA = { data: null, error: { code: 'XX000', message: 'caída' } }
+  async function lanza(p: Promise<unknown>) {
+    const e = await p.then(
+      () => null,
+      (err: unknown) => err
+    )
+    expect(esLecturaFallida(e), `esperaba una LecturaFallida, llegó ${String(e)}`).toBe(true)
+  }
+
+  it('esAdminDeCentroDeNino: premisa true; con ninos caída, lanza', async () => {
+    const roles = { data: [{ centro_id: 'C1', rol: 'admin' }], error: null }
+    expect(
+      await esAdminDeCentroDeNino(
+        makeFake({ data: { centro_id: 'C1' }, error: null }, roles),
+        NINO,
+        USUARIO
+      )
+    ).toBe(true)
+    await lanza(esAdminDeCentroDeNino(makeFake(CAIDA, roles), NINO, USUARIO))
+  })
+
+  it('esTutorLegalDe: premisa true; con vinculos_familiares caída, lanza', async () => {
+    const vinculo = { data: [{ tipo_vinculo: 'tutor_legal_principal' }], error: null }
+    expect(await esTutorLegalDe(makeFake(vinculo, vinculo), NINO, USUARIO)).toBe(true)
+    await lanza(esTutorLegalDe(makeFake(CAIDA, CAIDA), NINO, USUARIO))
   })
 })

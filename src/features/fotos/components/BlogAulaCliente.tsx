@@ -197,7 +197,10 @@ export function BlogAulaCliente({ locale, aulaId, ninos, puedePublicar, publicac
     // Limpia un borrador nuevo y vacío (sin fotos ni texto) para no dejar posts huérfanos.
     if (e.isNew && e.media.length === 0 && e.texto.trim() === '') {
       startTransition(async () => {
-        await eliminarPublicacion({ publicacion_id: e.id })
+        const r = await eliminarPublicacion({ publicacion_id: e.id })
+        // Censo C (clase 1, 2026-11-26): si el borrado falla, la publicación vacía queda en el blog, a la vista
+        // de las familias. Antes se tiraba el resultado; ahora se dice, para borrarla desde la lista.
+        if (!r.success) toast.error(t('composer.vacia_no_borrada'))
         setEditor(null)
         router.refresh()
       })

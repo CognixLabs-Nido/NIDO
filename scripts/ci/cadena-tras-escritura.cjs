@@ -14,7 +14,8 @@
 //         a una función que ESCRIBE.
 //       PARA: `throw new LecturaFallida`, `return fail('common.lectura_fallida')`, o una llamada a una
 //         función que PARA, fuera de un `try` cuyo `catch` se lo trague (un `catch` que devuelve fail/err o
-//         lanza es otra forma de decir «no»). Una llamada pasada a `siFallaTrasEscribir(…)` no para.
+//         lanza es otra forma de decir «no»). Una llamada pasada a `siFallaTrasEscribir(…)` u `oNoLeido(…)`
+//         no para ni lanza: las dos la recogen.
 //     Esperado: 0 fuera de la lista (`cadena-tras-escritura.lista.json`, cada una con su motivo).
 //
 //  2. LA FRONTERA DE LAS ACCIONES: una acción exportada de un 'use server' no deja escapar una
@@ -227,6 +228,9 @@ function analizar(raiz, vol) {
       t.catchClause.getText()
     )
   const catchRelanza = (t) => /\bthrow\b/.test(t.catchClause.getText())
+  // Envoltorios que recogen la LecturaFallida de la llamada que reciben: `siFallaTrasEscribir` (devuelve el
+  // valor de repuesto) y `oNoLeido` (devuelve null y la sección lo dice: PR A). Por el nombre.
+  const ENVUELVEN = new Set(['siFallaTrasEscribir', 'oNoLeido'])
   const dentroDeSiFalla = (n, fn) => {
     let c = n
     while (c && c !== fn) {
@@ -235,7 +239,7 @@ function analizar(raiz, vol) {
         p &&
         ts.isCallExpression(p) &&
         p.arguments.includes(c) &&
-        p.expression.getText() === 'siFallaTrasEscribir'
+        ENVUELVEN.has(p.expression.getText())
       )
         return true
       c = p
@@ -417,7 +421,24 @@ function analizar(raiz, vol) {
   }
 }
 
-module.exports = { analizar, volatilidadDeMigraciones }
+/**
+ * La lista y su norma (Jose, 2026-11-27, `_norma` en la propia lista): «la lista solo puede encoger» va contra
+ * acumular excusas, no contra anotar un pendiente trazado. Cada entrada es de una clase ya explicada —falso
+ * positivo, tratado, fichero huérfano— o un PENDIENTE con su PR destino y su fecha (`Destino: PR <x> ·
+ * <AAAA-MM-DD>`). Una entrada sin eso no entra nunca. Las claves que empiezan por `_` no son entradas.
+ */
+const CLASE_EXPLICADA = /^(Falso positivo|Tratado|Fichero huérfano)\b/
+const PENDIENTE_CON_DUENO = /^Pendiente · Destino: PR \S+ · \d{4}-\d{2}-\d{2}\b/
+function leerLista(lista) {
+  const entradas = Object.keys(lista).filter((k) => !k.startsWith('_'))
+  const sinClase = entradas.filter((k) => {
+    const motivo = String(lista[k] ?? '')
+    return !CLASE_EXPLICADA.test(motivo) && !PENDIENTE_CON_DUENO.test(motivo)
+  })
+  return { entradas, sinClase }
+}
+
+module.exports = { analizar, volatilidadDeMigraciones, leerLista }
 
 if (require.main === module) {
   const raiz = process.cwd()
@@ -433,7 +454,8 @@ if (require.main === module) {
   const lista = JSON.parse(
     fs.readFileSync(path.join(__dirname, 'cadena-tras-escritura.lista.json'), 'utf8')
   )
-  const admitidas = new Set(Object.keys(lista))
+  const { entradas: enLista, sinClase } = leerLista(lista)
+  const admitidas = new Set(enLista)
   const nuevas = r.entradas.filter((e) => !admitidas.has(e))
   const sobran = [...admitidas].filter((e) => !r.entradas.includes(e))
   console.log(
@@ -448,6 +470,12 @@ if (require.main === module) {
   }
   for (const e of sobran) {
     console.log(`  SOBRA en la lista (ya no aparece: quítala, la lista solo encoge): ${e}`)
+    mal = true
+  }
+  for (const e of sinClase) {
+    console.log(
+      `  SIN DESTINO NI CLASE en la lista (ver _norma: un pendiente lleva «Pendiente · Destino: PR <x> · <fecha>»): ${e}`
+    )
     mal = true
   }
   for (const e of r.accionesQueLanzan) {

@@ -339,6 +339,37 @@ describe('renderExportHtml', () => {
     expect(html).toContain('doc.valores.titular')
   })
 
+  it('censo C: un adjunto cuyo fichero no está dice por qué no tiene enlace, no «Sin datos»', () => {
+    // La línea del adjunto, no la página: «Sin datos» sale también en las secciones vacías.
+    const lineaDni = (adjunto: Record<string, unknown>) => {
+      const html = renderExportHtml(
+        {
+          _meta: docDeNino()._meta,
+          usuario: {
+            ficha: { nombre_completo: 'X' },
+            adjuntos: [{ descripcion: 'DNI', ...adjunto }],
+          },
+        } as never,
+        t,
+        'es'
+      )
+      return /<li>DNI — (.*?)<\/li>/.exec(html)?.[1] ?? 'SIN LÍNEA'
+    }
+    // Premisa: con enlace, el enlace; sin enlace y sin motivo, «Sin datos», como siempre.
+    expect(lineaDni({ url_firmada: 'https://firmado.test/dni' })).toContain(
+      'https://firmado.test/dni'
+    )
+    expect(lineaDni({ url_firmada: null })).toContain('doc.sin_datos')
+    const linea = lineaDni({
+      url_firmada: null,
+      sin_enlace: 'fichero_no_encontrado',
+      path: 'c/n/dni.pdf',
+    })
+    expect(linea).toContain('doc.fichero_no_encontrado')
+    expect(linea).not.toContain('doc.sin_datos')
+    expect(linea).not.toContain('c/n/dni.pdf')
+  })
+
   it('export completo: las secciones nuevas del niño y la nota sin datos ampliados', () => {
     const html = renderExportHtml(
       docDeNino({

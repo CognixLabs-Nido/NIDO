@@ -21,6 +21,7 @@ import {
   type AntesTutor2,
   type InvitacionAlAprobar,
 } from '../lib/invitar-tutor2-al-aprobar'
+import { escrituraSecundariaFallida } from '@/shared/lib/tras-escritura'
 
 const idSchema = z.string().uuid()
 
@@ -145,11 +146,15 @@ export async function rechazarCambio(cambioId: string): Promise<ActionResult<{ i
       const { mandato_id } = payloadMandatoSepaSchema.parse(fila.payload)
       await decidirMandato(supabase, mandato_id, false)
     } catch (e) {
-      await supabase
+      const { error: errVolver } = await supabase
         .from('cambios_pendientes')
         .update({ estado: 'pendiente', revisado_por: null, decided_at: null })
         .eq('id', fila.id)
       logger.warn('rechazarCambio: mandato', e instanceof Error ? e.message : 'desconocido')
+      // Censo C: si tampoco vuelve a pendiente, la entrada queda rechazada con su mandato aún «propuesto».
+      // Es el mismo doble fallo que el de aprobarCambio, que Jose mandó a B2 el 2026-11-26; este se propone
+      // para B2 con él (propuesta, no decisión). Aquí, que se sepa: va a Sentry en vez de tirarse.
+      if (errVolver) escrituraSecundariaFallida('rechazarCambio: devolver a pendiente', errVolver)
       return fail('admin.pendientes.errors.decidir')
     }
   }

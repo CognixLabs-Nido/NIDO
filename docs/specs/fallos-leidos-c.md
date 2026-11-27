@@ -404,6 +404,211 @@ datos dentro, y sin dar acceso a ninguna parte. Con eso una página pública no 
 Y del escáner: «que el escáner enseñe TODAS las paradas de cada función, no solo la primera, porque si no el
 número que da vuelve a ser un suelo sin que lo sepamos.»
 
+### 2026-11-26 · la re-clasificación de las 201, y las dos clases que no veía ningún instrumento
+
+Resultado (`~/nido-logs/16/c/reclas/RESULTADO-201.md`): 185 propagan con motivo verdadero, 9 sin efecto, 2
+arregladas en el PR A, 3 paran con un motivo falso (ficha de gestión y tarjeta sanitaria → «no tienes
+permiso»; el curso destino del paso de curso → «no encontrado») y 2 F2 (el detalle de un evento sin
+«confirmar asistencia»; «cómo nos conociste»). Y dos clases que ni el censo ni el lint veían: el helper que
+avisa del fallo (`leidos`, `null`/`undefined`) con llamadores que no lo usan, y el helper que devuelve el
+constructor de la consulta sin `await`. Uno de los llamadores de la primera, `invitarTutor2AlValidar`, hace
+falsa una afirmación del cuerpo del PR A: `activarMatricula` no avisa si la invitación no sale. Jose, literal:
+
+«Los 5 defectos y las dos clases nuevas van al PR B, y las dos soluciones que propones son las correctas: un
+tipo que no deje usar los tutores sin mirar `leidos` es estructura, no una regla que haya que recordar.
+
+PERO LA SEGUNDA CLASE ESTÁ MEDIDA CON UNA REGEX Y ES UN SUELO, Y ESO NO ME VALE AQUÍ. Un helper que devuelve
+el constructor de la consulta sin await es invisible para el censo Y para el lint, así que no tenemos ni idea
+de cuántos hay, y uno de los tres que has encontrado se salta la comprobación de «ya existe» en una carga de
+beca. Eso es dinero.
+Mídelo con el compilador, como hiciste con el escáner de cadena: un helper cuyo tipo de retorno sea el
+constructor, y los sitios que hacen await sobre él. Dame el número exacto con sus huecos declarados, no un
+suelo. Y si al medirlo bien salen más sitios de dinero, me lo dices antes de seguir.
+
+Y LA PRIMERA CLASE ES PEOR DE LO QUE PARECE, por el motivo que tú mismo das: el escáner marcó ese helper como
+OK porque SÍ comprueba el error, y nunca llegó al clasificador. O sea que nuestro instrumento mira si el
+helper se entera del fallo, no si el llamador hace algo con esa información. Censa esa clase también con el
+compilador: helpers que informan del fallo —con un flag, con null o con undefined— y llamadores que no lo
+usan. Que el número salga del tipo, no de una lista de nombres.
+
+Y bien dicho lo de tu afirmación falsa del PR A: que activarMatricula no avisa cuando la invitación no sale,
+porque invitarTutor2AlValidar dice «no hacía falta». Corrígelo en B y que el cuerpo del B lo diga, que el A
+ya está mergeado y su descripción se queda como está.
+El encabezado de roles-del-usuario, al barrido del B.»
+
+### 2026-11-26 · la clase 2, medida con el compilador; aprobarCambio necesita diseño
+
+Medido (`scripts/ci/fallo-que-se-pierde.cjs`, `~/nido-logs/16/c/reclas/CLASE2-BUILDER.md`): 8 helpers, 17
+sitios, 9 miran el error, 8 no, 0 llamadas sin resolver; una función anónima de la clase, leída a mano
+(mira). De los 8, el de dinero que no estaba en la lista: `aprobarCambio` → `revertir()`, cuyo resultado se
+tira; si aplicar falla y deshacer también, el cambio queda «aprobado» sin aplicar y sale de la cola. Jose,
+literal:
+
+«Y aprobarCambio es el hallazgo, y NO se arregla comprobando el error. Lo que has descrito es un estado que no
+debería existir: un cambio marcado «aprobado» que no se aplicó, fuera de la cola y sin forma de reintentarlo.
+Comprobar el error te dice que pasó; lo que hace falta es decidir dónde queda ese cambio.
+La salida es que NUNCA SALGA DE LA COLA SI NO SE APLICÓ: si aplicar falla, el cambio se queda pendiente; si
+además falla el deshacer, se queda pendiente y marcado como «falló al aplicar», con lo que pasó, para que
+Dirección lo vea y lo reintente. Lo que no puede es desaparecer. Y que Dirección lo tenga en su lista, como
+los que están sin tarjeta sanitaria.
+Mídelo abierto antes: monta el doble fallo y enséñame en qué estado queda el cambio hoy.
+
+La clase 1 con el mismo escáner, sí, adelante.
+
+Y una cosa de tamaño: el PR B ya lleva los 66 apartados, los 16, los 5 de la re-clasificación, estos 8 y lo
+que salga de la clase 1. Si al juntarlo no se puede leer, PÁRTELO EN DOS: lo mecánico por un lado y lo que
+necesita diseño —aprobarCambio y el rollback de la cuenta nueva— por otro. Dímelo tú si hace falta; no quiero
+un PR que nadie pueda revisar, pero tampoco cinco.»
+
+### 2026-11-26 · la clase 1 medida, el PR B en dos, y recalcularTotal adelantado a B1
+
+Medido (`~/nido-logs/16/c/reclas/CLASE1-AVISO.md`): 316 helpers avisan del fallo, 464 sitios; los 77 que el
+escáner no resolvió, leídos uno a uno: 14 defectos (9 nuevos: los 4 llamadores que no leen `leidos`, las 3
+«altas sin terminar» con `?? []`, la publicación en lote que cuenta un fallo como «faltan ítems» y el borrado de
+limpieza del blog). **Límite conocido del escáner, escrito para que el próximo no los cuente como defectos:** 7
+sitios que el escáner da por «no usa» porque `!x` junta el fallo (`null`) con «no le toca» (`undefined`) son
+correctos, porque para Dirección `ficha_gestion_ninos` y `sip_de_ninos` contestan siempre y «no le toca» no
+puede darse (gate-alta 89/90, aplicar.ts 119, campos-ficha-familia 46, alta/[ninoId] 149 y 444,
+admin/ninos/[id] 113). _(Corregido el 2026-11-26, al escribir el cuerpo de B1: son 6, no 7. La
+444 de alta/[ninoId] era `esFamiliaNuevaEnCentro`, que no es un `!x`: es la re-clasificación 161, decidida
+abajo como degradación deliberada. Las 6 y la 161 están en `scripts/ci/fallo-que-se-pierde.lista.json`, cada
+una con su motivo.)_ El doble fallo de `aprobarCambio`, medido abierto (run 45785330097): la fila queda
+`aprobado`, fuera de la cola, y Dirección lee el mismo «no se pudo aplicar» que con un fallo solo. Jose, literal:
+
+«Sí, adelántalo. recalcularTotal es el único de todo esto que ESCRIBE un importe equivocado: un recibo con
+líneas que se queda en 0 € y además responde ok. Todo lo demás de este tramo son mensajes falsos o pantallas
+raras; esto es dinero escrito mal, y no espera a los grupos 5 y 6.
+Que entre en B1 con su medición abierta y su control: hoy escribe 0 con el recibo lleno, y después no escribe
+nada y lo dice.
+
+La partición B1 mecánico y B2 de diseño me vale tal cual, y el reparto también. aprobarCambio con su migración
+en B2, y el rollback de la cuenta nueva con él.
+
+La medición de la clase 1 está bien hecha, y lo que la hace creíble es que declares los 77 que el escáner no
+pudo resolver y los leyeras uno a uno, en vez de contarlos como buenos. Y los 7 que el escáner marcaba «no usa»
+y resultaron correctos porque para Dirección ese caso no puede darse: bien dejarlo escrito como límite conocido
+del instrumento, que es lo que evita que el próximo los cuente como defectos.
+
+Adelante con B1.»
+
+### 2026-11-26 · recalcularTotal: ¿cómo se pone al día? (Jose, literal)
+
+«El arreglo es el correcto: no escribir el total cuando no se pudo leer, y decirlo en vez de responder ok.
+Pero el aviso dice «el que ves no está al día», y eso deja una pregunta que hay que resolver en el mismo PR:
+¿CÓMO SE PONE AL DÍA? Si Dirección no tiene forma de volver a recalcularlo, ese recibo se queda con un total
+desfasado para siempre y el aviso solo le dice que tiene un problema sin salida.
+Mira si ya existe algo que lo recalcule —regenerar el mes, confirmar el recibo, lo que sea— y si existe, que el
+aviso lo diga. Si no existe, hace falta la forma de reintentarlo, y entonces dime si eso cabe en B1 o se va a B2
+con lo de diseño.
+Y de paso: un recibo con el total desfasado, ¿se puede confirmar y acabar en una remesa? Porque si se puede,
+ahí sí se cobraría un importe equivocado, y eso cambia la prioridad.»
+
+Leído en el código (rama fix/c-pantalla-b sobre main 1a84aac6), pendiente de su decisión:
+
+- Lo que ya recalcula: volver a guardar cualquier línea de ese recibo, y regenerar / recalcular el mes
+  (`generar_recibos_mes`, que reescribe el total de TODOS los borradores regulares del mes con la suma de sus
+  líneas). Solo se editan líneas de borradores regulares (lineas-recibo.ts:309), así que los dos caminos cubren
+  todo recibo que pueda quedar desfasado. Confirmar NO recalcula (`confirmar_recibo`, 20261223120000).
+- Sí se puede confirmar y acabar en una remesa: `confirmar_recibo` no mira las líneas, la remesa cobra
+  `total_centimos` (get-recibos-sepa-remesables, preparar-remesa) y `marcar_remesa_enviada` compara el fichero
+  con `total_centimos`, no con las líneas. Hoy el 0 se queda FUERA de la remesa (`total_centimos > 0`); con el
+  arreglo tal cual, el total desfasado es > 0 y entra: el arreglo solo convierte «no se cobra» en «se cobra mal»
+  si el aviso se pierde.
+
+### 2026-11-26 · El bloqueo de confirmar_recibo, en B1 (Jose, literal)
+
+«1 · EL BLOQUEO DE confirmar_recibo VA EN B1, contigo. Tu propio argumento lo decide: sin él, el arreglo de
+recalcularTotal es peor que no arreglar, y mandarlo a B2 abre una ventana en la que se cobra mal. Que B1 lleve
+una migración no es un problema: «mecánico» era una descripción de lo que había dentro, no una regla.
+Con su guarda de md5, su ensayo terminado en RAISE y su control negativo: un recibo con el total desfasado no se
+confirma y lo dice con el HINT.
+Y mídelo abierto antes: hoy ese recibo se confirma y entra en la remesa, y quiero el número y el camino copiados
+del log.
+
+2 · EL AVISO NOMBRA LOS DOS CAMINOS: volver a guardar una línea o recalcular el mes. Un aviso que dice que algo
+no está al día sin decir cómo ponerlo al día es dejar a la directora con un problema y sin salida.
+
+Y LA ALTERNATIVA DE FONDO ANÓTALA COMO LA BUENA, aunque no sea ahora: que la base mantenga el total con un
+trigger sobre las líneas hace desaparecer la clase entera —ni relectura, ni segunda escritura, ni avisos—.
+Déjalo escrito así, con lo que haría falta leer antes (las funciones que insertan la cabecera con su total),
+para que cuando alguien lo retome no empiece de cero. No lo hagas ahora.»
+
+### La solución buena, para después: el total lo mantiene la base (NO se hace ahora)
+
+Un trigger `AFTER INSERT OR UPDATE OF importe_centimos OR DELETE` sobre `lineas_recibo` que reescriba
+`recibos.total_centimos` con la suma de las líneas del recibo, en la misma transacción. Hace desaparecer la clase
+entera: la app no relee las líneas, no hay segunda escritura que pueda fallar, no hay aviso, y un total no puede
+quedar desfasado. `recalcularTotal` y su aviso se borran, y el bloqueo de `confirmar_recibo` queda como red.
+Antes de escribirlo hay que leer, desde su definición VIVA, cada función que escribe `total_centimos` o inserta
+una cabecera con su total antes (o sin) sus líneas, y decidir en cada una si el total es siempre la suma:
+
+- `generar_recibos_mes` (última: 20270121120000): pone el total al final del bucle y en el barrido final; con el
+  trigger sería redundante, y hay que medir el coste de un UPDATE por línea en la regeneración de un mes entero.
+- el cargo puntual (`anadir_cargo_puntual`, 20261116120000:178), que crea el borrador con su total.
+- la devolución (`resolver_devolucion`, 20261118120000:143-174): el re-giro nace con `total_centimos` del original
+  más gastos, y una línea «Re-giro de recibo devuelto»; y la línea de arrastre al recibo del mes siguiente.
+- `crear_recibo_esporadico`, el cheque (`cobrar_recibo_con_cheque`, la diferencia; `resolver_sobrante_cheque`,
+  la línea negativa), `anular_alta` (20270203120000:672, que ya recalcula) y la facturación desde la
+  incorporación (20270120130000:228 y 577).
+- Los recibos que no son borrador: las líneas de un recibo confirmado o enviado no se tocan (freeze por estado),
+  pero el trigger no debe intentar reescribir el total de un recibo en `enviado_banco` (lo protege
+  `recibos_dinero_solo_por_funcion` solo por estado; el total no). Hay que decidir qué hace con ellos.
+- Los datos: antes de aplicarlo, contar en producción los recibos cuyo total ya no es la suma de sus líneas
+  (de cualquier estado), porque el trigger los dejaría como están hasta que se toque una línea.
+
+### «Cómo nos has conocido» con la lectura caída: no se pregunta (reclasificación 161, 2026-11-26)
+
+Decisión del 2026-11-26, literal: «La (a). «Cómo nos has conocido» es una pregunta opcional de marketing: no
+preguntarla no cuesta nada, y preguntarla por si acaso significa molestar con ella a una familia que ya está en
+el centro, que es justo lo que decidió Jose que no pasara. Documentada como degradación deliberada, con el
+motivo, y no la toques.»
+
+`esFamiliaNuevaEnCentro` (src/features/alta/queries/familia-nueva-en-centro.ts) devuelve `null` si no puede
+contar, y la página del alta no pregunta. Es una degradación DELIBERADA, no un F1: lo que se pierde es una
+respuesta opcional de marketing; lo que se evitaría preguntando «por si acaso» es justo lo que se decidió el
+2026-11-10 que no pasara (preguntarla a una familia que ya está en el centro). No se cambia.
+
+### 2026-11-26 · los 228 de la lista blanca, por áreas (Jose, literal)
+
+«Y el detalle que más me ha gustado del mensaje es el del lint: que la regla ponga rojo también cuando un
+fichero tiene MENOS sitios que su número, diciendo a cuánto bajarlo. Eso es lo que impide que la whitelist se
+quede alta y esconda los nuevos detrás del hueco que deja lo arreglado. Sin eso, el contador habría sido una
+puerta abierta con el tiempo.
+Y bien medir la whitelist de verdad —228 contra los 237 que permitía— en vez de fiarte del número que había.
+
+Adelante con los 228 por áreas. Y cuando el PR esté entero, dame el md5 de la 20270208120000 y le paso a Jose
+el merge.»
+
+Hecho en B1: los 228, por áreas, con su mutación por área; la lista blanca de `nido/lectura-mira-el-error`
+queda vacía y se borra, y la regla reporta todo lo que ve. Lo que la regla no ve (su cabecera lo declara) lo
+cubre el escáner `fallo-que-se-pierde`, ahora paso propio de la CI con su lista
+(`scripts/ci/fallo-que-se-pierde.lista.json`), que tiene la misma propiedad que la de arriba: rojo con uno
+más, y rojo con uno menos («la lista solo encoge»).
+
+### 2026-11-27 · aprobarCambio en la lista de Cadena, y qué puede entrar en una lista que encoge (Jose, literal)
+
+El escáner de cadena marcó `aprobarCambio` en la CI de B1: `familiaDeNino` (aplicar.ts) ya lanzaba antes con
+la lectura caída, y el `catch` ya deshacía la aprobación (`revertir()`); B1 solo la hizo `LecturaFallida`, y el
+escáner la ve. Opciones: (a) a la lista con destino B2, (b) leer la familia antes de aprobar en B1, (c) volver
+al `Error` desnudo. Jose, literal:
+
+«La (a). El comportamiento no cambia —ya lanzaba antes y el catch ya deshacía la aprobación—, así que no hay
+defecto nuevo: lo único que ha cambiado es que el escáner ahora lo ve. La (b) traería a B1 justo el flujo que
+decidimos tratar con diseño en B2, y la (c) es esconderlo, que es lo que no hacemos.
+
+Y el matiz de la norma, que es mío y lo aclaro: «la lista solo puede encoger» iba contra acumular excusas, no
+contra anotar un pendiente trazado. Una entrada con su PR DESTINO nombrado y su fecha no es una excusa, es un
+pendiente con dueño. Lo que no puede entrar nunca es una entrada sin destino ni fecha. Escríbelo así en la
+propia lista, para que el que venga detrás sepa cuál es la diferencia.
+Y en el cuerpo del PR que quede claro que esa entrada se va con B2, y que B2 la vacía.
+
+Y LO DEL EXPORT ES OTRO CASO DE LA REGLA, el tercero en dos días: tu arreglo dejaba a una persona sin su copia
+entera del art. 15 porque faltaba un fichero. Un dato que no está no puede impedir entregar todos los demás.»
+
+Hecho: la norma va en la propia lista (`_norma` en `scripts/ci/cadena-tras-escritura.lista.json`) y el escáner
+la hace cumplir: cada entrada es de una clase ya explicada (falso positivo, tratado, fichero huérfano) o un
+pendiente con `Destino: PR <x> · <AAAA-MM-DD>`; una entrada sin eso pone la CI roja.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).

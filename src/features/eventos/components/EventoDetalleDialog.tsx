@@ -129,6 +129,12 @@ export function EventoDetalleDialog({
           )}
           {evento.descripcion && <p className="whitespace-pre-wrap">{evento.descripcion}</p>}
 
+          {/* Censo C (139): sin saber de qué niños es tutor legal, no se esconde el bloque: se dice. */}
+          {esFamilia && evento.requiere_confirmacion && !detalle.confirmaciones_leidas && (
+            <p className="text-muted-foreground border-border rounded-lg border p-3">
+              {t('detalle.confirmaciones_no_leidas')}
+            </p>
+          )}
           {conConfirmaciones && (
             <div className="border-border space-y-2 rounded-lg border p-3">
               <p className="font-medium">{t('detalle.confirmaciones')}</p>

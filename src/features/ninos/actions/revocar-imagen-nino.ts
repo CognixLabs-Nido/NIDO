@@ -44,20 +44,24 @@ export async function revocarImagenNino(
   if (!user) return fail('nino.imagen.errors.no_autorizado')
 
   // Ficha visible por RLS → centro (para el gate de admin) + foto_url (para borrar el blob).
-  const { data: nino } = await supabase
+  const { data: nino, error: errNino } = await supabase
     .from('ninos')
     .select('id, centro_id, foto_url')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
+  // Censo C: una lectura caída no es «no autorizado».
+  if (errNino) return fail('common.lectura_fallida')
   if (!nino) return fail('nino.imagen.errors.no_autorizado')
 
   // Dirección del centro del niño o tutor legal de ESE niño. El gate evita el estado parcial
   // de quien no puede (consent sin revocar pero perfil borrado, o al revés).
-  const [{ data: esAdmin }, { data: esTutorLegal }] = await Promise.all([
-    supabase.rpc('es_admin', { p_centro_id: nino.centro_id }),
-    supabase.rpc('es_tutor_legal_de', { p_nino_id: ninoId }),
-  ])
+  const [{ data: esAdmin, error: errAdmin }, { data: esTutorLegal, error: errTutor }] =
+    await Promise.all([
+      supabase.rpc('es_admin', { p_centro_id: nino.centro_id }),
+      supabase.rpc('es_tutor_legal_de', { p_nino_id: ninoId }),
+    ])
+  if (errAdmin || errTutor) return fail('common.lectura_fallida')
   if (!esAdmin && !esTutorLegal) return fail('nino.imagen.errors.no_autorizado')
 
   // (a) Revocar el consent → el flag baja a false por el trigger derivador → ocultación

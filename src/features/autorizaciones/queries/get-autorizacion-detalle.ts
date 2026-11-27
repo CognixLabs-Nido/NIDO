@@ -272,7 +272,11 @@ async function construirRoster(
   politicaAut: PoliticaFirmantes,
   ninoIds: string[]
 ): Promise<RosterFirmaNino[]> {
-  const [{ data: ninos }, { data: vinculos }, { data: firmas }] = await Promise.all([
+  const [
+    { data: ninos, error: errNinos },
+    { data: vinculos, error: errVinculos },
+    { data: firmas, error: errFirmas },
+  ] = await Promise.all([
     supabase
       .from('ninos')
       .select('id, nombre, apellidos, requiere_ambos_firmantes')
@@ -289,15 +293,18 @@ async function construirRoster(
       .eq('autorizacion_id', autorizacionId)
       .in('nino_id', ninoIds),
   ])
+  const errRoster = errNinos ?? errVinculos ?? errFirmas
+  if (errRoster) throw new LecturaFallida('construirRoster', errRoster)
 
   // Nombres de los firmantes (puede no resolverse por RLS → fallback en UI).
   const firmanteIds = Array.from(new Set((vinculos ?? []).map((v) => v.usuario_id)))
   const nombrePorUsuario = new Map<string, string>()
   if (firmanteIds.length) {
-    const { data: us } = await supabase
+    const { data: us, error: errUs } = await supabase
       .from('usuarios')
       .select('id, nombre_completo')
       .in('id', firmanteIds)
+    if (errUs) throw new LecturaFallida('construirRoster: nombres', errUs)
     for (const u of us ?? []) nombrePorUsuario.set(u.id, u.nombre_completo)
   }
 
@@ -325,7 +332,9 @@ async function construirRoster(
       .eq('tipo', 'imagen')
       .is('revocado_en', null)
       .in('nino_id', ninoIds)
-    if (errConsents) logger.warn('construirRoster: consentimientos imagen', errConsents.message)
+    // Sin leerlos, el panel diría que nadie ha consentido.
+    if (errConsents)
+      throw new LecturaFallida('construirRoster: consentimientos imagen', errConsents)
     for (const c of consents ?? []) {
       if (!c.nino_id) continue
       const set = consentidoresPorNino.get(c.nino_id) ?? new Set<string>()
