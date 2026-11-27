@@ -94,9 +94,7 @@ END
 $function$;
 REVOKE ALL ON FUNCTION privado.cambios_pendientes_nace_limpio() FROM PUBLIC, anon, authenticated, service_role;
 
-CREATE TRIGGER cambios_pendientes_nace_limpio
-  BEFORE INSERT ON public.cambios_pendientes
-  FOR EACH ROW EXECUTE FUNCTION privado.cambios_pendientes_nace_limpio();
+-- MUTACIÓN M4: sin el trigger
 
 -- ---- Reservar ----
 -- Devuelve {"estado": "reservado", "fila": {...}} | {"estado": "aplicandose", "desde": ...} |
@@ -165,10 +163,7 @@ BEGIN
      AND is_nullable = 'YES';
   IF n <> 4 THEN RAISE EXCEPTION 'guarda posterior: columnas nuevas %, esperadas 4', n; END IF;
 
-  SELECT count(*) INTO n FROM pg_trigger
-   WHERE tgrelid = 'public.cambios_pendientes'::regclass AND tgname = 'cambios_pendientes_nace_limpio'
-     AND NOT tgisinternal AND tgenabled = 'O';
-  IF n <> 1 THEN RAISE EXCEPTION 'guarda posterior: falta el trigger nace_limpio'; END IF;
+  -- MUTACIÓN M4: sin la guarda del trigger (si no, la migración no aplica y no se mide nada)
 
   -- Las dos funciones: INVOKER (la RLS de quien llama), solo authenticated, nada para anon ni PUBLIC.
   SELECT count(*) INTO n FROM pg_proc
