@@ -374,6 +374,28 @@ describe('después de validar, lo que es prueba no cambia sin Dirección', () =>
     ).toBe('aprobado')
   })
 
+  // B2 (2026-11-27, medido antes de construir): ¿reaplicar el mandato es inofensivo? El test de arriba ya mide
+  // que la base decide el mandato Y marca la entrada de la cola en la MISMA llamada (la entrada estaba
+  // 'pendiente' y sale 'aprobado'): aplicado y sin marcar no puede pasar. Esto mide la segunda vez.
+  it('B2 · reaplicar el mandato ya aprobado: la base dice no_propuesto y no cambia nada', async () => {
+    const estados = () =>
+      comoPostgres(
+        `SELECT string_agg(estado::text, ',' ORDER BY created_at, id) FROM public.mandatos_sepa WHERE familia_id = '${F}'`
+      )
+    const antes = estados()
+    const r = await s.D.rpc('decidir_mandato_propuesto', {
+      p_mandato_id: propuesto,
+      p_aprobar: true,
+    })
+    expect(r.error?.hint).toBe('no_propuesto')
+    expect(estados()).toBe(antes)
+    expect(
+      comoPostgres(
+        `SELECT estado FROM public.cambios_pendientes WHERE registro_id = '${propuesto}'`
+      )
+    ).toBe('aprobado')
+  })
+
   it('8 · otra propuesta, y Dirección la rechaza: queda rechazada y el activo sigue', async () => {
     const r = await firmarV3(
       s.T,
