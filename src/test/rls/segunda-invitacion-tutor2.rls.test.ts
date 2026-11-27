@@ -191,6 +191,10 @@ describe('la segunda invitación al segundo tutor, con una pendiente (medido ant
       cuentas1: cuentas1.length,
       cuentas2: cuentas2.length,
       mismaCuenta: cuentas1[0] === cuentas2[0],
+      // El instrumento a la vista: los dos enlaces, con el token de la fila cambiado por <TOKEN>
+      // (si el regex no casa, sale «(sin enlace)»).
+      enlaces: hrefs2.map((h) => h.split(inv2[0]?.token ?? '\u0000').join('<TOKEN>')),
+      mismoEnlace: hrefs2.length === 2 && hrefs2[0] === hrefs2[1],
     }
     console.warn('segunda invitación:', JSON.stringify(medido))
 
@@ -212,6 +216,7 @@ describe('la segunda invitación al segundo tutor, con una pendiente (medido ant
       cuentas1: 1,
       cuentas2: 1,
       mismaCuenta: true,
+      mismoEnlace: true,
     })
   }, 60_000)
 })
