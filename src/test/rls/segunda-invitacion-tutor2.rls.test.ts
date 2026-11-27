@@ -90,8 +90,9 @@ async function esperarCorreos(para: string, n: number): Promise<string[]> {
 
 /**
  * B2 (2026-11-27, Jose: «Mide antes lo que haces con la segunda invitación sobre una pendiente»).
- * Con el email de antes guardado en la fila al reclamarla, un reintento de la cola puede invitar
- * otra vez a un segundo tutor que ya tiene una invitación abierta. Lo que se mide: si esa segunda
+ * Con la decisión de invitar guardada en la fila al reclamarla (`invita_tutor2`, que sustituye el
+ * 2026-11-27 al email de antes), un reintento de la cola puede invitar otra vez a un segundo tutor
+ * que ya tiene una invitación abierta. Lo que se mide: si esa segunda
  * invitación invalida la primera o rompe algo. Por el camino de la cola (`invitarTutor2`), contra el
  * GoTrue y el buzón del CI. Fixtures ficticios.
  */
