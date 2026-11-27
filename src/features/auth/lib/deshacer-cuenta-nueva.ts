@@ -40,9 +40,7 @@ export async function deshacerCuentaNueva(
   const roles = await Promise.resolve(retirarRolesDeCuentaNueva(service, usuarioId)).catch(
     (e: unknown) => ({ error: { message: e instanceof Error ? e.message : 'lanzó' } })
   )
-  const bloqueo = await service.auth.admin
-    .updateUserById(usuarioId, { ban_duration: BLOQUEO })
-    .catch((e: unknown) => ({ error: { message: e instanceof Error ? e.message : 'lanzó' } }))
+  const bloqueo = { error: null as null | { message: string } } // MUTACIÓN M3: sin bloqueo
 
   const queda: CuentaDeshecha = bloqueo.error ? 'a_medias' : 'bloqueada'
   logger.error(`cuenta nueva sin deshacer (${donde})`, {
