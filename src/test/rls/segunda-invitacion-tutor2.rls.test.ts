@@ -43,6 +43,11 @@ vi.mock('@/shared/lib/correo/enviar-correo', () => ({
   },
 }))
 
+// El GoTrue del CI solo acepta `127.0.0.1:3000` como destino (config.toml): con el `localhost` por
+// defecto de `getAppUrl` cambia el enlace por su `site_url` pelado y el correo no lleva el token
+// (medido, run 45977463781). Se fija el de la lista para que el enlace del correo se pueda leer.
+vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://127.0.0.1:3000')
+
 const { invitarTutor2 } = await import('@/features/matriculas/lib/invitacion-tutor2')
 
 const BUZON = process.env.MAILPIT_URL ?? process.env.INBUCKET_URL
