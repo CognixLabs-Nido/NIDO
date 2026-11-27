@@ -36,7 +36,9 @@ describe('el export no dice «no accesible con tu rol» cuando la ficha médica 
     nino = await createTestNino(centro.id)
     tutor = await createTestUser({ nombre: 'Tutor Export Ficha' })
     await asignarRol(tutor.id, centro.id, 'tutor_legal')
-    await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal')
+    // Con el permiso de la ficha médica: sin él la base la niega y la nota «no accesible» es VERDAD (lo midió
+    // la primera corrida, run 45967108427: el control salía rojo con un vínculo sin permisos).
+    await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal', { puede_ver_info_medica: true })
   }, 90_000)
 
   afterAll(async () => {
