@@ -717,6 +717,48 @@ Adelante con la migración y el resto de B2.»
 La 4.ª columna aprobada el 2026-11-27 («la del email de antes») queda **sustituida el 2026-11-27 por**
 `invita_tutor2 boolean` (decisión de arriba).
 
+### 2026-11-27 · B2: las mutaciones, una sonda por mutación salvo que se demuestre (Jose, literal)
+
+Propuesta: cinco mutaciones (M1 la decisión de invitar recalculada en el reintento, M2 el deduplicado sin mirar
+su error, M3 deshacer la cuenta sin bloquearla, M4 la migración sin el trigger `nace_limpio`, M5 `maxDuration`
+200), M1-M4 juntas en una corrida porque cada una enrojece un test distinto. Jose, literal:
+
+«El plan está bien pensado y las cinco mutaciones son las correctas. Pero juntar cuatro en una corrida es justo lo
+que la regla «una sonda, una mutación» prohíbe, y la has escrito tú después de que nos pasara cuatro veces.
+Que enrojezcan tests DISTINTOS no basta: lo que nos tumbó aquellas veces fue el arrastre, un test que cae por el
+estado que dejó otro, o una mutación que mata un fichero antes de que llegue el aserto de la siguiente. Compruébalo
+y dímelo: que las cuatro no comparten niño, ni familia, ni fichero, ni orden. Si lo puedes demostrar, van juntas y
+nos ahorramos tres corridas; si no, van separadas, que es lo que acordamos.
+Y en la predicción de cada una, la línea que esperas que caiga, no solo el test.
+
+Lo demás, adelante. M4 con la migración sin el trigger es la que me importa más: una columna que no nace limpia es
+la clase de cosa que no se nota hasta que alguien la lee.»
+
+### 2026-11-28 · B2: las cuatro columnas de la reserva no salen en el export (decisión del usuario, literal; para el abogado en F11-B)
+
+La guarda del catálogo del export (`columnas-export.test.ts`: un «no sale» no puede decir «pendiente» ni «por
+decidir», y una columna nueva no entra como `porDecidir`) se puso roja con la propuesta del 2026-11-27. Decisión,
+literal (no es de Jose: «No se lo preguntes a Jose»):
+
+«Decisión mía, con fecha de hoy, y anotada para que el abogado la revise en F11-B. No se lo preguntes a Jose: «¿sale
+aplicando_desde en la exportación del art. 15?» no es una pregunta que pueda contestar, y la guarda está para que
+nadie la deje sin decidir, no para obligar a que la decida él.
+
+Las cuatro van como NO SALE, con este motivo escrito en el catálogo:
+
+- aplicando_desde: marca técnica de que el proceso está en curso. No describe a la familia ni a su hijo, describe el
+  estado de una ejecución nuestra.
+- fallo_aplicar_at y fallo_aplicar_motivo: cuándo y con qué código falló nuestro propio proceso. El interesado tiene
+  derecho a saber qué pasa con su solicitud, y eso ya lo tiene: la ve pendiente en la app, con el aviso de que no se
+  pudo aplicar. Un código de error interno no le añade nada y no es un dato suyo.
+- invita_tutor2: una decisión interna nuestra, booleana, sobre si hay que enviar una invitación. Lo que sí es su dato
+  —el email del segundo tutor— ya sale por su propia columna, que es justo por lo que elegimos el booleano en vez de
+  guardar el email.
+
+Y que el catálogo lo diga con esas palabras, no con «pendiente»: el criterio es que una columna que describe el
+estado de nuestro proceso no es un dato del interesado, y una que describe a la familia o al niño sí. Ese criterio
+sirve para la siguiente columna que alguien añada.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).

@@ -486,11 +486,38 @@ email_que_se_queda)`, solo `service_role`. La app comprueba la sesión (`usuario
   validado, con invitación o sin ella, y lee `vinculos_familiares` (`es_admin` del centro del niño).
 - **La cola invita al segundo tutor** (sin migración, 2026-11-04): `aprobarCambio` lee su email
   antes de aplicar y, si es nuevo y el alta está validada, le invita con el núcleo del botón
-  (`invitarTutor2`), con la sesión de la directora que aprueba. La limpieza recorre todos los
+  (`invitarTutor2`), con la sesión de la directora que aprueba. Desde B2 (`20270209120000`) la
+  decisión se guarda en la fila (`invita_tutor2`) al reservar el cambio la primera vez, y un reintento
+  la lee en vez de recalcularla; la invitación va antes de marcar 'aprobado' (ver «La cola no saca un
+  cambio que no se aplicó»). La limpieza recorre todos los
   hermanos: `cancelar_invitacion_tutor2` una vez por niño, y la base vuelve a mirar quién actúa en
   cada llamada.
 - Test: `src/test/audit/altas-sin-terminar.test.ts`, `src/test/rls/altas-en-proceso.rls.test.ts`,
   `src/test/rls/invitacion-tutor2.rls.test.ts` y `src/test/rls/cola-invita-tutor2.rls.test.ts`.
+
+### La cola no saca un cambio que no se aplicó (censo C, B2)
+
+Migración `20270209120000_fix_cola_no_sale_sin_aplicar`; spec `docs/specs/fallos-leidos-c.md`, «B2…».
+«Un cambio NUNCA sale de la cola si no se aplicó» (Jose, 2026-11-26).
+
+- **La reserva:** `reclamar_cambio_pendiente(cambio)` (SECURITY INVOKER, `EXECUTE` solo para
+  `authenticated`): con la RLS de siempre (`cambios_pendientes_update`, `es_admin`), pone
+  `aplicando_desde` sin sacar la fila de 'pendiente'. Vale 2 minutos contra el `now()` de la base
+  (60 s de `maxDuration` de la página de pendientes, más 8 s del `statement_timeout` de
+  `authenticated`, más margen; lo vigila `src/test/guards/reserva-cola.test.ts`). Con otra vigente
+  contesta `aplicandose`; a una fila que no ve, `no_pendiente`.
+- **El fallo:** `marcar_fallo_cambio_pendiente(cambio, desde, motivo)` deja, en una escritura y solo
+  sobre la reserva propia, `fallo_aplicar_at` y `fallo_aplicar_motivo` (un código,
+  `^[a-z_]{1,60}$`) y quita la reserva. Si esa escritura falla también, la fila sigue pendiente y
+  reservada, y a los 2 minutos se puede volver a aprobar.
+- **Las cuatro columnas nacen vacías**, inserte quien inserte (`privado.cambios_pendientes_nace_limpio`):
+  la política de INSERT del tutor no mira columnas.
+- **El export art. 15 no las saca** (decisión del 2026-11-28, para F11-B): describen el estado de
+  nuestro proceso, no a la familia ni al niño.
+- Medido en producción el 2026-11-27 (ensayo terminado en RAISE, LF y CRLF iguales; aplicada dos
+  veces, salta la guarda previa).
+- Tests: `aprobar-cambio-doble-fallo.rls.test.ts`, `cola-invita-tutor2.rls.test.ts`,
+  `aplicar-cambio-dos-veces.rls.test.ts` y `src/test/guards/reserva-cola.test.ts`.
 
 ### Los documentos del centro (serie de altas, fase 3, 3a)
 
