@@ -690,6 +690,33 @@ Y bien apuntado el fallo de predicción del tope del service role.
 
 Adelante con B2.»
 
+### 2026-11-27 · B2: el booleano, y el fallo de la invitación dentro (Jose, literal)
+
+Medido antes (run 45978678857, `segunda-invitacion-tutor2.rls.test.ts`, 274/274 ficheros): una segunda invitación al
+mismo email reutiliza la fila y el token, alarga la caducidad, reenvía el correo con el mismo enlace y no manda el
+aviso de «acéptala desde tu perfil»; una cuenta. Propuesta: en vez del email de antes, guardar la decisión
+(`invita_tutor2 boolean`). Leído sin medir: la lectura de deduplicado de `sendInvitation` descarta su error y, con
+ella caída, abriría una segunda invitación con otro token. Jose, literal:
+
+«1 · EL BOOLEANO, y tu razonamiento es el que lo decide: lo que el reintento necesita es la DECISIÓN, no el dato. Y
+encima evita meter un email en una tabla que la auditoría copia entera y la purga tendría que aprender a limpiar.
+Guardar un dato personal para resolver algo que resuelve un booleano es exactamente lo que no hacemos.
+invita_tutor2, vacío mientras no se ha decidido.
+
+2 · EL FALLO DE LA INVITACIÓN VA EN B2. Está en el camino que estás tocando, es pequeño, y dos enlaces vivos para el
+mismo tutor no es un detalle: son dos tokens válidos para entrar en la cuenta de una familia. Mídelo antes, que lo
+tienes leído, y ciérralo con el criterio de siempre: si no se pudo leer si ya había una invitación abierta, no se
+abre otra y se dice.
+
+Y bien contado lo del instrumento: que el GoTrue del CI cambiara el enlace por su dirección base es un efecto del CI
+y no de producción, y decirlo evita que alguien lea ese resultado como un fallo de la app. Lo mismo con los dos
+shards muertos en Docker antes de correr nada: eso no es un rojo, es que no midió.
+
+Adelante con la migración y el resto de B2.»
+
+La 4.ª columna aprobada el 2026-11-27 («la del email de antes») queda **sustituida el 2026-11-27 por**
+`invita_tutor2 boolean` (decisión de arriba).
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
