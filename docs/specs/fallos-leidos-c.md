@@ -609,6 +609,31 @@ Hecho: la norma va en la propia lista (`_norma` en `scripts/ci/cadena-tras-escri
 la hace cumplir: cada entrada es de una clase ya explicada (falso positivo, tratado, fichero huérfano) o un
 pendiente con `Destino: PR <x> · <AAAA-MM-DD>`; una entrada sin eso pone la CI roja.
 
+### 2026-11-27 · B2, y luego el grupo 1 (Jose, literal)
+
+«La 20270208120000 está aplicada y el #552 mergeado. Verifícala en producción, solo lectura y con control
+positivo.
+
+Y a por B2, que es corto y cierra lo que dejamos abierto de B1:
+
+- aprobarCambio: un cambio NUNCA sale de la cola si no se aplicó. Si aplicar falla, se queda pendiente; si
+  además falla el deshacer, se queda pendiente y marcado como «falló al aplicar», con lo que pasó, y Dirección
+  lo ve en su lista para reintentarlo. Ya tienes medido el doble fallo: hoy queda «aprobado», fuera de la cola
+  y sin forma de reintentarlo.
+- El rollback de la cuenta nueva: hoy un fallo al borrar los roles deja una cuenta que se va a borrar con roles
+  puestos.
+- Y con eso vacías las entradas de la lista de Cadena que tenían B2 como destino.
+
+Después, el grupo 1, que es lo irreversible y lo que de verdad importa de todo esto: las dos purgas, el export
+del art. 15, el pase de curso que da de baja a todos los niños del centro si falla una lectura, y el #549, el
+barrido de los ocho buckets que hace que un DNI huérfano no sobreviva a una solicitud de olvido.
+Mide abierto cada cosa antes de cerrarla y dime cuántos PRs te sale.»
+
+Verificada en producción el 2026-11-27 (solo lectura, `~/nido-logs/17/verif`): registrada (control: la
+anterior sí, una inventada no); el cuerpo vivo, con su md5 normalizado igual al del fichero (control con una
+letra cambiada: distinto); compara el total antes de confirmar; los permisos, como estaban; 4 recibos regulares
+vivos, ningún borrador, ninguno desfasado.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
