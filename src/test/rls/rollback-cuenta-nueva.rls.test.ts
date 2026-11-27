@@ -16,12 +16,14 @@ import {
 } from './setup'
 
 /**
- * MEDIDO ABIERTO (censo C, B2, decisión de Jose del 2026-11-27): «El rollback de la cuenta nueva: hoy un fallo
- * al borrar los roles deja una cuenta que se va a borrar con roles puestos». `acceptInvitationCore` crea la
- * cuenta, le da el rol y, si algo de después falla, la deshace: `retirarRolesDeCuentaNueva` (cuyo resultado se
- * tira) y `auth.admin.deleteUser` (con `.catch(() => {})`). Contra la base efímera de verdad; lo único simulado:
- * `registrar_consentimiento` contesta error (para entrar en el rollback) y, en el caso medido, el DELETE de
- * `roles_usuario`. Fixtures ficticios del 2026-11-27.
+ * B2 (censo C; decisiones de Jose del 2026-11-27). Medido abierto antes con este fichero (runs 45965561775 y
+ * 45966559012): «el fallo que abre el agujero no es el borrado de los roles, es el deleteUser tragado, y en
+ * los tres casos la acción responde "create_failed"… le dice a Dirección que la cuenta no se creó, y la
+ * cuenta existe, tiene rol de profe y puede entrar». Ahora (`deshacerCuentaNueva`): `deleteUser` primero y
+ * mirado; si falla, se retiran los roles (mirado) y se BLOQUEA la cuenta en Auth, y lo que quede a medias va
+ * a Sentry. «Bloquear la cuenta en Auth es la pieza que cierra el peor caso» (Jose). Contra la base efímera y
+ * el GoTrue del CI; lo único simulado: `registrar_consentimiento` contesta error (para entrar en el
+ * rollback), el DELETE de `roles_usuario` y `auth.admin.deleteUser`. Fixtures ficticios del 2026-11-27.
  */
 vi.mock('next/headers', () => ({
   headers: async () => new Headers(),
@@ -59,6 +61,9 @@ vi.mock('@/lib/supabase/admin', async (importOriginal) => {
 })
 
 const { acceptInvitationCore } = await import('@/features/auth/actions/accept-invitation')
+const { logger } = await import('@/shared/lib/logger')
+// Lo que va a Sentry (`logger.error`): se espía, sin cambiar lo que hace.
+const errores = vi.spyOn(logger, 'error')
 
 const PASS = 'Rollback-Cuenta-2026!'
 let centro: TestCentro
@@ -135,7 +140,7 @@ afterAll(async () => {
   await deleteTestCentro(centro.id)
 }, 90_000)
 
-describe('el rollback de la cuenta nueva: una cuenta que se deshace no se queda con roles (medido abierto)', () => {
+describe('el rollback de la cuenta nueva: una cuenta que se deshace no queda con la que entrar (B2)', () => {
   it('control: si solo falla el consentimiento, no queda cuenta, ni roles, ni entra', async () => {
     const inv = await invitar()
     fallos.fallaRpc = 'registrar_consentimiento'
@@ -153,7 +158,7 @@ describe('el rollback de la cuenta nueva: una cuenta que se deshace no se queda 
     })
   })
 
-  it('con el borrado de los roles fallando: lo que queda (los cuatro se miden)', async () => {
+  it('con el borrado de los roles fallando: deleteUser va primero y se lleva la cuenta y sus roles', async () => {
     const inv = await invitar()
     fallos.fallaRpc = 'registrar_consentimiento'
     fallos.fallaEscrituraTabla = 'roles_usuario'
@@ -161,57 +166,59 @@ describe('el rollback de la cuenta nueva: una cuenta que se deshace no se queda 
     const r = await aceptar(inv.token)
     fallos.fallaRpc = null
     fallos.fallaEscrituraTabla = null
-    expect(
-      fallos.fallidas,
-      'premisa: el consentimiento y el borrado fallaron'
-    ).toBeGreaterThanOrEqual(2)
-    const queda = await loQueQueda(inv)
-    expect.soft(r, 'lo que contesta la acción').toEqual({
-      success: false,
-      error: 'auth.invitation.errors.create_failed',
+    expect(fallos.fallidas, 'premisa: el consentimiento falló').toBeGreaterThan(0)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.create_failed' })
+    expect(await loQueQueda(inv)).toEqual({
+      cuentaAuth: false,
+      rolesVivos: 0,
+      entra: false,
+      aceptada: false,
     })
-    expect.soft(queda.rolesVivos, 'roles vivos de la cuenta deshecha').toBe(0)
-    expect.soft(queda.cuentaAuth, '¿sigue la cuenta de Auth?').toBe(false)
-    expect.soft(queda.entra, '¿entra con su contraseña?').toBe(false)
-    expect.soft(queda.aceptada, '¿la invitación quedó aceptada?').toBe(false)
-    // Para el informe: el estado entero, en el log.
-    console.warn('rollback con el borrado de roles fallando:', JSON.stringify({ r, queda }))
   })
 
-  it('si falla deleteUser (el borrado de roles va bien): lo que queda', async () => {
+  it('si falla deleteUser: la cuenta queda sin roles y BLOQUEADA (no entra), y Sentry lo sabe', async () => {
     const inv = await invitar()
     fallos.fallaRpc = 'registrar_consentimiento'
     authFalla.deleteUser = true
     fallos.fallidas = 0
+    errores.mockClear()
     const r = await aceptar(inv.token)
     fallos.fallaRpc = null
     authFalla.deleteUser = false
     expect(fallos.fallidas, 'premisa: el consentimiento falló').toBeGreaterThan(0)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.create_failed' })
     const queda = await loQueQueda(inv)
-    expect.soft(queda.rolesVivos, 'roles vivos de la cuenta deshecha').toBe(0)
-    expect.soft(queda.cuentaAuth, '¿sigue la cuenta de Auth?').toBe(false)
-    expect.soft(queda.entra, '¿entra con su contraseña?').toBe(false)
-    console.warn('rollback con deleteUser fallando:', JSON.stringify({ r, queda }))
+    // Premisa: deleteUser falló de verdad (la cuenta sigue en Auth).
+    expect(queda.cuentaAuth, '¿sigue la cuenta de Auth?').toBe(true)
+    expect(queda).toEqual({ cuentaAuth: true, rolesVivos: 0, entra: false, aceptada: false })
+    expect(errores).toHaveBeenCalledWith(
+      'cuenta nueva sin deshacer (accept: consentimiento)',
+      expect.objectContaining({ borrada: false, roles_retirados: true, bloqueada: true })
+    )
   })
 
-  it('si fallan los dos (el borrado de roles y deleteUser): lo que queda', async () => {
+  it('si fallan los dos (deleteUser y el borrado de roles): conserva el rol pero NO entra, y Sentry lo sabe', async () => {
     const inv = await invitar()
     fallos.fallaRpc = 'registrar_consentimiento'
     fallos.fallaEscrituraTabla = 'roles_usuario'
     authFalla.deleteUser = true
     fallos.fallidas = 0
+    errores.mockClear()
     const r = await aceptar(inv.token)
     fallos.fallaRpc = null
     fallos.fallaEscrituraTabla = null
     authFalla.deleteUser = false
     expect(
       fallos.fallidas,
-      'premisa: el consentimiento y el borrado fallaron'
+      'premisa: el consentimiento y el borrado de los roles fallaron'
     ).toBeGreaterThanOrEqual(2)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.create_failed' })
     const queda = await loQueQueda(inv)
-    expect.soft(queda.rolesVivos, 'roles vivos de la cuenta deshecha').toBe(0)
-    expect.soft(queda.cuentaAuth, '¿sigue la cuenta de Auth?').toBe(false)
-    expect.soft(queda.entra, '¿entra con su contraseña?').toBe(false)
-    console.warn('rollback con los dos fallando:', JSON.stringify({ r, queda }))
+    expect(queda.cuentaAuth, 'premisa: deleteUser falló (la cuenta sigue)').toBe(true)
+    expect(queda).toEqual({ cuentaAuth: true, rolesVivos: 1, entra: false, aceptada: false })
+    expect(errores).toHaveBeenCalledWith(
+      'cuenta nueva sin deshacer (accept: consentimiento)',
+      expect.objectContaining({ borrada: false, roles_retirados: false, bloqueada: true })
+    )
   })
 })

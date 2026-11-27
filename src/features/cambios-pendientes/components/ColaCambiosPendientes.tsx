@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 import { CheckIcon, FileTextIcon, XIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useFormatter, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -12,7 +14,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { safeTranslateError } from '@/shared/lib/safe-translate'
 
 import { aprobarCambio, rechazarCambio } from '../actions/decidir'
-import type { CambioPendienteItem, LineaCambio } from '../queries/get-cola'
+import type { CambioPendienteItem, IntentoAplicar, LineaCambio } from '../queries/get-cola'
 
 interface Props {
   items: CambioPendienteItem[]
@@ -36,6 +38,32 @@ export function ColaCambiosPendientes({ items }: Props) {
   const tPet = useTranslations('peticion_servicios')
   const tGastos = useTranslations('gastos_gestion')
   const tErrors = useTranslations()
+  const format = useFormatter()
+  const router = useRouter()
+
+  // B2 (2026-11-27): lo que pasó con el último intento de aplicarlo. La entrada sigue en la cola en los
+  // tres casos. «No consta que se haya aplicado» dice la verdad sin afirmar lo que no se sabe (Jose).
+  const MOTIVOS = [
+    'lectura_tutor2',
+    'decision_tutor2',
+    'aplicar',
+    'ruta_invalida',
+    'rechazar_mandato',
+  ]
+  function textoIntento(i: IntentoAplicar): string {
+    if (i.tipo === 'aplicandose')
+      return t('intento.aplicandose', {
+        hora: format.dateTime(new Date(i.desde), {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Europe/Madrid',
+        }),
+      })
+    if (i.tipo === 'sin_constancia') return t('intento.sin_constancia')
+    return t('intento.fallo', {
+      motivo: t(`intento.motivo.${MOTIVOS.includes(i.motivo) ? i.motivo : 'otro'}`),
+    })
+  }
 
   function valor(l: LineaCambio, v: string | null, lado: 'antes' | 'despues') {
     if (l.campo === 'documento')
@@ -57,7 +85,9 @@ export function ColaCambiosPendientes({ items }: Props) {
     }
     return v
   }
-  const [filas, setFilas] = useState(items)
+  // Las decididas se quitan aquí; el resto sale de `items`, que se relee tras un fallo (`router.refresh`).
+  const [decididas, setDecididas] = useState<ReadonlySet<string>>(new Set())
+  const filas = items.filter((f) => !decididas.has(f.id))
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
@@ -68,9 +98,11 @@ export function ColaCambiosPendientes({ items }: Props) {
       setPendingId(null)
       if (!r.success) {
         toast.error(safeTranslateError(tErrors, r.error))
+        // La entrada sigue en la cola: se relee para enseñar qué pasó (falló, o se está aplicando).
+        router.refresh()
         return
       }
-      setFilas((prev) => prev.filter((f) => f.id !== id))
+      setDecididas((prev) => new Set(prev).add(id))
       if (accion === 'rechazar') toast.success(t('rechazado'))
       else if ('tutor2' in r.data && r.data.tutor2 === 'no_salio')
         toast.warning(t('aprobado_tutor2_no_salio'))
@@ -121,6 +153,15 @@ export function ColaCambiosPendientes({ items }: Props) {
                     ))}
                   </dl>
                 )}
+                {f.intento && (
+                  <p
+                    className="text-accent-warm-800 text-xs"
+                    data-testid={`intento-${f.id}`}
+                    role="status"
+                  >
+                    {textoIntento(f.intento)}
+                  </p>
+                )}
                 <p className="text-muted-foreground text-xs">
                   {t('solicitado_por', { nombre: f.solicitante || t('solicitante_desconocido') })}
                 </p>
@@ -130,7 +171,7 @@ export function ColaCambiosPendientes({ items }: Props) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={pendingId === f.id}
+                  disabled={pendingId === f.id || f.intento?.tipo === 'aplicandose'}
                   onClick={() => decidir(f.id, 'rechazar')}
                   data-testid={`rechazar-${f.id}`}
                 >
@@ -140,7 +181,7 @@ export function ColaCambiosPendientes({ items }: Props) {
                 <Button
                   type="button"
                   size="sm"
-                  disabled={pendingId === f.id}
+                  disabled={pendingId === f.id || f.intento?.tipo === 'aplicandose'}
                   onClick={() => decidir(f.id, 'aprobar')}
                   data-testid={`aprobar-${f.id}`}
                 >

@@ -34,6 +34,40 @@ export interface CambioPendienteItem {
    * un «antes» que no es.
    */
   lineas: LineaCambio[] | null
+  /**
+   * Qué pasó con el último intento de aplicarlo (B2, 2026-11-27). La fila sigue en la cola en los tres
+   * casos: `aplicandose` (otra aprobación lo está aplicando; los botones esperan), `sin_constancia` (se
+   * reservó hace más de 2 minutos y no consta el resultado: se puede volver a aprobar) y `fallo` (no se
+   * pudo aplicar, con su motivo). La reserva la decide la base contra su `now()`; aquí el corte de los 2
+   * minutos es solo para enseñarlo, con el reloj del servidor.
+   */
+  intento: IntentoAplicar | null
+}
+
+export type IntentoAplicar =
+  | { tipo: 'aplicandose'; desde: string }
+  | { tipo: 'sin_constancia'; desde: string }
+  | { tipo: 'fallo'; at: string; motivo: string }
+
+/** Lo que vale una reserva (`reclamar_cambio_pendiente`, 20270209120000). */
+export const RESERVA_MS = 2 * 60 * 1000
+
+function intentoDe(
+  r: {
+    aplicando_desde: string | null
+    fallo_aplicar_at: string | null
+    fallo_aplicar_motivo: string | null
+  },
+  ahora: number
+): IntentoAplicar | null {
+  if (r.aplicando_desde) {
+    return ahora - Date.parse(r.aplicando_desde) < RESERVA_MS
+      ? { tipo: 'aplicandose', desde: r.aplicando_desde }
+      : { tipo: 'sin_constancia', desde: r.aplicando_desde }
+  }
+  if (r.fallo_aplicar_at && r.fallo_aplicar_motivo)
+    return { tipo: 'fallo', at: r.fallo_aplicar_at, motivo: r.fallo_aplicar_motivo }
+  return null
 }
 
 // La identidad sale de la tabla; el DNI, la dirección, el estado civil y el libro de familia son de
@@ -88,7 +122,7 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
   const { data, error } = await supabase
     .from('cambios_pendientes')
     .select(
-      'id, entidad, nino_id, payload, created_at, nino:ninos(nombre), solicitante:usuarios!cambios_pendientes_solicitado_por_fkey(nombre_completo)'
+      'id, entidad, nino_id, payload, created_at, aplicando_desde, fallo_aplicar_at, fallo_aplicar_motivo, nino:ninos(nombre), solicitante:usuarios!cambios_pendientes_solicitado_por_fkey(nombre_completo)'
     )
     .eq('centro_id', centroId)
     .eq('estado', 'pendiente')
@@ -175,6 +209,7 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
     filas.filter((r) => r.entidad === 'mandato_sepa')
   )
 
+  const ahora = Date.now()
   return filas.map((r) => {
     const entidad = r.entidad as EntidadCambio
     const payload = (r.payload && typeof r.payload === 'object' ? r.payload : {}) as Fila
@@ -213,6 +248,7 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       ninoNombre: r.nino?.nombre ?? '',
       solicitante: r.solicitante?.nombre_completo ?? '',
       createdAt: r.created_at,
+      intento: intentoDe(r, ahora),
       lineas,
     }
   })

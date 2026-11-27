@@ -1268,7 +1268,22 @@
         "decidir": "No se pudo procesar la decisión. Inténtalo de nuevo.",
         "no_pendiente": "Este cambio ya no está pendiente.",
         "aplicar": "No se pudo aplicar el cambio. Se ha dejado pendiente para reintentar.",
-        "ruta_invalida": "El documento no corresponde a este niño; no se ha aplicado. Recházalo para cerrarlo."
+        "ruta_invalida": "El documento no corresponde a este niño; no se ha aplicado. Recházalo para cerrarlo.",
+        "aplicandose": "Este cambio se está aplicando ahora mismo. Espera un momento y vuelve a mirar.",
+        "aplicado_sin_cerrar": "El cambio se ha aplicado, pero no se ha podido cerrar en la cola. Seguirá aquí; puedes volver a aprobarlo sin riesgo."
+      },
+      "intento": {
+        "aplicandose": "Se está aplicando desde las {hora}.",
+        "sin_constancia": "No consta que se haya aplicado. Puedes volver a aprobarlo.",
+        "fallo": "No se pudo aplicar: {motivo}",
+        "motivo": {
+          "lectura_tutor2": "no se pudieron leer los datos del segundo tutor.",
+          "decision_tutor2": "no se pudo guardar si hay que invitar al segundo tutor.",
+          "aplicar": "no se pudo escribir el cambio.",
+          "ruta_invalida": "el documento no corresponde a este niño.",
+          "rechazar_mandato": "no se pudo rechazar el mandato.",
+          "otro": "motivo no reconocido."
+        }
       }
     },
     "familias": {

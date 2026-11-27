@@ -79,6 +79,28 @@ export async function sendInvitation(
       if (!aula) return fail('auth.invitation.errors.forbidden')
     }
 
+    // Deduplicar: si existe invitación pendiente con mismo email + centro + rol + niño,
+    // actualizar. El `nino_id` ES parte de la clave (alta tutor-driven): un mismo tutor
+    // puede tener invitaciones abiertas para DOS niños distintos a la vez — sin acotar por
+    // niño, la 2.ª invitación clobbearía el `nino_id` de la 1.ª (esqueleto huérfano).
+    let dedupeQuery = service
+      .from('invitaciones')
+      .select('id')
+      .eq('email', parsed.data.email)
+      .eq('centro_id', parsed.data.centroId)
+      .eq('rol_objetivo', parsed.data.rolObjetivo)
+      .is('accepted_at', null)
+      .is('rejected_at', null)
+    dedupeQuery = parsed.data.ninoId
+      ? dedupeQuery.eq('nino_id', parsed.data.ninoId)
+      : dedupeQuery.is('nino_id', null)
+    // B2 (2026-11-27, Jose): si no se pudo leer si ya había una invitación abierta, no se abre otra y se
+    // dice. Leída como «no hay», abría una segunda con otro token: dos enlaces vivos para entrar en la
+    // cuenta de una familia (medido abierto, `invitacion-dedupe-caida.rls.test.ts`). Va antes de todo lo
+    // que pueda escribir: así «no se pudo leer» no deja nada hecho.
+    const { data: existing, error: errorDedupe } = await dedupeQuery.limit(1).maybeSingle()
+    if (errorDedupe) return fail('common.lectura_fallida')
+
     // Una profe de baja temporal no se vuelve a invitar: Dirección la reactiva desde Personal. Es
     // un aviso para quien invita; la puerta es la aceptación, que lo vuelve a mirar (si esta
     // lectura falla, se sigue).
@@ -112,23 +134,6 @@ export async function sendInvitation(
         : parsed.data.rolObjetivo === 'autorizado'
           ? 'autorizado'
           : null
-
-    // Deduplicar: si existe invitación pendiente con mismo email + centro + rol + niño,
-    // actualizar. El `nino_id` ES parte de la clave (alta tutor-driven): un mismo tutor
-    // puede tener invitaciones abiertas para DOS niños distintos a la vez — sin acotar por
-    // niño, la 2.ª invitación clobbearía el `nino_id` de la 1.ª (esqueleto huérfano).
-    let dedupeQuery = service
-      .from('invitaciones')
-      .select('id')
-      .eq('email', parsed.data.email)
-      .eq('centro_id', parsed.data.centroId)
-      .eq('rol_objetivo', parsed.data.rolObjetivo)
-      .is('accepted_at', null)
-      .is('rejected_at', null)
-    dedupeQuery = parsed.data.ninoId
-      ? dedupeQuery.eq('nino_id', parsed.data.ninoId)
-      : dedupeQuery.is('nino_id', null)
-    const { data: existing } = await dedupeQuery.limit(1).maybeSingle()
 
     let invitationId: string
     if (existing) {

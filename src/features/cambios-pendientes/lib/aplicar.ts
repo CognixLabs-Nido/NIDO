@@ -190,7 +190,7 @@ export async function aplicarCambioPendiente(
   if (entidad === 'peticion_servicios') {
     // Fase 8b: guarda las respuestas y cambia lo que se cobra, con la sesión de la directora. La
     // base vuelve a mirar quién (Dirección del centro), que el alta esté validada y que cada opción
-    // se siga ofreciendo; un fallo lanza y la aprobación vuelve a pendiente.
+    // se siga ofreciendo; un fallo lanza y el cambio sigue pendiente, «falló al aplicar» (B2).
     const { respuestas } = payloadPeticionServiciosSchema.parse(row.payload)
     const { error } = await db.rpc('aplicar_peticion_servicios', {
       p_nino_id: row.nino_id,

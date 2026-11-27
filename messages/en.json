@@ -1268,7 +1268,22 @@
         "decidir": "The decision could not be processed. Please try again.",
         "no_pendiente": "This change is no longer pending.",
         "aplicar": "The change could not be applied. It has been left pending for retry.",
-        "ruta_invalida": "The document does not belong to this child; it has not been applied. Reject it to close it."
+        "ruta_invalida": "The document does not belong to this child; it has not been applied. Reject it to close it.",
+        "aplicandose": "This change is being applied right now. Wait a moment and check again.",
+        "aplicado_sin_cerrar": "The change has been applied, but it could not be closed in the queue. It will stay here; you can approve it again safely."
+      },
+      "intento": {
+        "aplicandose": "Being applied since {hora}.",
+        "sin_constancia": "There is no record that it was applied. You can approve it again.",
+        "fallo": "It could not be applied: {motivo}",
+        "motivo": {
+          "lectura_tutor2": "the second guardian’s details could not be read.",
+          "decision_tutor2": "whether to invite the second guardian could not be saved.",
+          "aplicar": "the change could not be written.",
+          "ruta_invalida": "the document does not belong to this child.",
+          "rechazar_mandato": "the mandate could not be rejected.",
+          "otro": "unrecognised reason."
+        }
       }
     },
     "familias": {

@@ -1125,13 +1125,17 @@ export type Database = {
       }
       cambios_pendientes: {
         Row: {
+          aplicando_desde: string | null
           campo: string | null
           centro_id: string
           created_at: string
           decided_at: string | null
           entidad: string
           estado: Database["public"]["Enums"]["estado_cambio_pendiente"]
+          fallo_aplicar_at: string | null
+          fallo_aplicar_motivo: string | null
           id: string
+          invita_tutor2: boolean | null
           nino_id: string
           payload: Json | null
           registro_id: string
@@ -1140,13 +1144,17 @@ export type Database = {
           valor_propuesto: Json | null
         }
         Insert: {
+          aplicando_desde?: string | null
           campo?: string | null
           centro_id: string
           created_at?: string
           decided_at?: string | null
           entidad: string
           estado?: Database["public"]["Enums"]["estado_cambio_pendiente"]
+          fallo_aplicar_at?: string | null
+          fallo_aplicar_motivo?: string | null
           id?: string
+          invita_tutor2?: boolean | null
           nino_id: string
           payload?: Json | null
           registro_id: string
@@ -1155,13 +1163,17 @@ export type Database = {
           valor_propuesto?: Json | null
         }
         Update: {
+          aplicando_desde?: string | null
           campo?: string | null
           centro_id?: string
           created_at?: string
           decided_at?: string | null
           entidad?: string
           estado?: Database["public"]["Enums"]["estado_cambio_pendiente"]
+          fallo_aplicar_at?: string | null
+          fallo_aplicar_motivo?: string | null
           id?: string
+          invita_tutor2?: boolean | null
           nino_id?: string
           payload?: Json | null
           registro_id?: string
@@ -6192,6 +6204,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      marcar_fallo_cambio_pendiente: {
+        Args: { p_cambio: string; p_desde: string; p_motivo: string }
+        Returns: boolean
+      }
       marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
       marcar_recibo_devuelto: {
         Args: {
@@ -6506,6 +6522,7 @@ export type Database = {
         Returns: undefined
       }
       recibo_en_remesa: { Args: { p_recibo_id: string }; Returns: boolean }
+      reclamar_cambio_pendiente: { Args: { p_cambio: string }; Returns: Json }
       registrar_consentimiento: {
         Args: {
           p_ip?: unknown

@@ -1,12 +1,4 @@
 {
-  "src/features/auth/actions/accept-invitation.ts|retirarRolesDeCuentaNueva|NO_MIRA": {
-    "n": 3,
-    "motivo": "El rollback de la cuenta nueva: va a B2 con aprobarCambio (Jose, 2026-11-26: «aprobarCambio con su migración en B2, y el rollback de la cuenta nueva con él»). Necesita diseño, no comprobar el error."
-  },
-  "src/features/cambios-pendientes/actions/decidir.ts|revertir|NO_MIRA": {
-    "n": 2,
-    "motivo": "aprobarCambio → revertir(): el doble fallo deja el cambio «aprobado» sin aplicar. B2 (Jose, 2026-11-26: «NUNCA SALGA DE LA COLA SI NO SE APLICÓ»)."
-  },
   "src/features/alta/lib/gate-alta.ts|leerFichaGestionDe|NO_USA": {
     "n": 1,
     "motivo": "Límite conocido del escáner (spec, 2026-11-26, «la clase 1 medida»): `!x` junta el fallo (null) con «no le toca» (undefined), pero para quien cierra el alta `ficha_gestion_ninos` contesta siempre: no le toca no puede darse. Correcto."

@@ -1268,7 +1268,22 @@
         "decidir": "No s'ha pogut processar la decisió. Torna a provar-ho.",
         "no_pendiente": "Este canvi ja no està pendent.",
         "aplicar": "No s'ha pogut aplicar el canvi. S ha deixat pendent per a reintentar.",
-        "ruta_invalida": "El document no correspon a aquest xiquet; no s'ha aplicat. Rebutja'l per a tancar-lo."
+        "ruta_invalida": "El document no correspon a aquest xiquet; no s'ha aplicat. Rebutja'l per a tancar-lo.",
+        "aplicandose": "Este canvi s'està aplicant ara mateix. Espera un moment i torna a mirar-ho.",
+        "aplicado_sin_cerrar": "El canvi s'ha aplicat, però no s'ha pogut tancar en la cua. Hi continuarà; pots tornar a aprovar-lo sense risc."
+      },
+      "intento": {
+        "aplicandose": "S'està aplicant des de les {hora}.",
+        "sin_constancia": "No consta que s'haja aplicat. Pots tornar a aprovar-lo.",
+        "fallo": "No s'ha pogut aplicar: {motivo}",
+        "motivo": {
+          "lectura_tutor2": "no s'han pogut llegir les dades del segon tutor.",
+          "decision_tutor2": "no s'ha pogut guardar si cal convidar el segon tutor.",
+          "aplicar": "no s'ha pogut escriure el canvi.",
+          "ruta_invalida": "el document no correspon a aquest xiquet.",
+          "rechazar_mandato": "no s'ha pogut rebutjar el mandat.",
+          "otro": "motiu no reconegut."
+        }
       }
     },
     "familias": {

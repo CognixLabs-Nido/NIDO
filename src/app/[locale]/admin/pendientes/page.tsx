@@ -5,6 +5,11 @@ import { listarCambiosPendientes } from '@/features/cambios-pendientes/queries/g
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 
 export const dynamic = 'force-dynamic'
+// B2 (2026-11-27): explícito, no el defecto del plan. Las acciones de la cola corren en la función de esta
+// página, y la reserva de un cambio vale 2 minutos (`reclamar_cambio_pendiente`, 20270209120000): 60 s
+// de esta función, más 8 s del `statement_timeout` de `authenticated` (leído en producción), más margen.
+// Si se sube este número, hay que subir la reserva en la base.
+export const maxDuration = 60
 
 interface PageProps {
   params: Promise<{ locale: string }>

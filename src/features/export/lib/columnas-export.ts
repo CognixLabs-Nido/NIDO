@@ -574,6 +574,26 @@ export const SECCIONES_EXPORT = {
     revisado_por: NS_PERSONA,
     created_at: { sale: 'solicitado_en' },
     decided_at: { sale: 'decidido_en' },
+    // B2 (decisión del usuario del 2026-11-28, para que el abogado la revise en F11-B): las cuatro columnas de
+    // la reserva de la cola no salen. El criterio, para la siguiente columna que alguien añada: una columna
+    // que describe el estado de nuestro proceso no es un dato del interesado, y una que describe a la familia
+    // o al niño sí.
+    aplicando_desde: {
+      noSale:
+        'Marca técnica de que el proceso está en curso. No describe a la familia ni a su hijo, describe el estado de una ejecución nuestra (decisión del 2026-11-28; criterio: una columna que describe el estado de nuestro proceso no es un dato del interesado).',
+    },
+    fallo_aplicar_at: {
+      noSale:
+        'Cuándo falló nuestro propio proceso. El interesado tiene derecho a saber qué pasa con su solicitud, y eso ya lo tiene: la sigue viendo sin resolver en la app, con el aviso de que no se pudo aplicar. No es un dato suyo (decisión del 2026-11-28).',
+    },
+    fallo_aplicar_motivo: {
+      noSale:
+        'Con qué código falló nuestro propio proceso. El interesado ya ve su solicitud sin resolver en la app, con el aviso de que no se pudo aplicar; un código de error interno no le añade nada y no es un dato suyo (decisión del 2026-11-28).',
+    },
+    invita_tutor2: {
+      noSale:
+        'Una decisión interna nuestra, booleana, sobre si hay que enviar una invitación. Lo que sí es su dato, el email del segundo tutor, ya sale por su propia columna: por eso se eligió el booleano en vez de guardar el email (decisión del 2026-11-28).',
+    },
   }),
   'nino.fin_de_curso': seccion('rollover_finaliza', {
     id: NS_ID,

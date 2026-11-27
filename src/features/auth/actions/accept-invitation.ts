@@ -8,7 +8,6 @@ import {
   chocaConLaAdminViva,
   motivoQueImpideElRol,
   motivoQueNoVuelve,
-  retirarRolesDeCuentaNueva,
   type MotivoQueNoVuelve,
 } from '@/features/centros/contexto/escribir-roles'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
@@ -22,6 +21,7 @@ import type { Database } from '@/types/db'
 
 import { clasificarCuenta } from '../lib/clasificar-cuenta'
 import { cuentaHaOperado } from '../lib/cuenta-ha-operado'
+import { deshacerCuentaNueva } from '../lib/deshacer-cuenta-nueva'
 import { crearVinculoProfeAula } from '../lib/vincular-profe-aula'
 import { acceptInvitationSchema, type AcceptInvitationInput } from '../schemas/invitation'
 
@@ -358,7 +358,7 @@ export async function acceptInvitationCore(
       .maybeSingle()
     if (ninoFamErr || !ninoFam?.familia_id) {
       logger.warn('backfill: familia del niño no resuelta', ninoFamErr?.message)
-      await service.auth.admin.deleteUser(userId).catch(() => {})
+      await deshacerCuentaNueva(service, userId, 'backfill: familia del niño')
       return fail('auth.invitation.errors.create_failed')
     }
 
@@ -372,13 +372,13 @@ export async function acceptInvitationCore(
       .is('usuario_id', null)
     if (perfilesErr) {
       logger.warn('backfill: lookup de perfil falló', perfilesErr.message)
-      await service.auth.admin.deleteUser(userId).catch(() => {})
+      await deshacerCuentaNueva(service, userId, 'backfill: lookup de perfil')
       return fail('auth.invitation.errors.create_failed')
     }
     const perfil = perfiles?.find((p) => (p.email ?? '').trim().toLowerCase() === emailInv)
     if (!perfil) {
       logger.warn('backfill: perfil pendiente no encontrado por email')
-      await service.auth.admin.deleteUser(userId).catch(() => {})
+      await deshacerCuentaNueva(service, userId, 'backfill: perfil no encontrado')
       return fail('auth.invitation.errors.create_failed')
     }
 
@@ -392,7 +392,7 @@ export async function acceptInvitationCore(
     if (backfillErr || !linked) {
       // Error, o 0 filas (otra sesión lo enlazó entre el SELECT y el UPDATE): NO seguir mudo.
       logger.warn('backfill familia_tutores.usuario_id falló', backfillErr?.message)
-      await service.auth.admin.deleteUser(userId).catch(() => {})
+      await deshacerCuentaNueva(service, userId, 'backfill: enlazar perfil')
       return fail('auth.invitation.errors.create_failed')
     }
   }
@@ -404,7 +404,7 @@ export async function acceptInvitationCore(
   })
   if (roleErr) {
     logger.warn('accept: roles_usuario insert falló (rollback de la cuenta)', roleErr.message)
-    await service.auth.admin.deleteUser(userId).catch(() => {})
+    await deshacerCuentaNueva(service, userId, 'accept: rol')
     return fail(
       chocaConLaAdminViva(roleErr)
         ? 'auth.invitation.errors.centro_ya_tiene_admin'
@@ -428,8 +428,7 @@ export async function acceptInvitationCore(
     if (consentErr) {
       // Rollback del usuario recién creado: sin consentimiento no se completa el alta.
       logger.warn('registrar_consentimiento falló', consentErr.message)
-      await retirarRolesDeCuentaNueva(service, userId)
-      await service.auth.admin.deleteUser(userId).catch(() => {})
+      await deshacerCuentaNueva(service, userId, 'accept: consentimiento')
       return fail('auth.invitation.errors.create_failed')
     }
   }
@@ -453,8 +452,7 @@ export async function acceptInvitationCore(
         })
     if (vinculoError) {
       logger.warn('accept: auto-vínculo tutor↔niño falló (rollback de la cuenta)', vinculoError)
-      await retirarRolesDeCuentaNueva(service, userId)
-      await service.auth.admin.deleteUser(userId).catch(() => {})
+      await deshacerCuentaNueva(service, userId, 'accept: vínculo tutor↔niño')
       return fail(vinculoError)
     }
   }
@@ -473,8 +471,7 @@ export async function acceptInvitationCore(
       // inserción → rollback de la cuenta recién creada.
       logger.warn('accept: vínculo profe↔aula falló', profeError)
       if (profeError !== 'auth.invitation.errors.coordinadora_ocupada') {
-        await retirarRolesDeCuentaNueva(service, userId)
-        await service.auth.admin.deleteUser(userId).catch(() => {})
+        await deshacerCuentaNueva(service, userId, 'accept: vínculo profe↔aula')
       }
       return fail(profeError)
     }

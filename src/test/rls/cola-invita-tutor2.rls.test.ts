@@ -52,6 +52,29 @@ vi.mock('@/features/auth/actions/send-invitation', async (importOriginal) => {
   }
 })
 
+// B2 (2026-11-27): `muerte.una` simula que la función se corta justo después de aplicar y antes de
+// invitar (lo que hace Vercel al pasar `maxDuration`): lanza sin que la acción lo recoja, y lo de después
+// no corre.
+const muerte = vi.hoisted(() => ({ una: false }))
+vi.mock('@/features/cambios-pendientes/lib/invitar-tutor2-al-aprobar', async (importOriginal) => {
+  const real =
+    await importOriginal<
+      typeof import('@/features/cambios-pendientes/lib/invitar-tutor2-al-aprobar')
+    >()
+  return {
+    ...real,
+    invitarTutor2SiCambioElEmail: async (
+      ...args: Parameters<typeof real.invitarTutor2SiCambioElEmail>
+    ) => {
+      if (muerte.una) {
+        muerte.una = false
+        throw new Error('la función se cortó (simulado)')
+      }
+      return real.invitarTutor2SiCambioElEmail(...args)
+    },
+  }
+})
+
 const { aprobarCambio } = await import('@/features/cambios-pendientes/actions/decidir')
 const { reenviarInvitacionTutor2 } = await import('@/features/matriculas/actions/invitacion-tutor2')
 const { getAltasEnProceso } = await import('@/features/matriculas/queries/get-altas-en-proceso')
@@ -74,6 +97,7 @@ describe('La cola invita al segundo tutor al aprobar un email nuevo', () => {
   const emailX = `t2-cola-x-${sufijo}@nido.test`
   const emailY = `t2-cola-y-${sufijo}@nido.test`
   const emailZ = `t2-cola-z-${sufijo}@nido.test`
+  const emailW = `t2-cola-w-${sufijo}@nido.test`
 
   const datos = (email: string, calle = 'Calle Ficticia') => ({
     tipo_vinculo: 'tutor_legal_secundario',
@@ -179,7 +203,7 @@ describe('La cola invita al segundo tutor al aprobar un email nuevo', () => {
 
   afterAll(async () => {
     sesion.actual = null
-    for (const email of [emailX, emailY, emailZ]) {
+    for (const email of [emailX, emailY, emailZ, emailW]) {
       for (const u of await cuentasAuth(email)) await serviceClient.auth.admin.deleteUser(u.id)
     }
     if (centro) await deleteTestCentro(centro.id)
@@ -265,5 +289,44 @@ describe('La cola invita al segundo tutor al aprobar un email nuevo', () => {
     })
     expect((await invitacionesFamilia()).map((i) => i.email)).toEqual([emailZ])
     expect(await cuentasAuth(emailZ)).toHaveLength(1)
+  })
+
+  it('B2: si la función se corta tras aplicar y antes de invitar, el reintento invita igual', async () => {
+    sesion.actual = await clientFor(directora)
+    const id = await cambio(leo, datos(emailW))
+    const llamadas = espia.llamadas
+
+    muerte.una = true
+    await expect(aprobarCambio(id)).rejects.toThrow('la función se cortó')
+    // Premisa: se aplicó (el email ya es el nuevo), no se invitó, y la fila sigue en la cola, reservada,
+    // con la decisión de invitar guardada.
+    expect((await segundoTutor())?.email).toBe(emailW)
+    expect(espia.llamadas).toBe(llamadas)
+    const { data: tras, error } = await serviceClient
+      .from('cambios_pendientes')
+      .select('estado, aplicando_desde, invita_tutor2')
+      .eq('id', id)
+      .single()
+    expect(error).toBeNull()
+    expect(tras).toMatchObject({ estado: 'pendiente', invita_tutor2: true })
+    expect(tras!.aplicando_desde).not.toBeNull()
+
+    // Pasados los 2 minutos de la reserva (se envejece la fila: el reloj es el de la base).
+    const hace3min = new Date(Date.parse(tras!.aplicando_desde!) - 3 * 60 * 1000).toISOString()
+    expect(
+      (
+        await serviceClient
+          .from('cambios_pendientes')
+          .update({ aplicando_desde: hace3min })
+          .eq('id', id)
+      ).error
+    ).toBeNull()
+
+    // El reintento reaplica (el email ya es el nuevo: recalcular diría «no cambia») y, con la decisión
+    // guardada, invita.
+    expect(await aprobarCambio(id)).toEqual({ success: true, data: { id, tutor2: 'invitado' } })
+    expect(await estadoCambio(id)).toBe('aprobado')
+    expect(espia.llamadas).toBe(llamadas + 1)
+    expect((await invitacionesFamilia()).map((i) => i.email)).toEqual([emailW])
   })
 })
