@@ -665,6 +665,31 @@ a «aprobado» cuando se aplicó, y si falla deja «falló al aplicar» con su m
 nueva: `deleteUser` primero y mirado; si falla, retirar los roles (mirado) y bloquear la cuenta en Auth; lo que
 quede a medias, a Sentry.
 
+### 2026-11-27 · B2: aprobado, y las 4 columnas (Jose, literal)
+
+Medido antes de construir (run 45969793004, 273/273 ficheros; `~/nido-logs/17/b2`): las cinco entidades se
+reaplican sin daño (los 8 casos de `aplicar-cambio-dos-veces.rls.test.ts` dan el mismo estado tras la 2.ª vez; el
+mandato contesta `no_propuesto` y no cambia nada). No es idempotente la invitación al 2.º tutor: el email de antes
+se lee en cada intento. La marca de «aplicando»: 2 minutos (60 s de `maxDuration` explícito en la página de
+pendientes + 8 s, el `statement_timeout` de `authenticated` leído en producción, + margen), comparada con el
+`now()` de la base. Jose, literal:
+
+«Adelante con la migración: las 3 columnas y la del email de antes. Guardarlo en la fila al reclamarla es lo
+correcto, y el criterio que lo decide es el que tú mismo das: mejor invitar dos veces que no invitar a nadie. Un
+email repetido molesta; una invitación que no llega deja a un tutor fuera de la app sin que nadie se entere.
+Mide antes lo que haces con la segunda invitación sobre una pendiente, como dices, y si resulta que una segunda
+invitación invalida la primera o rompe algo, me lo dices antes de construirlo.
+
+Los 2 minutos están bien razonados: 60 de Vercel, 8 del tope por sentencia y el margen, comparado contra el now()
+de la base para no depender de relojes. Y los tres mensajes que ve Dirección son los correctos, sobre todo el de
+«no consta que se haya aplicado»: dice la verdad sin afirmar lo que no sabemos.
+
+Lo que no cubre —que alguien cambie esos datos por otra vía durante esos dos minutos— queda dicho y aceptado: es lo
+mismo que pasaría aplicando tarde, así que no inventamos un bloqueo nuevo para eso.
+Y bien apuntado el fallo de predicción del tope del service role.
+
+Adelante con B2.»
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
