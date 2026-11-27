@@ -634,6 +634,37 @@ anterior sí, una inventada no); el cuerpo vivo, con su md5 normalizado igual al
 letra cambiada: distinto); compara el total antes de confirmar; los permisos, como estaban; 4 recibos regulares
 vivos, ningún borrador, ninguno desfasado.
 
+### 2026-11-27 · B2: los dos diseños, con una condición y una pregunta (Jose, literal)
+
+Medido abierto antes (`~/nido-logs/17/b2`, runs 45965561775 y 45966559012): con solo el borrado de los roles
+fallando, `deleteUser` borra la cuenta y la cascada se lleva los roles (no queda nada); con `deleteUser` fallando
+(tragado con `.catch`), la cuenta sigue y entra; con los dos, sigue, entra y conserva su rol de profe. En los tres
+casos la acción contesta «create_failed». Jose, literal:
+
+«Los dos diseños me valen. Y el hallazgo del rollback es peor de lo que parecía: el fallo que abre el agujero no
+es el borrado de los roles, es el deleteUser tragado, y en los tres casos la acción responde «create_failed». O
+sea que le dice a Dirección que la cuenta no se creó, y la cuenta existe, tiene rol de profe y puede entrar. Que
+eso quede escrito así en el PR.
+Bloquear la cuenta en Auth es la pieza que cierra el peor caso, y es lo que hace que tu diseño valga. Adelante.
+
+LA CONDICIÓN DEL (1): mide la idempotencia ANTES de construir, no después. Tú mismo señalas el caso inverso
+—aplicado y sin marcar, que al aprobar otra vez se reaplica—, y si reaplicar no es inofensivo para alguna
+entidad, el diseño cambia y no quiero enterarme con la migración escrita. Entidad por entidad: servicios, gastos,
+mandato, datos del niño, documentos. Dime cuáles son idempotentes y cuáles no, y para las que no, qué haces.
+
+Y UNA PREGUNTA DEL (1): la marca de «aplicando» que se desbloquea «después de unos minutos». ¿Cuántos y por qué?
+Si es corta, dos aprobaciones a la vez aplican dos veces; si es larga, Dirección se queda mirando un cambio que
+no puede tocar. Dame el número con su motivo, y qué ve Dirección mientras esa marca está puesta.
+
+Los 4 PRs del grupo 1 me valen, y el orden también: las purgas primero, que son las irreversibles. Y el de
+cerrar_curso con su migración, que un centro entero dado de baja por una lectura caída es lo más gordo que queda
+en la lista.»
+
+Los diseños aprobados: (1) `aprobarCambio` reserva el cambio sin sacarlo de la cola (`aplicando_desde`), solo pasa
+a «aprobado» cuando se aplicó, y si falla deja «falló al aplicar» con su motivo; (2) el rollback de la cuenta
+nueva: `deleteUser` primero y mirado; si falla, retirar los roles (mirado) y bloquear la cuenta en Auth; lo que
+quede a medias, a Sentry.
+
 ## Orden de trabajo (de las decisiones de arriba)
 
 1. Sólidos del pase de comidas (forma regla; valor por defecto «no come sólidos»).
