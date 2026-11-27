@@ -54,8 +54,20 @@ async function enlacesDelBuzon(para: string): Promise<string[]> {
   const lista = ((await r.json()) as { messages?: Array<{ ID: string }> }).messages ?? []
   const hrefs: string[] = []
   for (const m of [...lista].reverse()) {
-    const c = (await (await fetch(`${BUZON}/api/v1/message/${m.ID}`)).json()) as { HTML: string }
-    hrefs.push(/href="([^"]*\/invitation\/[^"]*)"/.exec(c.HTML)?.[1] ?? '(sin enlace)')
+    const c = (await (await fetch(`${BUZON}/api/v1/message/${m.ID}`)).json()) as {
+      HTML?: string
+      Text?: string
+    }
+    // Todos los href del correo, unidos: el instrumento no presupone la forma del enlace.
+    const todos = [...(c.HTML ?? '').matchAll(/href=["']([^"']*)["']/g)].map((x) => x[1])
+    const urlsTexto = (c.Text ?? '').match(/https?:\/\/\S+/g) ?? []
+    hrefs.push(
+      todos.length
+        ? todos.join(' | ')
+        : urlsTexto.length
+          ? `texto: ${urlsTexto.join(' | ')}`
+          : `(sin enlace; html ${(c.HTML ?? '').length} car., texto ${(c.Text ?? '').length})`
+    )
   }
   return hrefs
 }
@@ -184,8 +196,8 @@ describe('la segunda invitación al segundo tutor, con una pendiente (medido ant
       abierta: !inv2[0]?.accepted_at && !inv2[0]?.rejected_at,
       correos1: hrefs1.length,
       correos2: hrefs2.length,
-      enlacePrimeroLlevaToken: hrefs2[0]?.endsWith(`/invitation/${inv2[0]?.token}`) ?? false,
-      enlaceSegundoLlevaToken: hrefs2[1]?.endsWith(`/invitation/${inv2[0]?.token}`) ?? false,
+      enlacePrimeroLlevaToken: hrefs2[0]?.includes(`/invitation/${inv2[0]?.token}`) ?? false,
+      enlaceSegundoLlevaToken: hrefs2[1]?.includes(`/invitation/${inv2[0]?.token}`) ?? false,
       avisos1,
       avisos2,
       cuentas1: cuentas1.length,
